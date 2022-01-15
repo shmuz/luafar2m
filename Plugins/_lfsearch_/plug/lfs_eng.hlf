@@ -1,0 +1,1196 @@
+.Language=English,English
+.PluginContents=LuaFAR Search
+
+@Contents
+$ #LuaFAR Search (version 2.4)#
+^#FEATURES#
+ * Search and replace in the editor.
+ * Search files from the panels.
+ * Regular expressions (several libraries to choose from).
+ * User scripts in Lua language, with access to LuaFAR library,
+   the regular expression libraries and to the plugin's API.
+ * Plugin menus can be extended with user's items that may include
+   "presets", test scripts, etc.
+
+   ~Operation in Editor~@OperInEditor@
+   ~Operation in Panels~@OperInPanels@
+
+ For details on regular exressions, consult their documentation:
+   ~Far regular expressions~@:RegExp@
+   ~Lua regular expressions~@LuaStringPatterns@
+   ~Oniguruma~@Oniguruma@
+   ~PCRE~@PCRE@
+
+^#LIBRARIES USED BY THE PLUGIN#
+ #Lua 5.1#   : lua5.1.dll
+ #LuaFAR#    : luafarw.dll
+ #Oniguruma# : onig.dll (optional)
+ #PCRE#      : pcre.dll (optional)
+
+ In order to be found by the plugin, each of these libraries must be located
+on %PATH%. 
+
+@OperInEditor
+^#Operation in Editor#
+
+^#Dialog settings# 
+ #Search for#
+ The search pattern. If "Reg. Expression" option is checked then it is
+interpreted as a regular expression, otherwise as a literal string.
+
+ #Case sensitive#
+ Toggles case sensitivity.
+
+ #Whole words#
+ Search for whole words.
+
+ #Reg. Expression#
+ If checked, then the string to search is treated as a regular expression,
+otherwise as a literal string.
+
+ #Ignore spaces#
+ All literal whitespace in the search pattern is deleted before the search
+begins. Escape the whitespace with #\# if it is an integral part of the
+pattern. (If Lua regex is used, the escaping character is #%#).
+
+ #Regexp library#
+ Select a regular expression library to be used in search operations.
+
+ #Scope# (where the search is conducted):
+       #Global search# - the scope is the whole editor buffer.
+       #Selected text# - the scope is the selected region.
+
+ #Origin# (where the search begins):
+       #From cursor# - search from cursor to the scope border.
+       #Whole scope# - search between the scope borders.
+ 
+ #Reverse search#
+ Search in reverse direction (right to left, bottom to top).
+
+ #Replace with#
+ The replace pattern.
+ If Regular Expression option is checked then:
+    *  #$1#-#$9# and #$A#-#$F# are used for specifying submatches (groups).
+       #$0# stands for the whole match.
+    *  Literal dollar signs (#$#) and backslashes (#\#) must be escaped
+       with #\#
+    *  Other punctuation marks may or may not be escaped with #\#
+
+    *  The following escape sequences can be used as they are easier
+       to put into a dialog field than their character equivalents:
+       #\a#        alarm (hex 07)
+       #\e#        escape (hex 1B)
+       #\f#        formfeed (hex 0C)
+       #\n#        linefeed (hex 0A)
+       #\r#        carriage return (hex 0D)
+       #\t#        tab (hex 09)
+       #\xhhhh#    character with hex code #hhhh#
+
+    *  The following escape sequences control text case:
+       #\L#        turn the following text into lower case
+       #\U#        turn the following text into upper case
+       #\E#        end the scope of the last \L or \U
+       #\l#        turn the next character into lower case
+       #\u#        turn the next character into upper case
+
+       \L and \U elements can be nested. Their scope extends till
+       a matching \E (or till the end of the replace pattern).
+
+    *  The following escape sequences insert numbering:
+       #\R#           insert count: current number of replacements
+       #\R{#offset#}#   as above, but incremented by specified offset,
+                    e.g. \R{20} or \R{-10}
+       #\R{#offset#,#width#}# as above, but inserted with the specified
+                    width (zeros are added at the beginning),
+                    e.g. \R{20,4} or \R{-10,4}
+
+ If the Function Mode option is selected, then the text in this field is
+treated as the body of a Lua function (see below).
+
+ #Function Mode#
+ *  The replace pattern is treated as the #body# of a Lua function
+    (so the keyword 'function', parameter list and the keyword 'end'
+    must be omitted).
+ *  The function is called whenever a match occurs. Its return value
+    is used as the replacement (nil/false mean no replacement).
+ *  The function can use the following preset variables:
+       #c0# -- the whole match.
+       #c1#, #c2#, ..., #c9# -- the captured submatches.
+       #rex# -- the regex library loaded.
+ *  The function can set and modify global variables and use them
+    during its current and future invocations (within the current
+    search).
+
+ #Delete empty line#
+ If some editor line becomes empty as a result of replace operation,
+it will be deleted.
+
+ #Reverse Search#
+ Search in reverse direction.
+
+ #Regexp. Library#
+ Select a regular expression library that will perform the search.
+Two libraries (#Far regex# and #Lua regex#) are embedded in LuaFAR and thus
+always available. The libraries #Oniguruma# and #PCRE# need additionally
+the following files to be present in the system:
+   Oniguruma : onig.dll (on PATH)
+        PCRE : pcre.dll (on PATH)
+
+ #Advanced#
+ Enable the advanced features: Line Filter, Initial Code and Final Code.
+ 
+ #Line Filter#
+ *  Line Filter allows to conduct search or replace on some lines
+    while skipping the others.
+ *  The filter string is treated as a Lua chunk.
+    It is called  whenever a new line is about to be searched.
+    If it returns true then the line is skipped.
+ *  The function can use global variables and the following
+    preset variables:
+    #s#   -- Current search line (or part of it in a block search)
+    #n#   -- Search line number (the search start line is 1)
+    #rex# -- The regex library loaded.
+
+ #Initial code#
+ Lua code that executes before the search process begins:
+   a) global variables and functions can be initialized here and used
+      further by the #Line Filter# and #Replace# (when in function mode).
+   b) a #dofile (filename)# call can be placed here, for the same
+      purpose as in the above paragraph.
+
+ #Final code#
+ Lua code that executes after the search process ends. It can be used for
+closing a file that was opened by the "Initial" code.
+
+ #Count#
+ Do search and count all occurrences of the found text.
+
+ #Show All#
+ Do search and show the list with all lines containing the found text.
+Each line in the list contains an editor line where the search succeeded.
+    *  #Enter#      go to the selected line in the editor.
+    *  #F6#         show different parts of long lines.
+    *  #F7#         show the selected line in a message box.
+    *  #Ctrl-C#     copy the selected line to the clipboard.
+
+^#CONFIGURATION#
+ #Pick search string from:#
+ This setting determines how the #Search# field is initialized when the
+Search or Replace dialog is opened. There are 3 options:
+    *  #Editor#            Word above cursor.
+    *  #History#           Search string taken from Far dialog history.
+    *  #Don't pick#        Search field is left empty.
+
+^#LIMITATIONS#
+ The search is done on per-line basis. Thus, if matching text is spread
+across multiple lines, it will not be found.
+
+^#USER SCRIPTS#
+ The utility can be extended by the ~User Scripts~@UserScripts@.
+
+ ~Contents~@Contents@
+
+@UserScripts
+^#USER SCRIPTS#
+
+ The plugin can execute Lua scripts added by the user. Create a file
+named #_usermenu.lua# in the plugin directory and place there calls
+`AddToMenu' passing in the name of the script.
+
+^#AddToMenu (#Text, File [, Param1 [, Param2]]#)#
+
+ #Text# - text that should appear in the menu. To add a separator, specify
+a string beginning with #":sep:"# following by optional text, e.g.
+":sep:Block commands".
+
+ #File# - name of a Lua script file to run upon this item activation
+(its path is relative to the plugin's directory).
+
+ #Param1# (optional) - first value that will be passed to user script.
+It can be any Lua type.
+
+ #Param2# (optional) - second value that will be passed to user script.
+It can be any Lua type.
+
+^#Examples:#
+      AddToMenu ("Count words", "countw.lua")
+      AddToMenu ("Count letters", "countl.lua")
+      AddToMenu ("Search", "search.lua", "search")
+
+^#WHAT'S AVAILABLE TO USER SCRIPTS#
+
+  Libraries (no need to call `require'):
+    *  The standard Lua libraries
+    *  LuaFAR (namespaces #far#, #bit# and #unicode#)
+    *  history (namespace #history#, same as in LuaFAR for Editor)
+    *  dialog  (namespace #far2.dialog#, same as in LuaFAR for Editor)
+
+  Functions:
+    *  #SearchOrReplace# (the main plugin function; see description
+       below).
+
+^#nFound, nReps = SearchOrReplace (Operation, Data)#
+
+ #Operation# - one of predefined strings.
+ The following operations correspond to the plugin menu items:
+
+       "search"       :  search operation, with its dialog
+       "replace"      :  replace operation, with its dialog
+       "repeat"       :  repeat last operation (Data.sLastOp)
+       "config"       :  call Configuration Dialog
+
+ The following operations do not display dialogs and the final message:
+
+       "test:search"  :  search operation
+       "test:count"   :  count matches in the text
+       "test:showall" :  show all matches
+       "test:replace" :  replace operation
+
+ #Data# - a table with predefined fields. If a field is not present,
+        its default value is used. The default value for booleans is
+        `false'; for strings - an empty string. The value type can be
+        deduced by from the 1-st letter of its name: b=boolean;
+        f=function; n=number; s=string.
+
+       "sSearchPat"      : search pattern
+       "sReplacePat"     : replace pattern
+       "sRegexLib"       : regular expression library, either of:
+                           "far" (default), "lua", "oniguruma" or
+                           "pcre"
+       "sScope"          : search scope: "global" (default) or
+                           "block"
+       "sOrigin"         : search origin: "cursor" (default) or
+                           "scope"
+
+       "bCaseSens"       : case sensitive search
+       "bRegExpr"        : regular expression mode
+       "bWholeWords"     : whole word search
+       "bExtended"       : ignore whitespace in regexp
+       "bSearchBack"     : search in reverse direction
+
+       "bRepInBlock"     : replace in selection
+       "bRepIsFunc"      : Function mode
+       "bDelEmptyLine"   : delete empty line after replacement
+
+       "bFilterFunc"     : Line filter is on
+       "sFilterFunc"     : Line filter function
+
+       "sInitFunc"       : Initial function
+       "sFinalFunc"      : Final function
+
+       "sLastOp"         : last operation
+
+       "fUserChoiceFunc" :
+         A function called by the program when a match is found
+         and a user decision is needed.
+         The parameters are (all are strings): sTitle, sFound, sReps.
+         The valid return value is either of:
+             "yes", "all", "no", "cancel".
+         If the function is not supplied, the default user choice
+         dialog is displayed.
+
+ #nFound, nReps# - numbers of matches found and replacements made,
+                 respectively.
+
+ ~Contents~@Contents@
+
+@OperInPanels
+^#Operation in Panels#
+
+^#Dialog settings# 
+ #File mask#
+ Far-style ~file masks~@:FileMasks@.
+
+ #Search for#
+ #Case sensitive#
+ #Whole words#
+ #Reg. Expression#
+ #Ignore spaces#
+ #Regexp library#
+ These settings are the same as in ~Operation in Editor~@OperInEditor@.
+
+ #Encodings#
+ Choose the code page or pages for searching in the text.
+ There are 3 possibilities:
+
+   #*# Some code page from the list is selected: the search is performed using
+only that code page.
+ 
+   #*# "All code pages" is selected and some code pages are checked
+in the list. The search is performed using the checked code pages.
+(A page can be checked in the list by pressing Space or Ins).
+ 
+   #*# "All code pages" is selected and no code pages are checked in the list.
+The search is performed using the predefined set of code pages:
+{ OEM, ANSI, 1200, 1201, 65000, 65001 }.
+
+ #Search area#
+ Choose where to look for files and directories:
+   #*# From the current folder
+   #*# The current folder only
+   #*# Selected files and folders
+   #*# From the root of current disk
+   #*# In all non-removable drives
+   #*# In all local drives
+   #*# In PATH folders
+
+ #Search for folders#
+ Specify whether folders should be found or not.
+
+ #Search in symbolic links#
+ Specify whether to search in symbolic links or not.
+
+ #Configuration#
+ Envoke ~configuration dialog~@SearchResultsPanel@ for search results panel.
+
+ ~Contents~@Contents@
+
+@SearchResultsPanel
+^#Search results panel#
+
+ The plugin uses the standard #TmpPanel# plugin for displaying its search
+results. Some settings of the temporary panel are overridden just before
+displaying the panel. After the panel is displayed, the original settings of
+TmpPanel are restored. 
+
+^#Dialog settings# 
+ #Column types#
+ #Column widths#
+ #Status line column types#
+ #Status line column widths#
+ #Full screen mode#
+ Read about these settings in the help file of TmpPanel plugin.
+
+ #Macro#
+ Specify text of the macro to be executed immediately after the search
+results panel is displayed. (The default macro sets the "Full name" sorting
+order).
+
+ ~Contents~@Contents@
+
+@LuaStringPatterns
+$ #Lua 5.1 Regular Expressions#
+#Character Class:#
+
+ A character class is used to represent a set of characters. The following
+combinations are allowed in describing a character class:
+
+    #x#  (where x is not one of the magic characters ^$()%.[]*+-?)
+       represents the character x itself.
+    #.#  (a dot) represents all characters.
+    #%a# represents all letters.
+    #%c# represents all control characters.
+    #%d# represents all digits.
+    #%l# represents all lowercase letters.
+    #%p# represents all punctuation characters.
+    #%s# represents all space characters.
+    #%u# represents all uppercase letters.
+    #%w# represents all alphanumeric characters.
+    #%x# represents all hexadecimal digits.
+    #%z# represents the character with representation 0.
+    #%x# (where x is any non-alphanumeric character) represents
+       the character x. This is the standard way to escape the magic
+       characters. Any  punctuation character  (even the  non magic)
+       can be preceded by a '%' when used to  represent itself  in a
+       pattern.
+    #[set]# represents the class which is the union of all characters
+       in set. A range of characters can be specified  by separating
+       the end characters of the range  with a  '-'. All  classes %x
+       described above can also be  used as  components in  set. All
+       other characters  in set  represent themselves.  For example,
+       [%w_] (or [_%w]) represents all alphanumeric  characters plus
+       the  underscore,  [0-7]  represents  the  octal  digits,  and
+       [0-7%l%-]  represents  the  octal  digits plus  the lowercase
+       letters plus the '-' character.
+
+       The interaction between  ranges and  classes is  not defined.
+       Therefore, patterns like  [%a-z] or  [a-%%] have  no meaning.
+
+    #[^set]# represents the complement of set, where set is interpreted
+       as above.
+
+ For all classes represented by single letters (%a, %c, etc.),
+the corresponding uppercase letter represents the complement of
+the class. For instance, %S represents all non-space characters.
+
+ The definitions of letter, space, and other character groups depend on
+the current locale. In particular, the class [a-z] may not be equivalent to %l.
+
+#Pattern Item:#
+
+A pattern item can be
+
+    * a single character class, which  matches any  single character
+      in the class;
+    * a single character class followed by '*',  which matches  0 or
+      more repetitions of characters in the class.  These repetition
+      items  will  always  match  the  longest   possible  sequence;
+
+    * a single character class followed by '+',  which matches  1 or
+      more repetitions of characters in the class.  These repetition
+      items  will  always  match  the  longest   possible  sequence;
+
+    * a single character class followed by '-', which also matches 0
+      or more repetitions of  characters in  the class.  Unlike '*',
+      these repetition items will always match the shortest possible
+      sequence;
+
+    * a single character class followed by '?', which matches 0 or 1
+      occurrence of a character in the class;
+
+    * %n, for n between 1 and 9; such item matches a substring equal
+      to the n-th captured string (see below);
+
+    * %bxy, where x  and y  are two  distinct characters;  such item
+      matches strings that start with x, end with y, and where the x
+      and y are balanced. This means that, if  one reads  the string
+      from left to right, counting +1 for an x and -1  for a  y, the
+      ending  y  is  the  first  y  where the  count reaches  0. For
+      instance,  the  item  %b()  matches expressions  with balanced
+      parentheses.
+
+#Pattern:#
+
+ A pattern is a sequence of pattern items. A '^' at the beginning
+of a pattern anchors the match at the beginning of the subject string.
+A '$' at the end of a pattern anchors the match at the end of the subject
+string. At other positions, '^' and '$' have no special meaning and represent
+themselves.
+
+#Captures:#
+
+ A pattern can contain sub-patterns enclosed in parentheses; they describe
+captures. When a match succeeds, the substrings of the subject string that
+match captures are stored (captured) for future use. Captures are numbered
+according to their left parentheses. For instance, in the pattern
+"(a*(.)%w(%s*))", the part of the string matching "a*(.)%w(%s*)" is stored
+as the first capture (and therefore has number 1); the character matching
+"." is captured with number 2, and the part matching "%s*" has number 3.
+
+ As a special case, the empty capture () captures the current string position
+(a number). For instance, if we apply the pattern "()aa()" on the string
+"flaaap", there will be two captures: 3 and 5.
+
+ A pattern cannot contain embedded zeros. Use %z instead.
+
+ ~Contents~@Contents@
+
+@Oniguruma
+$ #Oniguruma Regular Expressions Version 5.9.1    2007/09/05#
+
+syntax: ONIG_SYNTAX_RUBY (default)
+
+
+#1. Syntax elements#
+
+  \       escape (enable or disable meta character meaning)
+  |       alternation
+  (...)   group
+  [...]   character class
+
+
+#2. Characters#
+
+  \t           horizontal tab (0x09)
+  \v           vertical tab   (0x0B)
+  \n           newline        (0x0A)
+  \r           return         (0x0D)
+  \b           back space     (0x08)
+  \f           form feed      (0x0C)
+  \a           bell           (0x07)
+  \e           escape         (0x1B)
+  \nnn         octal char            (encoded byte value)
+  \xHH         hexadecimal char      (encoded byte value)
+  \x{7HHHHHHH} wide hexadecimal char (character code point value)
+  \cx          control char          (character code point value)
+  \C-x         control char          (character code point value)
+  \M-x         meta  (x|0x80)        (character code point value)
+  \M-\C-x      meta control char     (character code point value)
+
+ (* \b is effective in character class [...] only)
+
+
+#3. Character types#
+
+  .        any character (except newline)
+
+  \w       word character
+
+           Not Unicode:
+             alphanumeric, "_" and multibyte char.
+
+           Unicode:
+             General_Category -- (Letter|Mark|Number|Connector_Punctuation)
+
+  \W       non word char
+
+  \s       whitespace char
+
+           Not Unicode:
+             \t, \n, \v, \f, \r, \x20
+
+           Unicode:
+             0009, 000A, 000B, 000C, 000D, 0085(NEL),
+             General_Category -- Line_Separator
+                              -- Paragraph_Separator
+                              -- Space_Separator
+
+  \S       non whitespace char
+
+  \d       decimal digit char
+
+           Unicode: General_Category -- Decimal_Number
+
+  \D       non decimal digit char
+
+  \h       hexadecimal digit char   [0-9a-fA-F]
+
+  \H       non hexadecimal digit char
+
+
+  Character Property
+
+    * \p{property-name}
+    * \p{^property-name}    (negative)
+    * \P{property-name}     (negative)
+
+    property-name:
+
+     + works on all encodings
+       Alnum, Alpha, Blank, Cntrl, Digit, Graph, Lower,
+       Print, Punct, Space, Upper, XDigit, Word, ASCII,
+
+     + works on EUC_JP, Shift_JIS
+       Hiragana, Katakana
+
+     + works on UTF8, UTF16, UTF32
+       Any, Assigned, C, Cc, Cf, Cn, Co, Cs, L, Ll, Lm, Lo, Lt, Lu,
+       M, Mc, Me, Mn, N, Nd, Nl, No, P, Pc, Pd, Pe, Pf, Pi, Po, Ps,
+       S, Sc, Sk, Sm, So, Z, Zl, Zp, Zs,
+       Arabic, Armenian, Bengali, Bopomofo, Braille, Buginese, Buhid,
+       Canadian_Aboriginal, Cherokee, Common, Coptic, Cypriot,
+       Cyrillic, Deseret, Devanagari, Ethiopic, Georgian, Glagolitic,
+       Gothic, Greek, Gujarati, Gurmukhi, Han, Hangul, Hanunoo,
+       Hebrew, Hiragana, Inherited, Kannada, Katakana, Kharoshthi,
+       Khmer, Lao, Latin, Limbu, Linear_B, Malayalam, Mongolian,
+       Myanmar, New_Tai_Lue, Ogham, Old_Italic, Old_Persian, Oriya,
+       Osmanya, Runic, Shavian, Sinhala, Syloti_Nagri, Syriac,
+       Tagalog, Tagbanwa, Tai_Le, Tamil, Telugu, Thaana, Thai,
+       Tibetan, Tifinagh, Ugaritic, Yi
+
+
+
+#4. Quantifier#
+
+  greedy
+
+    ?       1 or 0 times
+    *       0 or more times
+    +       1 or more times
+    {n,m}   at least n but not more than m times
+    {n,}    at least n times
+    {,n}    at least 0 but not more than n times ({0,n})
+    {n}     n times
+
+  reluctant
+
+    ??      1 or 0 times
+    *?      0 or more times
+    +?      1 or more times
+    {n,m}?  at least n but not more than m times
+    {n,}?   at least n times
+    {,n}?   at least 0 but not more than n times (== {0,n}?)
+
+  possessive (greedy and does not backtrack after repeated)
+
+    ?+      1 or 0 times
+    *+      0 or more times
+    ++      1 or more times
+
+    ({n,m}+, {n,}+, {n}+ are possessive op. in ONIG_SYNTAX_JAVA only)
+
+    ex. /a*+/ === /(?>a*)/
+
+
+#5. Anchors#
+
+  ^       beginning of the line
+  $       end of the line
+  \b      word boundary
+  \B      not word boundary
+  \A      beginning of string
+  \Z      end of string, or before newline at the end
+  \z      end of string
+  \G      matching start position
+
+
+#6. Character class#
+
+  ^...    negative class (lowest precedence operator)
+  x-y     range from x to y
+  [...]   set (character class in character class)
+  ..&&..  intersection (low precedence at the next of ^)
+
+    ex. [a-w&&[^c-g]z] ==> ([a-w] AND ([^c-g] OR z)) ==> [abh-w]
+
+  * If you want to use '[', '-', ']' as a normal character
+    in a character class, you should escape these characters by '\'.
+
+
+  POSIX bracket ([:xxxxx:], negate [:^xxxxx:])
+
+    Not Unicode Case:
+
+      alnum    alphabet or digit char
+      alpha    alphabet
+      ascii    code value: [0 - 127]
+      blank    \t, \x20
+      cntrl
+      digit    0-9
+      graph    include all of multibyte encoded characters
+      lower
+      print    include all of multibyte encoded characters
+      punct
+      space    \t, \n, \v, \f, \r, \x20
+      upper
+      xdigit   0-9, a-f, A-F
+      word     alphanumeric, "_" and multibyte characters
+
+
+    Unicode Case:
+
+      alnum    Letter | Mark | Decimal_Number
+      alpha    Letter | Mark
+      ascii    0000 - 007F
+      blank    Space_Separator | 0009
+      cntrl    Control | Format | Unassigned | Private_Use |
+               Surrogate
+      digit    Decimal_Number
+      graph    [[:^space:]] && ^Control && ^Unassigned && ^Surrogate
+      lower    Lowercase_Letter
+      print    [[:graph:]] | [[:space:]]
+      punct    Connector_Punctuation | Dash_Punctuation |
+               Close_Punctuation | Final_Punctuation |
+               Initial_Punctuation | Other_Punctuation |
+               Open_Punctuation
+      space    Space_Separator | Line_Separator | Paragraph_Separator
+               | 0009 | 000A | 000B | 000C | 000D | 0085
+      upper    Uppercase_Letter
+      xdigit   0030 - 0039 | 0041 - 0046 | 0061 - 0066
+               (0-9, a-f, A-F)
+      word     Letter | Mark | Decimal_Number | Connector_Punctuation
+
+
+
+#7. Extended groups#
+
+  (?##...)            comment
+
+  (?imx-imx)         option on/off
+                         i: ignore case
+                         m: multi-line (dot(.) match newline)
+                         x: extended form
+  (?imx-imx:subexp)  option on/off for subexp
+
+  (?:subexp)         not captured group
+  (subexp)           captured group
+
+  (?=subexp)         look-ahead
+  (?!subexp)         negative look-ahead
+  (?<=subexp)        look-behind
+  (?<!subexp)        negative look-behind
+
+                     Subexp of look-behind must be fixed character
+                     length. But different character length is
+                     allowed in top level alternatives only.
+                     ex. (?<=a|bc) is OK. (?<=aaa(?:b|cd)) is not
+                     allowed.
+
+                     In negative-look-behind, captured group isn't
+                     allowed, but shy group(?:) is allowed.
+
+  (?>subexp)         atomic group
+                     don't backtrack in subexp.
+
+  (?<name>subexp), (?'name'subexp)
+                     define named group
+                     (All characters of the name must be a word
+                     character.)
+
+                     Not only a name but a number is assigned like a
+                     captured group.
+
+                     Assigning the same name as two or more subexps
+                     is allowed. In this case, a subexp call can not
+                     be performed although the back reference is
+                     possible.
+
+
+#8. Back reference#
+
+  \n          back reference by group number (n >= 1)
+  \k<n>       back reference by group number (n >= 1)
+  \k'n'       back reference by group number (n >= 1)
+  \k<-n>      back reference by relative group number (n >= 1)
+  \k'-n'      back reference by relative group number (n >= 1)
+  \k<name>    back reference by group name
+  \k'name'    back reference by group name
+
+  In the back reference by the multiplex definition name,
+  a subexp with a large number is referred to preferentially.
+  (When not matched, a group of the small number is referred to.)
+
+  * Back reference by group number is forbidden if named group is
+    defined in the pattern and ONIG_OPTION_CAPTURE_GROUP is not
+    setted.
+
+
+  back reference with nest level
+
+    level: 0, 1, 2, ...
+
+    \k<n+level>     (n >= 1)
+    \k<n-level>     (n >= 1)
+    \k'n+level'     (n >= 1)
+    \k'n-level'     (n >= 1)
+
+    \k<name+level>
+    \k<name-level>
+    \k'name+level'
+    \k'name-level'
+
+    Destinate relative nest level from back reference position.
+
+    ex 1.
+
+      /\A(?<a>|.|(?:(?<b>.)\g<a>\k<b+0>))\z/.match("reer")
+
+    ex 2.
+
+      r = Regexp.compile(<<'__REGEXP__'.strip, Regexp::EXTENDED)
+      (?<element> \g<stag> \g<content>* \g<etag> ){0}
+      (?<stag> < \g<name> \s* > ){0}
+      (?<name> [a-zA-Z_:]+ ){0}
+      (?<content> [^<&]+ (\g<element> | [^<&]+)* ){0}
+      (?<etag> </ \k<name+1> >){0}
+      \g<element>
+      __REGEXP__
+
+      p r.match('<foo>f<bar>bbb</bar>f</foo>').captures
+
+
+
+#9. Subexp call ("Tanaka Akira special")#
+
+  \g<name>    call by group name
+  \g'name'    call by group name
+  \g<n>       call by group number (n >= 1)
+  \g'n'       call by group number (n >= 1)
+  \g<-n>      call by relative group number (n >= 1)
+  \g'-n'      call by relative group number (n >= 1)
+
+  * left-most recursive call is not allowed.
+     ex. (?<name>a|\g<name>b)   => error
+         (?<name>a|b\g<name>c)  => OK
+
+  * Call by group number is forbidden if named group is defined in the pattern
+    and ONIG_OPTION_CAPTURE_GROUP is not setted.
+
+  * If the option status of called group is different from calling position
+    then the group's option is effective.
+
+    ex. (?-i:\g<name>)(?i:(?<name>a)){0}  match to "A"
+
+
+#10. Captured group#
+
+  Behavior of the no-named group (...) changes with the following conditions.
+  (But named group is not changed.)
+
+  case 1. /.../     (named group is not used, no option)
+
+     (...) is treated as a captured group.
+
+  case 2. /.../g    (named group is not used, 'g' option)
+
+     (...) is treated as a no-captured group (?:...).
+
+  case 3. /..(?<name>..)../   (named group is used, no option)
+
+     (...) is treated as a no-captured group (?:...).
+     numbered-backref/call is not allowed.
+
+  case 4. /..(?<name>..)../G  (named group is used, 'G' option)
+
+     (...) is treated as a captured group.
+     numbered-backref/call is allowed.
+
+  where
+    g: ONIG_OPTION_DONT_CAPTURE_GROUP
+    G: ONIG_OPTION_CAPTURE_GROUP
+
+  ('g' and 'G' options are argued in ruby-dev ML)
+
+ ~Contents~@Contents@
+
+@PCRE
+$ #PCRE REGULAR EXPRESSION SYNTAX SUMMARY#
+
+ The full syntax and semantics of the regular expressions that are
+supported by PCRE are described in the pcrepattern documentation.
+This document contains just a quick-reference summary of the syntax.
+
+#QUOTING#
+
+  \x         where x is non-alphanumeric is a literal x
+  \Q...\E    treat enclosed characters as literal
+
+
+#CHARACTERS#
+
+  \a         alarm, that is, the BEL character (hex 07)
+  \cx        "control-x", where x is any character
+  \e         escape (hex 1B)
+  \f         formfeed (hex 0C)
+  \n         newline (hex 0A)
+  \r         carriage return (hex 0D)
+  \t         tab (hex 09)
+  \ddd       character with octal code ddd, or backreference
+  \xhh       character with hex code hh
+  \x{hhh..}  character with hex code hhh..
+
+
+#CHARACTER TYPES#
+
+  .          any character except newline;
+               in dotall mode, any character whatsoever
+  \C         one byte, even in UTF-8 mode (best avoided)
+  \d         a decimal digit
+  \D         a character that is not a decimal digit
+  \h         a horizontal whitespace character
+  \H         a character that is not a horizontal whitespace
+             character
+  \N         a character that is not a newline
+  \p{xx}     a character with the xx property
+  \P{xx}     a character without the xx property
+  \R         a newline sequence
+  \s         a whitespace character
+  \S         a character that is not a whitespace character
+  \v         a vertical whitespace character
+  \V         a character that is not a vertical whitespace character
+  \w         a "word" character
+  \W         a "non-word" character
+  \X         an extended Unicode sequence
+
+ In PCRE, by default, \d, \D, \s, \S, \w, and \W recognize only ASCII
+characters, even in UTF-8 mode. However, this can be changed by
+setting the PCRE_UCP option.
+
+
+#GENERAL CATEGORY PROPERTIES FOR \p and \P#
+
+  C          Other
+  Cc         Control
+  Cf         Format
+  Cn         Unassigned
+  Co         Private use
+  Cs         Surrogate
+
+  L          Letter
+  Ll         Lower case letter
+  Lm         Modifier letter
+  Lo         Other letter
+  Lt         Title case letter
+  Lu         Upper case letter
+  L&         Ll, Lu, or Lt
+
+  M          Mark
+  Mc         Spacing mark
+  Me         Enclosing mark
+  Mn         Non-spacing mark
+
+  N          Number
+  Nd         Decimal number
+  Nl         Letter number
+  No         Other number
+
+  P          Punctuation
+  Pc         Connector punctuation
+  Pd         Dash punctuation
+  Pe         Close punctuation
+  Pf         Final punctuation
+  Pi         Initial punctuation
+  Po         Other punctuation
+  Ps         Open punctuation
+
+  S          Symbol
+  Sc         Currency symbol
+  Sk         Modifier symbol
+  Sm         Mathematical symbol
+  So         Other symbol
+
+  Z          Separator
+  Zl         Line separator
+  Zp         Paragraph separator
+  Zs         Space separator
+
+
+#PCRE SPECIAL CATEGORY PROPERTIES FOR \p and \P#
+
+  Xan        Alphanumeric: union of properties L and N
+  Xps        POSIX space: property Z or tab, NL, VT, FF, CR
+  Xsp        Perl space: property Z or tab, NL, FF, CR
+  Xwd        Perl word: property Xan or underscore
+
+
+#SCRIPT NAMES FOR \p AND \P#
+
+ Arabic, Armenian, Avestan, Balinese, Bamum, Bengali, Bopomofo,
+Braille, Buginese, Buhid, Canadian_Aboriginal, Carian, Cham,
+Cherokee, Common, Coptic, Cuneiform, Cypriot, Cyrillic, Deseret,
+Devanagari, Egyptian_Hieroglyphs, Ethiopic, Georgian, Glagolitic,
+Gothic, Greek, Gujarati, Gurmukhi, Han, Hangul, Hanunoo, Hebrew,
+Hiragana, Imperial_Aramaic, Inherited, Inscriptional_Pahlavi,
+Inscriptional_Parthian, Javanese, Kaithi, Kannada, Katakana,
+Kayah_Li, Kharoshthi, Khmer, Lao, Latin, Lepcha, Limbu, Linear_B,
+Lisu, Lycian, Lydian, Malayalam, Meetei_Mayek, Mongolian, Myanmar,
+New_Tai_Lue, Nko, Ogham, Old_Italic, Old_Persian, Old_South_Arabian,
+Old_Turkic, Ol_Chiki, Oriya, Osmanya, Phags_Pa, Phoenician, Rejang,
+Runic, Samaritan, Saurashtra, Shavian, Sinhala, Sundanese,
+Syloti_Nagri, Syriac, Tagalog, Tagbanwa, Tai_Le, Tai_Tham, Tai_Viet,
+Tamil, Telugu, Thaana, Thai, Tibetan, Tifinagh, Ugaritic, Vai, Yi.
+
+#CHARACTER CLASSES#
+
+  [...]       positive character class
+  [^...]      negative character class
+  [x-y]       range (can be used for hex characters)
+  [[:xxx:]]   positive POSIX named set
+  [[:^xxx:]]  negative POSIX named set
+
+  alnum       alphanumeric
+  alpha       alphabetic
+  ascii       0-127
+  blank       space or tab
+  cntrl       control character
+  digit       decimal digit
+  graph       printing, excluding space
+  lower       lower case letter
+  print       printing, including space
+  punct       printing, excluding alphanumeric
+  space       whitespace
+  upper       upper case letter
+  word        same as \w
+  xdigit      hexadecimal digit
+
+ In PCRE, POSIX character set names recognize only ASCII characters
+by default, but some of them use Unicode properties if PCRE_UCP is
+set. You can use \Q...\E inside a character class.
+
+
+#QUANTIFIERS#
+
+  ?           0 or 1, greedy
+  ?+          0 or 1, possessive
+  ??          0 or 1, lazy
+  *           0 or more, greedy
+  *+          0 or more, possessive
+  *?          0 or more, lazy
+  +           1 or more, greedy
+  ++          1 or more, possessive
+  +?          1 or more, lazy
+  {n}         exactly n
+  {n,m}       at least n, no more than m, greedy
+  {n,m}+      at least n, no more than m, possessive
+  {n,m}?      at least n, no more than m, lazy
+  {n,}        n or more, greedy
+  {n,}+       n or more, possessive
+  {n,}?       n or more, lazy
+
+
+#ANCHORS AND SIMPLE ASSERTIONS#
+
+  \b          word boundary
+  \B          not a word boundary
+  ^           start of subject
+               also after internal newline in multiline mode
+  \A          start of subject
+  $           end of subject
+               also before newline at end of subject
+               also before internal newline in multiline mode
+  \Z          end of subject
+               also before newline at end of subject
+  \z          end of subject
+  \G          first matching position in subject
+
+
+#MATCH POINT RESET#
+
+  \K          reset start of match
+
+
+#ALTERNATION#
+
+  expr|expr|expr...
+
+
+#CAPTURING#
+
+  (...)           capturing group
+  (?<name>...)    named capturing group (Perl)
+  (?'name'...)    named capturing group (Perl)
+  (?P<name>...)   named capturing group (Python)
+  (?:...)         non-capturing group
+  (?|...)         non-capturing group; reset group numbers for
+                   capturing groups in each alternative
+
+
+#ATOMIC GROUPS#
+
+  (?>...)         atomic, non-capturing group
+
+
+#COMMENT#
+
+  (?##....)        comment (not nestable)
+
+
+#OPTION SETTING#
+
+  (?i)            caseless
+  (?J)            allow duplicate names
+  (?m)            multiline
+  (?s)            single line (dotall)
+  (?U)            default ungreedy (lazy)
+  (?x)            extended (ignore white space)
+  (?-...)         unset option(s)
+
+ The following are recognized only at the start of a pattern or after
+one of the newline-setting options with similar syntax:
+
+  (*UTF8)         set UTF-8 mode (PCRE_UTF8)
+  (*UCP)          set PCRE_UCP (use Unicode properties for \d etc)
+
+
+#LOOKAHEAD AND LOOKBEHIND ASSERTIONS#
+
+  (?=...)         positive look ahead
+  (?!...)         negative look ahead
+  (?<=...)        positive look behind
+  (?<!...)        negative look behind
+
+ Each top-level branch of a look behind must be of a fixed length.
+
+
+#BACKREFERENCES#
+
+  \n              reference by number (can be ambiguous)
+  \gn             reference by number
+  \g{n}           reference by number
+  \g{-n}          relative reference by number
+  \k<name>        reference by name (Perl)
+  \k'name'        reference by name (Perl)
+  \g{name}        reference by name (Perl)
+  \k{name}        reference by name (.NET)
+  (?P=name)       reference by name (Python)
+
+
+#SUBROUTINE REFERENCES (POSSIBLY RECURSIVE)#
+
+  (?R)            recurse whole pattern
+  (?n)            call subpattern by absolute number
+  (?+n)           call subpattern by relative number
+  (?-n)           call subpattern by relative number
+  (?&name)        call subpattern by name (Perl)
+  (?P>name)       call subpattern by name (Python)
+  \g<name>        call subpattern by name (Oniguruma)
+  \g'name'        call subpattern by name (Oniguruma)
+  \g<n>           call subpattern by absolute number (Oniguruma)
+  \g'n'           call subpattern by absolute number (Oniguruma)
+  \g<+n>          call subpattern by relative number (PCRE extension)
+  \g'+n'          call subpattern by relative number (PCRE extension)
+  \g<-n>          call subpattern by relative number (PCRE extension)
+  \g'-n'          call subpattern by relative number (PCRE extension)
+
+
+#CONDITIONAL PATTERNS#
+
+  (?(condition)yes-pattern)
+  (?(condition)yes-pattern|no-pattern)
+
+  (?(n)...        absolute reference condition
+  (?(+n)...       relative reference condition
+  (?(-n)...       relative reference condition
+  (?(<name>)...   named reference condition (Perl)
+  (?('name')...   named reference condition (Perl)
+  (?(name)...     named reference condition (PCRE)
+  (?(R)...        overall recursion condition
+  (?(Rn)...       specific group recursion condition
+  (?(R&name)...   specific recursion condition
+  (?(DEFINE)...   define subpattern for reference
+  (?(assert)...   assertion condition
+
+
+#BACKTRACKING CONTROL#
+
+The following act immediately they are reached:
+
+  (*ACCEPT)       force successful match
+  (*FAIL)         force backtrack; synonym (*F)
+
+ The following act only when a subsequent match failure causes a
+backtrack to reach them. They all force a match failure, but they
+differ in what happens afterwards. Those that advance the
+start-of-match point do so only if the pattern is not anchored.
+
+  (*COMMIT)       overall failure, no advance of starting point
+  (*PRUNE)        advance to next starting character
+  (*SKIP)         advance start to current matching position
+  (*THEN)         local failure, backtrack to next alternation
+
+
+#NEWLINE CONVENTIONS#
+
+ These are recognized only at the very start of the pattern or after
+a (*BSR_...) or (*UTF8) or (*UCP) option.
+
+  (*CR)           carriage return only
+  (*LF)           linefeed only
+  (*CRLF)         carriage return followed by linefeed
+  (*ANYCRLF)      all three of the above
+  (*ANY)          any Unicode newline sequence
+
+
+#WHAT \R MATCHES#
+
+ These are recognized only at the very start of the pattern or after
+a (*...) option that sets the newline convention or UTF-8 or UCP
+mode.
+
+  (*BSR_ANYCRLF)  CR, LF, or CRLF
+  (*BSR_UNICODE)  any Unicode newline sequence
+
+
+#CALLOUTS#
+
+  (?C)      callout
+  (?Cn)     callout with data n
+
+
+#SEE ALSO#
+
+ pcrepattern(3), pcreapi(3), pcrecallout(3), pcrematching(3),
+pcre(3).
+
+#AUTHOR#
+
+ Philip Hazel
+ University Computing Service
+ Cambridge CB2 3QH, England.
+
+#REVISION#
+
+ Last updated: 12 May 2010
+ Copyright c 1997-2010 University of Cambridge.
+
+ ~Contents~@Contents@
