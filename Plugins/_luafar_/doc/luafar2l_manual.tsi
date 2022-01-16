@@ -969,7 +969,7 @@ id=153
 lv=2
 dt=Text
 nm=far.AdvControl
-mtime=3851366903
+mtime=3851447396
 <article>
 #_Result = far.AdvControl (Command, Param)
 #_
@@ -1018,14 +1018,7 @@ mtime=3851366903
 #_    Result:  integer    
 #_
 #_ACTL_KEYMACRO:
-#_    Param:   table (see its fields below)
-#_        AKey:          integer
-#_        Command:       flag
-#_        Flags:         flags combination
-#_        SequenceText:  string
-#_    Results: [1] integer, [2] table MacroParseResult
-#_             (the 2-nd result is returned only when
-#_             Param.Command == MCMD_CHECKMACRO)
+#_    not supported, replaced by 6 separate MacroControl functions
 #_
 #_ACTL_GETARRAYCOLOR:
 #_    Param:   none
@@ -1095,7 +1088,7 @@ mtime=3851366903
 #_  AdvControl
 #_
 #_@@@
-#_<lua> Links = { MacroParseResult="333.html", } </lua>
+#_<lua> Links = { MacroControl="428.html", } </lua>
 #_
 #_
 </article>
@@ -4488,6 +4481,159 @@ mtime=3480252400
 </article>
 </node>
 <node>
+id=428
+lv=1
+dt=Text
+nm=Macro Control
+ctime=3851439608
+mtime=3851439608
+<article>
+</article>
+</node>
+<node>
+id=429
+lv=2
+dt=Text
+nm=far.MacroCheck
+ctime=3851440061
+mtime=3851447881
+<article>
+#_errCode, errPosX, errPosY, errSrs = far.MacroCheck(SequenceText)
+#_
+#_**Parameters:**
+#_  SequenceText: string
+#_
+#_**Returns:**
+#_  errCode:  integer
+#_  errPosX:  integer
+#_  errPosY:  integer
+#_  errSrc:   string
+#_
+#_**Far API used:**
+#_  AdvControl, ACTL_KEYMACRO
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=430
+lv=2
+dt=Text
+nm=far.MacroGetArea
+ctime=3851440090
+mtime=3851447886
+<article>
+#_result = far.MacroGetArea()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  result: integer
+#_
+#_**Far API used:**
+#_  AdvControl, ACTL_KEYMACRO
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=431
+lv=2
+dt=Text
+nm=far.MacroGetState
+ctime=3851440130
+mtime=3851447888
+<article>
+#_result = far.MacroGetState()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  result: integer
+#_
+#_**Far API used:**
+#_  AdvControl, ACTL_KEYMACRO
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=432
+lv=2
+dt=Text
+nm=far.MacroLoadAll
+ctime=3851440174
+mtime=3851447920
+<article>
+#_result = far.MacroLoadAll()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  result: integer
+#_
+#_**Far API used:**
+#_  AdvControl, ACTL_KEYMACRO
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=433
+lv=2
+dt=Text
+nm=far.MacroPost
+ctime=3851440284
+mtime=3851448068
+<article>
+#_result = far.MacroPost (SequenceText, Flags, AKey)
+#_
+#_**Parameters:**
+#_  SequenceText: string
+#_  Flags:        flags (defaults to 0)
+#_  AKey:         integer (defaults to 0)
+#_
+#_**Returns:**
+#_  result: boolean
+#_
+#_**Far API used:**
+#_  AdvControl, ACTL_KEYMACRO
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=434
+lv=2
+dt=Text
+nm=far.MacroSaveAll
+ctime=3851440306
+mtime=3851447938
+<article>
+#_result = far.MacroSaveAll()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  result: integer
+#_
+#_**Far API used:**
+#_  AdvControl, ACTL_KEYMACRO
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=415
 lv=1
 dt=Text
@@ -6029,25 +6175,6 @@ mtime=3477138473
 #_  ['far.InputRecordToKey']="186.html",
 #_  MouseEventRecord="313.html",
 #_} </lua>
-#_
-</article>
-</node>
-<node>
-id=333
-lv=2
-dt=Text
-nm=MacroParseResult
-ctime=3480342884
-mtime=3480343147
-<article>
-#_<markdown>
-#_**`MacroParseResult`** is a table with the following predefined fields:
-#_
-#_      ErrCode: integer
-#_      ErrPosX: integer
-#_      ErrPosY: integer
-#_      ErrSrc:  string
-#_
 #_
 </article>
 </node>

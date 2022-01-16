@@ -3373,7 +3373,6 @@ int far_AdvControl (lua_State *L)
   void *Param = NULL;
   wchar_t buf[300];
   struct ActlEjectMedia em;
-  struct ActlKeyMacro km;
   struct KeySequence ks;
   struct FarSetColors fsc;
   struct PROGRESSVALUE pv;
@@ -3432,36 +3431,8 @@ int far_AdvControl (lua_State *L)
       Param = &em;
       break;
 
-    case ACTL_KEYMACRO:
-      memset(&km, 0, sizeof(km));
-      luaL_checktype(L, 2, LUA_TTABLE);
-      lua_getfield(L, 2, "Command");
-      get_env_flag(L, -1, &km.Command);
-      lua_getfield(L, 2, "Flags");
-      GetFlagCombination(L, -1, (int*)&km.Param.PlainText.Flags);
-      if (km.Command == MCMD_POSTMACROSTRING || km.Command == MCMD_CHECKMACRO) {
-        lua_getfield(L, 2, "SequenceText");
-        if (lua_isstring(L,-1))
-          km.Param.PlainText.SequenceText = check_utf8_string(L,-1,NULL);
-        else
-          return luaL_error(L, "SequenceText field must be a string");
-
-        if (km.Command == MCMD_POSTMACROSTRING) {
-          lua_getfield(L, 2, "AKey");
-          km.Param.PlainText.AKey = lua_tointeger(L, -1);
-        }
-        else if (km.Command == MCMD_CHECKMACRO) {
-          lua_pushinteger(L, Info->AdvControl(Info->ModuleNumber, Command, &km));
-          lua_createtable(L, 0, 4);
-          PutIntToTable(L, "ErrCode", km.Param.MacroResult.ErrCode);
-          PutIntToTable(L, "ErrPosX", km.Param.MacroResult.ErrPos.X);
-          PutIntToTable(L, "ErrPosY", km.Param.MacroResult.ErrPos.Y);
-          PutWStrToTable(L, "ErrSrc", km.Param.MacroResult.ErrSrc, -1);
-          return 2;
-        }
-      }
-      Param = &km;
-      break;
+    //case ACTL_KEYMACRO:
+    //  not supported as it's replaced by 6 separate functions far.MacroXxx
 
     case ACTL_GETARRAYCOLOR: {
       int size = Info->AdvControl(Info->ModuleNumber, Command, NULL);
@@ -3912,6 +3883,50 @@ int far_XLat (lua_State *L)
   return 1;
 }
 
+int _MacroSimple(lua_State *L, int Command)
+{
+  PSInfo *Info = GetPluginStartupInfo(L);
+  struct ActlKeyMacro km;
+  memset(&km, 0, sizeof(km));
+  km.Command = Command;
+  lua_pushinteger(L, Info->AdvControl(Info->ModuleNumber, ACTL_KEYMACRO, &km));
+  return 1;
+}
+
+int far_MacroGetArea (lua_State *L) { return _MacroSimple(L, MCMD_GETAREA);  }
+int far_MacroGetState(lua_State *L) { return _MacroSimple(L, MCMD_GETSTATE); }
+int far_MacroLoadAll (lua_State *L) { return _MacroSimple(L, MCMD_LOADALL);  }
+int far_MacroSaveAll (lua_State *L) { return _MacroSimple(L, MCMD_SAVEALL);  }
+
+int far_MacroCheck(lua_State *L)
+{
+  PSInfo *Info = GetPluginStartupInfo(L);
+  struct ActlKeyMacro km;
+  memset(&km, 0, sizeof(km));
+  km.Command = MCMD_CHECKMACRO;
+  km.Param.PlainText.SequenceText = check_utf8_string(L,1,NULL);
+  Info->AdvControl(Info->ModuleNumber, ACTL_KEYMACRO, &km);
+  lua_pushinteger (L, km.Param.MacroResult.ErrCode);
+  lua_pushinteger (L, km.Param.MacroResult.ErrPos.X);
+  lua_pushinteger (L, km.Param.MacroResult.ErrPos.Y);
+  push_utf8_string(L, km.Param.MacroResult.ErrSrc, -1);
+  return 4;
+}
+
+int far_MacroPost(lua_State *L)
+{
+  int Flags;
+  PSInfo *Info = GetPluginStartupInfo(L);
+  struct ActlKeyMacro km;
+  memset(&km, 0, sizeof(km));
+  km.Command = MCMD_POSTMACROSTRING;
+  km.Param.PlainText.SequenceText = check_utf8_string(L,1,NULL);
+  GetFlagCombination(L, 2, &Flags);
+  km.Param.PlainText.Flags = Flags;
+  km.Param.PlainText.AKey = luaL_optinteger(L,3,0);
+  lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, ACTL_KEYMACRO, &km));
+  return 1;
+}
 
 int win_GetConsoleScreenBufferInfo (lua_State* L)
 {
@@ -4238,6 +4253,12 @@ const luaL_reg far_funcs[] = {
   {"LuafarVersion",       far_LuafarVersion},
   {"MakeMenuItems",       far_MakeMenuItems},
   {"Show",                far_Show},
+  {"MacroGetArea",        far_MacroGetArea},
+  {"MacroGetState",       far_MacroGetState},
+  {"MacroLoadAll",        far_MacroLoadAll},
+  {"MacroSaveAll",        far_MacroSaveAll},
+  {"MacroCheck",          far_MacroCheck},
+  {"MacroPost",           far_MacroPost},
 
   {NULL, NULL}
 };

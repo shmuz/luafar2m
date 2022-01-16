@@ -1243,12 +1243,12 @@ id=59
 lv=0
 dt=Text
 nm=Command line and macro calls
-mtime=3505722056
+mtime=3851459121
 <article>
 #_<markdown>
 #_
 #_###Syntax
-#_      [lfe:] [<options>] <command>|-r<filename> [<arguments>]
+#_      lfe: [<options>] <command>|-r<filename> [<arguments>]
 #_
 #_####Options
 #_      -a          asynchronous execution
@@ -1268,6 +1268,26 @@ mtime=3505722056
 #_
 #_####Example of macro call
 #_      CallPlugin(0x10000,"-a calc 2+2")
+#_
+</article>
+</node>
+<node>
+id=78
+lv=1
+dt=Text
+nm=Another syntax
+ctime=3851458231
+mtime=3851458894
+<article>
+#_<markdown>
+#_
+#_###Syntax
+#_      lfe: = <expression_list>
+#_
+#_This syntax allows to display an expression list, e.g.
+#_      lfe: = 5, 6+44, "apple"
+#_is equivalent to
+#_      far.Show(5, 6+44, "apple")
 #_
 </article>
 </node>

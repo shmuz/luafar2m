@@ -594,7 +594,14 @@ local function export_OpenPlugin (aFrom, aItem)
 
   -- Called from command line
   if aFrom == F.OPEN_COMMANDLINE then
-    ProcessCommand(aItem, "panels")
+    local to_show = aItem:match("^%s*=(.*)")
+    if to_show then
+      local f = assert(loadstring("far.Show(".. to_show..")"))
+      local env = setmetatable({}, {__index=_G})
+      setfenv(f,env)()
+    else
+      ProcessCommand(aItem, "panels")
+    end
     return
   end
 
