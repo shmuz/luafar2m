@@ -115,8 +115,8 @@ function _M.NewList (props, items, bkeys, startId)
   -- Custom list properties and their defaults
   if P.resizeScreen then
     local sb = win.GetConsoleScreenBufferInfo()
-    self.wmax = max(4, sb.srWindowRight - sb.srWindowLeft + 1 - 8)
-    self.hmax = max(1, sb.srWindowBottom - sb.srWindowTop + 1 - 8)
+    self.wmax = max(4, sb.WindowRight - sb.WindowLeft + 1 - 8)
+    self.hmax = max(1, sb.WindowBottom - sb.WindowTop + 1 - 8)
   else
     self.wmax = max(4, P.wmax or 74)
     self.hmax = max(1, P.hmax or 19)
@@ -331,8 +331,8 @@ function List:Draw (x, y)
 end
 
 function List:MouseEvent (hDlg, Ev, x, y)
-  local X, Y = Ev.dwMousePositionX, Ev.dwMousePositionY
-  local MOVED = (Ev.dwEventFlags == F.MOUSE_MOVED)
+  local X, Y = Ev.MousePositionX, Ev.MousePositionY
+  local MOVED = (Ev.EventFlags == F.MOUSE_MOVED)
 
   -- A workaround: sometimes there frequently come parasite MOUSE_MOVED events
   --               having the same PositionX and PositionY ...
@@ -342,7 +342,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
     self.MouseX, self.MouseY = X, Y
   end
 
-  local LEFT = btest(Ev.dwButtonState, "FROM_LEFT_1ST_BUTTON_PRESSED")
+  local LEFT = btest(Ev.ButtonState, "FROM_LEFT_1ST_BUTTON_PRESSED")
   x, y = x+self.x, y+self.y -- screen coordinates of component's top-left corner
 
   local function MakeScrollFunction (key)
@@ -351,7 +351,8 @@ function List:MouseEvent (hDlg, Ev, x, y)
     local first = true
     return function(tmr)
       if first then
-        first, tmr.Interval = false, 30
+      --first, tmr.Interval = false, 30 --> setting timer.Interval is currently not supported in luafar2l
+        first = false
       end
       if not ( (key==KEY_PGUP or key==KEY_PGDN) and
                (Y >= y + 2 + self.slider_start) and
@@ -378,14 +379,15 @@ function List:MouseEvent (hDlg, Ev, x, y)
         -- click on border
         if #self.drawitems>self.h and X==x+self.w+1 and Y>y and Y<=y+self.h then
           -- click on scrollbar
+          local period = 50 -- was:300
           if Y == y + 1 then                           -- click on "up" arrow
-            self.timer = far.Timer(300, MakeScrollFunction(KEY_UP))
+            self.timer = far.Timer(period, MakeScrollFunction(KEY_UP))
           elseif Y == y + self.h then                  -- click on "down" arrow
-            self.timer = far.Timer(300, MakeScrollFunction(KEY_DOWN))
+            self.timer = far.Timer(period, MakeScrollFunction(KEY_DOWN))
           elseif Y < y + 2 + self.slider_start then    -- click above the slider
-            self.timer = far.Timer(300, MakeScrollFunction(KEY_PGUP))
+            self.timer = far.Timer(period, MakeScrollFunction(KEY_PGUP))
           elseif Y >= y + 2 + self.slider_start + self.slider_len then -- click below the slider
-            self.timer = far.Timer(300, MakeScrollFunction(KEY_PGDN))
+            self.timer = far.Timer(period, MakeScrollFunction(KEY_PGDN))
           else                                         -- click on slider
             -- start dragging slider
             self.clickY = Y
