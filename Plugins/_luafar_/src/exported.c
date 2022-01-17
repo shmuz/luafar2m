@@ -6,7 +6,6 @@
 #include "ustring.h"
 
 extern void Log(const char* str);
-extern const char* VirtualKeyStrings[256];
 extern void LF_Error(lua_State *L, const wchar_t* aMsg);
 
 // "Collector" is a Lua table referenced from the Plugin Object table by name.
@@ -812,17 +811,12 @@ int LF_ProcessEditorInputW (lua_State* L, const INPUT_RECORD *Rec)
   lua_newtable(L);                   //+2: Func,Tbl
   PutNumToTable(L, "EventType", Rec->EventType);
   if (Rec->EventType==KEY_EVENT || Rec->EventType==FARMACRO_KEY_EVENT) {
-    PutBoolToTable(L, "KeyDown",         Rec->Event.KeyEvent.bKeyDown);
-    PutNumToTable(L,  "RepeatCount",     Rec->Event.KeyEvent.wRepeatCount);
-
-    int vKey = Rec->Event.KeyEvent.wVirtualKeyCode & 0xff;
-    const char* s = VirtualKeyStrings[vKey] ? VirtualKeyStrings[vKey] : "";
-    PutStrToTable(L, "VirtualKeyCode", s);
-
-    PutNumToTable(L,  "VirtualScanCode", Rec->Event.KeyEvent.wVirtualScanCode);
-    PutNumToTable(L,  "AsciiChar",       Rec->Event.KeyEvent.uChar.AsciiChar);
-    PutNumToTable(L,  "UnicodeChar",     Rec->Event.KeyEvent.uChar.UnicodeChar);
-    PutNumToTable(L,  "ControlKeyState", Rec->Event.KeyEvent.dwControlKeyState);
+    PutBoolToTable(L,"KeyDown",         Rec->Event.KeyEvent.bKeyDown);
+    PutNumToTable(L, "RepeatCount",     Rec->Event.KeyEvent.wRepeatCount);
+    PutNumToTable(L, "VirtualKeyCode",  Rec->Event.KeyEvent.wVirtualKeyCode);
+    PutNumToTable(L, "VirtualScanCode", Rec->Event.KeyEvent.wVirtualScanCode);
+    PutWStrToTable(L, "UnicodeChar",   &Rec->Event.KeyEvent.uChar.UnicodeChar, 1);
+    PutNumToTable(L, "ControlKeyState", Rec->Event.KeyEvent.dwControlKeyState);
   }
   else if (Rec->EventType == MOUSE_EVENT) {
     PutMouseEvent(L, &Rec->Event.MouseEvent, TRUE);

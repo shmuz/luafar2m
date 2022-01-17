@@ -807,7 +807,7 @@ id=111
 lv=2
 dt=Text
 nm=export.ProcessEditorInput
-mtime=3851603567
+mtime=3851626638
 <article>
 #_result = export.ProcessEditorInput (Rec)
 #_
@@ -819,10 +819,9 @@ mtime=3851603567
 #_      *--if EventType is KEY_EVENT or FARMACRO_KEY_EVENT:*
 #_      KeyDown:           boolean
 #_      RepeatCount:       integer
-#_      VirtualKeyCode:    string
+#_      VirtualKeyCode:    integer
 #_      VirtualScanCode:   integer
-#_      AsciiChar:         integer
-#_      UnicodeChar:       integer
+#_      UnicodeChar:       string
 #_      ControlKeyState:   integer
 #_
 #_      *--if EventType is MOUSE_EVENT:*
