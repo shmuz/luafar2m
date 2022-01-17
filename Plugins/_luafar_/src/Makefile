@@ -5,7 +5,7 @@ include ../config.mak
 OUT= Out$(DIRBIT)
 MYCFLAGS  = -DBUILD_DLL -DFAR_DONT_USE_INTERNALS -fvisibility=hidden
 MYLDFLAGS = -llua5.1
-LUAFARDLL = luafar2l.so
+TARGET = $(PATH_LUAFAR)/$(LUAFARDLL)
 
 OBJ = \
   $(OUT)/farflags.o    \
@@ -23,14 +23,30 @@ OBJ = \
   $(OUT)/reg.o         \
   $(OUT)/mytimer.o
 
-$(OUT)/$(LUAFARDLL): $(OBJ)
-	$(CC) -o $@ $^ $(LDFLAGS)
+.PHONY: directories all install
+all: directories $(TARGET)
+directories: $(OUT)
+
+$(TARGET): $(OBJ)
+	sudo $(CC) -o $@ $^ $(LDFLAGS)
 
 $(OUT):
 	mkdir -p $@
 
-$(OUT)/%.o : %.c $(OUT)
+$(OUT)/%.o : %.c
 	$(CC) $(CFLAGS) -c $< -o $@
+
+farflags.c: $(INC_FAR)/plugin.hpp
+	$(LUAEXE) makeflags.lua '$<' > $@
+
+farcolor.c: $(INC_FAR)/farcolor.hpp
+	$(LUAEXE) makefarkeys.lua '$<' > $@
+
+farkeys.c: $(INC_FAR)/farkeys.hpp
+	$(LUAEXE) makefarkeys.lua '$<' > $@
+
+install: $(TARGET)
+	sudo cp -f $(TARGET) $(PATH_INSTALL)
 
 # Dependencies
 $(OUT)/*.o        : $(INC_FAR)/plugin.hpp
@@ -41,14 +57,5 @@ $(OUT)/lregex.o   : luafar.h util.h ustring.h
 $(OUT)/util.o     : util.h ustring.h
 $(OUT)/lflua.o    : luafar.h util.h ustring.h
 $(OUT)/luafar.o   : version.h
-
-farflags.c: $(INC_FAR)/plugin.hpp
-	$(LUAEXE) makeflags.lua '$<' > $@
-
-farcolor.c: $(INC_FAR)/farcolor.hpp
-	$(LUAEXE) makefarkeys.lua '$<' > $@
-
-farkeys.c: $(INC_FAR)/farkeys.hpp
-	$(LUAEXE) makefarkeys.lua '$<' > $@
 
 # (end of Makefile)

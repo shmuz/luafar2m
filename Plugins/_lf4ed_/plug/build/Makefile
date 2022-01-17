@@ -27,7 +27,7 @@ CFLAGS2     = $(CFLAGS1) -DFUNC_OPENLIBS=luafar_openlibs
 OBJ1        = luaplug1.o
 OBJ2        = luaplug2.o linit.o
 
-LIBS1       = $(LUAFARDLL)
+LIBS1       = $(PATH_INSTALL)/$(LUAFARDLL)
 LIBS2       = $(LIBS1)
 
 #-----------------------------------------------------------------------------

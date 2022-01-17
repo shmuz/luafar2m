@@ -15,7 +15,7 @@ OBJ_PLUG    = $(TRG)_plug.o
 MYCFLAGS    = -DFUNC_OPENLIBS=luafar_openlibs $(EXPORTS)
 
 OBJ         = $(OBJ_INIT) $(OBJ_PLUG)
-LIBS        = $(LUADLL) $(LUAFARDLL)
+LIBS        = $(LUADLL) $(PATH_INSTALL)/$(LUAFARDLL)
 
 all: $(TRG)
 

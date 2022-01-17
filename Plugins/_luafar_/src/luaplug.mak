@@ -12,10 +12,10 @@ MYLDFLAGS =
 vpath %.c $(PATH_LUAFARSRC)
 vpath %.h $(PATH_LUAFARSRC)
 
-$(TARGET): $(OBJ) $(LUAFARDLL)
+$(TARGET): $(OBJ) $(PATH_INSTALL)/$(LUAFARDLL)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(LUAFARDLL):
-	cd $(PATH_LUAFARSRC) && $(MAKE) -f luafar.mak
+#$(LUAFARDLL):
+#	cd $(PATH_LUAFARSRC) && $(MAKE) -f luafar.mak
 
 luaplug.o: luaplug.c luafar.h
