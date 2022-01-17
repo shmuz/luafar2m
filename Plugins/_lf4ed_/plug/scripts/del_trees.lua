@@ -56,9 +56,8 @@ local function DeleteTrees (aDirRegex)
 
   for i=1, panelInfo.SelectedItemsNumber do
     local item = panel.GetSelectedPanelItem (nil, 1, i)
-    local fd = item.FindData
-    if fd.FileAttributes:find("d") then
-      for path,file,stage,control in RecurseFunc(fd.FileName.."\\*", "bfE") do
+    if item.FileAttributes:find("d") then
+      for path,file,stage,control in RecurseFunc(item.FileName.."\\*", "bfE") do
         if stage == "b" then
           if depth > 0 or aDirRegex:find(path) then depth = depth + 1
           else control("skipf")

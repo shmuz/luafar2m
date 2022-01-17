@@ -264,22 +264,22 @@ int far_LuafarVersion (lua_State *L)
 
 void GetMouseEvent(lua_State *L, MOUSE_EVENT_RECORD* rec)
 {
-  rec->dwMousePosition.X = GetOptIntFromTable(L, "dwMousePositionX", 0);
-  rec->dwMousePosition.Y = GetOptIntFromTable(L, "dwMousePositionY", 0);
-  rec->dwButtonState = GetOptIntFromTable(L, "dwButtonState", 0);
-  rec->dwControlKeyState = GetOptIntFromTable(L, "dwControlKeyState", 0);
-  rec->dwEventFlags = GetOptIntFromTable(L, "dwEventFlags", 0);
+  rec->dwMousePosition.X = GetOptIntFromTable(L, "MousePositionX", 0);
+  rec->dwMousePosition.Y = GetOptIntFromTable(L, "MousePositionY", 0);
+  rec->dwButtonState = GetOptIntFromTable(L, "ButtonState", 0);
+  rec->dwControlKeyState = GetOptIntFromTable(L, "ControlKeyState", 0);
+  rec->dwEventFlags = GetOptIntFromTable(L, "EventFlags", 0);
 }
 
 void PutMouseEvent(lua_State *L, const MOUSE_EVENT_RECORD* rec, BOOL table_exist)
 {
   if (!table_exist)
     lua_createtable(L, 0, 5);
-  PutNumToTable(L, "dwMousePositionX", rec->dwMousePosition.X);
-  PutNumToTable(L, "dwMousePositionY", rec->dwMousePosition.Y);
-  PutNumToTable(L, "dwButtonState", rec->dwButtonState);
-  PutNumToTable(L, "dwControlKeyState", rec->dwControlKeyState);
-  PutNumToTable(L, "dwEventFlags", rec->dwEventFlags);
+  PutNumToTable(L, "MousePositionX", rec->dwMousePosition.X);
+  PutNumToTable(L, "MousePositionY", rec->dwMousePosition.Y);
+  PutNumToTable(L, "ButtonState", rec->dwButtonState);
+  PutNumToTable(L, "ControlKeyState", rec->dwControlKeyState);
+  PutNumToTable(L, "EventFlags", rec->dwEventFlags);
 }
 
 // convert a string from utf-8 to wide char and put it into a table,
@@ -312,9 +312,9 @@ void FillEditorSetPosition(lua_State *L, struct EditorSetPosition *esp)
   esp->Overtype  = GetOptIntFromTable(L, "Overtype", -1);
 }
 
+//a table expected on Lua stack top
 void PushFarFindData(lua_State *L, const struct FAR_FIND_DATA *wfd)
 {
-  lua_createtable(L, 0, 8);
   PutAttrToTable     (L,                       wfd->dwFileAttributes);
   PutNumToTable      (L, "FileSize",           (double)wfd->nFileSize);
   PutFileTimeToTable (L, "LastWriteTime",      wfd->ftLastWriteTime);
@@ -355,9 +355,7 @@ void PushPanelItem(lua_State *L, const struct PluginPanelItem *PanelItem)
 {
   lua_newtable(L); // "PanelItem"
   //-----------------------------------------------------------------------
-  PushFarFindData (L, &PanelItem->FindData);
-  lua_setfield(L, -2, "FindData");
-  //-----------------------------------------------------------------------
+  PushFarFindData(L, &PanelItem->FindData);
   PutNumToTable(L, "Flags", PanelItem->Flags);
   PutNumToTable(L, "NumberOfLinks", PanelItem->NumberOfLinks);
   if (PanelItem->Description)
@@ -1019,13 +1017,13 @@ int editor_ReadInput(lua_State *L)
   switch(ir.EventType) {
     case KEY_EVENT:
       PutStrToTable(L, "EventType", "KEY_EVENT");
-      PutBoolToTable(L,"bKeyDown", ir.Event.KeyEvent.bKeyDown);
-      PutNumToTable(L, "wRepeatCount", ir.Event.KeyEvent.wRepeatCount);
-      PutNumToTable(L, "wVirtualKeyCode", ir.Event.KeyEvent.wVirtualKeyCode);
-      PutNumToTable(L, "wVirtualScanCode", ir.Event.KeyEvent.wVirtualScanCode);
+      PutBoolToTable(L,"KeyDown", ir.Event.KeyEvent.bKeyDown);
+      PutNumToTable(L, "RepeatCount", ir.Event.KeyEvent.wRepeatCount);
+      PutNumToTable(L, "VirtualKeyCode", ir.Event.KeyEvent.wVirtualKeyCode);
+      PutNumToTable(L, "VirtualScanCode", ir.Event.KeyEvent.wVirtualScanCode);
       PutNumToTable(L, "UnicodeChar", ir.Event.KeyEvent.uChar.UnicodeChar);
       PutNumToTable(L, "AsciiChar", ir.Event.KeyEvent.uChar.AsciiChar);
-      PutNumToTable(L, "dwControlKeyState", ir.Event.KeyEvent.dwControlKeyState);
+      PutNumToTable(L, "ControlKeyState", ir.Event.KeyEvent.dwControlKeyState);
       break;
 
     case MOUSE_EVENT:
@@ -1035,18 +1033,18 @@ int editor_ReadInput(lua_State *L)
 
     case WINDOW_BUFFER_SIZE_EVENT:
       PutStrToTable(L, "EventType", "WINDOW_BUFFER_SIZE_EVENT");
-      PutNumToTable(L, "dwSizeX", ir.Event.WindowBufferSizeEvent.dwSize.X);
-      PutNumToTable(L, "dwSizeY", ir.Event.WindowBufferSizeEvent.dwSize.Y);
+      PutNumToTable(L, "SizeX", ir.Event.WindowBufferSizeEvent.dwSize.X);
+      PutNumToTable(L, "SizeY", ir.Event.WindowBufferSizeEvent.dwSize.Y);
       break;
 
     case MENU_EVENT:
       PutStrToTable(L, "EventType", "MENU_EVENT");
-      PutNumToTable(L, "dwCommandId", ir.Event.MenuEvent.dwCommandId);
+      PutNumToTable(L, "CommandId", ir.Event.MenuEvent.dwCommandId);
       break;
 
     case FOCUS_EVENT:
       PutStrToTable(L, "EventType", "FOCUS_EVENT");
-      PutBoolToTable(L,"bSetFocus", ir.Event.FocusEvent.bSetFocus);
+      PutBoolToTable(L,"SetFocus", ir.Event.FocusEvent.bSetFocus);
       break;
 
     default:
@@ -1073,10 +1071,10 @@ void FillInputRecord(lua_State *L, int pos, INPUT_RECORD *ir)
   ir->EventType = temp;
   switch(ir->EventType) {
     case KEY_EVENT:
-      ir->Event.KeyEvent.bKeyDown = GetOptBoolFromTable(L, "bKeyDown", FALSE);
-      ir->Event.KeyEvent.wRepeatCount = GetOptIntFromTable(L, "wRepeatCount", 1);
-      ir->Event.KeyEvent.wVirtualKeyCode = GetOptIntFromTable(L, "wVirtualKeyCode", 0);
-      ir->Event.KeyEvent.wVirtualScanCode = GetOptIntFromTable(L, "wVirtualScanCode", 0);
+      ir->Event.KeyEvent.bKeyDown = GetOptBoolFromTable(L, "KeyDown", FALSE);
+      ir->Event.KeyEvent.wRepeatCount = GetOptIntFromTable(L, "RepeatCount", 1);
+      ir->Event.KeyEvent.wVirtualKeyCode = GetOptIntFromTable(L, "VirtualKeyCode", 0);
+      ir->Event.KeyEvent.wVirtualScanCode = GetOptIntFromTable(L, "VirtualScanCode", 0);
       // prevent simultaneous setting of both UnicodeChar and AsciiChar
       lua_getfield(L, -1, "UnicodeChar");
       hasKey = !(lua_isnil(L, -1));
@@ -1086,7 +1084,7 @@ void FillInputRecord(lua_State *L, int pos, INPUT_RECORD *ir)
       else {
         ir->Event.KeyEvent.uChar.AsciiChar = GetOptIntFromTable(L, "AsciiChar", 0);
       }
-      ir->Event.KeyEvent.dwControlKeyState = GetOptIntFromTable(L, "dwControlKeyState", 0);
+      ir->Event.KeyEvent.dwControlKeyState = GetOptIntFromTable(L, "ControlKeyState", 0);
       break;
 
     case MOUSE_EVENT:
@@ -1094,16 +1092,16 @@ void FillInputRecord(lua_State *L, int pos, INPUT_RECORD *ir)
       break;
 
     case WINDOW_BUFFER_SIZE_EVENT:
-      ir->Event.WindowBufferSizeEvent.dwSize.X = GetOptIntFromTable(L, "dwSizeX", 0);
-      ir->Event.WindowBufferSizeEvent.dwSize.Y = GetOptIntFromTable(L, "dwSizeY", 0);
+      ir->Event.WindowBufferSizeEvent.dwSize.X = GetOptIntFromTable(L, "SizeX", 0);
+      ir->Event.WindowBufferSizeEvent.dwSize.Y = GetOptIntFromTable(L, "SizeY", 0);
       break;
 
     case MENU_EVENT:
-      ir->Event.MenuEvent.dwCommandId = GetOptIntFromTable(L, "dwCommandId", 0);
+      ir->Event.MenuEvent.dwCommandId = GetOptIntFromTable(L, "CommandId", 0);
       break;
 
     case FOCUS_EVENT:
-      ir->Event.FocusEvent.bSetFocus = GetOptBoolFromTable(L, "bSetFocus", FALSE);
+      ir->Event.FocusEvent.bSetFocus = GetOptBoolFromTable(L, "SetFocus", FALSE);
       break;
   }
   lua_pop(L, 1);
@@ -1887,6 +1885,7 @@ int far_GetDirList (lua_State *L)
     int i;
     lua_createtable(L, ItemsNumber, 0); // "PanelItems"
     for(i=0; i < ItemsNumber; i++) {
+      lua_newtable(L);
       PushFarFindData (L, PanelItems + i);
       lua_rawseti(L, -2, i+1);
     }
@@ -3298,6 +3297,7 @@ int WINAPI FrsUserFunc (const struct FAR_FIND_DATA *FData, const wchar_t *FullNa
 {
   lua_State *L = (lua_State*) Param;
   lua_pushvalue(L, 3); // push the Lua function
+  lua_newtable(L);
   PushFarFindData(L, FData);
   push_utf8_string(L, FullName, -1);
   int err = lua_pcall(L, 2, 1, 0);
@@ -3935,17 +3935,17 @@ int win_GetConsoleScreenBufferInfo (lua_State* L)
   if (!WINPORT(GetConsoleScreenBufferInfo)(h, &info))
     return lua_pushnil(L), 1;
   lua_createtable(L, 0, 11);
-  PutIntToTable(L, "dwSizeX",              info.dwSize.X);
-  PutIntToTable(L, "dwSizeY",              info.dwSize.Y);
-  PutIntToTable(L, "dwCursorPositionX",    info.dwCursorPosition.X);
-  PutIntToTable(L, "dwCursorPositionY",    info.dwCursorPosition.Y);
-  PutIntToTable(L, "wAttributes",          info.wAttributes);
-  PutIntToTable(L, "srWindowLeft",         info.srWindow.Left);
-  PutIntToTable(L, "srWindowTop",          info.srWindow.Top);
-  PutIntToTable(L, "srWindowRight",        info.srWindow.Right);
-  PutIntToTable(L, "srWindowBottom",       info.srWindow.Bottom);
-  PutIntToTable(L, "dwMaximumWindowSizeX", info.dwMaximumWindowSize.X);
-  PutIntToTable(L, "dwMaximumWindowSizeY", info.dwMaximumWindowSize.Y);
+  PutIntToTable(L, "SizeX",              info.dwSize.X);
+  PutIntToTable(L, "SizeY",              info.dwSize.Y);
+  PutIntToTable(L, "CursorPositionX",    info.dwCursorPosition.X);
+  PutIntToTable(L, "CursorPositionY",    info.dwCursorPosition.Y);
+  PutIntToTable(L, "Attributes",         info.wAttributes);
+  PutIntToTable(L, "WindowLeft",         info.srWindow.Left);
+  PutIntToTable(L, "WindowTop",          info.srWindow.Top);
+  PutIntToTable(L, "WindowRight",        info.srWindow.Right);
+  PutIntToTable(L, "WindowBottom",       info.srWindow.Bottom);
+  PutIntToTable(L, "MaximumWindowSizeX", info.dwMaximumWindowSize.X);
+  PutIntToTable(L, "MaximumWindowSizeY", info.dwMaximumWindowSize.Y);
   return 1;
 }
 

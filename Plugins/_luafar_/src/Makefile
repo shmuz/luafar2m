@@ -28,7 +28,7 @@ all: directories $(TARGET)
 directories: $(OUT)
 
 $(TARGET): $(OBJ)
-	sudo $(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(OUT):
 	mkdir -p $@
@@ -46,7 +46,7 @@ farkeys.c: $(INC_FAR)/farkeys.hpp
 	$(LUAEXE) makefarkeys.lua '$<' > $@
 
 install: $(TARGET)
-	sudo cp -f $(TARGET) $(PATH_INSTALL)
+	cp -f $(TARGET) $(PATH_INSTALL)
 
 # Dependencies
 $(OUT)/*.o        : $(INC_FAR)/plugin.hpp

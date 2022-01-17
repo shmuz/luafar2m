@@ -281,7 +281,7 @@ do
   local list = {}
   for i=1, panelInfo.SelectedItemsNumber do
     local item = panel.GetSelectedPanelItem (nil, 1, i)
-    table.insert(list, item.FindData.FileName)
+    table.insert(list, item.FileName)
   end
 
   local data = {}

@@ -70,8 +70,8 @@ local function ShowTable (tbl, title)
 end
 
 
-local function IsDirectory (FindData)
-  return FindData.FileAttributes:find"d" and true
+local function IsDirectory (PanelItem)
+  return PanelItem.FileAttributes:find"d" and true
 end
 
 
@@ -138,7 +138,7 @@ local function CheckForCorrect (Name)
   if p:match "^\\\\%.\\%a%:$" or
      isDevice(p, "\\\\.\\PhysicalDrive") or
      isDevice(p, "\\\\.\\cdrom") then
-    return { FindData = { FileName = p, FileAttributes = "a" } }
+    return { FileName = p, FileAttributes = "a"; }
   end
 
   if p:find "%S" and not p:find "[?*]" and p ~= "\\" and p ~= ".." then
@@ -146,22 +146,19 @@ local function CheckForCorrect (Name)
     local data = win.GetFileInfo(q)
     if data then
       data.FileName = p
-      local PanelItem = {
-        FindData    = data,
-        PackSize    = data.FileSize,
-        Description = "One of my files",
-        Owner       = "Joe Average",
-      --UserData    = numline,
-      --Flags       = { selected=true, },
-      }
-      return PanelItem
+      data.PackSize    = data.FileSize,
+      data.Description = "One of my files",
+      data.Owner       = "Joe Average",
+      --data.UserData  = numline,
+      --data.Flags     = { selected=true, },
+      return data
     end
   end
 end
 
 
 local function IsCurrentFileCorrect (Handle)
-  local fname = panel.GetCurrentPanelItem(Handle, 1).FindData.FileName
+  local fname = panel.GetCurrentPanelItem(Handle, 1).FileName
   local correct = (fname == "..") or (CheckForCorrect(fname) and true)
   return correct, fname
 end
@@ -177,7 +174,7 @@ local function GoToFile (Target, PanelNumber)
   local Name = Unquote (Trim (ExtractFileName (Target))):upper()
   for i=1, PInfo.ItemsNumber do
     local item = panel.GetPanelItem (nil, PanelNumber, i)
-    if Name == ExtractFileName (item.FindData.FileName):upper() then
+    if Name == ExtractFileName (item.FileName):upper() then
       panel.RedrawPanel (nil, PanelNumber, { CurrentItem=i, TopPanelItem=i })
       return
     end
@@ -220,7 +217,7 @@ local function ShowMenuFromList (Name)
   else
     local panelitem = CheckForCorrect (Item.action)
     if panelitem then
-      if IsDirectory (panelitem.FindData) then
+      if IsDirectory (panelitem) then
         panel.SetPanelDir (nil, 1, Item.action)
       else
         bShellExecute = true
@@ -576,10 +573,10 @@ function TmpPanelBase:UpdateItems (ShowOwners, ShowLinks)
   if ShowOwners or ShowLinks then
     for _,v in ipairs(PanelItems) do
       if ShowOwners then
-        v.Owner = far.GetFileOwner(nil, v.FindData.FileName)
+        v.Owner = far.GetFileOwner(nil, v.FileName)
       end
       if ShowLinks then
-        v.NumberOfLinks = far.GetNumberOfLinks(v.FindData.FileName)
+        v.NumberOfLinks = far.GetNumberOfLinks(v.FileName)
       end
     end
   end
@@ -593,7 +590,7 @@ function TmpPanelBase:ProcessRemoveKey (Handle)
   local PInfo = assert(panel.GetPanelInfo (Handle, 1))
   for i=1, PInfo.SelectedItemsNumber do
     local item = panel.GetSelectedPanelItem (Handle, 1, i)
-    tb_dict[item.FindData.FileName] = true
+    tb_dict[item.FileName] = true
   end
   for _,v in ipairs(self:Items()) do
     if not tb_dict[v] then
@@ -680,7 +677,7 @@ do
       if Ok then
         if CurFileName ~= ".." then
           local currItem = assert(panel.GetCurrentPanelItem (Handle, 1))
-          if IsDirectory (currItem.FindData) then
+          if IsDirectory (currItem) then
             panel.SetPanelDir (nil, 2, CurFileName)
           else
             GoToFile(CurFileName, 2)
@@ -783,20 +780,19 @@ end
 
 
 function TmpPanelBase:PutOneFile (PanelItem)
-  local CurName = PanelItem.FindData.FileName
+  local CurName = PanelItem.FileName
   PanelItem = CheckForCorrect(CurName)
   if not PanelItem then return false end
 
   local NameOnly = not CurName:match("\\")
-  local FindData = PanelItem.FindData
-  CurName = FindData.FileName
+  CurName = PanelItem.FileName
   if NameOnly then
     CurName = AddEndSlash (far.GetCurrentDirectory()) .. CurName
   end
   local items = self:Items()
   items[#items+1] = CurName
 
-  if self.SelectedCopyContents ~= 0 and NameOnly and IsDirectory(FindData) then
+  if self.SelectedCopyContents ~= 0 and NameOnly and IsDirectory(PanelItem) then
     if self.SelectedCopyContents == 2 then
       local res = _Message (M.MCopyContentsMsg, M.MWarning,
                             "Yes;No", "", "Config")
@@ -922,7 +918,7 @@ function TmpPanelBase:SetFindList (Handle, PanelItems)
   end
   local newfiles = {}
   for i,v in ipairs(PanelItems) do
-    newfiles[i] = v.FindData.FileName
+    newfiles[i] = v.FileName
   end
   self:ReplaceFiles (newfiles)
   self:CommitPutFiles (hScreen)
@@ -942,4 +938,3 @@ end
 
 
 return Package
-

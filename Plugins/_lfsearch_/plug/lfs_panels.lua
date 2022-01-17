@@ -323,7 +323,7 @@ local function MakeItemList (panelInfo, area)
       if panelInfo.Plugin then
         for i=1, panelInfo.ItemsNumber do
           local item = panel.GetPanelItem(nil, 1, i)
-          local name = item.FindData.FileName
+          local name = item.FileName
           if name ~= ".." and name ~= "." then itemList[#itemList+1] = name end
         end
       else
@@ -339,7 +339,7 @@ local function MakeItemList (panelInfo, area)
       local curdir_slash = panelInfo.Plugin and "" or panelDir:gsub(dirsep.."?$", dirsep, 1)
       for i=1, panelInfo.SelectedItemsNumber do
         local item = panel.GetSelectedPanelItem(nil, 1, i)
-        itemList[#itemList+1] = curdir_slash .. item.FindData.FileName
+        itemList[#itemList+1] = curdir_slash .. item.FileName
       end
     end
 

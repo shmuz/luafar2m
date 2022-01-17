@@ -807,6 +807,7 @@ id=111
 lv=2
 dt=Text
 nm=export.ProcessEditorInput
+mtime=3851603567
 <article>
 #_result = export.ProcessEditorInput (Rec)
 #_
@@ -816,30 +817,30 @@ nm=export.ProcessEditorInput
 #_      EventType:         integer
 #_
 #_      *--if EventType is KEY_EVENT or FARMACRO_KEY_EVENT:*
-#_      bKeyDown:          boolean
-#_      wRepeatCount:      integer
-#_      wVirtualKeyCode:   string
-#_      wVirtualScanCode:  integer
+#_      KeyDown:           boolean
+#_      RepeatCount:       integer
+#_      VirtualKeyCode:    string
+#_      VirtualScanCode:   integer
 #_      AsciiChar:         integer
 #_      UnicodeChar:       integer
-#_      dwControlKeyState: integer
+#_      ControlKeyState:   integer
 #_
 #_      *--if EventType is MOUSE_EVENT:*
-#_      dwMousePositionX   integer
-#_      dwMousePositionY   integer
-#_      dwButtonState      integer
-#_      dwControlKeyState  integer
-#_      dwEventFlags       integer
+#_      MousePositionX     integer
+#_      MousePositionY     integer
+#_      ButtonState        integer
+#_      ControlKeyState    integer
+#_      EventFlags         integer
 #_
 #_      *--if EventType is WINDOW_BUFFER_SIZE_EVENT:*
-#_      dwSizeX            integer
-#_      dwSizeY            integer
+#_      SizeX              integer
+#_      SizeY              integer
 #_
 #_      *--if EventType is MENU_EVENT:*
-#_      dwCommandId        integer
+#_      CommandId          integer
 #_
 #_      *--if EventType is FOCUS_EVENT:*
-#_      bSetFocus          boolean
+#_      SetFocus           boolean
 #_
 #_**Returns:**
 #_  result: boolean
@@ -4307,7 +4308,7 @@ lv=1
 dt=Text
 nm=File Filter Control
 ctime=3480243081
-mtime=3480252933
+mtime=3851611400
 <article>
 #_<markdown>
 #_File filter control is implemented as bindings of Far API
@@ -4333,7 +4334,7 @@ mtime=3480252933
 #_          for i=1, pInfo.ItemsNumber do
 #_            -- apply the filter...
 #_            local item = panel.GetPanelItem(nil, 1, i)
-#_            if AFilter:IsFileInFilter(item.FindData) then
+#_            if AFilter:IsFileInFilter(item) then
 #_              -- the element matches filter conditions;
 #_              -- process the element...
 #_            end
@@ -4883,6 +4884,7 @@ id=186
 lv=2
 dt=Text
 nm=far.InputRecordToKey
+mtime=3851604080
 <article>
 #_Key = far.InputRecordToKey (Input)
 #_
@@ -4890,7 +4892,7 @@ nm=far.InputRecordToKey
 #_  Input: table InputRecord
 #_         (Field *EventType* is mandatory, other fields
 #_         are optional. If some field is missing, the default
-#_         value of 0/false is used, except for *wRepeatCount*
+#_         value of 0/false is used, except for *RepeatCount*
 #_         that defaults to 1).
 #_
 #_**Returns:**
@@ -6136,7 +6138,7 @@ id=187
 lv=2
 dt=Text
 nm=InputRecord
-mtime=3477138473
+mtime=3851603799
 <article>
 #_This table is used in the functions:
 #_editor.ProcessInput, editor.ReadInput,
@@ -6147,26 +6149,26 @@ mtime=3477138473
 #_  EventType:         integer, or string
 #_
 #_  *--if EventType is KEY_EVENT or FARMACRO_KEY_EVENT:*
-#_  bKeyDown:          boolean
-#_  wRepeatCount:      integer
-#_  wVirtualKeyCode:   integer
-#_  wVirtualScanCode:  integer
+#_  KeyDown:           boolean
+#_  RepeatCount:       integer
+#_  VirtualKeyCode:    integer
+#_  VirtualScanCode:   integer
 #_  AsciiChar:         integer
 #_  UnicodeChar:       integer
-#_  dwControlKeyState: integer
+#_  ControlKeyState:   integer
 #_
 #_  *--if EventType is MOUSE_EVENT:*
 #_  see MouseEventRecord
 #_
 #_  *--if EventType is WINDOW_BUFFER_SIZE_EVENT:*
-#_  dwSizeX            integer
-#_  dwSizeY            integer
+#_  SizeX              integer
+#_  SizeY              integer
 #_
 #_  *--if EventType is MENU_EVENT:*
-#_  dwCommandId        integer
+#_  CommandId          integer
 #_
 #_  *--if EventType is FOCUS_EVENT:*
-#_  bSetFocus          boolean
+#_  SetFocus           boolean
 #_
 #_@@@
 #_<lua> Links = {
@@ -6184,15 +6186,15 @@ lv=2
 dt=Text
 nm=MouseEventRecord
 ctime=3477138206
-mtime=3477138526
+mtime=3851603641
 <article>
 #_**The table has the following fields:**
 #_
-#_  dwMousePositionX   :  integer
-#_  dwMousePositionY   :  integer
-#_  dwButtonState      :  integer
-#_  dwControlKeyState  :  integer
-#_  dwEventFlags       :  integer
+#_  MousePositionX   :  integer
+#_  MousePositionY   :  integer
+#_  ButtonState      :  integer
+#_  ControlKeyState  :  integer
+#_  EventFlags       :  integer
 #_
 #_
 </article>
@@ -6224,17 +6226,28 @@ id=85
 lv=2
 dt=Text
 nm=PluginPanelItem
+mtime=3851611769
 <article>
 #_<markdown>
 #_**`PluginPanelItem`** is a table with the following predefined fields:
 #_
-#_      FindData:         table
-#_      Flags:            integer
-#_      NumberOfLinks:    integer
-#_      Description:      string
-#_      Owner:            string
-#_      CustomColumnData: table, or nil
-#_      UserData:         integer
+#_      LastWriteTime:      number
+#_      LastAccessTime:     number
+#_      CreationTime:       number
+#_
+#_      FileSize:           number
+#_      PackSize:           number
+#_
+#_      FileName:           string
+#_      AlternateFileName:  string
+#_
+#_      FileAttributes:     string
+#_      Flags:              integer
+#_      NumberOfLinks:      integer
+#_      Description:        string
+#_      Owner:              string
+#_      CustomColumnData:   table, or nil
+#_      UserData:           integer
 #_
 #_@@@
 #_<lua> Links = { FindData="90.html" } </lua>
@@ -6995,7 +7008,7 @@ lv=3
 dt=Text
 nm=win.GetConsoleScreenBufferInfo
 ctime=3483001149
-mtime=3483001574
+mtime=3851603973
 <article>
 #_info = win.GetConsoleScreenBufferInfo ()
 #_
@@ -7005,17 +7018,17 @@ mtime=3483001574
 #_**Returns:**
 #_  info : table, or nil
 #_    fields of *info*:
-#_      dwSizeX:              integer
-#_      dwSizeY:              integer
-#_      dwCursorPositionX:    integer
-#_      dwCursorPositionY:    integer
-#_      wAttributes:          integer
-#_      srWindowLeft:         integer
-#_      srWindowTop:          integer
-#_      srWindowRight:        integer
-#_      srWindowBottom:       integer
-#_      dwMaximumWindowSizeX: integer
-#_      dwMaximumWindowSizeY: integer
+#_      SizeX:               integer
+#_      SizeY:               integer
+#_      CursorPositionX:     integer
+#_      CursorPositionY:     integer
+#_      Attributes:          integer
+#_      WindowLeft:          integer
+#_      WindowTop:           integer
+#_      WindowRight:         integer
+#_      WindowBottom:        integer
+#_      MaximumWindowSizeX:  integer
+#_      MaximumWindowSizeY:  integer
 #_
 #_**Windows API used:**
 #_  GetStdHandle(STD_OUTPUT_HANDLE), GetConsoleScreenBufferInfo

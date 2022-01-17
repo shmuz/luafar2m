@@ -179,16 +179,12 @@ const wchar_t** CreateStringsArray(lua_State* L, int cpos, const char* field,
 // collector table is one under the top (-2)
 void FillPluginPanelItem (lua_State *L, struct PluginPanelItem *pi)
 {
-  lua_getfield(L, -1, "FindData");
-  if (lua_istable (L, -1)) {
-    pi->FindData.dwFileAttributes = GetAttrFromTable(L);
-    pi->FindData.ftCreationTime   = GetFileTimeFromTable(L, "CreationTime");
-    pi->FindData.ftLastAccessTime = GetFileTimeFromTable(L, "LastAccessTime");
-    pi->FindData.ftLastWriteTime  = GetFileTimeFromTable(L, "LastWriteTime");
-    pi->FindData.nFileSize = GetFileSizeFromTable(L, "FileSize");
-    pi->FindData.lpwszFileName = (wchar_t*)AddStringToCollectorField(L,-2,"FileName");
-  }
-  lua_pop (L, 1);
+  pi->FindData.dwFileAttributes = GetAttrFromTable(L);
+  pi->FindData.ftCreationTime   = GetFileTimeFromTable(L, "CreationTime");
+  pi->FindData.ftLastAccessTime = GetFileTimeFromTable(L, "LastAccessTime");
+  pi->FindData.ftLastWriteTime  = GetFileTimeFromTable(L, "LastWriteTime");
+  pi->FindData.nFileSize = GetFileSizeFromTable(L, "FileSize");
+  pi->FindData.lpwszFileName = (wchar_t*)AddStringToCollectorField(L,-2,"FileName");
 
   pi->Flags = GetOptIntFromTable(L, "Flags", 0);
   pi->Flags &= ~PPIF_USERDATA; // prevent far.exe from treating UserData as pointer,
