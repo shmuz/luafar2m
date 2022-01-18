@@ -14,11 +14,11 @@ MAKE_LANG   = $(LUAEXE) -epackage.path=[[$(LUA_SHARE)/?.lua]] lf4ed_lang.lua
 CONFIG      = lf4ed.cfg
 
 ifeq ($(DIRBIT),64)
-  TRG1      = luaplug-x64.far-plug-wide
-  TRG2      = lf4ed-x64.far-plug-wide
+  TRG1      = lf4ed-x64.far-plug-wide
+  TRG2      = lf4ed_e-x64.far-plug-wide
 else
-  TRG1      = luaplug.far-plug-wide
-  TRG2      = lf4ed.far-plug-wide
+  TRG1      = lf4ed.far-plug-wide
+  TRG2      = lf4ed_e.far-plug-wide
 endif
 
 CFLAGS1     = $(CFLAGS) -DBUILD_STATIC $(EXPORTS)

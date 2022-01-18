@@ -16,12 +16,13 @@
 void Log(const char* str)
 {
   static int N = 0;
-  N++;
   FILE* fp = fopen("/home/shmuel/far2l/_build/install/Plugins/_lfsearch_/mylog.txt", "a");
-  if (N == 1)
-    fprintf(fp, "\n--------------------------------\n");
-  fprintf(fp, "%d: %s\n", N, str);
-  fclose(fp);
+  if (fp) {
+    if (++N == 1)
+      fprintf(fp, "\n--------------------------------\n");
+    fprintf(fp, "%d: %s\n", N, str);
+    fclose(fp);
+  }
 }
 
 typedef struct PluginStartupInfo PSInfo;

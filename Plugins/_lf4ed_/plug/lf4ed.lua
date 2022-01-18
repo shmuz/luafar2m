@@ -26,6 +26,7 @@ local DefaultCfg = {
 local Utils = require "far2.utils"
 local M     = require "lf4ed_message"
 local F = far.Flags
+local VK = win.GetVirtualKeys()
 local FirstRun = not _Plugin
 local band, bor, bnot = bit.band, bit.bor, bit.bnot
 local dirsep = package.config:sub(1,1)
@@ -402,21 +403,31 @@ local function fReloadUserFile()
   env.AddUserFile("_usermenu.lua")
 end
 
+lf4ed.reload = fReloadUserFile
+
 local function traceback3(msg)
   return debug.traceback(msg, 3)
 end
 
 local function RunMenuItem(aArg, aItem, aRestoreConfig)
-  local argCopy = ShallowCopy(aArg) -- prevent parasite connection between utilities
+  aArg = ShallowCopy(aArg) -- prevent parasite connection between utilities
   local restoreConfig = aRestoreConfig and lf4ed.config()
+
   local function wrapfunc()
-    if aItem.action then return aItem.action(argCopy) end
-    return RunUserFunc(argCopy, aItem)
+    if aItem.action then
+      return aItem.action(aArg)
+    end
+    return RunUserFunc(aArg, aItem)
   end
+
   local ok, result = xpcall(wrapfunc, traceback3)
   local result2 = _Cfg.ReturnToMainMenu
-  if restoreConfig then lf4ed.config(restoreConfig) end
-  if not ok then ScriptErrMsg(result) end
+  if restoreConfig then
+    lf4ed.config(restoreConfig)
+  end
+  if not ok then
+    ScriptErrMsg(result)
+  end
   return ok, result, result2
 end
 
@@ -625,13 +636,16 @@ local function export_OpenPlugin (aFrom, aItem)
     local menu = SetSearchMenu(properties)
     local item, pos = menu(properties, items, keys)
     if not item then break end
+
     history.position = pos
     local arg = { From = sFrom }
     if sFrom == "dialog" then arg.hDlg = aItem.hDlg end
     local ok, result, bRetToMainMenu = RunMenuItem(arg, item, item.action~=Configure)
     if not ok then break end
+
     _History:save()
     if not (bRetToMainMenu or item.action==Configure) then break end
+
     if item.action==Configure and result=="reloaded" then
       properties, items, keys = MakeMainMenu(sFrom)
     else
@@ -664,7 +678,7 @@ end
 
 local function KeyComb (Rec)
   local f = 0
-  local state = Rec.dwControlKeyState
+  local state = Rec.ControlKeyState
   local ALT   = bor(F.LEFT_ALT_PRESSED, F.RIGHT_ALT_PRESSED)
   local CTRL  = bor(F.LEFT_CTRL_PRESSED, F.RIGHT_CTRL_PRESSED)
   local SHIFT = F.SHIFT_PRESSED
@@ -672,7 +686,8 @@ local function KeyComb (Rec)
   if 0 ~= band(state, ALT) then f = bor(f, 0x01) end
   if 0 ~= band(state, CTRL) then f = bor(f, 0x02) end
   if 0 ~= band(state, SHIFT) then f = bor(f, 0x04) end
-  f = f .. "+" .. Rec.wVirtualKeyCode
+  local name = VK[Rec.VirtualKeyCode%256]
+  if name then f = f .. "+" .. name; end
   return f
 end
 
@@ -681,7 +696,7 @@ local function export_ProcessEditorInput (Rec)
   if (EventType==F.FARMACRO_KEY_EVENT) or (EventType==F.KEY_EVENT) then
     local item = _Plugin.HotKeyTable[KeyComb(Rec)]
     if item then
-      if Rec.bKeyDown then
+      if Rec.KeyDown then
         if type(item)=="number" then item = EditorMenuItems[item] end
         if item then RunMenuItem({From="editor"}, item, item.action~=Configure) end
       end
