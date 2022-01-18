@@ -16,7 +16,15 @@
 void Log(const char* str)
 {
   static int N = 0;
-  FILE* fp = fopen("/home/shmuel/far2l/_build/install/Plugins/_lfsearch_/mylog.txt", "a");
+
+  char *file;
+  char *fileName = "/far2l/_build/install/Plugins/_lfsearch_/mylog.txt";
+
+  file = malloc(strlen(getenv("HOME")) + strlen(fileName) + 1);
+  strcpy(file, getenv("HOME"));
+  strcat(file, fileName);
+
+  FILE* fp = fopen(file, "a");
   if (fp) {
     if (++N == 1)
       fprintf(fp, "\n--------------------------------\n");
