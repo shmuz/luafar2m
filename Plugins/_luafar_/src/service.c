@@ -25,6 +25,9 @@ void Log(const char* str)
   strcat(file, fileName);
 
   FILE* fp = fopen(file, "a");
+
+  free(file);
+
   if (fp) {
     if (++N == 1)
       fprintf(fp, "\n--------------------------------\n");
