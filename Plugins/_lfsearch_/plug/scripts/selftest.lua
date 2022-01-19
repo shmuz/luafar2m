@@ -31,13 +31,13 @@ end
 
 local function GetEditorText()
   local t = {}
-  editor.SetPosition(0,0)
-  for i=1, editor.GetInfo().TotalLines do t[i]=editor.GetString(i-1, 2) end
+  editor.SetPosition(1,1)
+  for i=1, editor.GetInfo().TotalLines do t[i]=editor.GetString(i, 2) end
   return table.concat(t, "\r")
 end
 
 local function SetEditorText(str)
-  editor.SetPosition(0,0)
+  editor.SetPosition(1,1)
   for i=1, editor.GetInfo().TotalLines do editor.DeleteString() end
   editor.InsertText(str)
 end
@@ -48,7 +48,7 @@ end
 
 local function RunOneTest (op, data, refFound, refReps)
   data.sRegexLib = sRegexLib or "far"
-  editor.SetPosition(data.CurLine or 0, data.CurPos or 0)
+  editor.SetPosition(data.CurLine or 1, data.CurPos or 1)
   local nFound, nReps = SearchOrReplace(op, data)
   if nFound ~= refFound or nReps ~= refReps then
     ProtectedError(
@@ -70,7 +70,7 @@ end
 
 local function test_Switches()
   SetEditorText("line1\rline2\rline3\rline4\r")
-  local dt = { CurLine=1, CurPos=1 }
+  local dt = { CurLine=2, CurPos=2 }
   local lua0, lua1
   if sRegexLib == "lua" then lua0, lua1 = 0, 1 else lua0, lua1 = 1, 0 end
 
@@ -187,7 +187,7 @@ local function test_Replace()
     AssertEditorText("LLine1\rLLine2\rLLine3\r")
 
     -- test replace from cursor
-    dt = { sSearchPat="l", sReplacePat="LL", CurPos=1, fUserChoiceFunc=fReturnAll }
+    dt = { sSearchPat="l", sReplacePat="LL", CurPos=2, fUserChoiceFunc=fReturnAll }
     dt.bSearchBack = (k==1)
     SetEditorText("line1\rline2\rline3\r")
     if dt.bSearchBack then
@@ -263,14 +263,14 @@ local function test_Replace()
   dt = { sSearchPat="in", sReplacePat="###", sScope="block" }
   dt.fUserChoiceFunc = fReturnAll
   SetEditorText("line1\rline2\rline3\rline4\r")
-  editor.Select("BTYPE_STREAM",1,0,-1,2)
+  editor.Select("BTYPE_STREAM",2,1,-1,2)
   RunOneTest("test:replace", dt, 2, 2)
   AssertEditorText("line1\rl###e2\rl###e3\rline4\r")
   --------
   dt = { sSearchPat=".+", sReplacePat="###", sScope="block", bRegExpr=true }
   dt.fUserChoiceFunc = fReturnAll
   SetEditorText("line1\rline2\rline3\rline4\r")
-  editor.Select("BTYPE_COLUMN",1,1,2,2)
+  editor.Select("BTYPE_COLUMN",2,2,2,2)
   RunOneTest("test:replace", dt, 2, 2)
   AssertEditorText("line1\rl###e2\rl###e3\rline4\r")
 
@@ -326,7 +326,7 @@ local function test_Replace()
   for k=0,1 do
     dt.bSearchBack = (k==1)
     SetEditorText("foo1\rbar1\rfoo2\rbar2\rfoo3\rbar3\rfoo4\rbar4\r")
-    editor.Select("BTYPE_STREAM",2,0,-1,4)
+    editor.Select("BTYPE_STREAM",3,1,-1,4)
     RunOneTest("test:replace", dt, 2, 2)
     AssertEditorText("foo1\rbar1\rfoo2\rfoo3\rfoo4\rbar4\r")
   end

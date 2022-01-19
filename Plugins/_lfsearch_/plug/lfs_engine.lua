@@ -86,7 +86,7 @@ end
 
 
 local function EditorSelect (b)
-  editor.Select(b.BlockType, b.StartLine, b.StartPos, b.EndPos - b.StartPos,
+  editor.Select(b.BlockType, b.StartLine, b.StartPos, b.EndPos - b.StartPos + 1,
                    b.EndLine - b.StartLine + 1)
 end
 
@@ -280,8 +280,8 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
       or function(y) return y >= tBlockInfo.StartLine end
   else
     fLineInScope = bForward
-      and function(y) return y < tInfo.TotalLines end
-      or function(y) return y >= 0 end
+      and function(y) return y <= tInfo.TotalLines end
+      or function(y) return y >= 1 end
   end
 
   -- sLine must be set/modified only via set_sLine, in order to cache its length.
@@ -297,12 +297,12 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
       end
     end
     egs = EditorGetString(y, 1)
-    part1 = egs.StringText:sub(1, egs.SelStart)
+    part1 = egs.StringText:sub(1, egs.SelStart-1)
     if egs.SelEnd == -1 then
-      set_sLine(egs.StringText:sub(egs.SelStart+1))
+      set_sLine(egs.StringText:sub(egs.SelStart))
       part3 = ""
     else
-      set_sLine(egs.StringText:sub(egs.SelStart+1, egs.SelEnd))
+      set_sLine(egs.StringText:sub(egs.SelStart, egs.SelEnd))
       part3 = egs.StringText:sub(egs.SelEnd+1)
     end
   end
@@ -311,11 +311,11 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
     if tBlockInfo then
       y = bForward and tBlockInfo.StartLine or tBlockInfo.EndLine
       SetStartBlockParam(y)
-      x = bForward and 0 or sLineLen
+      x = bForward and 1 or sLineLen
     else
-      y = bForward and 0 or tInfo.TotalLines - 1
+      y = bForward and 1 or tInfo.TotalLines
       set_sLine(EditorGetString(y, 2))
-      x = bForward and 0 or sLineLen
+      x = bForward and 1 or sLineLen+1
       part1, part3 = "", ""
     end
   else -- "cursor"
@@ -323,22 +323,22 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
       if tInfo.CurLine < tBlockInfo.StartLine then
         y = tBlockInfo.StartLine
         SetStartBlockParam(y)
-        x = bForward and 0 or sLineLen
+        x = bForward and 1 or sLineLen
       elseif tInfo.CurLine > tBlockInfo.EndLine then
         y = tBlockInfo.EndLine
         SetStartBlockParam(y)
-        x = bForward and 0 or sLineLen
+        x = bForward and 1 or sLineLen
       else
         y = tInfo.CurLine
         SetStartBlockParam(y)
-        x = tInfo.CurPos <= egs.SelStart and 0
+        x = tInfo.CurPos <= egs.SelStart and 1
             or min(egs.SelEnd==-1 and sLineLen or egs.SelEnd,
                    tInfo.CurPos - egs.SelStart, sLineLen)
       end
     else
       y = tInfo.CurLine
       set_sLine(EditorGetString(y, 2))
-      x = min(tInfo.CurPos, sLineLen)
+      x = min(tInfo.CurPos, sLineLen+1)
       part1, part3 = "", ""
     end
   end
@@ -351,14 +351,14 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
       else
         set_sLine(EditorGetString(y, 2))
       end
-      x = bForward and 0 or sLineLen
+      x = bForward and 1 or sLineLen+1
       bAllowEmpty = true
     end
   end
   -----------------------------------------------------------------------------
   local update_x = bForward
-    and function(fr, to, delta) x = to + (delta or 0) end
-    or function(fr, to) x = fr - 1 end
+    and function(fr, to, delta) x = to + (delta or 1) end
+    or function(fr, to) x = fr end
   -----------------------------------------------------------------------------
   local function update_info()
     editor.SetTitle("found: " .. nFound)
@@ -386,7 +386,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
     local bLineDeleted
     ---------------------------------------------------------------------------
     if not (fFilter and fFilter(sLine, nLine)) then
-      while bForward and x <= sLineLen or not bForward and x >= 0 do
+      while bForward and x <= sLineLen+1 or not bForward and x >= 1 do
         -- iterate on current line
         -----------------------------------------------------------------------
         nOp = nOp + 1
@@ -396,14 +396,14 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
         end
         -----------------------------------------------------------------------
         if bFastCount then
-          local _, n = Regex:gsub(sLine:sub(x+1), "")
+          local _, n = Regex:gsub(sLine:sub(x), "")
           nFound = nFound + n
           break
         end
         -----------------------------------------------------------------------
         local collect, fr, to
-        if bForward then collect = Regex:ufind(sLine, x+1)
-        else collect = find_back(sLine, Regex, x+1)
+        if bForward then collect = Regex:ufind(sLine, x)
+        else collect = find_back(sLine, Regex, x)
         end
         if not collect then break end
         fr, to = collect[1], collect[2]
@@ -429,7 +429,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
           --editor.SetPosition(y, x)
           local p1 = part1:len()
           ScrollToPosition (y, p1+x, fr, to, scroll)
-          editor.Select("BTYPE_STREAM", y, p1+fr-1, to-fr+1, 1)
+          editor.Select("BTYPE_STREAM", y, p1+fr, to-fr+1, 1)
           editor.Redraw()
           tStartPos = editor.GetInfo()
         end
@@ -470,7 +470,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
                   part1 = ""
                 end
                 EditorSetCurString(sHead)
-                editor.SetPosition(nil, sHead:len())
+                editor.SetPosition(nil, sHead:len()+1)
                 editor.InsertString()
                 sHead = ""
                 nAddedLines = nAddedLines + 1
@@ -486,10 +486,10 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
 
               if bForward then
                 y = y + nAddedLines
-                x = sHead:len()
+                x = sHead:len() + 1
               else
                 if sStartLine then set_sLine(sStartLine) end
-                x = fr - 1
+                x = fr
                 editor.SetPosition(y, x)
               end
 

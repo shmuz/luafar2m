@@ -93,7 +93,7 @@ local function OnError (msg)
       line = line + startsel
     end
     local offs = math.floor(eInfo.WindowSizeY / 2)
-    editor.SetPosition(line-1, 0, 0, line>offs and line-offs or 0)
+    editor.SetPosition(line, 1, 1, line>offs and line-offs or 0)
     editor.Redraw()
   end
 end
