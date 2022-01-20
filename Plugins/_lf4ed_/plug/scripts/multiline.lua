@@ -21,7 +21,7 @@
 
 -- started: 2009-11-25 by Shmuel Zeigerman
 
-local fgsub = require "shmuz.fgsub"
+local fgsub = require "fgsub"
 local far2_dialog = require "far2.dialog"
 local rex = require "rex_pcre"
 local history = require "history"
@@ -73,22 +73,24 @@ local M = {
 }
 
 local function mkReadFunc (row, pos)
-  local linebuf = ""
+  local linebuf, linebuflen = {}, 0
   local tOffs = { 0, startRow=row, startPos=pos }
   return function (numBytes)
-    while linebuf:len() < numBytes do
-      local line = editor.GetString(row, 2)
+    while linebuflen < numBytes do
+      local line = editor.GetString(row+1, 2)
       if not line then break end
       if pos then
         line = line:sub(pos+1); pos = nil
       end
-      linebuf = linebuf .. line .. "\n"
+      linebuf[#linebuf+1] = line .. "\n"
+      linebuflen = linebuflen + line:len() + 1
       row = row+1
-      ------
       tOffs[#tOffs+1] = tOffs[#tOffs] + line:len() + 1
     end
-    local ret = linebuf:sub(1, numBytes)
-    linebuf = linebuf:sub(numBytes+1)
+    local s = table.concat(linebuf)
+    local ret = s:sub(1, numBytes)
+    linebuf = { s:sub(numBytes+1) }
+    linebuflen = linebuf[1]:len()
     return ret
   end, tOffs
 end
@@ -123,12 +125,12 @@ local function mkSelect (tOffs)
     if row1 == 1 then from = from + tOffs.startPos; end
     if row2 == 1 then to = to + tOffs.startPos; end
 
-    local startLine = tOffs.startRow + row1 - 1
-    local startPos = from - tOffs[row1] - 1
+    local startLine = tOffs.startRow + row1
+    local startPos = from - tOffs[row1]
     local width = (to - tOffs[row2]) - (from - tOffs[row1])
     local height = row2 - row1 + 1
-    local endLine = tOffs.startRow + row2 - 1
-    local endPos = to - tOffs[row2] - 1
+    local endLine = tOffs.startRow + row2
+    local endPos = to - tOffs[row2]
     local screenTop = startLine-1 >= 0 and startLine-1 or 0
 
     editor.Select("BTYPE_STREAM", startLine, startPos, width, height)
@@ -212,7 +214,7 @@ end
 
 local function GetWordAboveCursor ()
   local line = editor.GetString(nil, 2)
-  local pos = editor.GetInfo().CurPos + 1
+  local pos = editor.GetInfo().CurPos
   local r = regex.new("\\w+")
   local start = 1
   while true do
@@ -401,7 +403,7 @@ end
 -- Note: argument 'row' can be nil (using current line)
 local function ScrollToPosition (row, from, to, scroll)
   local editInfo = editor.GetInfo()
-  local LeftPos = editInfo.LeftPos
+  local LeftPos = editInfo.LeftPos - 1
   -- left-most (or right-most) char is not visible
   if (from <= LeftPos) or (to > LeftPos + editInfo.WindowSizeX) then
     if to - from + 1 >= editInfo.WindowSizeX then
@@ -424,7 +426,7 @@ local function ScrollToPosition (row, from, to, scroll)
     top = row - math.floor(halfscreen - scroll - 0.5)
   end
   -----------------------------------------------------------------------------
-  editor.SetPosition { TopScreenLine=top, CurLine=row, LeftPos=LeftPos, CurPos=to }
+  editor.SetPosition { TopScreenLine=top, CurLine=row+1, LeftPos=LeftPos+1, CurPos=to+1 }
 end
 
 
@@ -446,7 +448,7 @@ local function ShowCollectedLines (items, regex)
       local from, to = rex.find(s, regex, item.init)
       if from then
         ScrollToPosition(item.lineno, from, to)
-        editor.Select("BTYPE_STREAM", nil, from-1, to-from+1, 1)
+        editor.Select("BTYPE_STREAM", nil, from, to-from+1, 1)
       end
       editor.Redraw()
     end
@@ -457,7 +459,7 @@ end
 local function DoAction (aOperation, aRegex, aReplacePat, aFilterFunc, aWrap,
                          aBlockMode, aWithDialog, aTitle)
   local info = editor.GetInfo()
-  local readFunc, tOffs = mkReadFunc(info.CurLine, info.CurPos)
+  local readFunc, tOffs = mkReadFunc(info.CurLine-1, info.CurPos-1)
   local callback, items
   if aOperation == "search" then callback = mkSelect(tOffs)
   elseif aOperation == "showall" then

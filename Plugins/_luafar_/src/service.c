@@ -2794,7 +2794,7 @@ int viewer_GetInfo(lua_State *L)
   PutNumToTable(L,  "WindowSizeY", vi.WindowSizeY);
   PutNumToTable(L,  "Options",     vi.Options);
   PutNumToTable(L,  "TabSize",     vi.TabSize);
-  PutNumToTable(L,  "LeftPos",     vi.LeftPos);
+  PutNumToTable(L,  "LeftPos",     vi.LeftPos + 1);
   lua_createtable(L, 0, 4);
   PutNumToTable (L, "CodePage",    vi.CurMode.CodePage);
   PutBoolToTable(L, "Wrap",        vi.CurMode.Wrap);
@@ -2835,12 +2835,12 @@ int viewer_SetPosition(lua_State *L)
   if (lua_istable(L, 1)) {
     lua_settop(L, 1);
     vsp.StartPos = (int64_t)GetOptNumFromTable(L, "StartPos", 0);
-    vsp.LeftPos = (int64_t)GetOptNumFromTable(L, "LeftPos", 0);
+    vsp.LeftPos = (int64_t)GetOptNumFromTable(L, "LeftPos", 1) - 1;
     vsp.Flags   = GetOptIntFromTable(L, "Flags", 0);
   }
   else {
     vsp.StartPos = (int64_t)luaL_optnumber(L,1,0);
-    vsp.LeftPos = (int64_t)luaL_optnumber(L,2,0);
+    vsp.LeftPos = (int64_t)luaL_optnumber(L,2,1) - 1;
     vsp.Flags = luaL_optinteger(L,3,0);
   }
   if (Info->ViewerControl(VCTL_SETPOSITION, &vsp))

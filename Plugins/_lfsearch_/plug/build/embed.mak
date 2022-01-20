@@ -5,7 +5,7 @@
 FAR_EXPORTS = OPENPLUGINW
 include ../../../_luafar_/config.mak
 
-TRG         = lfsearch-x$(DIRBIT).far-plug-wide
+TRG         = lfsearch_e-x$(DIRBIT).far-plug-wide
 LUAC        = $(PATH_EXE)/luac.exe
 GEN_METHOD  = -plain
 CONFIG      = embed.cfg

@@ -360,7 +360,7 @@ local function test_bug_20090208()
                sScope="block", fUserChoiceFunc=fReturnAll }
   dt.sSearchPat = (sRegexLib == "lua") and "%w+" or "\\w+"
   SetEditorText(("my table\r"):rep(5))
-  editor.Select("BTYPE_STREAM",1,0,-1,2)
+  editor.Select("BTYPE_STREAM",2,1,-1,2)
   RunOneTest("test:replace", dt, 4, 4)
   AssertEditorText("my table\r\rmy \rtable\r\rmy \rtable\rmy table\rmy table\r")
 end

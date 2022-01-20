@@ -23,7 +23,7 @@ end
 
 local function ClearBuffer()
   local editInfo = editor.GetInfo()
-  editor.Select("BTYPE_STREAM", 0, 0, -1, editInfo.TotalLines-1)
+  editor.Select("BTYPE_STREAM", 1, 1, nil, editInfo.TotalLines-1)
   editor.DeleteBlock()
 end
 
@@ -59,9 +59,9 @@ local function TestCase (data, selection, refer, expr, colpat, onlysel)
   y1,y2 = tonumber(y1),tonumber(y2)
   if x1 then
     x1,x2 = tonumber(x1),tonumber(x2)
-    selection = { "BTYPE_COLUMN", y1-1, x1-1, x2-x1+1, y2-y1+1 }
+    selection = { "BTYPE_COLUMN", y1, x1, x2-x1+1, y2-y1+1 }
   else
-    selection = { "BTYPE_STREAM", y1-1, 0, -1, y2-y1+1 }
+    selection = { "BTYPE_STREAM", y1, 1, -1, y2-y1+1 }
   end
   -----------------------------------------------------------------------------
   local control = {}
@@ -95,15 +95,15 @@ local function TestCase (data, selection, refer, expr, colpat, onlysel)
   ClearBuffer()
   for i=1,#data do editor.InsertString() end
   for i,line in ipairs(data) do
-    editor.SetPosition(i-1, 0)
-    editor.SetString(i-1, line, "")
+    editor.SetPosition(i, 1)
+    editor.SetString(i, line, "")
   end
   editor.Select(unpack(selection))
   -----------------------------------------------------------------------------
   sl.SortWithRawData(control)
   for i = 1, #data do
-    editor.SetPosition(i-1, 0)
-    local s = editor.GetString(i-1)
+    editor.SetPosition(i, 1)
+    local s = editor.GetString(i)
     if type(refer) == "string" then
       ProtectedAssert(s.StringText .. s.StringEOL == data[tonumber(refer:sub(i,i))])
     elseif type(refer) == "table" then
@@ -212,7 +212,7 @@ package.loaded["sortlines"]=nil
   TestCase (data1, "1-8", "12345678", "i")
   TestCase (data1, "1-8", "87654321", "-i")
   TestCase (data1, "1-8", "21436587", "i%2==0 and i-1 or i+1")
-  TestCase (data1, "1-8", "13572468", "i%2==1 and i-I or i")  
+  TestCase (data1, "1-8", "13572468", "i%2==1 and i-I or i")
   -----------------------------------------------------------------------------
   editor.SaveFile(filename)
   far.Message"Success!"

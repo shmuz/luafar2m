@@ -163,7 +163,7 @@ end
 
 local function GetWordAboveCursor ()
   local line = editor.GetString(nil, 2)
-  local pos = editor.GetInfo().CurPos + 1
+  local pos = editor.GetInfo().CurPos
   local r = regex.new("\\w+")
   local start = 1
   while true do

@@ -11,11 +11,24 @@ local function ErrMsg (msg)
   far.Message(msg, M.MError, M.MOk, "w")
 end
 
+local function GetNearestWord (pattern)
+  local line = editor.GetString(nil, 2)
+  local pos = editor.GetInfo().CurPos
+  local r = regex.new(pattern)
+  local start = 1
+  while true do
+    local from, to, word = r:find(line, start)
+    if not from then break end
+    if pos <= to then return from, to, word end
+    start = to + 1
+  end
+end
+
 local function GetAllText()
   local ei = editor.GetInfo()
   if ei then
     local t = {}
-    for n = 0, ei.TotalLines-1 do
+    for n = 1, ei.TotalLines do
       table.insert(t, editor.GetString(n, 2))
     end
     editor.SetPosition(ei)
@@ -30,10 +43,10 @@ local function GetSelectedText()
     local n = ei.BlockStartLine
     while true do
       local s = editor.GetString(n, 1)
-      if not s or s.SelStart == -1 then
+      if not s or s.SelStart == 0 then
         break
       end
-      local sel = s.StringText:sub (s.SelStart+1, s.SelEnd)
+      local sel = s.StringText:sub (s.SelStart, s.SelEnd)
       table.insert(t, sel)
       n = n + 1
     end
@@ -132,48 +145,82 @@ local function ResultDialog (aHelpTopic, aData, result)
   return (ret == D.btnOk.id)
 end
 
--- NOTE: In order to obtain correct offsets, this function should use either
---       regex.find, or unicode.utf8.cfind function.
-local function BlockSum(history)
-  local block = editor.GetSelection()
-  if not block then ErrMsg(M.MNoTextSelected) return end
-
+local function BlockSum (history)
   local ei = assert(editor.GetInfo(), "EditorGetInfo failed")
+  local blockEndLine
   local sum = 0
-  local x_start, x_dot
-  local regex = regex.new([[ (\S[^\s;,:]*) ]], "x")
-  for n = block.StartLine, block.EndLine do
-    local s = editor.GetString (n, 1)
-    local start, _, sel = regex:find( s.StringText:sub(s.SelStart+1, s.SelEnd) )
+  local x_start, x_dot, has_dots
+  local pattern = [[(\S[\w.]*)]]
+
+  if ei.BlockType ~= F.BTYPE_NONE then
+    local r = regex.new(pattern)
+    for n=ei.BlockStartLine, ei.TotalLines do
+      local s = editor.GetString (n)
+      if s.SelEnd == 0 or s.SelStart < 1 then
+        blockEndLine = n - 1
+        break
+      end
+      local start, fin, sel = r:find( s.StringText:sub(s.SelStart, s.SelEnd) ) -- 'start' in selection
+      if start then
+        x_start = editor.RealToTab(n, s.SelStart + start - 1) -- 'start' column in line
+        local num = tonumber(sel)
+        if num then
+          sum = sum + num
+          local x = regex.find(sel, "\\.")
+          if x then
+            has_dots = true
+            x_dot = x_start + x - 1  -- 'dot' column in line
+          else
+            x_dot = editor.RealToTab(n, s.SelStart + fin)
+          end
+        end
+      end
+    end
+  else
+    local start, fin, word = GetNearestWord(pattern)
     if start then
-      x_start = editor.RealToTab(n, s.SelStart + start)
-      local num = tonumber(sel)
+      x_start = editor.RealToTab(nil, start)
+      local num = tonumber(word)
       if num then
         sum = sum + num
-        local x = regex.find(sel, "\\.")
-        if x then x_dot = x_start + x - 1 end
+        local x = regex.find(word, "\\.")
+        if x then
+          has_dots = true
+          x_dot = x_start + x - 1
+        else
+          x_dot = editor.RealToTab(nil, 1 + fin)
+        end
       end
     end
   end
+
+  if has_dots then
+    sum = tostring(sum)
+    local last = sum:match("%.(%d+)$")
+    sum = sum .. (last and ("0"):rep(2 - #last) or ".00")
+  end
   if not ResultDialog("BlockSum", history, sum) then return end
+
   sum = history.edtResult
-  if history.cbxCopy then far.CopyToClipboard(sum) end
+  if history.cbxCopy then
+    far.CopyToClipboard(sum)
+  end
   if history.cbxInsert then
-    local y = block.EndLine -- position of the last line
-    local s = editor.GetString(y) -- get last block line
-    editor.SetPosition (y, s.StringText:len()) -- insert a new line
-    editor.InsertString()                      -- +
+    local y = blockEndLine or ei.CurLine -- position of the last line
+    local s = editor.GetString(y)                     -- get last line
+    editor.SetPosition (y, s.StringText:len()+1)      -- insert a new line
+    editor.InsertString()                             -- +
     local prefix = "="
     if x_dot then
-      local x = regex.find(tostring(sum), "\\.")
+      local x = regex.find(tostring(sum), "\\.") or #sum+1
       if x then x_start = x_dot - (x - 1) end
     end
     if x_start then
-      x_start = x_start>#prefix and x_start-#prefix-1 or 0
+      x_start = x_start>#prefix and x_start-#prefix or 1
     else
-      x_start = (block.BlockType==F.BTYPE_COLUMN) and s.SelStart or 0
+      x_start = (ei.BlockType==F.BTYPE_COLUMN) and s.SelStart or 1
     end
-    editor.SetPosition (y+1, x_start)
+    editor.SetPosition (y+1, x_start, nil, nil, ei.LeftPos)
     editor.InsertText(prefix .. sum)
     editor.Redraw()
   else
@@ -181,7 +228,7 @@ local function BlockSum(history)
   end
 end
 
-local function LuaExpr(history)
+local function LuaExpr (history)
   local edInfo = editor.GetInfo()
   local text, numline = GetSelectedText()
   if not text then
@@ -194,8 +241,9 @@ local function LuaExpr(history)
     ErrMsg(msg) return
   end
 
-  local env = { math=math, _G=_G, far=far }
-  setmetatable(env, { __index=math })
+  local env = {}
+  for k,v in pairs(math) do env[k]=v end
+  setmetatable(env, { __index=_G })
   setfenv(func, env)
   local ok, result = pcall(func)
   if not ok then
@@ -211,8 +259,8 @@ local function LuaExpr(history)
   if history.cbxInsert then
     local line = editor.GetString(numline)
     local pos = (edInfo.BlockType==F.BTYPE_NONE) and line.StringLength or line.SelEnd
-    editor.SetPosition(numline, pos)
-    editor.InsertText(" = " .. result .. " ; ")
+    editor.SetPosition(numline, pos+1)
+    editor.InsertText(" = " .. result .. " ;")
     editor.Redraw()
   end
   if history.cbxCopy then

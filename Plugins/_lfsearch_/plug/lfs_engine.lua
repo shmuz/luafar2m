@@ -311,7 +311,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
     if tBlockInfo then
       y = bForward and tBlockInfo.StartLine or tBlockInfo.EndLine
       SetStartBlockParam(y)
-      x = bForward and 1 or sLineLen
+      x = bForward and 1 or sLineLen+1
     else
       y = bForward and 1 or tInfo.TotalLines
       set_sLine(EditorGetString(y, 2))
@@ -408,15 +408,15 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
         if not collect then break end
         fr, to = collect[1], collect[2]
         -----------------------------------------------------------------------
-        if fr-1==x and to==x and not bAllowEmpty then
+        if fr==x and to+1==x and not bAllowEmpty then
           if bForward then
-            if x == sLineLen then break end
+            if x > sLineLen then break end
             x = x + 1
-            collect = Regex:ufind(sLine, x+1)
+            collect = Regex:ufind(sLine, x)
           else
-            if x == 0 then break end
+            if x == 1 then break end
             x = x - 1
-            collect = find_back(sLine, Regex, x+1)
+            collect = find_back(sLine, Regex, x)
           end
           if not collect then break end
           fr, to = collect[1], collect[2]

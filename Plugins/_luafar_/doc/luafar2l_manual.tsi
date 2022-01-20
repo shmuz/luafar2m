@@ -2419,50 +2419,18 @@ nm=Editor functions
 </article>
 </node>
 <node>
-id=21
-lv=2
-dt=Text
-nm=editor.Editor
-mtime=3492942591
-<article>
-#_result = editor.Editor (FileName, Title, X1, Y1, X2, Y2,
-#_                        Flags, StartLine, StartChar, CodePage)
-#_
-#_**Parameters:**
-#_  FileName:  string
-#_  Title:     string,  or nil (default = FileName)
-#_  X1:        integer, or nil (default = 0)
-#_  Y1:        integer, or nil (default = 0)
-#_  X2:        integer, or nil (default = -1)
-#_  Y2:        integer, or nil (default = -1)
-#_  Flags:     flags combination, or nil (default = 0)
-#_  StartLine: integer, or nil (default = -1)
-#_  StartChar: integer, or nil (default = -1)
-#_  CodePage:  integer, or nil (default = CP_AUTODETECT)
-#_
-#_**Returns:**
-#_  result: integer
-#_
-#_**Far API used:**
-#_  Editor
-#_
-#_@@@
-#_
-#_
-</article>
-</node>
-<node>
 id=22
 lv=2
 dt=Text
 nm=editor.AddColor
+mtime=3851868818
 <article>
 #_result = editor.AddColor (StringNumber, StartPos, EndPos, Color)
 #_
 #_**Parameters:**
 #_  StringNumber: integer, or nil
-#_  StartPos:     integer
-#_  EndPos:       integer
+#_  StartPos:     integer (1-based)
+#_  EndPos:       integer (1-based)
 #_  Color:        integer
 #_
 #_**Returns:**
@@ -2599,15 +2567,49 @@ nm=editor.DeleteString
 </article>
 </node>
 <node>
+id=21
+lv=2
+dt=Text
+nm=editor.Editor
+mtime=3851868780
+<article>
+#_result = editor.Editor (FileName, Title, X1, Y1, X2, Y2,
+#_                        Flags, StartLine, StartChar, CodePage)
+#_
+#_**Parameters:**
+#_  FileName:  string
+#_  Title:     string,  or nil (default = FileName)
+#_  X1:        integer, or nil (default = 0)
+#_  Y1:        integer, or nil (default = 0)
+#_  X2:        integer, or nil (default = -1)
+#_  Y2:        integer, or nil (default = -1)
+#_  Flags:     flags,   or nil (default = 0)
+#_  StartLine: integer, or nil (1-based; default = -1)
+#_  StartChar: integer, or nil (1-based; default = -1)
+#_  CodePage:  integer, or nil (default = CP_AUTODETECT)
+#_
+#_**Returns:**
+#_  result: integer
+#_
+#_**Far API used:**
+#_  Editor
+#_
+#_@@@
+#_
+#_
+</article>
+</node>
+<node>
 id=27
 lv=2
 dt=Text
 nm=editor.ExpandTabs
+mtime=3851868866
 <article>
 #_result = editor.ExpandTabs ([StringNumber])
 #_
 #_**Parameters:**
-#_  StringNumber: integer (0-based)
+#_  StringNumber: integer (1-based)
 #_
 #_**Returns:**
 #_  result: boolean
@@ -2701,7 +2703,7 @@ id=29
 lv=2
 dt=Text
 nm=editor.GetInfo
-mtime=3480262888
+mtime=3851869393
 <article>
 #_Info = editor.GetInfo ()
 #_
@@ -2716,14 +2718,14 @@ mtime=3480262888
 #_      WindowSizeX:    integer
 #_      WindowSizeY:    integer
 #_      TotalLines:     integer
-#_      CurLine:        integer, 0-based
-#_      CurPos:         integer, 0-based
-#_      CurTabPos:      integer, 0-based
-#_      TopScreenLine:  integer, 0-based
-#_      LeftPos:        integer, 0-based
+#_      CurLine:        integer, 1-based
+#_      CurPos:         integer, 1-based
+#_      CurTabPos:      integer, 1-based
+#_      TopScreenLine:  integer, 1-based
+#_      LeftPos:        integer, 1-based
 #_      Overtype:       boolean
 #_      BlockType:      integer
-#_      BlockStartLine: integer, 0-based
+#_      BlockStartLine: integer, 1-based
 #_      Options:        integer
 #_      TabSize:        integer
 #_      BookMarkCount:  integer
@@ -2805,7 +2807,7 @@ id=31
 lv=2
 dt=Text
 nm=editor.GetString
-mtime=3476530777
+mtime=3851868912
 <article>
 #_**Note:**
 #_--This function is an extension over its prototype in Far API.
@@ -2821,12 +2823,12 @@ mtime=3476530777
 #_  LineInfo: table (mode<2), or string (mode==2), or nil
 #_    (if mode==2, only StringText is returned)
 #_    fields of LineInfo:
-#_      StringNumber: integer, 0-based
+#_      StringNumber: integer, 1-based
 #_      StringText:   string
 #_      StringEOL:    string
 #_      StringLength: integer
-#_      SelStart:     integer, 0-based
-#_      SelEnd:       integer, 0-based
+#_      SelStart:     integer, 1-based
+#_      SelEnd:       integer, 1-based
 #_
 #_**Note:**
 #_  Modes 1 ("fast") and 2 ("fastest") have a side effect: the
@@ -3028,15 +3030,16 @@ id=39
 lv=2
 dt=Text
 nm=editor.RealToTab
+mtime=3851868988
 <article>
 #_result = editor.RealToTab (StringNumber, SrcPos)
 #_
 #_**Parameters:**
-#_  StringNumber: integer (0-based), or nil
-#_  SrcPos:       integer
+#_  StringNumber: integer (1-based), or nil
+#_  SrcPos:       integer (1-based)
 #_
 #_**Returns:**
-#_  result: integer, or nil
+#_  result: integer (1-based), or nil
 #_
 #_**Far API used:**
 #_  EditorControl, ECTL_REALTOTAB
@@ -3094,7 +3097,7 @@ id=42
 lv=2
 dt=Text
 nm=editor.Select
-mtime=3480262966
+mtime=3851869040
 <article>
 #_result = editor.Select (SelectData)
 #_  or
@@ -3106,8 +3109,8 @@ mtime=3480262966
 #_    fields of SelectData:
 #_      BlockType:      flag
 #_        (either of: "BTYPE_NONE", "BTYPE_STREAM", "BTYPE_COLUMN")
-#_      BlockStartLine: integer, 0-based
-#_      BlockStartPos:  integer, 0-based
+#_      BlockStartLine: integer, 1-based
+#_      BlockStartPos:  integer, 1-based
 #_      BlockWidth:     integer
 #_      BlockHeight:    integer
 #_
@@ -3188,6 +3191,7 @@ id=43
 lv=2
 dt=Text
 nm=editor.SetPosition
+mtime=3851869097
 <article>
 #_result = editor.SetPosition (PosData)
 #_  or
@@ -3197,11 +3201,11 @@ nm=editor.SetPosition
 #_**Parameters:**
 #_  PosData: table
 #_    fields of PosData:
-#_      CurLine:       integer, 0-based
-#_      CurPos:        integer, 0-based
-#_      CurTabPos:     integer, 0-based
-#_      TopScreenLine: integer, 0-based
-#_      LeftPos:       integer, 0-based
+#_      CurLine:       integer, 1-based
+#_      CurPos:        integer, 1-based
+#_      CurTabPos:     integer, 1-based
+#_      TopScreenLine: integer, 1-based
+#_      LeftPos:       integer, 1-based
 #_      Overtype:      integer
 #_
 #_  Parameters of the 2-nd function variant correspond to fields
@@ -3222,11 +3226,12 @@ id=44
 lv=2
 dt=Text
 nm=editor.SetString
+mtime=3851869148
 <article>
 #_result = editor.SetString (StringNumber, StringText, StringEOL)
 #_
 #_**Parameters:**
-#_  StringNumber: integer, or nil
+#_  StringNumber: integer, 1-based (default=0)
 #_  StringText:   string
 #_  StringEOL:    string, or nil
 #_
@@ -3268,15 +3273,16 @@ id=48
 lv=2
 dt=Text
 nm=editor.TabToReal
+mtime=3851869191
 <article>
 #_result = editor.TabToReal (StringNumber, SrcPos)
 #_
 #_**Parameters:**
-#_  StringNumber: integer (0-based), or nil
-#_  SrcPos:       integer
+#_  StringNumber: integer (1-based), or nil
+#_  SrcPos:       integer (1-based)
 #_
 #_**Returns:**
-#_  result: integer, or nil
+#_  result: integer (1-based), or nil
 #_
 #_**Far API used:**
 #_  EditorControl, ECTL_TABTOREAL
@@ -4098,40 +4104,11 @@ nm=Viewer functions
 </article>
 </node>
 <node>
-id=77
-lv=2
-dt=Text
-nm=viewer.Viewer
-mtime=3482049266
-<article>
-#_result = viewer.Viewer (FileName, Title, X1, Y1, X2, Y2, Flags, CodePage)
-#_
-#_**Parameters:**
-#_  FileName: string
-#_  Title:    string  (defaults to FileName)
-#_  X1:       integer (defaults to 0)
-#_  Y1:       integer (defaults to 0)
-#_  X2:       integer (defaults to -1)
-#_  Y2:       integer (defaults to -1)
-#_  Flags:    flags combination (defaults to 0)
-#_  CodePage: integer (defaults to CP_AUTODETECT)
-#_
-#_**Returns:**
-#_  result: boolean
-#_
-#_**Far API used:**
-#_  Viewer
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
 id=132
 lv=2
 dt=Text
 nm=viewer.GetInfo
-mtime=3487146918
+mtime=3851877307
 <article>
 #_Info = viewer.GetInfo ()
 #_
@@ -4149,7 +4126,7 @@ mtime=3487146918
 #_      WindowSizeY:    integer
 #_      Options:        integer
 #_      TabSize:        integer
-#_      LeftPos:        double, 0-based
+#_      LeftPos:        double, 1-based
 #_      CurMode:        table
 #_
 #_**Far API used:**
@@ -4275,7 +4252,7 @@ id=142
 lv=2
 dt=Text
 nm=viewer.SetPosition
-mtime=3487877516
+mtime=3851877803
 <article>
 #_pos = viewer.SetPosition (PosData)
 #_  or
@@ -4284,8 +4261,8 @@ mtime=3487877516
 #_**Parameters:**
 #_  PosData: table
 #_    fields of PosData:
-#_      StartPos:  number
-#_      LeftPos:   number
+#_      StartPos:  number, 0-based
+#_      LeftPos:   number, 1-based
 #_      Flags:     integer
 #_
 #_  Parameters of the 2-nd function variant correspond to fields
@@ -4296,6 +4273,35 @@ mtime=3487877516
 #_
 #_**Far API used:**
 #_  ViewerControl, VCTL_SETPOSITION
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=77
+lv=2
+dt=Text
+nm=viewer.Viewer
+mtime=3482049266
+<article>
+#_result = viewer.Viewer (FileName, Title, X1, Y1, X2, Y2, Flags, CodePage)
+#_
+#_**Parameters:**
+#_  FileName: string
+#_  Title:    string  (defaults to FileName)
+#_  X1:       integer (defaults to 0)
+#_  Y1:       integer (defaults to 0)
+#_  X2:       integer (defaults to -1)
+#_  Y2:       integer (defaults to -1)
+#_  Flags:    flags combination (defaults to 0)
+#_  CodePage: integer (defaults to CP_AUTODETECT)
+#_
+#_**Returns:**
+#_  result: boolean
+#_
+#_**Far API used:**
+#_  Viewer
 #_
 #_@@@
 #_
@@ -5835,7 +5841,7 @@ lv=4
 dt=Text
 nm=Interval
 ctime=3482328655
-mtime=3482344791
+mtime=3851879409
 <article>
 #_value = timer.Interval
 #_    or
@@ -5845,8 +5851,10 @@ mtime=3482344791
 #_  Query or set the interval (in milliseconds) of the timer.
 #_  This is a read/write integer property.
 #_
-#_@@@
+#_**NOTE:**
+#_  Currently *Interval* is a read-only property.
 #_
+#_@@@
 #_
 </article>
 </node>

@@ -14,7 +14,7 @@ local function EditorBlock (start_line)
   start_line = start_line or editor.GetInfo().BlockStartLine
   return function()
     local lineInfo = editor.GetString (start_line, 1)
-    if lineInfo and lineInfo.SelStart >= 0 and lineInfo.SelEnd ~= 0 then
+    if lineInfo and lineInfo.SelStart >= 1 and lineInfo.SelEnd ~= 0 then
       start_line = start_line + 1
       return lineInfo
     end
@@ -23,12 +23,12 @@ end
 
 
 local function EditorHasSelection (editInfo)
-  return editInfo.BlockType ~= 0 and editInfo.BlockStartLine >= 0
+  return editInfo.BlockType ~= 0 and editInfo.BlockStartLine >= 1
 end
 
 
 local function EditorSelectCurLine (editInfo)
-  return editor.Select ("BTYPE_STREAM", editInfo.CurLine, 0, -1, 1)
+  return editor.Select ("BTYPE_STREAM", editInfo.CurLine, 1, nil, 1)
 end
 
 
@@ -174,12 +174,12 @@ local function Wrap (aColumn1, aColumn2, aPrefix, aJustify, aFactor)
   end
 
   -- Put reformatted lines into the editor
-  local Pos = { CurLine = editInfo.BlockStartLine, CurPos = 0 }
+  local Pos = { CurLine = editInfo.BlockStartLine, CurPos = 1 }
   editor.SetPosition (Pos)
   for i = #lines_out, 1, -1 do
     editor.InsertString()
     editor.SetPosition (Pos)
-    editor.SetString(-1, lines_out[i])
+    editor.SetString(nil, lines_out[i])
   end
 end
 
@@ -199,7 +199,7 @@ local function PrefixBlock (aPrefix)
   end
 
   for line in EditorBlock (editInfo.BlockStartLine) do
-    editor.SetString(-1, aPrefix() .. line.StringText)
+    editor.SetString(nil, aPrefix() .. line.StringText)
   end
 
   editor.SetPosition (editInfo)
