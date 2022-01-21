@@ -392,14 +392,14 @@ local function SearchFromPanel (aHistory)
   -----------------------------------------------------------------------------
   local userbreak
   local function ConfirmEsc()
-    if 0 == far.Message(M.MConfirmCancel, M.MInterrupted, ";YesNo", "w") then
+    if 1 == far.Message(M.MConfirmCancel, M.MInterrupted, ";YesNo", "w") then
       userbreak = true; return true
     end
   end
   local function ConfirmEsc2()
     local r = far.Message(M.MConfirmCancel, M.MInterrupted, M.MButtonsCancelOnFile, "w")
-    if r==0 then userbreak = true end
-    return r==0 or r==1
+    if r==1 then userbreak = true end
+    return r==1 or r==2
   end
   local tOut, cnt = {}, 0
   far.Message((" "):rep(WID).."\n"..M.MFilesFound.."0", TITLE, "")
@@ -498,7 +498,7 @@ local function SearchFromPanel (aHistory)
        end)
   else
     far.AdvControl("ACTL_REDRAWALL")
-    if userbreak or 0==far.Message(M.MNoFilesFound,M.MMenuTitle,M.MButtonsNewSearch) then
+    if userbreak or 1==far.Message(M.MNoFilesFound,M.MMenuTitle,M.MButtonsNewSearch) then
       return SearchFromPanel(aHistory)
     end
   end

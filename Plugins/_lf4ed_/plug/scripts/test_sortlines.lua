@@ -34,8 +34,8 @@ local function PrepareFile (filename)
   if bit.band (editInfo.CurState, F.ECSTATE_SAVED) == 0 then
     local result = far.Message("\nSave current file?\n",
       "A new file will be created", "[Yes];[No];[Cancel]")
-    if result < 0 or result == 2 then return false end
-    if result == 0 and not editor.SaveFile(editInfo.FileName) then
+    if result < 0 or result == 3 then return false end
+    if result == 1 and not editor.SaveFile(editInfo.FileName) then
       far.Message"Could not save file. Canceling the operation."
       return false
     end

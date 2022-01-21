@@ -1456,7 +1456,7 @@ int SplitToTable(lua_State *L, const wchar_t *Text, wchar_t Delim, int StartInde
 //             if absent or nil, then one button "OK" is used).
 // 4-th param: flags
 // 5-th param: help topic
-// Return: -1 if escape pressed, else - button number chosen (0 based).
+// Return: -1 if escape pressed, else - button number chosen (1 based).
 int far_Message(lua_State *L)
 {
   luaL_checkany(L,1);
@@ -1480,7 +1480,8 @@ int far_Message(lua_State *L)
   const wchar_t *HelpTopic = opt_utf8_string(L, 5, NULL);
 
   PSInfo *Info = GetPluginStartupInfo(L);
-  lua_pushinteger(L, LF_Message(Info, Msg, Title, Buttons, Flags, HelpTopic));
+  int ret = LF_Message(Info, Msg, Title, Buttons, Flags, HelpTopic);
+  lua_pushinteger(L, ret<0 ? ret : ret+1);
   return 1;
 }
 
@@ -2153,6 +2154,64 @@ HANDLE CheckDialogHandle (lua_State* L, int pos)
   return CheckValidDialog(L, pos)->hDlg;
 }
 
+int Is_DM_DialogItem(int Msg)
+{
+  switch(Msg) {
+    case DM_ADDHISTORY:
+    case DM_EDITUNCHANGEDFLAG:
+    case DM_ENABLE:
+    case DM_GETCHECK:
+    case DM_GETCOMBOBOXEVENT:
+    case DM_GETCONSTTEXTPTR:
+    case DM_GETCURSORPOS:
+    case DM_GETCURSORSIZE:
+    case DM_GETDLGITEM:
+    case DM_GETEDITPOSITION:
+    case DM_GETITEMDATA:
+    case DM_GETITEMPOSITION:
+    case DM_GETSELECTION:
+    case DM_GETTEXT:
+    case DM_GETTEXTLENGTH:
+    case DM_LISTADD:
+    case DM_LISTADDSTR:
+    case DM_LISTDELETE:
+    case DM_LISTFINDSTRING:
+    case DM_LISTGETCURPOS:
+    case DM_LISTGETDATA:
+    case DM_LISTGETDATASIZE:
+    case DM_LISTGETITEM:
+    case DM_LISTGETTITLES:
+    case DM_LISTINFO:
+    case DM_LISTINSERT:
+    case DM_LISTSET:
+    case DM_LISTSETCURPOS:
+    case DM_LISTSETDATA:
+    case DM_LISTSETMOUSEREACTION:
+    case DM_LISTSETTITLES:
+    case DM_LISTSORT:
+    case DM_LISTUPDATE:
+    case DM_SET3STATE:
+    case DM_SETCHECK:
+    case DM_SETCOMBOBOXEVENT:
+    case DM_SETCURSORPOS:
+    case DM_SETCURSORSIZE:
+    case DM_SETDLGITEM:
+    case DM_SETDROPDOWNOPENED:
+    case DM_SETEDITPOSITION:
+    case DM_SETFOCUS:
+    case DM_SETHISTORY:
+    case DM_SETITEMDATA:
+    case DM_SETITEMPOSITION:
+    case DM_SETMAXTEXTLENGTH:
+    case DM_SETSELECTION:
+    case DM_SETTEXT:
+    case DM_SETTEXTPTR:
+    case DM_SHOWITEM:
+      return 1;
+  }
+  return 0;
+}
+
 int far_SendDlgMessage (lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
@@ -2179,8 +2238,14 @@ int far_SendDlgMessage (lua_State *L)
   lua_settop(L, 4);
   HANDLE hDlg = CheckDialogHandle(L, 1);
   get_env_flag (L, 2, &Msg);
-  Param1 = luaL_optinteger(L, 3, 0);
+  if (Msg == DM_CLOSE) {
+    Param1 = luaL_optinteger(L,3,-1);
+    if (Param1>0) --Param1;
+  }
+  else
+    Param1 = Is_DM_DialogItem(Msg) ? luaL_optinteger(L,3,1)-1 : luaL_optinteger(L,3,0);
 
+  //Param2 and the rest
   switch(Msg) {
     default:
       luaL_argerror(L, 2, "operation not implemented");
@@ -2215,7 +2280,8 @@ int far_SendDlgMessage (lua_State *L)
       Param2 = luaL_optlong(L, 4, 0);
       break;
 
-    case DM_LISTADDSTR: res_incr=1;
+    case DM_LISTADDSTR:
+      res_incr=1;
     case DM_ADDHISTORY:
     case DM_SETHISTORY:
     case DM_SETTEXTPTR:
@@ -2422,6 +2488,7 @@ int far_SendDlgMessage (lua_State *L)
       return 1;
 
     case DM_LISTSETCURPOS:
+      res_incr = 1;
       luaL_checktype(L, 4, LUA_TTABLE);
       flp.SelectPos = GetOptIntFromTable(L, "SelectPos", 1) - 1;
       flp.TopPos = GetOptIntFromTable(L, "TopPos", 1) - 1;
@@ -2497,6 +2564,33 @@ int far_SendDlgMessage (lua_State *L)
   return 1;
 }
 
+int DN_ConvertParam1(int Msg, int Param1)
+{
+  switch(Msg) {
+    default:
+      return Param1;
+
+    case DN_BTNCLICK:
+    case DN_CTLCOLORDLGITEM:
+    case DN_CTLCOLORDLGLIST:
+    case DN_DRAWDLGITEM:
+    case DN_EDITCHANGE:
+    case DN_GOTFOCUS:
+    case DN_HELP:
+    case DN_HOTKEY:
+    case DN_INITDIALOG:
+    case DN_KEY:
+    case DN_KILLFOCUS:
+    case DN_LISTCHANGE:
+    case DN_LISTHOTKEY:
+      return Param1 + 1;
+
+    case DN_CLOSE:
+    case DN_MOUSECLICK:
+      return Param1 < 0 ? Param1 : Param1 + 1;
+  }
+}
+
 LONG_PTR WINAPI DlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2)
 {
   TDialogData *dd = (TDialogData*) gInfo.SendDlgMessage(hDlg,DM_GETDLGDATA,0,0);
@@ -2504,13 +2598,14 @@ LONG_PTR WINAPI DlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2)
     return dd->Info->DefDlgProc(hDlg, Msg, Param1, Param2);
   lua_State *L = dd->L;
   PSInfo *Info = dd->Info;
+  int Param1_mod = DN_ConvertParam1(Msg, Param1);
 
   lua_pushlightuserdata (L, dd);       //+1   retrieve the table
   lua_rawget (L, LUA_REGISTRYINDEX);   //+1
   lua_rawgeti(L, -1, 2);               //+2   retrieve the procedure
   lua_rawgeti(L, -2, 3);               //+3   retrieve the handle
   lua_pushinteger (L, Msg);            //+4
-  lua_pushinteger (L, Param1);         //+5
+  lua_pushinteger (L, Param1_mod);     //+5
 
   if (Msg == DN_CTLCOLORDLGLIST) {
     struct FarListColors* flc = (struct FarListColors*) Param2;
@@ -2681,6 +2776,8 @@ int far_DialogRun (lua_State *L)
 {
   TDialogData* dd = CheckValidDialog(L, 1);
   int result = dd->Info->DialogRun(dd->hDlg);
+  if (result >= 0) ++result;
+
   if (dd->wasError) {
     free_dialog(dd);
     luaL_error(L, "error occured in dialog procedure");
@@ -2730,7 +2827,7 @@ int far_GetDlgItem(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   HANDLE hDlg = CheckDialogHandle(L,1);
-  int numitem = luaL_checkinteger(L,2);
+  int numitem = luaL_checkinteger(L,2) - 1;
   PushDlgItemNum(L, hDlg, numitem, 3, Info);
   return 1;
 }
@@ -2739,7 +2836,7 @@ int far_SetDlgItem(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   HANDLE hDlg = CheckDialogHandle(L,1);
-  int numitem = luaL_checkinteger(L,2);
+  int numitem = luaL_checkinteger(L,2) - 1;
   return SetDlgItem(L, hDlg, numitem, 3, Info);
 }
 
@@ -3468,7 +3565,7 @@ int far_AdvControl (lua_State *L)
     case ACTL_GETSHORTWINDOWINFO: {
       struct WindowInfo wi;
       memset(&wi, 0, sizeof(wi));
-      wi.Pos = luaL_checkinteger(L,2);
+      wi.Pos = luaL_optinteger(L, 2, 0) - 1;
 
       if (Command == ACTL_GETWINDOWINFO) {
         int r = Info->AdvControl(Info->ModuleNumber, Command, &wi);
@@ -3483,7 +3580,7 @@ int far_AdvControl (lua_State *L)
       if (!r)
         return lua_pushinteger(L,0), 1;
       lua_createtable(L,0,4);
-      PutIntToTable(L, "Pos", wi.Pos);
+      PutIntToTable(L, "Pos", wi.Pos + 1);
       PutIntToTable(L, "Type", wi.Type);
       PutBoolToTable(L, "Modified", wi.Modified);
       PutBoolToTable(L, "Current", wi.Current);
@@ -4271,7 +4368,7 @@ const char far_Dialog[] =
 \n\
   local ret = far.DialogRun(hDlg)\n\
   for i, item in ipairs(Items) do\n\
-    local newitem = far.GetDlgItem(hDlg, i-1)\n\
+    local newitem = far.GetDlgItem(hDlg, i)\n\
     if type(item[7]) == 'table' then\n\
       item[7].SelectIndex = newitem[7].SelectIndex\n\
     else\n\
@@ -4449,24 +4546,24 @@ void LF_InitLuaState (lua_State *L, PSInfo *aInfo,
     lua_call(L, 0, 0);
   }
 
-	// getmetatable("").__index = utf8
-	lua_pushliteral(L, "");
-	lua_getmetatable(L, -1);
-	lua_getglobal(L, "utf8");
-	lua_setfield(L, -2, "__index");
-	lua_pop(L, 2);
+  // getmetatable("").__index = utf8
+  lua_pushliteral(L, "");
+  lua_getmetatable(L, -1);
+  lua_getglobal(L, "utf8");
+  lua_setfield(L, -2, "__index");
+  lua_pop(L, 2);
 
-	// unicode.utf8 = utf8 (for backward compatibility;)
-	lua_newtable(L);
-	lua_getglobal(L, "utf8");
-	lua_setfield(L, -2, "utf8");
-	lua_setglobal(L, "unicode");
+  // unicode.utf8 = utf8 (for backward compatibility;)
+  lua_newtable(L);
+  lua_getglobal(L, "utf8");
+  lua_setfield(L, -2, "utf8");
+  lua_setglobal(L, "unicode");
 
-	// utf8.cfind = utf8.find (for backward compatibility;)
-	lua_getglobal(L, "utf8");
-	lua_getfield(L, -1, "find");
-	lua_setfield(L, -2, "cfind");
-	lua_pop(L, 1);
+  // utf8.cfind = utf8.find (for backward compatibility;)
+  lua_getglobal(L, "utf8");
+  lua_getfield(L, -1, "find");
+  lua_setfield(L, -2, "cfind");
+  lua_pop(L, 1);
 
   //ProcessEnvVars(L, aEnvPrefix, aInfo);
 

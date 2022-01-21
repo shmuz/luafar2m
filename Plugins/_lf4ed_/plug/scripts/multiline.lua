@@ -386,17 +386,17 @@ local function GetUserChoice (aTitle, s_found, s_rep)
     "\n\"" .. s_rep .. "\"\n\001",
     aTitle,
     M.MUserChoiceButtons)
-  if c==0 or c==1 then
+  if c==1 or c==2 then
     _lastclock = os.clock()
 --~     if profiler and c==1 then profiler.start(logfile) end
   end
-  return c==0 and "yes" or c==1 and "all" or c==2 and "no" or "cancel"
+  return c==1 and "yes" or c==2 and "all" or c==3 and "no" or "cancel"
 end
 
 
 local function CheckUserBreak (aTitle)
   return (win.ExtractKey() == "ESCAPE") and
-    0 == far.Message(M.MUsrBrkPrompt, aTitle, M.MUsrBrkButtons, "w")
+    1 == far.Message(M.MUsrBrkPrompt, aTitle, M.MUsrBrkButtons, "w")
 end
 
 

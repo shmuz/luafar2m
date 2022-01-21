@@ -969,7 +969,7 @@ id=153
 lv=2
 dt=Text
 nm=far.AdvControl
-mtime=3851447396
+mtime=3851925082
 <article>
 #_Result = far.AdvControl (Command, Param)
 #_
@@ -1030,20 +1030,20 @@ mtime=3851447396
 #_             3 numbers (e.g. 1,70,2087), if Param==true;
 #_
 #_ACTL_GETWINDOWINFO:
-#_    Param:   integer
+#_    Param1:  window number; 1-based integer (optional; default=0)
 #_    Result:  table (see its fields below)
-#_        Pos:       integer
 #_        Type:      integer
+#_        Pos:       integer (1-based)
 #_        Modified:  boolean
 #_        Current:   boolean
 #_        TypeName:  string
 #_        Name:      string
 #_
 #_ACTL_GETSHORTWINDOWINFO:
-#_    Param:   integer
+#_    Param1:  window number; 1-based integer (optional; default=0)
 #_    Result:  table (see its fields below)
-#_        Pos:       integer
 #_        Type:      integer
+#_        Pos:       integer (1-based)
 #_        Modified:  boolean
 #_        Current:   boolean
 #_
@@ -1383,7 +1383,7 @@ id=20
 lv=2
 dt=Text
 nm=far.Dialog
-mtime=3490427865
+mtime=3851925986
 <article>
 #_result = far.Dialog (X1,Y1,X2,Y2,HelpTopic,Items,Flags,DlgProc)
 #_
@@ -1391,7 +1391,7 @@ mtime=3490427865
 #_  Same parameters as in far.DialogInit
 #_
 #_**Returns:**
-#_  result: integer
+#_  result: 1-based integer (or nil in case of failure)
 #_
 #_**Notes:**
 #_  1. The function exists to preserve backward compatibility
@@ -1485,7 +1485,7 @@ lv=2
 dt=Text
 nm=far.DialogRun
 ctime=3490426724
-mtime=3490427035
+mtime=3851925690
 <article>
 #_result = far.DialogRun (handle)
 #_
@@ -1493,7 +1493,7 @@ mtime=3490427035
 #_  handle: userdata (obtained from a far.DialogInit call)
 #_
 #_**Returns:**
-#_  result: integer
+#_  result: integer (1-based)
 #_
 #_**Far API used:**
 #_  DialogRun
@@ -1508,13 +1508,13 @@ id=54
 lv=2
 dt=Text
 nm=far.GetDlgItem
-mtime=3492005390
+mtime=3851926296
 <article>
 #_result = far.GetDlgItem (hDlg, numitem [,item])
 #_
 #_**Parameters:**
 #_  hDlg:    userdata
-#_  numitem: integer (0-based)
+#_  numitem: integer (1-based)
 #_  item:    table, or nil
 #_
 #_**Returns:**
@@ -1569,7 +1569,7 @@ id=65
 lv=2
 dt=Text
 nm=far.Message
-mtime=3482991858
+mtime=3851926808
 <article>
 #_result = far.Message (Msg, [Title], [Buttons], [Flags], [HelpTopic])
 #_
@@ -1597,7 +1597,7 @@ mtime=3482991858
 #_  *HelpTopic:* string
 #_
 #_**Returns:**
-#_  *result:* integer
+#_  *result:* integer (1-based)
 #_
 #_**Note:**
 #_  Before calling FAR function *Message*, the function:
@@ -1616,14 +1616,14 @@ id=71
 lv=2
 dt=Text
 nm=far.SendDlgMessage
-mtime=3504075322
+mtime=3851944638
 <article>
 #_Result = far.SendDlgMessage (hDlg, Msg, Param1, Param2)
 #_
 #_**Parameters:**
 #_  hDlg:   userdata
 #_  Msg:    flag
-#_  Param1: integer
+#_  Param1: integer (1-based where it is element index, 0-based otherwise)
 #_  Param2: *(depends on Msg)*
 #_
 #_**Returns:**
@@ -1739,6 +1739,8 @@ mtime=3504075322
 #_    *Example:*
 #_      res = far.SendDlgMessage(hDlg, "DM_LISTSETCURPOS", id,
 #_        { SelectPos=5, TopPos=2 })
+#_    *Note:*
+#_      Elements numbering is 1-based.
 #_
 #_DM_LISTSETTITLES:
 #_    Param2:  table
@@ -1828,13 +1830,13 @@ id=72
 lv=2
 dt=Text
 nm=far.SetDlgItem
-mtime=3492005393
+mtime=3851945242
 <article>
 #_result = far.SetDlgItem (hDlg, numitem, item)
 #_
 #_**Parameters:**
 #_  hDlg:    userdata
-#_  numitem: integer (0-based)
+#_  numitem: integer (1-based)
 #_  item:    table
 #_
 #_**Returns:**
@@ -1859,7 +1861,7 @@ lv=1
 dt=Text
 nm=Dialog Events
 ctime=3477040474
-mtime=3477412353
+mtime=3851945406
 <article>
 #_<markdown>
 #_
@@ -1872,9 +1874,8 @@ mtime=3477412353
 #_
 #_### Parameters passed to event handler
 #_
-#_1. `Param1` is integer for all event types (ID of a dialog element).
-#_1. For most event types, `Param2` is also integer, in accordance to
-#_   Far API.
+#_1. `Param1` is integer (1-based if it is ID of a dialog element, 0-based otherwise)
+#_1. For most event types, `Param2` is also integer, in accordance to Far API.
 #_1. For some events ([`DN_CTLCOLORDLGLIST`](286.html),
 #_   [`DN_DRAWDLGITEM`](287.html), [`DN_EDITCHANGE`](288.html),
 #_   [`DN_HELP`](289.html), [`DN_INITDIALOG`](308.html),

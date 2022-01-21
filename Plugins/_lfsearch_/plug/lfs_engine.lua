@@ -17,10 +17,10 @@ local function GetUserChoice (aTitle, s_found, s_rep)
     "\n\"" .. s_rep .. "\"\n\001",
     aTitle,
     M.MUserChoiceButtons)
-  if c==0 or c==1 then
+  if c==1 or c==2 then
     _lastclock = os.clock()
   end
-  return c==0 and "yes" or c==1 and "all" or c==2 and "no" or "cancel"
+  return c==1 and "yes" or c==2 and "all" or c==3 and "no" or "cancel"
 end
 
 
@@ -93,7 +93,7 @@ end
 
 local function CheckUserBreak (aTitle)
   return (win.ExtractKey() == "ESCAPE") and
-    0 == far.Message(M.MUsrBrkPrompt, aTitle, ";YesNo", "w")
+    1 == far.Message(M.MUsrBrkPrompt, aTitle, ";YesNo", "w")
 end
 
 

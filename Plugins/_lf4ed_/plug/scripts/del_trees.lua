@@ -41,7 +41,7 @@ end
 local function GetUserChoice(f)
   local r = far.Message("Do you wish to delete\n"..f, "Delete",
                         "&Delete;&All;&Skip;&Cancel", "w")
-  return r==0 and "yes" or r==1 and "all" or r==2 and "no" or "cancel"
+  return r==1 and "yes" or r==2 and "all" or r==3 and "no" or "cancel"
 end
 
 
