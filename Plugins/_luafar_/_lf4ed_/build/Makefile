@@ -2,48 +2,41 @@
 
 FAR_EXPORTS = CONFIGUREW  EXITFARW  OPENPLUGINW  PROCESSEDITOREVENTW  \
               PROCESSEDITORINPUTW  PROCESSVIEWEREVENTW
-include ../../../_luafar_/config.mak
+include ../../config.mak
 
 LUAC        = $(LUADLLPATH)/luac.exe
-PATH_PLUGIN = ..
-PATH_SCRIPT = $(PATH_PLUGIN)/script
-SCRIPTS     = luaplug.lua config.lua expression.lua wrap.lua
+PATH_PLUGIN = ../plug
 GEN_METHOD  = -plain
 MAKE_LANG   = $(LUAEXE) -epackage.path=[[$(LUA_SHARE)/?.lua]] lf4ed_lang.lua
-
 CONFIG      = lf4ed.cfg
 
 ifeq ($(DIRBIT),64)
-  TRG1      = lf4ed-x64.far-plug-wide
-  TRG2      = lf4ed_e-x64.far-plug-wide
+  TRG_N = lf4ed-x64.far-plug-wide
+  TRG_E = lf4ed_e-x64.far-plug-wide
 else
-  TRG1      = lf4ed.far-plug-wide
-  TRG2      = lf4ed_e.far-plug-wide
+  TRG_N = lf4ed.far-plug-wide
+  TRG_E = lf4ed_e.far-plug-wide
 endif
 
-CFLAGS1     = $(CFLAGS) -DBUILD_STATIC $(EXPORTS)
-CFLAGS2     = $(CFLAGS1) -DFUNC_OPENLIBS=luafar_openlibs
+CFLAGS1 = $(CFLAGS) -DBUILD_STATIC $(EXPORTS)
+CFLAGS2 = $(CFLAGS1) -DFUNC_OPENLIBS=luafar_openlibs
 
-OBJ1        = luaplug1.o
-OBJ2        = luaplug2.o linit.o
+OBJ_N   = luaplug1.o
+OBJ_E   = luaplug2.o linit.o
+LIBS    = ../../$(LUAFARDLL)
 
-LIBS1       = $(PATH_INSTALL)/$(LUAFARDLL)
-LIBS2       = $(LIBS1)
-
-#-----------------------------------------------------------------------------
-
-embed: $(TRG2)
+embed: $(TRG_E)
 	mv -f $< $(PATH_PLUGIN)
 	cd $(PATH_PLUGIN) && $(MAKE_LANG)
 
-noembed: $(TRG1)
+noembed: $(TRG_N)
 	mv -f $< $(PATH_PLUGIN)
 	cd $(PATH_PLUGIN) && $(MAKE_LANG)
 
-$(TRG1): $(OBJ1) $(LIBS1)
+$(TRG_N): $(OBJ_N) $(LIBS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(TRG2): $(OBJ2) $(LIBS2)
+$(TRG_E): $(OBJ_E) $(LIBS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 # Since linit.c has changing prerequisites (sets of Lua files),
@@ -59,14 +52,4 @@ luaplug1.o: $(PATH_LUAFARSRC)/luaplug.c
 luaplug2.o: $(PATH_LUAFARSRC)/luaplug.c
 	$(CC) -c -o $@ $< $(CFLAGS2)
 
-cleanplug:
-	cd $(PATH_PLUGIN) && del *.dll *.d $(SCRIPTS) farcolor.lua farkeys.lua
-
-cleansrc:
-	del *.o *.dll luac.out linit.c
-
-clean:
-	$(MAKE) cleanplug cleansrc
-
-.PHONY: noembed embed clean cleanplug cleansrc
-
+.PHONY: noembed embed

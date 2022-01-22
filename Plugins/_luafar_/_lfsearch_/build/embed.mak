@@ -3,7 +3,7 @@
 #  and LuaFAR DLLs.
 
 FAR_EXPORTS = OPENPLUGINW
-include ../../../_luafar_/config.mak
+include ../../config.mak
 
 TRG         = lfsearch_e-x$(DIRBIT).far-plug-wide
 LUAC        = $(PATH_EXE)/luac.exe
@@ -15,12 +15,13 @@ OBJ_PLUG    = $(TRG)_plug.o
 MYCFLAGS    = -DFUNC_OPENLIBS=luafar_openlibs $(EXPORTS)
 
 OBJ         = $(OBJ_INIT) $(OBJ_PLUG)
-LIBS        = $(LUADLL) $(PATH_INSTALL)/$(LUAFARDLL)
+LIBS        = ../../$(LUAFARDLL)
 
 all: $(TRG)
 
 $(TRG): $(OBJ) $(LIBS)
 	$(CC) -o $@ $^ $(LDFLAGS)
+	mv -f $@ ../plug
 
 $(OBJ_PLUG): $(PATH_LUAFARSRC)/luaplug.c
 	$(CC) -c $< -o $@ $(CFLAGS)
