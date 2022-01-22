@@ -80,7 +80,7 @@ extern "C" {
 }
 #endif
 
-#include "plugin.hpp"
+#include "farplug-wide.h"
 
 typedef struct {
   const char* key;

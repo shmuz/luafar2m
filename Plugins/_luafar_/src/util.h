@@ -1,7 +1,7 @@
 #ifndef LUAFAR_UTIL_H
 #define LUAFAR_UTIL_H
 
-#include "plugin.hpp"
+#include "farplug-wide.h"
 
 #include "lua.h"
 #include "lauxlib.h"

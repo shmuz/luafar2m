@@ -1,7 +1,8 @@
 FARSOURCE  = $(HOME)/far2l
 FARINSTALL = $(HOME)/far2l/_build/install
 
-INC_FAR    = $(FARSOURCE)/far2l/Include
+#INC_FAR    = $(FARSOURCE)/far2l/Include
+INC_FAR    = $(FARSOURCE)/far2l/far2sdk
 INC_WIN    = $(FARSOURCE)/WinPort
 INC_LUA    = $(PATH_LUAFAR)/include/lua
 
