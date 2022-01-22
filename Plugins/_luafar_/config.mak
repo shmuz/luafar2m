@@ -9,7 +9,8 @@ PATH_LUAFAR    = $(FARINSTALL)/Plugins/_luafar_
 PATH_LUAFARSRC = $(PATH_LUAFAR)/src
 LUA_SHARE      = $(PATH_LUAFAR)/lua_share
 LUAFARDLL      = luafar2l.so 
-PATH_INSTALL   = /usr/lib/x86_64-linux-gnu
+PATH_INSTALL   = $(PATH_LUAFAR)
+#PATH_INSTALL  = /usr/lib/x86_64-linux-gnu
 
 DIRBIT     = 64
 CC         = gcc

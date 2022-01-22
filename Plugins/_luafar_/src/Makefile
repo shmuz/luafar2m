@@ -1,4 +1,4 @@
-# luafar.mak
+# Makefile
 
 include ../config.mak
 
@@ -23,7 +23,7 @@ OBJ = \
   $(OUT)/reg.o         \
   $(OUT)/mytimer.o
 
-.PHONY: directories all install
+.PHONY: directories all
 all: directories $(TARGET)
 directories: $(OUT)
 
@@ -44,9 +44,6 @@ farcolor.c: $(INC_FAR)/farcolor.hpp
 
 farkeys.c: $(INC_FAR)/farkeys.hpp
 	$(LUAEXE) makefarkeys.lua '$<' > $@
-
-install: $(TARGET)
-	cp -f $(TARGET) $(PATH_INSTALL)
 
 # Dependencies
 $(OUT)/*.o        : $(INC_FAR)/plugin.hpp
