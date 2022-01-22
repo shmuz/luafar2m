@@ -6406,6 +6406,27 @@ mtime=3484575728
 </article>
 </node>
 <node>
+id=436
+lv=3
+dt=Text
+nm=win.GetCurrentDir
+ctime=3852043928
+mtime=3852044004
+<article>
+#_dir = win.GetCurrentDir ()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  dir : string (or nil)
+#_
+#_**Linux API used:**
+#_  getcwd
+#_
+</article>
+</node>
+<node>
 id=398
 lv=3
 dt=Text
@@ -6534,6 +6555,27 @@ mtime=3484723622
 <article>
 #_<markdown>
 #_This function is an alias to [`win.MoveFile`](362.html).
+#_
+</article>
+</node>
+<node>
+id=437
+lv=3
+dt=Text
+nm=win.SetCurrentDir
+ctime=3852044260
+mtime=3852044309
+<article>
+#_result = win.SetCurrentDir (dir)
+#_
+#_**Parameters:**
+#_  dir    : string 
+#_
+#_**Returns:**
+#_  result : boolean
+#_
+#_**Linux API used:**
+#_  chdir
 #_
 </article>
 </node>
@@ -7147,6 +7189,27 @@ nm=win.SetEnv
 #_  This function sets or deletes a given environment variable.
 #_
 #_@@@
+#_
+</article>
+</node>
+<node>
+id=435
+lv=3
+dt=Text
+nm=win.Sleep
+ctime=3852040835
+mtime=3852040910
+<article>
+#_win.Sleep (milliseconds)
+#_
+#_**Parameters:**
+#_  milliseconds: number
+#_
+#_**Returns:**
+#_  nothing
+#_
+#_**Linux API used:**
+#_  usleep
 #_
 </article>
 </node>

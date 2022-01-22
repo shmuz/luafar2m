@@ -126,11 +126,16 @@ local function RunFile (filespec, aArg)
 end
 
 local function RunUserFunc (aArgTable, aItem, ...)
-  assert(aItem.filename, "no file name")
+  assert(aItem.action or aItem.filename, "no action and no file name")
   assert(aItem.env, "no environment")
-  -- compile the file
-  local chunk, msg = loadfile(aItem.filename)
-  if not chunk then error(msg,2) end
+  -- compile the file (or the string)
+  local chunk, msg
+  if aItem.action then
+    chunk = aItem.action
+  else
+    chunk, msg = loadfile(aItem.filename)
+    if not chunk then error(msg,2) end
+  end
   -- copy "fixed" arguments
   local argCopy = ShallowCopy(aArgTable)
   for i,v in ipairs(aItem.arg) do argCopy[i] = v end
@@ -242,10 +247,17 @@ local function SplitCommandLine (str)
 end
 
 local function MakeAddCommand (Items, Env)
-  return function (aCommand, aFileName, ...)
-    if type(aCommand)=="string" and type(aFileName)=="string" then
-      _Plugin.CommandTable[aCommand] = { filename=_ModuleDir..aFileName, env=Env,
-                                        arg={...} }
+  return function (aCommand, aCode, ...)
+    if type(aCommand)=="string" then
+      local tt = { env = Env; arg = {...}; }
+      if type(aCode) == "string" then
+        tt.filename = _ModuleDir..aCode
+      elseif type(aCode) == "function" then
+        tt.action = aCode
+      else
+        return
+      end
+      _Plugin.CommandTable[aCommand] = tt
     end
   end
 end

@@ -153,40 +153,37 @@ id=57
 lv=2
 dt=Text
 nm=AddCommand
-mtime=3491313722
+mtime=3852046562
 <article>
 #_<markdown>
-#_**`AddCommand (command, file [, ...])`**
+#_**`AddCommand (command, handler [, ...])`**
 #_
 #_Function `AddCommand` is available to the *_usermenu.lua* script.<br>
 #_It establishes a correspondence between the given `command` and
-#_the specified utility (`file`). This allows to call that utility
-#_from the command line.
+#_the specified action (`handler`). This allows to run that action
+#_either from the command line or from a macro.
 #_
 #_### Parameters
 #_
 #_1. `command`<br>
 #_The first command line parameter after the plugin's prefix.
 #_
-#_1. `file`<br>
-#_Name of a Lua script file to run upon this command activation
-#_(its path is relative to the plugin's directory).
+#_1. `handler`<br>
+#_Either name of a Lua script file (its path is relative to the plugin's directory),
+#_or a Lua function.
 #_
 #_1. Extra parameters (optional)<br>
-#_Values that will be passed to user script (they are passed to the
-#_script in a table). There can be any number of values of any Lua
-#_type.
+#_Values that will be passed to the handler (they are passed in a table).
+#_There can be any number of values of any Lua type.
 #_
 #_### Note
 #_
-#_If command line contains more than one argument, then the
-#_second and subsequent arguments will be passed on to the user
-#_script, after the `param2` argument.
+#_If the command line contains arguments that follow the command then those
+#_arguments will be passed on to the handler.
 #_
 #_### Examples
-#_      AddCommand("calc", scriptspath.."common/calc.lua")
-#_      AddCommand("umenu", ScriptPath.."LuaFUM/LuaFUM.lua")
-#_
+#_      AddCommand("calc", "scripts/calc.lua")
+#_      AddCommand("hello", function() far.Message("Hello") end)
 #_
 </article>
 </node>
@@ -263,7 +260,7 @@ id=20
 lv=2
 dt=Text
 nm=MakeResident
-mtime=3505571368
+mtime=3852034276
 <article>
 #_<markdown>
 #_**`MakeResident (filename | table)`**
@@ -287,7 +284,7 @@ mtime=3505571368
 #_   `_usermenu.lua`.
 #_1. The handlers' input parameters correspond to the *exported
 #_   functions* with the same names, e.g. `ProcessViewerEvent`
-#_   corresponds to `far.ProcessViewerEvent`, etc. (see LuaFAR manual
+#_   corresponds to `export.ProcessViewerEvent`, etc. (see LuaFAR manual
 #_   for details). `ExitScript` has no parameters, no return value.
 #_1. If the return value of a handler's `ProcessEditorInput` is true,
 #_   the rest of `ProcessEditorInput` handlers are not called, and
@@ -414,6 +411,7 @@ id=14
 lv=1
 dt=Text
 nm=Example of use
+mtime=3852034533
 <article>
 #_<markdown>
 #_### _usermenu.lua
@@ -427,22 +425,22 @@ nm=Example of use
 #_    MakeResident("handlers.lua")
 #_
 #_### handlers.lua
-#_    local _F = far.GetFlags()
+#_    local F = far.Flags
 #_
 #_    function ProcessEditorInput (Rec)
-#_      if (Rec.EventType == _F.FARMACRO_KEY_EVENT) or
-#_         (Rec.EventType == _F.KEY_EVENT and Rec.bKeyDown)
+#_      if (Rec.EventType == F.FARMACRO_KEY_EVENT) or
+#_         (Rec.EventType == F.KEY_EVENT and Rec.KeyDown)
 #_      then
-#_        if Rec.AsciiChar == ("t"):byte() then
-#_          far.EditorInsertText("X")
-#_          far.EditorRedraw()
+#_        if Rec.UnicodeChar == ("t"):byte() then
+#_          editor.InsertText("X")
+#_          editor.Redraw()
 #_          return true
 #_        end
 #_      end
 #_    end
 #_
 #_    function ProcessEditorEvent (Event, Param)
-#_      if Event == _F.EE_READ then
+#_      if Event == F.EE_READ then
 #_        require 'fl_scripts/editor/template'
 #_        templates_menu()
 #_      end

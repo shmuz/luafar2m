@@ -3862,6 +3862,28 @@ int win_GetVirtualKeys (lua_State *L)
   return 1;
 }
 
+int win_Sleep (lua_State *L)
+{
+  unsigned usec = (unsigned) luaL_checknumber(L,1) * 1000; // msec -> mcsec
+  usleep(usec);
+  return 0;
+}
+
+int win_GetCurrentDir (lua_State *L)
+{
+  char *buf = (char*)lua_newuserdata(L, PATH_MAX*2);
+  char *dir = getcwd(buf, PATH_MAX*2);
+  if (dir) lua_pushstring(L,dir); else lua_pushnil(L);
+  return 1;
+}
+
+int win_SetCurrentDir (lua_State *L)
+{
+  const char *dir = luaL_checkstring(L,1);
+  lua_pushboolean(L, chdir(dir) == 0);
+  return 1;
+}
+
 HANDLE* CheckFileFilter(lua_State* L, int pos)
 {
   return (HANDLE*)luaL_checkudata(L, pos, FarFileFilterType);
@@ -4277,6 +4299,9 @@ const luaL_reg win_funcs[] = {
   {"wcscmp",                     win_wcscmp},
   {"ExtractKey",                 win_ExtractKey},
   {"GetVirtualKeys",             win_GetVirtualKeys},
+  {"Sleep",                      win_Sleep},
+  {"GetCurrentDir",              win_GetCurrentDir},
+  {"SetCurrentDir",              win_SetCurrentDir},
 
   {"EnumSystemCodePages",        ustring_EnumSystemCodePages },
   {"GetACP",                     ustring_GetACP},
