@@ -21,7 +21,8 @@ OBJ = \
   $(OUT)/ustring.o     \
   $(OUT)/util.o        \
   $(OUT)/reg.o         \
-  $(OUT)/mytimer.o
+  $(OUT)/mytimer.o     \
+  $(OUT)/lusercontrol.o
 
 .PHONY: directories all
 all: directories $(TARGET)

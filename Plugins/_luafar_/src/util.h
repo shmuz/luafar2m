@@ -49,5 +49,13 @@ TDialogData* NewDialogData(lua_State* L, struct PluginStartupInfo *Info, HANDLE 
                            BOOL isOwned);
 struct PluginStartupInfo* GetPluginStartupInfo(lua_State* L);
 
+typedef struct
+{
+  intptr_t X,Y;
+  intptr_t Size;
+  CHAR_INFO VBuf[1];
+} TFarUserControl;
+
+TFarUserControl* CheckFarUserControl(lua_State* L, int pos);
 #endif
 

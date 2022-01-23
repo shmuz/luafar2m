@@ -186,7 +186,7 @@ local function ScrollToPosition (row, pos, from, to, scroll)
   scroll = scroll or 0
   row = row or editInfo.CurLine
   if row < halfscreen - scroll then
-    top = 0
+    top = 1
   elseif row > halfscreen + scroll then
     top = row - floor(halfscreen + scroll - 0.5)
   else
@@ -240,7 +240,7 @@ local function ShowCollectedLines (items, params)
   if item then
     local fr, to = item.fr-item.offset, item.to-item.offset
     ScrollToPosition(item.lineno, to, fr, to)
-    editor.Select("BTYPE_STREAM", nil, fr-1, to-fr+1, 1)
+    editor.Select("BTYPE_STREAM", nil, fr, to-fr+1, 1)
     editor.Redraw()
   end
 end

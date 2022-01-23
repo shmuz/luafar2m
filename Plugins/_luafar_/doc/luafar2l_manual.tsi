@@ -1356,6 +1356,33 @@ nm=Dialog functions
 </article>
 </node>
 <node>
+id=438
+lv=2
+dt=Text
+nm=far.CreateUserControl
+ctime=3852117934
+mtime=3852120740
+<article>
+#_<markdown>
+#_Buffer support for `DI_USERCONTROL`. Use it like this:
+#_
+#_    local buffer=far.CreateUserControl(10,10)
+#_    local textel={Char="a",Attributes=0x4C}
+#_    for ii=1,#buffer do
+#_      buffer[ii]=textel
+#_    end
+#_    local items={
+#_      {"DI_DOUBLEBOX",   0,0,11,11, 0, 0,      0,0,""},
+#_      {"DI_USERCONTROL", 1,1,10,10, 0, buffer, 0,0,""}
+#_    }
+#_    far.Dialog (-1,-1,12,12,nil,items)
+#_
+#_@@@
+#_{di_usercontrol}: http://api.farmanager.com/ru/dialogapi/controls/di_usercontrol.html
+#_
+</article>
+</node>
+<node>
 id=219
 lv=2
 dt=Text

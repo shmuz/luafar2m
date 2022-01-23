@@ -749,7 +749,7 @@ function _M.Menu (props, list)
   list.autocenter = (list.autocenter ~= false)
   list.resizeW    = (list.resizeW ~= false)
   list.resizeH    = (list.resizeH ~= false)
-  local UId = 0
+  local UId = 1
   list.startId = UId
 
   local ret_item, ret_pos

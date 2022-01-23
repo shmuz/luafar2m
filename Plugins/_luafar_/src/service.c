@@ -31,6 +31,7 @@ extern int  luaopen_bit (lua_State *L);
 extern int  luaopen_unicode (lua_State *L);
 extern int  luaopen_utf8 (lua_State *L);
 extern int  luaopen_timer (lua_State *L);
+extern int  luaopen_usercontrol (lua_State *L);
 extern int  far_Find (lua_State*);
 extern int  far_Gmatch (lua_State*);
 extern int  far_Gsub (lua_State*);
@@ -2027,6 +2028,16 @@ void SetFarDialogItem(lua_State *L, struct FarDialogItem* Item, int itemindex,
       Item->ListItems->Items[SelectIndex-1].Flags |= LIF_SELECTED;
     lua_pop(L,1);                    // 0
   }
+  else if (Item->Type == DI_USERCONTROL)
+  {
+    lua_rawgeti(L, -1, 7);
+    if (lua_type(L,-1) == LUA_TUSERDATA)
+    {
+      TFarUserControl* fuc = CheckFarUserControl(L, -1);
+      Item->VBuf = fuc->VBuf;
+    }
+    lua_pop(L,1);
+  }
   else if (Item->Flags & DIF_HISTORY) {
     lua_pushinteger(L, 7);   // +1
     lua_gettable(L, -2);     // +1
@@ -2073,6 +2084,11 @@ void PushDlgItem (lua_State *L, const struct FarDialogItem* pItem, BOOL table_ex
     lua_pushinteger(L, pItem->ListPos+1);
     lua_setfield(L, -2, "SelectIndex");
     lua_pop(L,1);
+  }
+  else if (pItem->Type == DI_USERCONTROL)
+  {
+    lua_pushlightuserdata(L, pItem->VBuf);
+    lua_rawseti(L, -2, 7);
   }
   else
     PutIntToArray(L, 7, pItem->Selected);
@@ -4438,6 +4454,9 @@ int luaopen_far (lua_State *L)
   lua_pushcfunction(L, luaopen_timer);
   lua_call(L, 0, 1);
   lua_setfield(L, -2, "Timer");
+
+  lua_pushcfunction(L, luaopen_usercontrol);
+  lua_call(L, 0, 0);
 
   luaL_newmetatable(L, FarDialogType);
   lua_pushvalue(L,-1);
