@@ -48,8 +48,10 @@ local function ShallowCopy (src)
 end
 
 local RequireWithReload, ResetPackageLoaded do
-  local bypass_reload = { string=1,table=1,os=1,coroutine=1,math=1,io=1,debug=1,
-                          _G=1,package=1,far=1,bit=1,unicode=1,uio=1 }
+  local bypass_reload = {
+    string=1,table=1,os=1,coroutine=1,math=1,io=1,debug=1,_G=1,package=1,
+    far=1,panel=1,editor=1,viewer=1,regex=1,bit=1,utf8=1,win=1,
+  }
 
   RequireWithReload = function(name)
     if name and not bypass_reload[name] then
@@ -74,7 +76,7 @@ local function OnConfigChange (cfg)
   else setmetatable(_G, nil)
   end
   -- 2 --
-  require = cfg.RequireWithReload and RequireWithReload or _Plugin.OriginalRequire
+  require = cfg.RequireWithReload and RequireWithReload or _Plugin.OriginalRequire --luacheck:ignore 121
   -- 3 --
   far.ReloadDefaultScript = cfg.ReloadDefaultScript
 end
@@ -319,11 +321,11 @@ local function MakeResident (source)
   local meta = { __index=_G }
   local tp = type(source)
   if tp == "string" then
-    local chunk, errmsg = loadfile(_ModuleDir .. source)
-    if not chunk then error(errmsg, 2) end
+    local chunk, msg1 = loadfile(_ModuleDir .. source)
+    if not chunk then error(msg1, 2) end
     env = setmetatable({}, meta)
-    local ok, errmsg = pcall(setfenv(chunk, env))
-    if not ok then error(errmsg, 2) end
+    local ok, msg2 = pcall(setfenv(chunk, env))
+    if not ok then error(msg2, 2) end
   elseif tp == "table" then
     env = setmetatable(source, meta)
   else
@@ -346,14 +348,14 @@ local function MakeAddUserFile (aEnv, aItems)
       if not info or info.FileAttributes:find("d") then return end
     end
     ---------------------------------------------------------------------------
-    local chunk, err = loadfile(filename)
-    if not chunk then error(err, 3) end
+    local chunk, msg1 = loadfile(filename)
+    if not chunk then error(msg1, 3) end
     ---------------------------------------------------------------------------
     uStack[uDepth] = setmetatable({}, uMeta)
     aEnv.AddToMenu = MakeAddToMenu(aItems, uStack[uDepth])
     aEnv.AddCommand = MakeAddCommand(aItems, uStack[uDepth])
-    local ok, err = pcall(setfenv(chunk, aEnv))
-    if not ok then error(err, 3) end
+    local ok, msg2 = pcall(setfenv(chunk, aEnv))
+    if not ok then error(msg2, 3) end
     uDepth = uDepth - 1
   end
   return AddUserFile

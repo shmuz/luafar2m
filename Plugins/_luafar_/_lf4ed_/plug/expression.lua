@@ -88,8 +88,8 @@ local function ParamsDialog (aData)
         local s2 = D.sParam2:GetText(hDlg)
         local s3 = D.sParam3:GetText(hDlg)
         local s4 = D.sParam4:GetText(hDlg)
-        local ok, msg = pcall(CompileParams, s1, s2, s3, s4)
-        if not ok then ErrMsg(msg); return 0; end
+        local ok, msg2 = pcall(CompileParams, s1, s2, s3, s4)
+        if not ok then ErrMsg(msg2); return 0; end
       end
     end
   end

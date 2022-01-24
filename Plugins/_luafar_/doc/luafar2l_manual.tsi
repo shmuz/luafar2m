@@ -174,13 +174,13 @@ lv=2
 dt=Text
 nm=Extra exported functions
 ctime=3851409469
-mtime=3851409556
+mtime=3852182584
 <article>
 #_<markdown>
 #_
 #_<a name="luaopen_luaplug"></a>
 #_### Extra exported function: `luaopen_luaplug`
-#_Some libraries (e.g. `rings`) can create additional `lua_State` instances from Lua scripts. To initialize those instances with libraries included in LuaFAR (`far`, `bit`, `uio`, `unicode`), call `luaopen_luaplug`. The function must be loaded via `package.loadlib`. Internally, it calls [`LF_InitLuaState`](385.html).
+#_Some libraries (e.g. `rings`) can create additional `lua_State` instances from Lua scripts. To initialize those instances with libraries included in LuaFAR (`far`, `panel`, `editor`, etc.), call `luaopen_luaplug`. The function must be loaded via `package.loadlib`. Internally, it calls [`LF_InitLuaState`](385.html).
 #_
 #_**Example:**
 #_      local rings = require "rings"
@@ -8458,7 +8458,7 @@ id=129
 lv=2
 dt=Text
 nm=LF_LuaOpen
-mtime=3497514966
+mtime=3852182656
 <article>
 #_<markdown>
 #_    lua_State* LF_LuaOpen (PluginStartupInfo *Info, 
@@ -8478,7 +8478,7 @@ mtime=3497514966
 #_#### Returns:
 #_      Pointer to a newly created lua_State that already has some
 #_      libraries opened (including standard Lua libraries, "far",
-#_      "bit" and "unicode" libraries).
+#_      "bit" and "utf8" libraries).
 #_
 #_#### Description:
 #_
@@ -8559,7 +8559,7 @@ lv=2
 dt=Text
 nm=LF_InitLuaState
 ctime=3497514263
-mtime=3497514946
+mtime=3852182668
 <article>
 #_<markdown>
 #_    void LF_InitLuaState (lua_State* L,
@@ -8584,7 +8584,7 @@ mtime=3497514946
 #_The function performs the following actions, in this order
 #_(for simplicity, let's assume `EnvVarPrefix==L"LUAFAR"`):
 #_
-#_1. Open the standard Lua libraries, `far`, `bit` and `unicode`
+#_1. Open the standard Lua libraries, `far`, `bit` and `utf8`
 #_   libraries.
 #_1. Call `OpenLibs` function.
 #_1. Process `LUAFAR_PATH` the same way the standard Lua

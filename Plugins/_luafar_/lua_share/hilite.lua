@@ -1,7 +1,7 @@
 -- coding: utf-8
 -- started 2010-06-07 by Shmuel Zeigerman
 
-require "unicode"
+local unicode = require "unicode"
 getmetatable("").__index = unicode.utf8
 
 --[[---------------------------------------------------------------------------
@@ -33,7 +33,7 @@ local function hilite (Arr, Patt)
     if n == 0 then idx[#idx+1] = i end
   end
   ------------------------------------------------------------ initialize 'wei'
-  for i, v in ipairs(idx) do
+  for _, v in ipairs(idx) do
     local t = {}
     for c in Arr[v]:lower():gmatch(Patt) do
       if not state[c] and not t[c] then
@@ -53,9 +53,9 @@ local function hilite (Arr, Patt)
   table.sort(idx, function(i1, i2)
     return get_weight(Arr[i1]) < get_weight(Arr[i2]) end)
   ---------------------------------------------------------------------- assign
-  for i, v in ipairs(idx) do
+  for _, v in ipairs(idx) do
     local found
-    local s, n = Arr[v]:gsub(Patt,
+    local s = Arr[v]:gsub(Patt,
       function(c)
         if not found and not state[c:lower()] then
           found = true

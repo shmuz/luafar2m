@@ -207,7 +207,7 @@ local function ShowCollectedLines (items, params)
   local maxno, n = 1, items[#items].lineno+1
   while n >= 10 do maxno=maxno+1; n=n/10; end
 
-  local fmt = ("%%%dd%s %%s"):format(maxno, unicode.utf8.char(9474))
+  local fmt = ("%%%dd%s %%s"):format(maxno, ("").char(9474))
   for _, item in ipairs(items) do
     local s = item.text:gsub("%z", " ") -- replace null bytes with spaces
                        :gsub("^%s*",    -- delete leading spaces

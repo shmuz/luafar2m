@@ -14,7 +14,7 @@ local min, max, floor, ceil = math.min, math.max, math.floor, math.ceil
 local COL_MENUTEXT, COL_MENUSELECTEDTEXT, COL_MENUHIGHLIGHT,
   COL_MENUSELECTEDHIGHLIGHT, COL_MENUBOX, COL_MENUTITLE = 0,1,2,3,4,5
 
--- Some keys; taken from "farkeys.lua";
+-- Some keys
 local KEY_BS       = FK.KEY_BS
 local KEY_ENTER    = FK.KEY_ENTER
 ----
@@ -222,7 +222,7 @@ function List:OnDialogClose ()
 end
 
 do
-  local ch = unicode.utf8.char
+  local ch = utf8.char
   local sng = {c1=9484,c2=9488,c3=9492,c4=9496,hor=9472,ver=9474,sep1=9500,sep2=9508}
   local dbl = {c1=9556,c2=9559,c3=9562,c4=9565,hor=9552,ver=9553,sep1=9567,sep2=9570}
   for k,v in pairs(sng) do
@@ -278,7 +278,7 @@ function List:Draw (x, y)
   self:DrawBox(x, y)
   x, y = x+1, y+1-self.upper
   local mlen = self.margin:len()
-  local char = unicode.utf8.char
+  local char = utf8.char
   local check, hor = char(8730), char(9472)
   for i=self.upper, self.upper+self.h-1 do
     local v = self.drawitems[i]

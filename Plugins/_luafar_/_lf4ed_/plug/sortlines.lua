@@ -9,7 +9,6 @@ local Package = {}
 local sd = require "sortdialog"
 local SortDialog = sd.SortDialog
 
-local type, tonumber = type, tonumber
 local tinsert = table.insert
 local F = far.Flags
 local M = require "lf4ed_message"

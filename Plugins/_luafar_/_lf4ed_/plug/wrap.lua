@@ -239,8 +239,10 @@ local function ExecuteWrapDialog (aData)
       Check (hDlg, D.cbxReformat, D.labStart, D.edtColumn1, D.labEnd, D.edtColumn2, D.cbxJustify)
       Check (hDlg, D.cbxPrefix, D.edtPrefix, D.labCommand)
     elseif msg == F.DN_BTNCLICK then
-      if param1 == D.cbxReformat.id then Check (hDlg, D.cbxReformat, D.labStart, D.edtColumn1, D.labEnd, D.edtColumn2, D.cbxJustify)
-      elseif param1 == D.cbxPrefix.id then Check (hDlg, D.cbxPrefix, D.edtPrefix, D.labCommand)
+      if param1 == D.cbxReformat.id then
+        Check (hDlg, D.cbxReformat, D.labStart, D.edtColumn1, D.labEnd, D.edtColumn2, D.cbxJustify)
+      elseif param1 == D.cbxPrefix.id then
+        Check (hDlg, D.cbxPrefix, D.edtPrefix, D.labCommand)
       end
     elseif msg == F.DN_GETDIALOGINFO then
       return dialogGuid

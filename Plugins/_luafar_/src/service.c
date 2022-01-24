@@ -4597,18 +4597,6 @@ void LF_InitLuaState (lua_State *L, PSInfo *aInfo,
   lua_setfield(L, -2, "__index");
   lua_pop(L, 2);
 
-  // unicode.utf8 = utf8 (for backward compatibility;)
-  lua_newtable(L);
-  lua_getglobal(L, "utf8");
-  lua_setfield(L, -2, "utf8");
-  lua_setglobal(L, "unicode");
-
-  // utf8.cfind = utf8.find (for backward compatibility;)
-  lua_getglobal(L, "utf8");
-  lua_getfield(L, -1, "find");
-  lua_setfield(L, -2, "cfind");
-  lua_pop(L, 1);
-
   //ProcessEnvVars(L, aEnvPrefix, aInfo);
 
   // Run "_plug_init.lua" residing in the plugin's directory (if any).

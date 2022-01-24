@@ -507,14 +507,14 @@ id=31
 lv=0
 dt=Text
 nm=Plugin API
-mtime=3851705318
+mtime=3852182734
 <article>
 #_<markdown>
 #_
 #_1. There is an important thing to know when writing scripts for
 #_   *LuaFAR for Editor*: indexing string variables accesses functions
-#_   in **`unicode.utf8`** rather than in **`string`** namespace.
-#_     * For example, `s:sub(1,2)` means `unicode.utf8.sub(s,1,2)`.
+#_   in **`utf8`** rather than in **`string`** namespace.
+#_     * For example, `s:sub(1,2)` means `utf8.sub(s,1,2)`.
 #_     * To use `string` library, specify that explicitly,
 #_       e.g., `string.sub(s,1,2)`.
 #_     * **`#s`** refers to `string.len(s)`. Use **`s:len()`**

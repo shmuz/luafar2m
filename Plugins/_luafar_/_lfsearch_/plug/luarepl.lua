@@ -70,7 +70,7 @@ local lua_functions = setmetatable({
       local p = { pat=pat, plain=plain }
       return setmetatable(p, {__index = lua_methods})
     end
-  }, {__index = unicode.utf8})
+  }, {__index = utf8})
 
 
 local function GetRegexLib (engine_name)
@@ -196,7 +196,7 @@ local function TransformReplacePat (aStr)
                                R1 and tonumber(R12) or 0 }
       elseif c1 then
         c1 = tonumber(c1,16) or 0
-        T[#T+1] = { "hex", unicode.utf8.char(c1) }
+        T[#T+1] = { "hex", ("").char(c1) }
       elseif c2 then
         T[#T+1] = { "literal", c2:match("[%p%-+^$&]") or map[c2]
           or error("invalid escape: \\"..c2) }
