@@ -4,7 +4,7 @@ FARINSTALL = $(HOME)/far2l/_build/install
 #INC_FAR    = $(FARSOURCE)/far2l/Include
 INC_FAR    = $(FARSOURCE)/far2l/far2sdk
 INC_WIN    = $(FARSOURCE)/WinPort
-INC_LUA    = $(PATH_LUAFAR)/include/lua
+INC_LUA    = /usr/include/lua5.1
 
 PATH_LUAFAR    = $(FARINSTALL)/Plugins/_luafar_
 PATH_LUAFARSRC = $(PATH_LUAFAR)/src
