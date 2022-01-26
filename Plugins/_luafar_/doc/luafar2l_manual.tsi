@@ -4530,18 +4530,21 @@ lv=2
 dt=Text
 nm=far.MacroCheck
 ctime=3851440061
-mtime=3851447881
+mtime=3852390126
 <article>
-#_errCode, errPosX, errPosY, errSrs = far.MacroCheck(SequenceText)
+#_errCode, ... = far.MacroCheck(SequenceText)
 #_
 #_**Parameters:**
 #_  SequenceText: string
 #_
 #_**Returns:**
-#_  errCode:  integer
-#_  errPosX:  integer
-#_  errPosY:  integer
-#_  errSrc:   string
+#_  If successful:
+#_    0:        integer
+#_  If failed:
+#_    errCode:  integer
+#_    errPosX:  integer
+#_    errPosY:  integer
+#_    errSrc:   string
 #_
 #_**Far API used:**
 #_  AdvControl, ACTL_KEYMACRO

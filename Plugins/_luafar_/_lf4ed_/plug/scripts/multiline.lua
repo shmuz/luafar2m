@@ -499,8 +499,8 @@ local function MultilineSearch (aOp, aData, aStrings)
     end
   else
     local name = HasChange1208() and "lines" or "line0"
-    local FarSrchPat = win.GetRegKey("SavedDialogHistory\\SearchText", name)
-    local FarReplPat = win.GetRegKey("SavedDialogHistory\\ReplaceText", name)
+    local FarSrchPat = win.GetRegKey("HKCU", "SavedDialogHistory\\SearchText", name)
+    local FarReplPat = win.GetRegKey("HKCU", "SavedDialogHistory\\ReplaceText", name)
     if name == "lines" then
       FarSrchPat = FarSrchPat and FarSrchPat:match"^%Z*"
       FarReplPat = FarReplPat and FarReplPat:match"^%Z*"

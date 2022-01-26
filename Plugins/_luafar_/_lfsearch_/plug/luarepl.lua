@@ -20,7 +20,7 @@ end
 
 
 local function GetFarHistory (name)
-  local lines = win.GetRegKey("SavedDialogHistory\\"..name, "lines")
+  local lines = win.GetRegKey("HKCU", "SavedDialogHistory\\"..name, "lines")
   return lines and lines:match"^%Z*"
 end
 

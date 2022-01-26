@@ -285,7 +285,7 @@ end
 
 local function GetTmpPanelSettings()
   local t = {}
-  for k in pairs(TmpPanelRegVars) do t[k] = win.GetRegKey(TmpPanelRegKey, k) end
+  for k in pairs(TmpPanelRegVars) do t[k] = win.GetRegKey("HKCU", TmpPanelRegKey, k) end
   return t
 end
 
@@ -297,19 +297,19 @@ local function ChangeTmpPanelSettings (aHistory)
       if typ ~= "string" then
         typ, v = "dword", (v==true) and 1 or (v==false) and 0 or v
       end
-      win.SetRegKey(typ, TmpPanelRegKey, k, v)
+      win.SetRegKey("HKCU", TmpPanelRegKey, k, typ, v)
     end
   end
-  win.SetRegKey("dword", TmpPanelRegKey, "Contens", 0) -- Copy folder contents
-  win.SetRegKey("dword", TmpPanelRegKey, "Mode", 1) -- Replace files with file list
-  win.SetRegKey("dword", TmpPanelRegKey, "NewP", 1) -- New panel for search results
+  win.SetRegKey("HKCU", TmpPanelRegKey, "Contens", "dword", 0) -- Copy folder contents
+  win.SetRegKey("HKCU", TmpPanelRegKey, "Mode", "dword", 1) -- Replace files with file list
+  win.SetRegKey("HKCU", TmpPanelRegKey, "NewP", "dword", 1) -- New panel for search results
   return data
 end
 
 local function RestoreTmpPanelSettings (data)
   for k,v in pairs(data) do
     local typ = type(v) == "number" and "dword" or "string"
-    win.SetRegKey(typ, TmpPanelRegKey, k, v)
+    win.SetRegKey("HKCU", TmpPanelRegKey, k, typ, v)
   end
 end
 
