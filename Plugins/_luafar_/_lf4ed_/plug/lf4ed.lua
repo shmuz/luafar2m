@@ -270,31 +270,40 @@ local function MakeAddToMenu (Items, Env)
     aWhere = aWhere:lower()
     if not aWhere:find("[evpdc]") then return end
     ---------------------------------------------------------------------------
+    local tp = type(aFileName)
     local SepText = type(aItemText)=="string" and aItemText:match("^:sep:(.*)")
-    local bUserItem = SepText or type(aFileName)=="string"
-    if not bUserItem then
-      if aItemText~=true or type(aFileName)~="number" then
-        return
+    local tUserItem, bInternal
+    if not SepText then
+      if tp == "number" then
+        bInternal = true
+      elseif tp=="string" or tp=="function" then
+        tUserItem = {env=Env; arg={...}}
+        if     tp=="string"   then tUserItem.filename = _ModuleDir..aFileName
+        elseif tp=="function" then tUserItem.action = aFileName
+        end
       end
     end
+    if not (SepText or tUserItem or bInternal) then
+      return
+    end
     ---------------------------------------------------------------------------
-    if not SepText and aWhere:find("[ec]") and type(aHotKey)=="string" then
+    if (tUserItem or bInternal) and aWhere:find("[ec]") and type(aHotKey)=="string" then
       local HotKeyTable = _Plugin.HotKeyTable
       aHotKey = ConvertUserHotkey (aHotKey)
-      if bUserItem then
-        HotKeyTable[aHotKey] = {filename=_ModuleDir..aFileName, env=Env, arg={...}}
+      if tUserItem then
+        HotKeyTable[aHotKey] = tUserItem
       else
         HotKeyTable[aHotKey] = aFileName
       end
     end
     ---------------------------------------------------------------------------
-    if bUserItem and aItemText then
+    if SepText or (tUserItem and aItemText) then
       local item
       if SepText then
         item = { text=SepText, separator=true }
       else
-        item = { text=tostring(aItemText),
-                 filename=_ModuleDir..aFileName, env=Env, arg={...} }
+        tUserItem.text = tostring(aItemText)
+        item = tUserItem
       end
       if aWhere:find"c" then table.insert(Items.config, item) end
       if aWhere:find"d" then table.insert(Items.dialog, item) end

@@ -6,20 +6,12 @@ local lib, section = {}, {}
 local mt_lib     = {__index=lib}
 local mt_section = {__index=section}
 
-local function has_trailing(s)
-  return s:match("^ ") or s:match(" $")
-end
-
 local function get_secname(line)
-  local sec = line:match("^%s*%[([%w_./ ]+)%]")
-  return sec and not has_trailing(sec) and sec
+  return line:match("^%s*%[%s*(.-)%s*%]")
 end
 
 local function get_key_val(line)
-  local key,val = line:match("^%s*([%w_%-]+)%s*=%s*(.+)") -- no spaces in the key
-  if not key then key,val = line:match("^%s*([%w_%- ]+)=%s*(.+)"); end -- spaces in the key
-  if key and not has_trailing(key) then return key,val; end
-  return nil
+ return line:match("^%s*([^=]-)%s*=%s*(.-)%s*$")
 end
 
 -- @param fname     : name of ini-file
@@ -35,9 +27,13 @@ function lib.New(fname, nocomment)
     local secname = get_secname(line)
     if secname then
       local lname = secname:lower()
-      cursection = { name=secname; lname=lname; map={}; arr={}; }
-      setmetatable(cursection, mt_section)
-      self.map[lname] = cursection
+      if self.map[lname] then
+        cursection = self.map[lname] -- this allows a section to appear multiple times in the file
+      else
+        cursection = { name=secname; lname=lname; map={}; arr={}; }
+        setmetatable(cursection, mt_section)
+        self.map[lname] = cursection
+      end
     elseif cursection then
       local key,val = get_key_val(line)
       if key then
@@ -82,6 +78,23 @@ end
 function section:pairs()
   local i=0
   return function() i = i+1; return self.arr[i]; end
+end
+
+function section:write(fp)
+  fp:write("[", self.name, "]\n")
+  for _,item in ipairs(self.arr) do
+    fp:write(item.name, "=", item.val, "\n")
+  end
+end
+
+function lib:write(fname)
+  local fp = io.open(fname, "w")
+  if not fp then return nil end
+  for _,sec in ipairs(self.arr) do
+    sec:write(fp)
+    fp:write("\n")
+  end
+  fp:close()
 end
 
 function lib:GetString(sec, key)

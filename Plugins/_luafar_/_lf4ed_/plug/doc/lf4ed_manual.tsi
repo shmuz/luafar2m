@@ -94,10 +94,10 @@ id=13
 lv=2
 dt=Text
 nm=AddToMenu
-mtime=3491313710
+mtime=3852463666
 <article>
 #_<markdown>
-#_**`AddToMenu (where, text, hotkey, file [, ...])`**
+#_**`AddToMenu (where, text, hotkey, handler [, ...])`**
 #_
 #_Function `AddToMenu` is available to the *_usermenu.lua* script.<br>
 #_It allows to add a specified utility to the plugin's menu and
@@ -125,9 +125,11 @@ mtime=3491313710
 #_**NOTE:** a hot key assigned this way works **only from Editor**,
 #_provided that no macro is assigned to that key.
 #_
-#_1. `file`<br>
-#_Name of a Lua script file to run upon this item activation
-#_(its path is relative to the plugin's directory).
+#_1. `handler`<br>
+#_  -- Either name of a Lua script file to run upon this item activation
+#_(its path is relative to the plugin's directory), or<br>
+#_  -- a Lua function, or<br>
+#_  -- the number of a built-in utility (1 to 6).
 #_
 #_1. Extra parameters (optional)<br>
 #_Values that will be passed to user script (they are passed to the
@@ -142,9 +144,9 @@ mtime=3491313710
 #_      AddToMenu ("p", "Rename Files", nil, "rename.lua")
 #_      AddToMenu ("evp", "Calendar", "Alt+F12", "calendar.lua", "show")
 #_
-#_To assign a hot key to a built-in utility, supply `text` as `true`
-#_and specify the menu position via `file`:
-#_      AddToMenu ("e", true, "Ctrl+1", 1)
+#_To assign a hot key to a built-in utility, supply `text` as `nil`
+#_and specify the number of the built-in utility via `handler`:
+#_      AddToMenu ("e", nil, "Ctrl+1", 1)
 #_
 </article>
 </node>
@@ -411,7 +413,7 @@ id=14
 lv=1
 dt=Text
 nm=Example of use
-mtime=3852034533
+mtime=3852235188
 <article>
 #_<markdown>
 #_### _usermenu.lua
@@ -431,7 +433,7 @@ mtime=3852034533
 #_      if (Rec.EventType == F.FARMACRO_KEY_EVENT) or
 #_         (Rec.EventType == F.KEY_EVENT and Rec.KeyDown)
 #_      then
-#_        if Rec.UnicodeChar == ("t"):byte() then
+#_        if Rec.UnicodeChar == "t" then
 #_          editor.InsertText("X")
 #_          editor.Redraw()
 #_          return true
