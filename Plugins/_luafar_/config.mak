@@ -1,7 +1,8 @@
 FARSOURCE  = $(HOME)/far2l
 FARINSTALL = $(HOME)/far2l/_build/install
 
-INC_FAR    = $(FARSOURCE)/far2l/Include
+#INC_FAR    = $(FARSOURCE)/far2l/Include
+INC_FAR    = $(FARSOURCE)/far2l/far2sdk
 INC_WIN    = $(FARSOURCE)/WinPort
 INC_LUA    = $(PATH_LUAFAR)/include/lua
 
@@ -9,7 +10,8 @@ PATH_LUAFAR    = $(FARINSTALL)/Plugins/_luafar_
 PATH_LUAFARSRC = $(PATH_LUAFAR)/src
 LUA_SHARE      = $(PATH_LUAFAR)/lua_share
 LUAFARDLL      = luafar2l.so 
-PATH_INSTALL   = /usr/lib/x86_64-linux-gnu
+PATH_INSTALL   = $(PATH_LUAFAR)
+#PATH_INSTALL  = /usr/lib/x86_64-linux-gnu
 
 DIRBIT     = 64
 CC         = gcc

@@ -1,16 +1,20 @@
-#define WINPORT_REGISTRY //this must precede #include <windows.h>
+﻿#ifndef _REG_H_
+#define _REG_H_
+
+#ifndef WINPORT_REGISTRY
+#  define WINPORT_REGISTRY //this must precede #include <windows.h>
+#endif
 #include <windows.h>
 
-HKEY CreateRegKey(HKEY hRoot, wchar_t *RootKey, wchar_t *Key);
-HKEY OpenRegKey(HKEY hRoot, wchar_t *RootKey, wchar_t *Key);
+HKEY CreateRegKey(HKEY hRoot, wchar_t *Key, REGSAM samDesired);
+HKEY OpenRegKey(HKEY hRoot, wchar_t *Key, REGSAM samDesired);
 
-void SetRegKeyStr(HKEY hRoot, wchar_t *RootKey, wchar_t *Key, wchar_t *ValueName, wchar_t *ValueData);
-void SetRegKeyDword(HKEY hRoot, wchar_t *RootKey, wchar_t *Key, wchar_t *ValueName, DWORD ValueData);
-void SetRegKeyArr(HKEY hRoot, wchar_t *RootKey, wchar_t *Key, wchar_t *ValueName, BYTE *ValueData, DWORD ValueSize);
+BOOL SetRegKeyStr(HKEY hRoot, wchar_t *Key, wchar_t *ValueName, wchar_t *ValueData, REGSAM samDesired);
+BOOL SetRegKeyDword(HKEY hRoot, wchar_t *Key, wchar_t *ValueName, DWORD ValueData, REGSAM samDesired);
+BOOL SetRegKeyArr(HKEY hRoot, wchar_t *Key, wchar_t *ValueName, BYTE *ValueData, DWORD ValueSize, REGSAM samDesired);
 
-int GetRegKeyStr(HKEY hRoot, wchar_t *RootKey, wchar_t *Key, wchar_t *ValueName, wchar_t *ValueData, wchar_t *Default, DWORD DataSize);
-int GetRegKeyInt(HKEY hRoot, wchar_t *RootKey, wchar_t *Key, wchar_t *ValueName, int *ValueData, DWORD Default);
-int GetRegKeyDword(HKEY hRoot, wchar_t *RootKey, wchar_t *Key, wchar_t *ValueName, DWORD Default);
-int GetRegKeyArr(HKEY hRoot, wchar_t *RootKey, wchar_t *Key, wchar_t *ValueName, BYTE *ValueData, BYTE *Default, DWORD DataSize);
+int GetRegKeyStr(HKEY hRoot, wchar_t *Key, wchar_t *ValueName, wchar_t *ValueData, wchar_t *Default, DWORD DataSize, REGSAM samDesired);
+int GetRegKeyInt(HKEY hRoot, wchar_t *Key, wchar_t *ValueName, int *ValueData, DWORD Default, REGSAM samDesired);
+int GetRegKeyArr(HKEY hRoot, wchar_t *Key, wchar_t *ValueName, BYTE *ValueData, BYTE *Default, DWORD DataSize, REGSAM samDesired);
 
-void DeleteRegKey(HKEY hRoot, wchar_t *RootKey, wchar_t *Key);
+#endif // #ifndef _REG_H_

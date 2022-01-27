@@ -47,9 +47,9 @@ extern "C" {
 }
 #endif
 
-#include "plugin.hpp"
-#include "farcolor.hpp"
-#include "farkeys.hpp"
+#include "farplug-wide.h"
+#include "farcolor.h"
+#include "farkeys.h"
 
 typedef struct {
   const char* key;
@@ -87,8 +87,8 @@ do
   io.write(file_top)
   write_target(collector)
   local shortname = fname:match("[^\\/]+$")
-  local rep = shortname=="farcolor.hpp" and "colors" or
-              shortname=="farkeys.hpp" and "keys"    or
+  local rep = shortname=="farcolor.h" and "colors" or
+              shortname=="farkeys.h" and "keys"    or
               error("this input file is not supported")
   file_bottom = file_bottom:gsub("@@@", rep)
   io.write(file_bottom)

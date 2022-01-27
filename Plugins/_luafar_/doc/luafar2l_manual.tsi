@@ -174,13 +174,13 @@ lv=2
 dt=Text
 nm=Extra exported functions
 ctime=3851409469
-mtime=3851409556
+mtime=3852182584
 <article>
 #_<markdown>
 #_
 #_<a name="luaopen_luaplug"></a>
 #_### Extra exported function: `luaopen_luaplug`
-#_Some libraries (e.g. `rings`) can create additional `lua_State` instances from Lua scripts. To initialize those instances with libraries included in LuaFAR (`far`, `bit`, `uio`, `unicode`), call `luaopen_luaplug`. The function must be loaded via `package.loadlib`. Internally, it calls [`LF_InitLuaState`](385.html).
+#_Some libraries (e.g. `rings`) can create additional `lua_State` instances from Lua scripts. To initialize those instances with libraries included in LuaFAR (`far`, `panel`, `editor`, etc.), call `luaopen_luaplug`. The function must be loaded via `package.loadlib`. Internally, it calls [`LF_InitLuaState`](385.html).
 #_
 #_**Example:**
 #_      local rings = require "rings"
@@ -969,7 +969,7 @@ id=153
 lv=2
 dt=Text
 nm=far.AdvControl
-mtime=3851447396
+mtime=3851925082
 <article>
 #_Result = far.AdvControl (Command, Param)
 #_
@@ -1030,20 +1030,20 @@ mtime=3851447396
 #_             3 numbers (e.g. 1,70,2087), if Param==true;
 #_
 #_ACTL_GETWINDOWINFO:
-#_    Param:   integer
+#_    Param1:  window number; 1-based integer (optional; default=0)
 #_    Result:  table (see its fields below)
-#_        Pos:       integer
 #_        Type:      integer
+#_        Pos:       integer (1-based)
 #_        Modified:  boolean
 #_        Current:   boolean
 #_        TypeName:  string
 #_        Name:      string
 #_
 #_ACTL_GETSHORTWINDOWINFO:
-#_    Param:   integer
+#_    Param1:  window number; 1-based integer (optional; default=0)
 #_    Result:  table (see its fields below)
-#_        Pos:       integer
 #_        Type:      integer
+#_        Pos:       integer (1-based)
 #_        Modified:  boolean
 #_        Current:   boolean
 #_
@@ -1356,6 +1356,33 @@ nm=Dialog functions
 </article>
 </node>
 <node>
+id=438
+lv=2
+dt=Text
+nm=far.CreateUserControl
+ctime=3852117934
+mtime=3852120740
+<article>
+#_<markdown>
+#_Buffer support for `DI_USERCONTROL`. Use it like this:
+#_
+#_    local buffer=far.CreateUserControl(10,10)
+#_    local textel={Char="a",Attributes=0x4C}
+#_    for ii=1,#buffer do
+#_      buffer[ii]=textel
+#_    end
+#_    local items={
+#_      {"DI_DOUBLEBOX",   0,0,11,11, 0, 0,      0,0,""},
+#_      {"DI_USERCONTROL", 1,1,10,10, 0, buffer, 0,0,""}
+#_    }
+#_    far.Dialog (-1,-1,12,12,nil,items)
+#_
+#_@@@
+#_{di_usercontrol}: http://api.farmanager.com/ru/dialogapi/controls/di_usercontrol.html
+#_
+</article>
+</node>
+<node>
 id=219
 lv=2
 dt=Text
@@ -1383,7 +1410,7 @@ id=20
 lv=2
 dt=Text
 nm=far.Dialog
-mtime=3490427865
+mtime=3851925986
 <article>
 #_result = far.Dialog (X1,Y1,X2,Y2,HelpTopic,Items,Flags,DlgProc)
 #_
@@ -1391,7 +1418,7 @@ mtime=3490427865
 #_  Same parameters as in far.DialogInit
 #_
 #_**Returns:**
-#_  result: integer
+#_  result: 1-based integer (or nil in case of failure)
 #_
 #_**Notes:**
 #_  1. The function exists to preserve backward compatibility
@@ -1485,7 +1512,7 @@ lv=2
 dt=Text
 nm=far.DialogRun
 ctime=3490426724
-mtime=3490427035
+mtime=3851925690
 <article>
 #_result = far.DialogRun (handle)
 #_
@@ -1493,7 +1520,7 @@ mtime=3490427035
 #_  handle: userdata (obtained from a far.DialogInit call)
 #_
 #_**Returns:**
-#_  result: integer
+#_  result: integer (1-based)
 #_
 #_**Far API used:**
 #_  DialogRun
@@ -1508,13 +1535,13 @@ id=54
 lv=2
 dt=Text
 nm=far.GetDlgItem
-mtime=3492005390
+mtime=3851926296
 <article>
 #_result = far.GetDlgItem (hDlg, numitem [,item])
 #_
 #_**Parameters:**
 #_  hDlg:    userdata
-#_  numitem: integer (0-based)
+#_  numitem: integer (1-based)
 #_  item:    table, or nil
 #_
 #_**Returns:**
@@ -1569,7 +1596,7 @@ id=65
 lv=2
 dt=Text
 nm=far.Message
-mtime=3482991858
+mtime=3851926808
 <article>
 #_result = far.Message (Msg, [Title], [Buttons], [Flags], [HelpTopic])
 #_
@@ -1597,7 +1624,7 @@ mtime=3482991858
 #_  *HelpTopic:* string
 #_
 #_**Returns:**
-#_  *result:* integer
+#_  *result:* integer (1-based)
 #_
 #_**Note:**
 #_  Before calling FAR function *Message*, the function:
@@ -1616,14 +1643,14 @@ id=71
 lv=2
 dt=Text
 nm=far.SendDlgMessage
-mtime=3504075322
+mtime=3851944638
 <article>
 #_Result = far.SendDlgMessage (hDlg, Msg, Param1, Param2)
 #_
 #_**Parameters:**
 #_  hDlg:   userdata
 #_  Msg:    flag
-#_  Param1: integer
+#_  Param1: integer (1-based where it is element index, 0-based otherwise)
 #_  Param2: *(depends on Msg)*
 #_
 #_**Returns:**
@@ -1739,6 +1766,8 @@ mtime=3504075322
 #_    *Example:*
 #_      res = far.SendDlgMessage(hDlg, "DM_LISTSETCURPOS", id,
 #_        { SelectPos=5, TopPos=2 })
+#_    *Note:*
+#_      Elements numbering is 1-based.
 #_
 #_DM_LISTSETTITLES:
 #_    Param2:  table
@@ -1828,13 +1857,13 @@ id=72
 lv=2
 dt=Text
 nm=far.SetDlgItem
-mtime=3492005393
+mtime=3851945242
 <article>
 #_result = far.SetDlgItem (hDlg, numitem, item)
 #_
 #_**Parameters:**
 #_  hDlg:    userdata
-#_  numitem: integer (0-based)
+#_  numitem: integer (1-based)
 #_  item:    table
 #_
 #_**Returns:**
@@ -1859,7 +1888,7 @@ lv=1
 dt=Text
 nm=Dialog Events
 ctime=3477040474
-mtime=3477412353
+mtime=3851945406
 <article>
 #_<markdown>
 #_
@@ -1872,9 +1901,8 @@ mtime=3477412353
 #_
 #_### Parameters passed to event handler
 #_
-#_1. `Param1` is integer for all event types (ID of a dialog element).
-#_1. For most event types, `Param2` is also integer, in accordance to
-#_   Far API.
+#_1. `Param1` is integer (1-based if it is ID of a dialog element, 0-based otherwise)
+#_1. For most event types, `Param2` is also integer, in accordance to Far API.
 #_1. For some events ([`DN_CTLCOLORDLGLIST`](286.html),
 #_   [`DN_DRAWDLGITEM`](287.html), [`DN_EDITCHANGE`](288.html),
 #_   [`DN_HELP`](289.html), [`DN_INITDIALOG`](308.html),
@@ -2419,50 +2447,18 @@ nm=Editor functions
 </article>
 </node>
 <node>
-id=21
-lv=2
-dt=Text
-nm=editor.Editor
-mtime=3492942591
-<article>
-#_result = editor.Editor (FileName, Title, X1, Y1, X2, Y2,
-#_                        Flags, StartLine, StartChar, CodePage)
-#_
-#_**Parameters:**
-#_  FileName:  string
-#_  Title:     string,  or nil (default = FileName)
-#_  X1:        integer, or nil (default = 0)
-#_  Y1:        integer, or nil (default = 0)
-#_  X2:        integer, or nil (default = -1)
-#_  Y2:        integer, or nil (default = -1)
-#_  Flags:     flags combination, or nil (default = 0)
-#_  StartLine: integer, or nil (default = -1)
-#_  StartChar: integer, or nil (default = -1)
-#_  CodePage:  integer, or nil (default = CP_AUTODETECT)
-#_
-#_**Returns:**
-#_  result: integer
-#_
-#_**Far API used:**
-#_  Editor
-#_
-#_@@@
-#_
-#_
-</article>
-</node>
-<node>
 id=22
 lv=2
 dt=Text
 nm=editor.AddColor
+mtime=3851868818
 <article>
 #_result = editor.AddColor (StringNumber, StartPos, EndPos, Color)
 #_
 #_**Parameters:**
 #_  StringNumber: integer, or nil
-#_  StartPos:     integer
-#_  EndPos:       integer
+#_  StartPos:     integer (1-based)
+#_  EndPos:       integer (1-based)
 #_  Color:        integer
 #_
 #_**Returns:**
@@ -2599,15 +2595,49 @@ nm=editor.DeleteString
 </article>
 </node>
 <node>
+id=21
+lv=2
+dt=Text
+nm=editor.Editor
+mtime=3851868780
+<article>
+#_result = editor.Editor (FileName, Title, X1, Y1, X2, Y2,
+#_                        Flags, StartLine, StartChar, CodePage)
+#_
+#_**Parameters:**
+#_  FileName:  string
+#_  Title:     string,  or nil (default = FileName)
+#_  X1:        integer, or nil (default = 0)
+#_  Y1:        integer, or nil (default = 0)
+#_  X2:        integer, or nil (default = -1)
+#_  Y2:        integer, or nil (default = -1)
+#_  Flags:     flags,   or nil (default = 0)
+#_  StartLine: integer, or nil (1-based; default = -1)
+#_  StartChar: integer, or nil (1-based; default = -1)
+#_  CodePage:  integer, or nil (default = CP_AUTODETECT)
+#_
+#_**Returns:**
+#_  result: integer
+#_
+#_**Far API used:**
+#_  Editor
+#_
+#_@@@
+#_
+#_
+</article>
+</node>
+<node>
 id=27
 lv=2
 dt=Text
 nm=editor.ExpandTabs
+mtime=3851868866
 <article>
 #_result = editor.ExpandTabs ([StringNumber])
 #_
 #_**Parameters:**
-#_  StringNumber: integer (0-based)
+#_  StringNumber: integer (1-based)
 #_
 #_**Returns:**
 #_  result: boolean
@@ -2701,7 +2731,7 @@ id=29
 lv=2
 dt=Text
 nm=editor.GetInfo
-mtime=3480262888
+mtime=3851869393
 <article>
 #_Info = editor.GetInfo ()
 #_
@@ -2716,14 +2746,14 @@ mtime=3480262888
 #_      WindowSizeX:    integer
 #_      WindowSizeY:    integer
 #_      TotalLines:     integer
-#_      CurLine:        integer, 0-based
-#_      CurPos:         integer, 0-based
-#_      CurTabPos:      integer, 0-based
-#_      TopScreenLine:  integer, 0-based
-#_      LeftPos:        integer, 0-based
+#_      CurLine:        integer, 1-based
+#_      CurPos:         integer, 1-based
+#_      CurTabPos:      integer, 1-based
+#_      TopScreenLine:  integer, 1-based
+#_      LeftPos:        integer, 1-based
 #_      Overtype:       boolean
 #_      BlockType:      integer
-#_      BlockStartLine: integer, 0-based
+#_      BlockStartLine: integer, 1-based
 #_      Options:        integer
 #_      TabSize:        integer
 #_      BookMarkCount:  integer
@@ -2805,7 +2835,7 @@ id=31
 lv=2
 dt=Text
 nm=editor.GetString
-mtime=3476530777
+mtime=3851868912
 <article>
 #_**Note:**
 #_--This function is an extension over its prototype in Far API.
@@ -2821,12 +2851,12 @@ mtime=3476530777
 #_  LineInfo: table (mode<2), or string (mode==2), or nil
 #_    (if mode==2, only StringText is returned)
 #_    fields of LineInfo:
-#_      StringNumber: integer, 0-based
+#_      StringNumber: integer, 1-based
 #_      StringText:   string
 #_      StringEOL:    string
 #_      StringLength: integer
-#_      SelStart:     integer, 0-based
-#_      SelEnd:       integer, 0-based
+#_      SelStart:     integer, 1-based
+#_      SelEnd:       integer, 1-based
 #_
 #_**Note:**
 #_  Modes 1 ("fast") and 2 ("fastest") have a side effect: the
@@ -3028,15 +3058,16 @@ id=39
 lv=2
 dt=Text
 nm=editor.RealToTab
+mtime=3851868988
 <article>
 #_result = editor.RealToTab (StringNumber, SrcPos)
 #_
 #_**Parameters:**
-#_  StringNumber: integer (0-based), or nil
-#_  SrcPos:       integer
+#_  StringNumber: integer (1-based), or nil
+#_  SrcPos:       integer (1-based)
 #_
 #_**Returns:**
-#_  result: integer, or nil
+#_  result: integer (1-based), or nil
 #_
 #_**Far API used:**
 #_  EditorControl, ECTL_REALTOTAB
@@ -3094,7 +3125,7 @@ id=42
 lv=2
 dt=Text
 nm=editor.Select
-mtime=3480262966
+mtime=3851869040
 <article>
 #_result = editor.Select (SelectData)
 #_  or
@@ -3106,8 +3137,8 @@ mtime=3480262966
 #_    fields of SelectData:
 #_      BlockType:      flag
 #_        (either of: "BTYPE_NONE", "BTYPE_STREAM", "BTYPE_COLUMN")
-#_      BlockStartLine: integer, 0-based
-#_      BlockStartPos:  integer, 0-based
+#_      BlockStartLine: integer, 1-based
+#_      BlockStartPos:  integer, 1-based
 #_      BlockWidth:     integer
 #_      BlockHeight:    integer
 #_
@@ -3188,6 +3219,7 @@ id=43
 lv=2
 dt=Text
 nm=editor.SetPosition
+mtime=3851869097
 <article>
 #_result = editor.SetPosition (PosData)
 #_  or
@@ -3197,11 +3229,11 @@ nm=editor.SetPosition
 #_**Parameters:**
 #_  PosData: table
 #_    fields of PosData:
-#_      CurLine:       integer, 0-based
-#_      CurPos:        integer, 0-based
-#_      CurTabPos:     integer, 0-based
-#_      TopScreenLine: integer, 0-based
-#_      LeftPos:       integer, 0-based
+#_      CurLine:       integer, 1-based
+#_      CurPos:        integer, 1-based
+#_      CurTabPos:     integer, 1-based
+#_      TopScreenLine: integer, 1-based
+#_      LeftPos:       integer, 1-based
 #_      Overtype:      integer
 #_
 #_  Parameters of the 2-nd function variant correspond to fields
@@ -3222,11 +3254,12 @@ id=44
 lv=2
 dt=Text
 nm=editor.SetString
+mtime=3851869148
 <article>
 #_result = editor.SetString (StringNumber, StringText, StringEOL)
 #_
 #_**Parameters:**
-#_  StringNumber: integer, or nil
+#_  StringNumber: integer, 1-based (default=0)
 #_  StringText:   string
 #_  StringEOL:    string, or nil
 #_
@@ -3268,15 +3301,16 @@ id=48
 lv=2
 dt=Text
 nm=editor.TabToReal
+mtime=3851869191
 <article>
 #_result = editor.TabToReal (StringNumber, SrcPos)
 #_
 #_**Parameters:**
-#_  StringNumber: integer (0-based), or nil
-#_  SrcPos:       integer
+#_  StringNumber: integer (1-based), or nil
+#_  SrcPos:       integer (1-based)
 #_
 #_**Returns:**
-#_  result: integer, or nil
+#_  result: integer (1-based), or nil
 #_
 #_**Far API used:**
 #_  EditorControl, ECTL_TABTOREAL
@@ -4098,40 +4132,11 @@ nm=Viewer functions
 </article>
 </node>
 <node>
-id=77
-lv=2
-dt=Text
-nm=viewer.Viewer
-mtime=3482049266
-<article>
-#_result = viewer.Viewer (FileName, Title, X1, Y1, X2, Y2, Flags, CodePage)
-#_
-#_**Parameters:**
-#_  FileName: string
-#_  Title:    string  (defaults to FileName)
-#_  X1:       integer (defaults to 0)
-#_  Y1:       integer (defaults to 0)
-#_  X2:       integer (defaults to -1)
-#_  Y2:       integer (defaults to -1)
-#_  Flags:    flags combination (defaults to 0)
-#_  CodePage: integer (defaults to CP_AUTODETECT)
-#_
-#_**Returns:**
-#_  result: boolean
-#_
-#_**Far API used:**
-#_  Viewer
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
 id=132
 lv=2
 dt=Text
 nm=viewer.GetInfo
-mtime=3487146918
+mtime=3851877307
 <article>
 #_Info = viewer.GetInfo ()
 #_
@@ -4149,7 +4154,7 @@ mtime=3487146918
 #_      WindowSizeY:    integer
 #_      Options:        integer
 #_      TabSize:        integer
-#_      LeftPos:        double, 0-based
+#_      LeftPos:        double, 1-based
 #_      CurMode:        table
 #_
 #_**Far API used:**
@@ -4275,7 +4280,7 @@ id=142
 lv=2
 dt=Text
 nm=viewer.SetPosition
-mtime=3487877516
+mtime=3851877803
 <article>
 #_pos = viewer.SetPosition (PosData)
 #_  or
@@ -4284,8 +4289,8 @@ mtime=3487877516
 #_**Parameters:**
 #_  PosData: table
 #_    fields of PosData:
-#_      StartPos:  number
-#_      LeftPos:   number
+#_      StartPos:  number, 0-based
+#_      LeftPos:   number, 1-based
 #_      Flags:     integer
 #_
 #_  Parameters of the 2-nd function variant correspond to fields
@@ -4296,6 +4301,35 @@ mtime=3487877516
 #_
 #_**Far API used:**
 #_  ViewerControl, VCTL_SETPOSITION
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=77
+lv=2
+dt=Text
+nm=viewer.Viewer
+mtime=3482049266
+<article>
+#_result = viewer.Viewer (FileName, Title, X1, Y1, X2, Y2, Flags, CodePage)
+#_
+#_**Parameters:**
+#_  FileName: string
+#_  Title:    string  (defaults to FileName)
+#_  X1:       integer (defaults to 0)
+#_  Y1:       integer (defaults to 0)
+#_  X2:       integer (defaults to -1)
+#_  Y2:       integer (defaults to -1)
+#_  Flags:    flags combination (defaults to 0)
+#_  CodePage: integer (defaults to CP_AUTODETECT)
+#_
+#_**Returns:**
+#_  result: boolean
+#_
+#_**Far API used:**
+#_  Viewer
 #_
 #_@@@
 #_
@@ -4496,18 +4530,21 @@ lv=2
 dt=Text
 nm=far.MacroCheck
 ctime=3851440061
-mtime=3851447881
+mtime=3852390126
 <article>
-#_errCode, errPosX, errPosY, errSrs = far.MacroCheck(SequenceText)
+#_errCode, ... = far.MacroCheck(SequenceText)
 #_
 #_**Parameters:**
 #_  SequenceText: string
 #_
 #_**Returns:**
-#_  errCode:  integer
-#_  errPosX:  integer
-#_  errPosY:  integer
-#_  errSrc:   string
+#_  If successful:
+#_    0:        integer
+#_  If failed:
+#_    errCode:  integer
+#_    errPosX:  integer
+#_    errPosY:  integer
+#_    errSrc:   string
 #_
 #_**Far API used:**
 #_  AdvControl, ACTL_KEYMACRO
@@ -5835,7 +5872,7 @@ lv=4
 dt=Text
 nm=Interval
 ctime=3482328655
-mtime=3482344791
+mtime=3851879409
 <article>
 #_value = timer.Interval
 #_    or
@@ -5845,8 +5882,10 @@ mtime=3482344791
 #_  Query or set the interval (in milliseconds) of the timer.
 #_  This is a read/write integer property.
 #_
-#_@@@
+#_**NOTE:**
+#_  Currently *Interval* is a read-only property.
 #_
+#_@@@
 #_
 </article>
 </node>
@@ -6397,6 +6436,27 @@ mtime=3484575728
 </article>
 </node>
 <node>
+id=436
+lv=3
+dt=Text
+nm=win.GetCurrentDir
+ctime=3852043928
+mtime=3852044004
+<article>
+#_dir = win.GetCurrentDir ()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  dir : string (or nil)
+#_
+#_**Linux API used:**
+#_  getcwd
+#_
+</article>
+</node>
+<node>
 id=398
 lv=3
 dt=Text
@@ -6529,103 +6589,223 @@ mtime=3484723622
 </article>
 </node>
 <node>
-id=420
+id=437
+lv=3
+dt=Text
+nm=win.SetCurrentDir
+ctime=3852044260
+mtime=3852044309
+<article>
+#_result = win.SetCurrentDir (dir)
+#_
+#_**Parameters:**
+#_  dir    : string 
+#_
+#_**Returns:**
+#_  result : boolean
+#_
+#_**Linux API used:**
+#_  chdir
+#_
+</article>
+</node>
+<node>
+id=440
 lv=2
 dt=Text
 nm=Registry access
-ctime=3851399761
-mtime=3851399761
+ctime=3664128224
+mtime=3664128224
 <article>
 </article>
 </node>
 <node>
-id=18
+id=441
 lv=3
 dt=Text
 nm=win.DeleteRegKey
+ctime=3665073013
+mtime=3852308672
 <article>
-#_result = win.DeleteRegKey (Key)
+#_result = win.DeleteRegKey (RootKey, Key, [AccessMask])
 #_
 #_**Parameters:**
-#_  Key: string
+#_  RootKey:     string (one of: "HKLM", "HKCC", "HKCR", "HKCU", "HKU")
+#_  Key:         string
+#_  AccessMask:  flag ("KEY_WOW64_32KEY" or "KEY_WOW64_64KEY"; the default is 0)
 #_
 #_**Returns:**
 #_  result: boolean
 #_
 #_**Description:**
 #_  This function deletes a registry key.
-#_  The *Key* argument is assumed to be relative to the FAR registry key
-#_  (which is usually *HKEY_CURRENT_USER\Software\Far*).
+#_
+#_**Example of use:**
+#_*-- Recursively delete registry keys*
+#_function win.DeleteRegKey_Recurse(RootKey, Key, AccessMask)
+#_  while true do
+#_    local subkey = win.EnumRegKey(RootKey, Key, 0, AccessMask)
+#_    if not (subkey and win.DeleteRegKey_Recurse(RootKey, Key.."\\"..subkey, AccessMask)) then
+#_      break
+#_    end
+#_  end
+#_  return win.DeleteRegKey(RootKey, Key, AccessMask)
+#_end
 #_
 #_**Far API used:**
 #_  PluginStartupInfo.RootKey
 #_
-#_@@@
+</article>
+</node>
+<node>
+id=442
+lv=3
+dt=Text
+nm=win.DeleteRegValue
+ctime=3659625870
+mtime=3852308638
+<article>
+#_result = win.DeleteRegValue (RootKey, Key, [ValueName], [AccessMask])
+#_
+#_**Parameters:**
+#_  RootKey:     string (one of: "HKLM", "HKCC", "HKCR", "HKCU", "HKU")
+#_  Key:         string
+#_  ValueName:   string (optional)
+#_  AccessMask:  flag ("KEY_WOW64_32KEY" or "KEY_WOW64_64KEY"; the default is 0)
+#_
+#_**Returns:**
+#_  result: boolean
+#_
+#_**Description:**
+#_  This function deletes a registry value.
+#_
+#_**Far API used:**
+#_  PluginStartupInfo.RootKey
 #_
 </article>
 </node>
 <node>
-id=61
+id=443
+lv=3
+dt=Text
+nm=win.EnumRegKey
+ctime=3568652034
+mtime=3852308644
+<article>
+#_Subkey = win.EnumRegKey (RootKey, Key, Index, [AccessMask])
+#_
+#_**Parameters:**
+#_  RootKey:     string (one of: "HKLM", "HKCC", "HKCR", "HKCU", "HKU")
+#_  Key:         string (specify "" if RootKey itself is enumerated)
+#_  Index:       integer (0-based)
+#_  AccessMask:  flag ("KEY_WOW64_32KEY" or "KEY_WOW64_64KEY"; the default is 0)
+#_
+#_**Returns:**
+#_  Subkey:    string, or nil
+#_
+#_**Description:**
+#_  This function enumerates subkeys of the given registry key.
+#_
+#_**Example of use:**
+#_*-- Recursively delete registry keys*
+#_function win.DeleteRegKey_Recurse(RootKey, Key, AccessMask)
+#_  while true do
+#_    local subkey = win.EnumRegKey(RootKey, Key, 0, AccessMask)
+#_    if not (subkey and win.DeleteRegKey_Recurse(RootKey, Key.."\\"..subkey, AccessMask)) then
+#_      break
+#_    end
+#_  end
+#_  return win.DeleteRegKey(RootKey, Key, AccessMask)
+#_end
+#_
+#_**Far API used:**
+#_  PluginStartupInfo.RootKey
+#_
+</article>
+</node>
+<node>
+id=444
+lv=3
+dt=Text
+nm=win.EnumRegValue
+ctime=3568712149
+mtime=3852308649
+<article>
+#_ValueName = win.EnumRegValue (RootKey, Key, Index, [AccessMask])
+#_
+#_**Parameters:**
+#_  RootKey:     string (one of: "HKLM", "HKCC", "HKCR", "HKCU", "HKU")
+#_  Key:         string (specify "" if RootKey itself is enumerated)
+#_  Index:       integer (0-based)
+#_  AccessMask:  flag ("KEY_WOW64_32KEY" or "KEY_WOW64_64KEY"; the default is 0)
+#_
+#_**Returns:**
+#_  ValueName: string, or nil
+#_
+#_**Description:**
+#_  This function enumerates values of the given registry key.
+#_
+#_**Far API used:**
+#_  PluginStartupInfo.RootKey
+#_
+</article>
+</node>
+<node>
+id=445
 lv=3
 dt=Text
 nm=win.GetRegKey
+mtime=3852308657
 <article>
-#_ValueData, DataType = win.GetRegKey (Key, ValueName)
+#_ValueData, DataType = win.GetRegKey (RootKey, Key, ValueName, [AccessMask])
 #_
 #_**Parameters:**
-#_  Key:       string
-#_  ValueName: string
+#_  RootKey:     string (one of: "HKLM", "HKCC", "HKCR", "HKCU", "HKU")
+#_  Key:         string
+#_  ValueName:   string
+#_  AccessMask:  flag ("KEY_WOW64_32KEY" or "KEY_WOW64_64KEY"; the default is 0)
 #_
 #_**Returns:**
 #_  ValueData: string, or number
-#_  DataType:  string (one of: "string", "expandstring",
-#_                     "multistring", "dword" and "binary")
+#_  DataType:  string (one of: "string", "expandstring", "multistring",
+#_                             "dword" and "binary")
 #_
 #_**Returns on failure:**
 #_  nil + error message
 #_
 #_**Description:**
 #_  This function gets a value from a registry key.
-#_  The *Key* argument is assumed to be relative to the FAR registry key
-#_  (which is usually *HKEY_CURRENT_USER\Software\Far*).
-#_
-#_**Example:**
-#_  LastSearch = win.GetRegKey("SavedDialogHistory\\SearchText", "line0")
 #_
 #_**Far API used:**
 #_  PluginStartupInfo.RootKey
-#_
-#_@@@
 #_
 </article>
 </node>
 <node>
-id=73
+id=446
 lv=3
 dt=Text
 nm=win.SetRegKey
+mtime=3852308661
 <article>
-#_win.SetRegKey (DataType, Key, ValueName, ValueData)
+#_result = win.SetRegKey (RootKey, Key, ValueName, DataType, ValueData, [AccessMask])
 #_
 #_**Parameters:**
-#_  DataType:  string (one of: "string", "expandstring",
-#_                     "multistring", "dword" and "binary")
-#_  Key:       string
-#_  ValueName: string
-#_  ValueData: string or number
+#_  RootKey:     string (one of: "HKLM", "HKCC", "HKCR", "HKCU", "HKU")
+#_  Key:         string
+#_  ValueName:   string
+#_  DataType:    string (one of: "string", "expandstring", "multistring", "dword" and "binary")
+#_  ValueData:   string or number
+#_  AccessMask:  flag ("KEY_WOW64_32KEY" or "KEY_WOW64_64KEY"; the default is 0)
 #_
 #_**Returns:**
-#_  none
+#_  result:      boolean (true on success)
 #_
 #_**Description:**
 #_  This function sets a value in a registry key.
-#_  The *Key* argument is assumed to be relative to the FAR registry key
-#_  (which is usually *HKEY_CURRENT_USER\Software\Far*).
 #_
 #_**Far API used:**
 #_  PluginStartupInfo.RootKey
-#_
-#_@@@
 #_
 </article>
 </node>
@@ -7138,6 +7318,27 @@ nm=win.SetEnv
 #_  This function sets or deletes a given environment variable.
 #_
 #_@@@
+#_
+</article>
+</node>
+<node>
+id=435
+lv=3
+dt=Text
+nm=win.Sleep
+ctime=3852040835
+mtime=3852040910
+<article>
+#_win.Sleep (milliseconds)
+#_
+#_**Parameters:**
+#_  milliseconds: number
+#_
+#_**Returns:**
+#_  nothing
+#_
+#_**Linux API used:**
+#_  usleep
 #_
 </article>
 </node>
@@ -8359,7 +8560,7 @@ id=129
 lv=2
 dt=Text
 nm=LF_LuaOpen
-mtime=3497514966
+mtime=3852182656
 <article>
 #_<markdown>
 #_    lua_State* LF_LuaOpen (PluginStartupInfo *Info, 
@@ -8379,7 +8580,7 @@ mtime=3497514966
 #_#### Returns:
 #_      Pointer to a newly created lua_State that already has some
 #_      libraries opened (including standard Lua libraries, "far",
-#_      "bit" and "unicode" libraries).
+#_      "bit" and "utf8" libraries).
 #_
 #_#### Description:
 #_
@@ -8460,7 +8661,7 @@ lv=2
 dt=Text
 nm=LF_InitLuaState
 ctime=3497514263
-mtime=3497514946
+mtime=3852182668
 <article>
 #_<markdown>
 #_    void LF_InitLuaState (lua_State* L,
@@ -8485,7 +8686,7 @@ mtime=3497514946
 #_The function performs the following actions, in this order
 #_(for simplicity, let's assume `EnvVarPrefix==L"LUAFAR"`):
 #_
-#_1. Open the standard Lua libraries, `far`, `bit` and `unicode`
+#_1. Open the standard Lua libraries, `far`, `bit` and `utf8`
 #_   libraries.
 #_1. Call `OpenLibs` function.
 #_1. Process `LUAFAR_PATH` the same way the standard Lua

@@ -796,7 +796,7 @@ function TmpPanelBase:PutOneFile (PanelItem)
     if self.SelectedCopyContents == 2 then
       local res = _Message (M.MCopyContentsMsg, M.MWarning,
                             "Yes;No", "", "Config")
-      self.SelectedCopyContents = (res == 0) and 1 or 0
+      self.SelectedCopyContents = (res == 1) and 1 or 0
     end
     if self.SelectedCopyContents ~= 0 then
       local DirPanelItems = far.GetDirList (CurName)

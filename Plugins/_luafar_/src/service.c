@@ -42,6 +42,7 @@ extern int  luaopen_bit (lua_State *L);
 extern int  luaopen_unicode (lua_State *L);
 extern int  luaopen_utf8 (lua_State *L);
 extern int  luaopen_timer (lua_State *L);
+extern int  luaopen_usercontrol (lua_State *L);
 extern int  far_Find (lua_State*);
 extern int  far_Gmatch (lua_State*);
 extern int  far_Gsub (lua_State*);
@@ -316,11 +317,11 @@ void PushEditorSetPosition(lua_State *L, const struct EditorSetPosition *esp)
 
 void FillEditorSetPosition(lua_State *L, struct EditorSetPosition *esp)
 {
-  esp->CurLine   = GetOptIntFromTable(L, "CurLine", -1);
-  esp->CurPos    = GetOptIntFromTable(L, "CurPos", -1);
-  esp->CurTabPos = GetOptIntFromTable(L, "CurTabPos", -1);
-  esp->TopScreenLine = GetOptIntFromTable(L, "TopScreenLine", -1);
-  esp->LeftPos   = GetOptIntFromTable(L, "LeftPos", -1);
+  esp->CurLine   = GetOptIntFromTable(L, "CurLine", 0) - 1;
+  esp->CurPos    = GetOptIntFromTable(L, "CurPos", 0) - 1;
+  esp->CurTabPos = GetOptIntFromTable(L, "CurTabPos", 0) - 1;
+  esp->TopScreenLine = GetOptIntFromTable(L, "TopScreenLine", 0) - 1;
+  esp->LeftPos   = GetOptIntFromTable(L, "LeftPos", 0) - 1;
   esp->Overtype  = GetOptIntFromTable(L, "Overtype", -1);
 }
 
@@ -469,14 +470,14 @@ int editor_GetInfo(lua_State *L)
   PutNumToTable(L, "WindowSizeX", ei.WindowSizeX);
   PutNumToTable(L, "WindowSizeY", ei.WindowSizeY);
   PutNumToTable(L, "TotalLines", ei.TotalLines);
-  PutNumToTable(L, "CurLine", ei.CurLine);
-  PutNumToTable(L, "CurPos", ei.CurPos);
-  PutNumToTable(L, "CurTabPos", ei.CurTabPos);
-  PutNumToTable(L, "TopScreenLine", ei.TopScreenLine);
-  PutNumToTable(L, "LeftPos", ei.LeftPos);
+  PutNumToTable(L, "CurLine", ei.CurLine + 1);
+  PutNumToTable(L, "CurPos", ei.CurPos + 1);
+  PutNumToTable(L, "CurTabPos", ei.CurTabPos + 1);
+  PutNumToTable(L, "TopScreenLine", ei.TopScreenLine + 1);
+  PutNumToTable(L, "LeftPos", ei.LeftPos + 1);
   PutBoolToTable(L, "Overtype", ei.Overtype);
   PutNumToTable(L, "BlockType", ei.BlockType);
-  PutNumToTable(L, "BlockStartLine", ei.BlockStartLine);
+  PutNumToTable(L, "BlockStartLine", ei.BlockStartLine + 1);
   PutNumToTable(L, "Options", ei.Options);
   PutNumToTable(L, "TabSize", ei.TabSize);
   PutNumToTable(L, "BookMarkCount", ei.BookMarkCount);
@@ -522,7 +523,7 @@ BOOL FastGetString (PSInfo *Info, struct EditorGetString *egs,
 int editor_GetString(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  int line_num = luaL_optinteger(L, 1, -1);
+  int line_num = luaL_optinteger(L, 1, 0) - 1;
   int fast     = luaL_optinteger(L, 2, 0);
   BOOL res;
   struct EditorGetString egs;
@@ -538,11 +539,11 @@ int editor_GetString(lua_State *L)
       push_utf8_string (L, egs.StringText, egs.StringLength);
     else {
       lua_createtable(L, 0, 6);
-      PutNumToTable (L, "StringNumber", egs.StringNumber);
+      PutNumToTable (L, "StringNumber", egs.StringNumber+1);
       PutWStrToTable (L, "StringText",  egs.StringText, egs.StringLength);
       PutWStrToTable (L, "StringEOL",   egs.StringEOL, -1);
       PutNumToTable (L, "StringLength", egs.StringLength);
-      PutNumToTable (L, "SelStart",     egs.SelStart);
+      PutNumToTable (L, "SelStart",     egs.SelStart+1);
       PutNumToTable (L, "SelEnd",       egs.SelEnd);
     }
     return 1;
@@ -554,7 +555,7 @@ int editor_SetString(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   struct EditorSetString ess;
-  ess.StringNumber = luaL_optinteger(L, 1, -1);
+  ess.StringNumber = luaL_optinteger(L, 1, 0) - 1;
   ess.StringText = check_utf8_string(L, 2, &ess.StringLength);
   ess.StringEOL = opt_utf8_string(L, 3, NULL);
   if (Info->EditorControl(ECTL_SETSTRING, &ess))
@@ -722,11 +723,11 @@ int editor_SetPosition(lua_State *L)
     FillEditorSetPosition(L, &esp);
   }
   else {
-    esp.CurLine   = luaL_optinteger(L, 1, -1);
-    esp.CurPos    = luaL_optinteger(L, 2, -1);
-    esp.CurTabPos = luaL_optinteger(L, 3, -1);
-    esp.TopScreenLine = luaL_optinteger(L, 4, -1);
-    esp.LeftPos   = luaL_optinteger(L, 5, -1);
+    esp.CurLine   = luaL_optinteger(L, 1, 0) - 1;
+    esp.CurPos    = luaL_optinteger(L, 2, 0) - 1;
+    esp.CurTabPos = luaL_optinteger(L, 3, 0) - 1;
+    esp.TopScreenLine = luaL_optinteger(L, 4, 0) - 1;
+    esp.LeftPos   = luaL_optinteger(L, 5, 0) - 1;
     esp.Overtype  = luaL_optinteger(L, 6, -1);
   }
   if (Info->EditorControl(ECTL_SETPOSITION, &esp) != 0)
@@ -745,7 +746,7 @@ int editor_Redraw(lua_State *L)
 int editor_ExpandTabs(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  int line_num = luaL_optinteger(L, 1, -1);
+  int line_num = luaL_optinteger(L, 1, 0) - 1;
   if (Info->EditorControl(ECTL_EXPANDTABS, &line_num))
     return lua_pushboolean(L, 1), 1;
   return 0;
@@ -856,8 +857,8 @@ int SetEditorSelect(lua_State *L, int pos_table, struct EditorSelect *es)
     return 0;
   }
   lua_pushvalue(L, pos_table);
-  es->BlockStartLine = GetOptIntFromTable(L, "BlockStartLine", -1);
-  es->BlockStartPos  = GetOptIntFromTable(L, "BlockStartPos", -1);
+  es->BlockStartLine = GetOptIntFromTable(L, "BlockStartLine", 0) - 1;
+  es->BlockStartPos  = GetOptIntFromTable(L, "BlockStartPos", 0) - 1;
   es->BlockWidth     = GetOptIntFromTable(L, "BlockWidth", -1);
   es->BlockHeight    = GetOptIntFromTable(L, "BlockHeight", -1);
   lua_pop(L,2);
@@ -875,8 +876,8 @@ int editor_Select(lua_State *L)
   else {
     if (!get_env_flag(L, 1, &es.BlockType))
       return 0;
-    es.BlockStartLine = luaL_optinteger(L, 2, -1);
-    es.BlockStartPos  = luaL_optinteger(L, 3, -1);
+    es.BlockStartLine = luaL_optinteger(L, 2, 0) - 1;
+    es.BlockStartPos  = luaL_optinteger(L, 3, 0) - 1;
     es.BlockWidth     = luaL_optinteger(L, 4, -1);
     es.BlockHeight    = luaL_optinteger(L, 5, -1);
   }
@@ -897,14 +898,14 @@ int editor_GetSelection(lua_State *L)
 
   lua_createtable (L, 0, 5);
   PutIntToTable (L, "BlockType", EI.BlockType);
-  PutIntToTable (L, "StartLine", EI.BlockStartLine);
+  PutIntToTable (L, "StartLine", EI.BlockStartLine+1);
 
   struct EditorGetString egs;
   if(!FastGetString(Info, &egs, EI.BlockStartLine))
     return lua_pushnil(L), 1;
 
   int BlockStartPos = egs.SelStart;
-  PutIntToTable (L, "StartPos", BlockStartPos);
+  PutIntToTable (L, "StartPos", BlockStartPos+1);
 
   // binary search for a non-block line
   int h = 100; // arbitrary small number
@@ -937,7 +938,7 @@ int editor_GetSelection(lua_State *L)
   if(!FastGetString(Info, &egs, from))
     return lua_pushnil(L), 1;
 
-  PutIntToTable (L, "EndLine", from);
+  PutIntToTable (L, "EndLine", from+1);
   PutIntToTable (L, "EndPos", egs.SelEnd);
 
   // restore current position, since FastGetString() changed it
@@ -956,10 +957,10 @@ int _EditorTabConvert(lua_State *L, int Operation)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   struct EditorConvertPos ecp;
-  ecp.StringNumber = luaL_optinteger(L, 1, -1);
-  ecp.SrcPos = luaL_checkinteger(L, 2);
+  ecp.StringNumber = luaL_optinteger(L, 1, 0) - 1;
+  ecp.SrcPos = luaL_checkinteger(L, 2) - 1;
   if (Info->EditorControl(Operation, &ecp))
-    return lua_pushinteger(L, ecp.DestPos), 1;
+    return lua_pushinteger(L, ecp.DestPos+1), 1;
   return 0;
 }
 
@@ -984,9 +985,9 @@ int editor_AddColor(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   struct EditorColor ec;
-  ec.StringNumber = luaL_optinteger(L, 1, -1);
-  ec.StartPos     = luaL_checkinteger(L, 2);
-  ec.EndPos       = luaL_checkinteger(L, 3);
+  ec.StringNumber = luaL_optinteger(L, 1, 0) - 1;
+  ec.StartPos     = luaL_checkinteger(L, 2) - 1;
+  ec.EndPos       = luaL_checkinteger(L, 3) - 1;
   ec.Color        = luaL_checkinteger(L, 4);
   ec.ColorItem    = 0;
   if (Info->EditorControl(ECTL_ADDCOLOR, &ec))
@@ -998,9 +999,9 @@ int editor_GetColor(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   struct EditorColor ec;
-  ec.StringNumber = luaL_optinteger(L, 1, -1);
-  ec.StartPos     = luaL_checkinteger(L, 2);
-  ec.EndPos       = luaL_checkinteger(L, 3);
+  ec.StringNumber = luaL_optinteger(L, 1, 0) - 1;
+  ec.StartPos     = luaL_checkinteger(L, 2) - 1;
+  ec.EndPos       = luaL_checkinteger(L, 3) - 1;
   ec.ColorItem    = luaL_checkinteger(L, 4);
   ec.Color        = 0;
   if (Info->EditorControl(ECTL_GETCOLOR, &ec))
@@ -1467,7 +1468,7 @@ int SplitToTable(lua_State *L, const wchar_t *Text, wchar_t Delim, int StartInde
 //             if absent or nil, then one button "OK" is used).
 // 4-th param: flags
 // 5-th param: help topic
-// Return: -1 if escape pressed, else - button number chosen (0 based).
+// Return: -1 if escape pressed, else - button number chosen (1 based).
 int far_Message(lua_State *L)
 {
   luaL_checkany(L,1);
@@ -1491,7 +1492,8 @@ int far_Message(lua_State *L)
   const wchar_t *HelpTopic = opt_utf8_string(L, 5, NULL);
 
   PSInfo *Info = GetPluginStartupInfo(L);
-  lua_pushinteger(L, LF_Message(Info, Msg, Title, Buttons, Flags, HelpTopic));
+  int ret = LF_Message(Info, Msg, Title, Buttons, Flags, HelpTopic);
+  lua_pushinteger(L, ret<0 ? ret : ret+1);
   return 1;
 }
 
@@ -2037,6 +2039,16 @@ void SetFarDialogItem(lua_State *L, struct FarDialogItem* Item, int itemindex,
       Item->ListItems->Items[SelectIndex-1].Flags |= LIF_SELECTED;
     lua_pop(L,1);                    // 0
   }
+  else if (Item->Type == DI_USERCONTROL)
+  {
+    lua_rawgeti(L, -1, 7);
+    if (lua_type(L,-1) == LUA_TUSERDATA)
+    {
+      TFarUserControl* fuc = CheckFarUserControl(L, -1);
+      Item->VBuf = fuc->VBuf;
+    }
+    lua_pop(L,1);
+  }
   else if (Item->Flags & DIF_HISTORY) {
     lua_pushinteger(L, 7);   // +1
     lua_gettable(L, -2);     // +1
@@ -2083,6 +2095,11 @@ void PushDlgItem (lua_State *L, const struct FarDialogItem* pItem, BOOL table_ex
     lua_pushinteger(L, pItem->ListPos+1);
     lua_setfield(L, -2, "SelectIndex");
     lua_pop(L,1);
+  }
+  else if (pItem->Type == DI_USERCONTROL)
+  {
+    lua_pushlightuserdata(L, pItem->VBuf);
+    lua_rawseti(L, -2, 7);
   }
   else
     PutIntToArray(L, 7, pItem->Selected);
@@ -2164,6 +2181,64 @@ HANDLE CheckDialogHandle (lua_State* L, int pos)
   return CheckValidDialog(L, pos)->hDlg;
 }
 
+int Is_DM_DialogItem(int Msg)
+{
+  switch(Msg) {
+    case DM_ADDHISTORY:
+    case DM_EDITUNCHANGEDFLAG:
+    case DM_ENABLE:
+    case DM_GETCHECK:
+    case DM_GETCOMBOBOXEVENT:
+    case DM_GETCONSTTEXTPTR:
+    case DM_GETCURSORPOS:
+    case DM_GETCURSORSIZE:
+    case DM_GETDLGITEM:
+    case DM_GETEDITPOSITION:
+    case DM_GETITEMDATA:
+    case DM_GETITEMPOSITION:
+    case DM_GETSELECTION:
+    case DM_GETTEXT:
+    case DM_GETTEXTLENGTH:
+    case DM_LISTADD:
+    case DM_LISTADDSTR:
+    case DM_LISTDELETE:
+    case DM_LISTFINDSTRING:
+    case DM_LISTGETCURPOS:
+    case DM_LISTGETDATA:
+    case DM_LISTGETDATASIZE:
+    case DM_LISTGETITEM:
+    case DM_LISTGETTITLES:
+    case DM_LISTINFO:
+    case DM_LISTINSERT:
+    case DM_LISTSET:
+    case DM_LISTSETCURPOS:
+    case DM_LISTSETDATA:
+    case DM_LISTSETMOUSEREACTION:
+    case DM_LISTSETTITLES:
+    case DM_LISTSORT:
+    case DM_LISTUPDATE:
+    case DM_SET3STATE:
+    case DM_SETCHECK:
+    case DM_SETCOMBOBOXEVENT:
+    case DM_SETCURSORPOS:
+    case DM_SETCURSORSIZE:
+    case DM_SETDLGITEM:
+    case DM_SETDROPDOWNOPENED:
+    case DM_SETEDITPOSITION:
+    case DM_SETFOCUS:
+    case DM_SETHISTORY:
+    case DM_SETITEMDATA:
+    case DM_SETITEMPOSITION:
+    case DM_SETMAXTEXTLENGTH:
+    case DM_SETSELECTION:
+    case DM_SETTEXT:
+    case DM_SETTEXTPTR:
+    case DM_SHOWITEM:
+      return 1;
+  }
+  return 0;
+}
+
 int far_SendDlgMessage (lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
@@ -2190,8 +2265,14 @@ int far_SendDlgMessage (lua_State *L)
   lua_settop(L, 4);
   HANDLE hDlg = CheckDialogHandle(L, 1);
   get_env_flag (L, 2, &Msg);
-  Param1 = luaL_optinteger(L, 3, 0);
+  if (Msg == DM_CLOSE) {
+    Param1 = luaL_optinteger(L,3,-1);
+    if (Param1>0) --Param1;
+  }
+  else
+    Param1 = Is_DM_DialogItem(Msg) ? luaL_optinteger(L,3,1)-1 : luaL_optinteger(L,3,0);
 
+  //Param2 and the rest
   switch(Msg) {
     default:
       luaL_argerror(L, 2, "operation not implemented");
@@ -2226,7 +2307,8 @@ int far_SendDlgMessage (lua_State *L)
       Param2 = luaL_optlong(L, 4, 0);
       break;
 
-    case DM_LISTADDSTR: res_incr=1;
+    case DM_LISTADDSTR:
+      res_incr=1;
     case DM_ADDHISTORY:
     case DM_SETHISTORY:
     case DM_SETTEXTPTR:
@@ -2433,6 +2515,7 @@ int far_SendDlgMessage (lua_State *L)
       return 1;
 
     case DM_LISTSETCURPOS:
+      res_incr = 1;
       luaL_checktype(L, 4, LUA_TTABLE);
       flp.SelectPos = GetOptIntFromTable(L, "SelectPos", 1) - 1;
       flp.TopPos = GetOptIntFromTable(L, "TopPos", 1) - 1;
@@ -2508,6 +2591,33 @@ int far_SendDlgMessage (lua_State *L)
   return 1;
 }
 
+int DN_ConvertParam1(int Msg, int Param1)
+{
+  switch(Msg) {
+    default:
+      return Param1;
+
+    case DN_BTNCLICK:
+    case DN_CTLCOLORDLGITEM:
+    case DN_CTLCOLORDLGLIST:
+    case DN_DRAWDLGITEM:
+    case DN_EDITCHANGE:
+    case DN_GOTFOCUS:
+    case DN_HELP:
+    case DN_HOTKEY:
+    case DN_INITDIALOG:
+    case DN_KEY:
+    case DN_KILLFOCUS:
+    case DN_LISTCHANGE:
+    case DN_LISTHOTKEY:
+      return Param1 + 1;
+
+    case DN_CLOSE:
+    case DN_MOUSECLICK:
+      return Param1 < 0 ? Param1 : Param1 + 1;
+  }
+}
+
 LONG_PTR WINAPI DlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2)
 {
   TDialogData *dd = (TDialogData*) gInfo.SendDlgMessage(hDlg,DM_GETDLGDATA,0,0);
@@ -2515,13 +2625,14 @@ LONG_PTR WINAPI DlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2)
     return dd->Info->DefDlgProc(hDlg, Msg, Param1, Param2);
   lua_State *L = dd->L;
   PSInfo *Info = dd->Info;
+  int Param1_mod = DN_ConvertParam1(Msg, Param1);
 
   lua_pushlightuserdata (L, dd);       //+1   retrieve the table
   lua_rawget (L, LUA_REGISTRYINDEX);   //+1
   lua_rawgeti(L, -1, 2);               //+2   retrieve the procedure
   lua_rawgeti(L, -2, 3);               //+3   retrieve the handle
   lua_pushinteger (L, Msg);            //+4
-  lua_pushinteger (L, Param1);         //+5
+  lua_pushinteger (L, Param1_mod);     //+5
 
   if (Msg == DN_CTLCOLORDLGLIST) {
     struct FarListColors* flc = (struct FarListColors*) Param2;
@@ -2692,6 +2803,8 @@ int far_DialogRun (lua_State *L)
 {
   TDialogData* dd = CheckValidDialog(L, 1);
   int result = dd->Info->DialogRun(dd->hDlg);
+  if (result >= 0) ++result;
+
   if (dd->wasError) {
     free_dialog(dd);
     luaL_error(L, "error occured in dialog procedure");
@@ -2741,7 +2854,7 @@ int far_GetDlgItem(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   HANDLE hDlg = CheckDialogHandle(L,1);
-  int numitem = luaL_checkinteger(L,2);
+  int numitem = luaL_checkinteger(L,2) - 1;
   PushDlgItemNum(L, hDlg, numitem, 3, Info);
   return 1;
 }
@@ -2750,7 +2863,7 @@ int far_SetDlgItem(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   HANDLE hDlg = CheckDialogHandle(L,1);
-  int numitem = luaL_checkinteger(L,2);
+  int numitem = luaL_checkinteger(L,2) - 1;
   return SetDlgItem(L, hDlg, numitem, 3, Info);
 }
 
@@ -2805,7 +2918,7 @@ int viewer_GetInfo(lua_State *L)
   PutNumToTable(L,  "WindowSizeY", vi.WindowSizeY);
   PutNumToTable(L,  "Options",     vi.Options);
   PutNumToTable(L,  "TabSize",     vi.TabSize);
-  PutNumToTable(L,  "LeftPos",     vi.LeftPos);
+  PutNumToTable(L,  "LeftPos",     vi.LeftPos + 1);
   lua_createtable(L, 0, 4);
   PutNumToTable (L, "CodePage",    vi.CurMode.CodePage);
   PutBoolToTable(L, "Wrap",        vi.CurMode.Wrap);
@@ -2846,12 +2959,12 @@ int viewer_SetPosition(lua_State *L)
   if (lua_istable(L, 1)) {
     lua_settop(L, 1);
     vsp.StartPos = (int64_t)GetOptNumFromTable(L, "StartPos", 0);
-    vsp.LeftPos = (int64_t)GetOptNumFromTable(L, "LeftPos", 0);
+    vsp.LeftPos = (int64_t)GetOptNumFromTable(L, "LeftPos", 1) - 1;
     vsp.Flags   = GetOptIntFromTable(L, "Flags", 0);
   }
   else {
     vsp.StartPos = (int64_t)luaL_optnumber(L,1,0);
-    vsp.LeftPos = (int64_t)luaL_optnumber(L,2,0);
+    vsp.LeftPos = (int64_t)luaL_optnumber(L,2,1) - 1;
     vsp.Flags = luaL_optinteger(L,3,0);
   }
   if (Info->ViewerControl(VCTL_SETPOSITION, &vsp))
@@ -2943,113 +3056,157 @@ int far_Text(lua_State *L)
   return 0;
 }
 
-void OneLevelUp(const wchar_t *src, wchar_t *trg)
-{
-  wchar_t *p;
-  wcscpy(trg, src);
-  p = wcsrchr(trg, L'\\');
-  *(p ? p : trg) = L'\0';
-}
+#ifndef HKEY_CURRENT_CONFIG
+#define HKEY_CURRENT_CONFIG ((HKEY) (ULONG_PTR)((LONG)0x80000005))
+#endif
 
-// SetRegKey (DataType, Key, ValueName, ValueData)
-//   DataType:        "string","expandstring","multistring","dword" or "binary", [string]
-//   Key:             registry key, [string]
-//   ValueName:       registry value name, [string]
-//   ValueData:       registry value data, [string | number | lstring]
-// Returns:
-//   nothing.
-int win_SetRegKey(lua_State *L)
+static HKEY CheckHKey(lua_State *L, int pos)
 {
-  PSInfo *Info = GetPluginStartupInfo(L);
-  const char* DataType    = luaL_checkstring(L, 1);
-  wchar_t* Key            = (wchar_t*)check_utf8_string(L, 2, NULL);
-  wchar_t* ValueName      = (wchar_t*)check_utf8_string(L, 3, NULL);
-  wchar_t farkey[512];
-  size_t len;
-  OneLevelUp(Info->RootKey, farkey);
+  const char *str = luaL_checkstring(L, pos);
 
-  if (!strcmp ("string", DataType)) {
-    SetRegKeyStr(HKEY_CURRENT_USER, farkey, Key, ValueName,
-              (wchar_t*)check_utf8_string(L, 4, NULL));
-  }
-  else if (!strcmp ("dword", DataType)) {
-    SetRegKeyDword(HKEY_CURRENT_USER, farkey, Key, ValueName,
-              luaL_checkinteger(L, 4));
-  }
-  else if (!strcmp ("binary", DataType)) {
-    BYTE *data = (BYTE*)luaL_checklstring(L, 4, &len);
-    SetRegKeyArr(HKEY_CURRENT_USER, farkey, Key, ValueName, data, len);
-  }
-  else if (!strcmp ("expandstring", DataType)) {
-    const wchar_t* data = check_utf8_string(L, 4, NULL);
-    HKEY hKey = CreateRegKey(HKEY_CURRENT_USER, farkey, Key);
-    WINPORT(RegSetValueEx)(hKey, ValueName, 0, REG_EXPAND_SZ, (BYTE*)data, 1+wcslen(data));
-    WINPORT(RegCloseKey)(hKey);
-  }
-  else if (!strcmp ("multistring", DataType)) {
-    const char* data = luaL_checklstring(L, 4, &len);
-    HKEY hKey = CreateRegKey(HKEY_CURRENT_USER, farkey, Key);
-    WINPORT(RegSetValueEx)(hKey, ValueName, 0, REG_MULTI_SZ, (BYTE*)data, len);
-    WINPORT(RegCloseKey)(hKey);
-  }
-  else
-    luaL_argerror (L, 1, "unsupported value type");
+  if(!strcmp(str, "HKLM")) return HKEY_LOCAL_MACHINE;
+
+  if(!strcmp(str, "HKCC")) return HKEY_CURRENT_CONFIG;
+
+  if(!strcmp(str, "HKCR")) return HKEY_CLASSES_ROOT;
+
+  if(!strcmp(str, "HKCU")) return HKEY_CURRENT_USER;
+
+  if(!strcmp(str, "HKU"))  return HKEY_USERS;
+
+  luaL_argerror(L, pos, "must be 'HKLM', 'HKCC', 'HKCR', 'HKCU' or 'HKU'");
   return 0;
 }
 
-// ValueData, DataType = GetRegKey (Key, ValueName)
-//   Key:             registry key, [string]
-//   ValueName:       registry value name, [string]
-//   ValueData:       registry value data, [string | number | lstring]
-//   DataType:        "string", "expandstring", "multistring", "dword"
-//                    or "binary", [string]
-int win_GetRegKey(lua_State *L)
+REGSAM GetSamDesired(lua_State *L, int pos)
 {
-  PSInfo *Info = GetPluginStartupInfo(L);
-  wchar_t* Key = (wchar_t*)check_utf8_string(L, 1, NULL);
-  const wchar_t* ValueName = check_utf8_string(L, 2, NULL);
-  wchar_t farkey[512];
-  OneLevelUp(Info->RootKey, farkey);
+  static const char* samOptions[] = {"KEY_DEFAULT", "KEY_WOW64_64KEY", "KEY_WOW64_32KEY", NULL};
+  int index = luaL_checkoption(L, pos, "KEY_DEFAULT", samOptions);
+  return index==0 ? 0 : index==1 ? KEY_WOW64_64KEY : KEY_WOW64_32KEY;
+}
 
-  HKEY hKey = OpenRegKey(HKEY_CURRENT_USER, farkey, Key);
-  if (hKey == NULL) {
+// SetRegKey (Root, Key, ValueName, DataType, ValueData [, samDesired])
+//   Root:       root, [string], one of "HKLM", "HKCC", "HKCR", "HKCU", "HKU"
+//   Key:        registry key, [string]
+//   ValueName:  registry value name, [string]
+//   DataType:   "string","expandstring","multistring","dword" or "binary", [string]
+//   ValueData:  registry value data, [string | number | lstring]
+//   samDesired: access mask, [flag] ("KEY_WOW64_32KEY" or "KEY_WOW64_64KEY"; the default is 0)
+// Returns:
+//   nothing.
+static int win_SetRegKey(lua_State *L)
+{
+  HKEY hRoot           = CheckHKey(L, 1);
+  wchar_t* Key         = (wchar_t*)check_utf8_string(L, 2, NULL);
+  wchar_t* ValueName   = (wchar_t*)check_utf8_string(L, 3, NULL);
+  const char* DataType = luaL_checkstring(L, 4);
+  REGSAM samDesired    = GetSamDesired(L, 6);
+  int i_len;
+  size_t s_len;
+  BOOL result = FALSE;
+
+  if(!strcmp("string", DataType))
+  {
+    result=SetRegKeyStr(hRoot, Key, ValueName, (wchar_t*)check_utf8_string(L, 5, NULL), samDesired);
+  }
+  else if(!strcmp("dword", DataType))
+  {
+    result=SetRegKeyDword(hRoot, Key, ValueName, (DWORD)luaL_checkinteger(L, 5), samDesired);
+  }
+  else if(!strcmp("binary", DataType))
+  {
+    BYTE *data = (BYTE*)luaL_checklstring(L, 5, &s_len);
+    result=SetRegKeyArr(hRoot, Key, ValueName, data, (DWORD)s_len, samDesired);
+  }
+  else if(!strcmp("expandstring", DataType))
+  {
+    const wchar_t* data = check_utf8_string(L, 5, &i_len);
+    HKEY hKey = CreateRegKey(hRoot, Key, samDesired);
+    if (hKey)
+    {
+      result = (ERROR_SUCCESS == WINPORT(RegSetValueEx)(hKey, ValueName, 0, REG_EXPAND_SZ, (BYTE*)data,
+        (DWORD)((1+i_len)*sizeof(wchar_t))));
+      WINPORT(RegCloseKey)(hKey);
+    }
+  }
+  else if(!strcmp("multistring", DataType))
+  {
+    const wchar_t* data = check_utf8_string(L, 5, &i_len);
+    HKEY hKey = CreateRegKey(hRoot, Key, samDesired);
+    if (hKey)
+    {
+      result = (ERROR_SUCCESS == WINPORT(RegSetValueEx)(hKey, ValueName, 0, REG_MULTI_SZ, (BYTE*)data,
+        (DWORD)((1+i_len)*sizeof(wchar_t))));
+      WINPORT(RegCloseKey)(hKey);
+    }
+  }
+  else
+    luaL_argerror(L, 5, "unsupported value type");
+
+  lua_pushboolean(L, result==FALSE ? 0:1);
+  return 1;
+}
+
+// ValueData, DataType = GetRegKey (Root, Key, ValueName [, samDesired])
+//   Root:       [string], one of "HKLM", "HKCC", "HKCR", "HKCU", "HKU"
+//   Key:        registry key, [string]
+//   ValueName:  registry value name, [string]
+//   samDesired: access mask, [flag] ("KEY_WOW64_32KEY" or "KEY_WOW64_64KEY"; the default is 0)
+// Returns:
+//   ValueData:  registry value data, [string | number | lstring]
+//   DataType:   "string", "expandstring", "multistring", "dword" or "binary", [string]
+static int win_GetRegKey(lua_State *L)
+{
+  HKEY hKey;
+  DWORD datatype, datasize;
+  char *data;
+  LONG ret;
+  HKEY hRoot = CheckHKey(L, 1);
+  wchar_t* Key = (wchar_t*)check_utf8_string(L, 2, NULL);
+  const wchar_t* ValueName = check_utf8_string(L, 3, NULL);
+  REGSAM samDesired = GetSamDesired(L, 4);
+  hKey = OpenRegKey(hRoot, Key, samDesired);
+
+  if(hKey == NULL)
+  {
     lua_pushnil(L);
     lua_pushstring(L, "OpenRegKey failed.");
     return 2;
   }
 
-  DWORD datatype, datasize;
   WINPORT(RegQueryValueEx)(hKey, ValueName, NULL, &datatype, NULL, &datasize);
-
-  char* data = (char*) malloc(datasize);
-  LONG ret = WINPORT(RegQueryValueEx)(hKey, ValueName, NULL, &datatype, (BYTE*)data, &datasize);
+  data = (char*) malloc(datasize);
+  ret = WINPORT(RegQueryValueEx)(hKey, ValueName, NULL, &datatype, (BYTE*)data, &datasize);
   WINPORT(RegCloseKey)(hKey);
 
-  if (ret != ERROR_SUCCESS) {
+  if(ret != ERROR_SUCCESS)
+  {
     lua_pushnil(L);
     lua_pushstring(L, "RegQueryValueEx failed.");
   }
-  else {
-    switch (datatype) {
+  else
+  {
+    switch(datatype)
+    {
       case REG_BINARY:
-        lua_pushlstring (L, data, datasize);
-        lua_pushstring (L, "binary");
+        lua_pushlstring(L, data, datasize);
+        lua_pushstring(L, "binary");
         break;
       case REG_DWORD:
-        lua_pushinteger (L, *(int*)data);
-        lua_pushstring (L, "dword");
+        lua_pushinteger(L, *(int*)data);
+        lua_pushstring(L, "dword");
         break;
       case REG_SZ:
-        push_utf8_string (L, (wchar_t*)data, -1);
-        lua_pushstring (L, "string");
+        push_utf8_string(L, (wchar_t*)data, -1);
+        lua_pushstring(L, "string");
         break;
       case REG_EXPAND_SZ:
-        push_utf8_string (L, (wchar_t*)data, -1);
-        lua_pushstring (L, "expandstring");
+        push_utf8_string(L, (wchar_t*)data, -1);
+        lua_pushstring(L, "expandstring");
         break;
       case REG_MULTI_SZ:
-        push_utf8_string (L, (wchar_t*)data, datasize/sizeof(wchar_t));
-        lua_pushstring (L, "multistring");
+        push_utf8_string(L, (wchar_t*)data, datasize/sizeof(wchar_t));
+        lua_pushstring(L, "multistring");
         break;
       default:
         lua_pushnil(L);
@@ -3057,23 +3214,143 @@ int win_GetRegKey(lua_State *L)
         break;
     }
   }
+
   free(data);
   return 2;
 }
 
-// Result = DeleteRegKey (Key)
-//   Key:             registry key, [string]
-//   Result:          TRUE if success, FALSE if failure, [boolean]
-int win_DeleteRegKey(lua_State *L)
+// Result = DeleteRegKey (Root, Key [, samDesired])
+//   Root:       [string], one of "HKLM", "HKCC", "HKCR", "HKCU", "HKU"
+//   Key:        registry key, [string]
+//   samDesired: access mask, [flag] ("KEY_WOW64_32KEY" or "KEY_WOW64_64KEY"; the default is 0)
+// Returns:
+//   Result:     TRUE if success, FALSE if failure, [boolean]
+static int win_DeleteRegKey(lua_State *L)
 {
-  PSInfo *Info = GetPluginStartupInfo(L);
-  const wchar_t* Key = check_utf8_string(L, 1, NULL);
-  wchar_t farkey[512];
-  OneLevelUp(Info->RootKey, farkey);
-  wcscat(farkey, L"\\");
-  wcscat(farkey, Key);
-  long res = WINPORT(RegDeleteKey) (HKEY_CURRENT_USER, farkey);
-  lua_pushboolean (L, res==ERROR_SUCCESS);
+  long res;
+  HKEY hRoot         = CheckHKey(L, 1);
+  const wchar_t* Key = check_utf8_string(L, 2, NULL);
+  //int index          = luaL_checkoption(L, 3, "KEY_DEFAULT", samOptions);
+  //REGSAM samDesired  = index==0 ? 0 : index==1 ? KEY_WOW64_64KEY : KEY_WOW64_32KEY;
+
+  res = WINPORT(RegDeleteKey)(hRoot, Key);
+  return lua_pushboolean(L, res==ERROR_SUCCESS), 1;
+}
+
+// Result = DeleteRegValue (Root, Key, ValueName [, samDesired])
+//   Root:      [string], one of "HKLM", "HKCC", "HKCR", "HKCU", "HKU"
+//   Key:       registry key, [string]
+//   ValueName: value name, [optional string]
+//   samDesired: access mask, [flag] ("KEY_WOW64_32KEY" or "KEY_WOW64_64KEY"; the default is 0)
+// Returns:
+//   Result:    TRUE if success, FALSE if failure, [boolean]
+static int win_DeleteRegValue(lua_State *L)
+{
+  HKEY hKey;
+  HKEY hRoot = CheckHKey(L, 1);
+  const wchar_t* Key = check_utf8_string(L, 2, NULL);
+  const wchar_t* Name = opt_utf8_string(L, 3, NULL);
+  REGSAM samDesired = GetSamDesired(L, 4);
+  int res = 0;
+  if (WINPORT(RegOpenKeyEx)(hRoot, Key, 0, samDesired, &hKey) == ERROR_SUCCESS)
+  {
+    res = (WINPORT(RegDeleteValue)(hKey, Name) == ERROR_SUCCESS);
+    WINPORT(RegCloseKey)(hKey);
+  }
+  lua_pushboolean(L, res);
+  return 1;
+}
+
+// Result = EnumRegKey (Root, Key, Index [, samDesired])
+//   Root:      [string], one of "HKLM", "HKCC", "HKCR", "HKCU", "HKU"
+//   Key:       registry key, [string]
+//   Index:     integer
+//   samDesired: access mask, [flag] ("KEY_WOW64_32KEY" or "KEY_WOW64_64KEY"; the default is 0)
+// Returns:
+//   Result:    string or nil
+static int win_EnumRegKey(lua_State *L)
+{
+  HKEY hKey;
+  LONG ret;
+  HKEY hRoot = CheckHKey(L, 1);
+  wchar_t* Key = (wchar_t*)check_utf8_string(L, 2, NULL);
+  DWORD dwIndex = (DWORD)luaL_checkinteger(L, 3);
+  REGSAM samDesired = GetSamDesired(L, 4);
+  wchar_t Name[512];
+  DWORD NameSize = ARRAYSIZE(Name);
+  FILETIME LastWriteTime;
+
+  if(WINPORT(RegOpenKeyEx)(hRoot, Key, 0, samDesired, &hKey)!=ERROR_SUCCESS)
+  {
+    lua_pushnil(L);
+    lua_pushstring(L, "WINPORT(RegOpenKeyEx) failed.");
+    return 2;
+  }
+
+  ret = WINPORT(RegEnumKeyEx)(
+    hKey,             // handle of key to enumerate
+    dwIndex,          // index of subkey to enumerate
+    Name,             // address of buffer for subkey name
+    &NameSize,        // address for size of subkey buffer
+    NULL,             // reserved
+    NULL,             // address of buffer for class string
+    NULL,             // address for size of class buffer
+    &LastWriteTime);  // address for time key last written to
+
+  WINPORT(RegCloseKey)(hKey);
+
+  if (ret == ERROR_SUCCESS)
+    push_utf8_string(L, Name, NameSize);
+  else
+    lua_pushnil(L);
+
+  return 1;
+}
+
+// Result = EnumRegValue (Root, Key, Index [, samDesired])
+//   Root:      [string], one of "HKLM", "HKCC", "HKCR", "HKCU", "HKU"
+//   Key:       registry key, [string]
+//   Index:     integer
+//   samDesired: access mask, [flag] ("KEY_WOW64_32KEY" or "KEY_WOW64_64KEY"; the default is 0)
+// Returns:
+//   Result:    string or nil
+static int win_EnumRegValue(lua_State *L)
+{
+  HKEY hKey;
+  LONG ret;
+  HKEY hRoot = CheckHKey(L, 1);
+  wchar_t* Key = (wchar_t*)check_utf8_string(L, 2, NULL);
+  DWORD dwIndex = (DWORD)luaL_checkinteger(L, 3);
+  REGSAM samDesired = GetSamDesired(L, 4);
+  wchar_t Name[512];
+  DWORD NameSize = ARRAYSIZE(Name);
+  DWORD Type;
+
+  if(WINPORT(RegOpenKeyEx)(hRoot, Key, 0, samDesired, &hKey)!=ERROR_SUCCESS)
+  {
+    lua_pushnil(L);
+    lua_pushstring(L, "WINPORT(RegOpenKeyEx) failed.");
+    return 2;
+  }
+
+  ret = WINPORT(RegEnumValue)(
+    hKey,             // handle of key to query
+    dwIndex,          // index of value to query
+    Name,             // address of buffer for value string
+    &NameSize,        // address for size of value buffer
+    NULL,             // reserved
+    &Type,            // address of buffer for type code
+    NULL,             // address of buffer for value data
+    NULL              // address for size of data buffer
+   );
+
+  WINPORT(RegCloseKey)(hKey);
+
+  if (ret == ERROR_SUCCESS)
+    push_utf8_string(L, Name, NameSize);
+  else
+    lua_pushnil(L);
+
   return 1;
 }
 
@@ -3479,7 +3756,7 @@ int far_AdvControl (lua_State *L)
     case ACTL_GETSHORTWINDOWINFO: {
       struct WindowInfo wi;
       memset(&wi, 0, sizeof(wi));
-      wi.Pos = luaL_checkinteger(L,2);
+      wi.Pos = luaL_optinteger(L, 2, 0) - 1;
 
       if (Command == ACTL_GETWINDOWINFO) {
         int r = Info->AdvControl(Info->ModuleNumber, Command, &wi);
@@ -3494,7 +3771,7 @@ int far_AdvControl (lua_State *L)
       if (!r)
         return lua_pushinteger(L,0), 1;
       lua_createtable(L,0,4);
-      PutIntToTable(L, "Pos", wi.Pos);
+      PutIntToTable(L, "Pos", wi.Pos + 1);
       PutIntToTable(L, "Type", wi.Type);
       PutBoolToTable(L, "Modified", wi.Modified);
       PutBoolToTable(L, "Current", wi.Current);
@@ -3776,6 +4053,28 @@ int win_GetVirtualKeys (lua_State *L)
   return 1;
 }
 
+int win_Sleep (lua_State *L)
+{
+  unsigned usec = (unsigned) luaL_checknumber(L,1) * 1000; // msec -> mcsec
+  usleep(usec);
+  return 0;
+}
+
+int win_GetCurrentDir (lua_State *L)
+{
+  char *buf = (char*)lua_newuserdata(L, PATH_MAX*2);
+  char *dir = getcwd(buf, PATH_MAX*2);
+  if (dir) lua_pushstring(L,dir); else lua_pushnil(L);
+  return 1;
+}
+
+int win_SetCurrentDir (lua_State *L)
+{
+  const char *dir = luaL_checkstring(L,1);
+  lua_pushboolean(L, chdir(dir) == 0);
+  return 1;
+}
+
 HANDLE* CheckFileFilter(lua_State* L, int pos)
 {
   return (HANDLE*)luaL_checkudata(L, pos, FarFileFilterType);
@@ -3918,6 +4217,10 @@ int far_MacroCheck(lua_State *L)
   km.Command = MCMD_CHECKMACRO;
   km.Param.PlainText.SequenceText = check_utf8_string(L,1,NULL);
   Info->AdvControl(Info->ModuleNumber, ACTL_KEYMACRO, &km);
+  if (km.Param.MacroResult.ErrCode == MPEC_SUCCESS) {
+    lua_pushinteger(L, MPEC_SUCCESS);
+    return 1;
+  }
   lua_pushinteger (L, km.Param.MacroResult.ErrCode);
   lua_pushinteger (L, km.Param.MacroResult.ErrPos.X);
   lua_pushinteger (L, km.Param.MacroResult.ErrPos.Y);
@@ -4177,9 +4480,14 @@ const luaL_reg win_funcs[] = {
   {"RenameFile",                 win_MoveFile}, // alias
   {"CreateDir",                  win_CreateDir},
   {"RemoveDir",                  win_RemoveDir},
-  {"SetRegKey",                  win_SetRegKey},
-  {"GetRegKey",                  win_GetRegKey},
+
   {"DeleteRegKey",               win_DeleteRegKey},
+  {"DeleteRegValue",             win_DeleteRegValue},
+  {"EnumRegKey",                 win_EnumRegKey},
+  {"EnumRegValue",               win_EnumRegValue},
+  {"GetRegKey",                  win_GetRegKey},
+  {"SetRegKey",                  win_SetRegKey},
+
   {"GetEnv",                     win_GetEnv},
   {"SetEnv",                     win_SetEnv},
 //$  {"GetTimeZoneInformation",  win_GetTimeZoneInformation},
@@ -4191,6 +4499,9 @@ const luaL_reg win_funcs[] = {
   {"wcscmp",                     win_wcscmp},
   {"ExtractKey",                 win_ExtractKey},
   {"GetVirtualKeys",             win_GetVirtualKeys},
+  {"Sleep",                      win_Sleep},
+  {"GetCurrentDir",              win_GetCurrentDir},
+  {"SetCurrentDir",              win_SetCurrentDir},
 
   {"EnumSystemCodePages",        ustring_EnumSystemCodePages },
   {"GetACP",                     ustring_GetACP},
@@ -4282,7 +4593,7 @@ const char far_Dialog[] =
 \n\
   local ret = far.DialogRun(hDlg)\n\
   for i, item in ipairs(Items) do\n\
-    local newitem = far.GetDlgItem(hDlg, i-1)\n\
+    local newitem = far.GetDlgItem(hDlg, i)\n\
     if type(item[7]) == 'table' then\n\
       item[7].SelectIndex = newitem[7].SelectIndex\n\
     else\n\
@@ -4327,6 +4638,9 @@ int luaopen_far (lua_State *L)
   lua_pushcfunction(L, luaopen_timer);
   lua_call(L, 0, 1);
   lua_setfield(L, -2, "Timer");
+
+  lua_pushcfunction(L, luaopen_usercontrol);
+  lua_call(L, 0, 0);
 
   luaL_newmetatable(L, FarDialogType);
   lua_pushvalue(L,-1);
@@ -4460,24 +4774,12 @@ void LF_InitLuaState (lua_State *L, PSInfo *aInfo,
     lua_call(L, 0, 0);
   }
 
-	// getmetatable("").__index = utf8
-	lua_pushliteral(L, "");
-	lua_getmetatable(L, -1);
-	lua_getglobal(L, "utf8");
-	lua_setfield(L, -2, "__index");
-	lua_pop(L, 2);
-
-	// unicode.utf8 = utf8 (for backward compatibility;)
-	lua_newtable(L);
-	lua_getglobal(L, "utf8");
-	lua_setfield(L, -2, "utf8");
-	lua_setglobal(L, "unicode");
-
-	// utf8.cfind = utf8.find (for backward compatibility;)
-	lua_getglobal(L, "utf8");
-	lua_getfield(L, -1, "find");
-	lua_setfield(L, -2, "cfind");
-	lua_pop(L, 1);
+  // getmetatable("").__index = utf8
+  lua_pushliteral(L, "");
+  lua_getmetatable(L, -1);
+  lua_getglobal(L, "utf8");
+  lua_setfield(L, -2, "__index");
+  lua_pop(L, 2);
 
   //ProcessEnvVars(L, aEnvPrefix, aInfo);
 

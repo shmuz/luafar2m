@@ -848,11 +848,16 @@ int LF_ProcessEditorEventW (lua_State* L, int Event, void *Param)
       case EE_CLOSE:
       case EE_GOTFOCUS:
       case EE_KILLFOCUS:
-        lua_pushinteger(L, *(int*)Param); break;
+        lua_pushinteger(L, *(int*)Param);
+        break;
       case EE_REDRAW:
-        lua_pushinteger(L, (INT_PTR)Param); break;
+        lua_pushinteger(L, (INT_PTR)Param);
+        break;
       default:
-        lua_pushnil(L); break;
+      case EE_READ:
+      case EE_SAVE:
+        lua_pushnil(L);
+        break;
     }
     if (pcall_msg(L, 2, 1) == 0) {    //+1
       if (lua_isnumber(L,-1)) ret = lua_tointeger(L,-1);

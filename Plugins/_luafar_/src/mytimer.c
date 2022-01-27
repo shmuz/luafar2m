@@ -11,7 +11,6 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#include <plugin.hpp>
 #include "util.h"
 
 #define MAX_TIMER_COUNT 1000

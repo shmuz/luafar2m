@@ -1,7 +1,7 @@
 #ifndef LUAFAR_H
 #define LUAFAR_H
 
-#include <plugin.hpp>
+#include <farplug-wide.h>
 
 #ifdef __cplusplus
 extern "C" {

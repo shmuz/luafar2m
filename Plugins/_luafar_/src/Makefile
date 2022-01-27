@@ -1,4 +1,4 @@
-# luafar.mak
+# Makefile
 
 include ../config.mak
 
@@ -21,9 +21,10 @@ OBJ = \
   $(OUT)/ustring.o     \
   $(OUT)/util.o        \
   $(OUT)/reg.o         \
-  $(OUT)/mytimer.o
+  $(OUT)/mytimer.o     \
+  $(OUT)/lusercontrol.o
 
-.PHONY: directories all install
+.PHONY: directories all
 all: directories $(TARGET)
 directories: $(OUT)
 
@@ -36,20 +37,17 @@ $(OUT):
 $(OUT)/%.o : %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-farflags.c: $(INC_FAR)/plugin.hpp
+farflags.c: $(INC_FAR)/farplug-wide.h
 	$(LUAEXE) makeflags.lua '$<' > $@
 
-farcolor.c: $(INC_FAR)/farcolor.hpp
+farcolor.c: $(INC_FAR)/farcolor.h
 	$(LUAEXE) makefarkeys.lua '$<' > $@
 
-farkeys.c: $(INC_FAR)/farkeys.hpp
+farkeys.c: $(INC_FAR)/farkeys.h
 	$(LUAEXE) makefarkeys.lua '$<' > $@
-
-install: $(TARGET)
-	cp -f $(TARGET) $(PATH_INSTALL)
 
 # Dependencies
-$(OUT)/*.o        : $(INC_FAR)/plugin.hpp
+$(OUT)/*.o        : $(INC_FAR)/farplug-wide.h
 $(OUT)/reg.o      : reg.h
 $(OUT)/service.o  : reg.h luafar.h util.h version.h ustring.h
 $(OUT)/exported.o : luafar.h util.h ustring.h

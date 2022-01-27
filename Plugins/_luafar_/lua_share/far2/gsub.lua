@@ -1,4 +1,3 @@
-local utf8 = unicode.utf8
 local utf8_sub  = utf8.sub
 local utf8_gsub = utf8.gsub
 local table_insert = table.insert
