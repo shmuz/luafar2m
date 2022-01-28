@@ -7,11 +7,11 @@ local mt_lib     = {__index=lib}
 local mt_section = {__index=section}
 
 local function get_secname(line)
-  return line:match("^%s*%[%s*(.-)%s*%]")
+  return line:match("^%s*%[%s*([^%s%]].-)%s*%]")
 end
 
 local function get_key_val(line)
- return line:match("^%s*([^=]-)%s*=%s*(.-)%s*$")
+ return line:match("^%s*([^=%s][^=]-)%s*=%s*(.-)%s*$")
 end
 
 -- @param fname     : name of ini-file
@@ -20,7 +20,7 @@ end
 function lib.New(fname, nocomment)
   local fp, msg = io.open(fname)
   if not fp then return nil, msg; end
-  local self = { map={}; arr={}; }
+  local self = { map={}; }
   setmetatable(self, mt_lib)
   local cursection
   for line in fp:lines() do
@@ -30,7 +30,7 @@ function lib.New(fname, nocomment)
       if self.map[lname] then
         cursection = self.map[lname] -- this allows a section to appear multiple times in the file
       else
-        cursection = { name=secname; lname=lname; map={}; arr={}; }
+        cursection = { name=secname; lname=lname; map={}; }
         setmetatable(cursection, mt_section)
         self.map[lname] = cursection
       end
@@ -56,41 +56,48 @@ function lib.New(fname, nocomment)
       end
     end
   end
-  -- fill arrays
-  for _,sec in pairs(self.map) do
-    table.insert(self.arr, sec)
-    for _,item in pairs(sec.map) do
-      table.insert(sec.arr, item)
-    end
-    table.sort(sec.arr, function(a,b) return a.lname < b.lname end)
-  end
-  table.sort(self.arr, function(a,b) return a.lname < b.lname end)
 
   fp:close()
   return self
 end
 
 function lib:sections()
-  local i=0
-  return function() i = i+1; return self.arr[i]; end
+  local k,v
+  return function()
+    k,v = next(self.map, k)
+    return v
+  end
 end
 
-function section:pairs()
-  local i=0
-  return function() i = i+1; return self.arr[i]; end
+function lib:get_section(name)
+  return self.map[name:lower()]
+end
+
+function section:records()
+  local k,v
+  return function()
+    k,v = next(self.map, k)
+    return v
+  end
 end
 
 function section:write(fp)
   fp:write("[", self.name, "]\n")
-  for _,item in ipairs(self.arr) do
-    fp:write(item.name, "=", item.val, "\n")
+  for rec in self:records() do
+    fp:write(rec.name, "=", rec.val, "\n")
   end
+end
+
+function section:dict()
+  local t = {}
+  for rec in self:records() do t[rec.name]=rec.val end
+  return t
 end
 
 function lib:write(fname)
   local fp = io.open(fname, "w")
   if not fp then return nil end
-  for _,sec in ipairs(self.arr) do
+  for sec in self:sections() do
     sec:write(fp)
     fp:write("\n")
   end

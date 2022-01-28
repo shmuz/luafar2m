@@ -152,13 +152,13 @@ mtime=3851416711
 #_
 #_- **`FAR_EXPORTS`** - list of functions that should be exported by the plugin
 #_(in uppercase, whitespace-separated), e.g.:<br>
-#_  "`FAR_EXPORTS = OPENPLUGINW EXITFARW`".<br>
+#_  "`FAR_EXPORTS = OPENPLUGIN EXITFAR`".<br>
 #_(The functions *SetStartupInfoW*, *GetPluginInfoW* and *ProcessSynchroEventW*
 #_are always exported, so there's no need to include them in the list.)
 #_
 #_- **`MINFARVERSION`** - the minimum FAR version to be accepted by the plugin, e.g.:<br>
 #_  "`MINFARVERSION = 2,0,1420`"<br>
-#_(This setting is used only if `FAR_EXPORTS` includes GETMINFARVERSIONW`.)
+#_(This setting is used only if `FAR_EXPORTS` includes GETMINFARVERSION`.)
 #_
 #_- **`PATH_LUAFAR`** - root directory of the LuaFAR distribution.
 #_
@@ -279,6 +279,26 @@ mtime=3504697062
 #_      PluginConfigStrings: table (array of strings)
 #_      CommandPrefix:       string
 #_      SysId:               integer
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=447
+lv=2
+dt=Text
+nm=export.MayExitFAR
+ctime=3852492345
+mtime=3852492415
+<article>
+#_result = export.MayExitFAR()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  result:  boolean
 #_
 #_@@@
 #_
@@ -1192,7 +1212,7 @@ id=64
 lv=2
 dt=Text
 nm=far.Menu
-mtime=3480262770
+mtime=3852562033
 <article>
 #_Item, Position = far.Menu (Properties, Items [, BreakKeys])
 #_
@@ -1217,6 +1237,7 @@ mtime=3480262770
 #_        disable:      boolean
 #_        grayed:       boolean
 #_        hidden:       boolean
+#_        selected:     boolean
 #_        AccelKey:     integer
 #_
 #_  BreakKeys: table (array of break key items)
@@ -1232,18 +1253,18 @@ mtime=3480262770
 #_            nil     (the menu was cancelled by the user)
 #_
 #_**Notes:**
+#_Properties.SelectIndex=N is equivalent to Items[N].selected=true
+#_but it has a higher priority.
+#_
 #_The first return value (*Item*) should be used by the
 #_program for performing the item-specific action. To do
 #_so, the program can put some specific field(s) into
 #_each element of *Items* and *BreakKeys* tables. For
 #_example, such fields can be "action", "filename", etc.
 #_
-#_The second return value (*Position*) does not necessarily
-#_correspond to the position of the menuitem that the user
-#_have chosen, it is the menuitem that was selected at the
-#_time of the menu closing. It is provided so that the program
-#_would be able to call the closed menu again in the same
-#_visible state.
+#_The second return value (*Position*) is the menu item that
+#_was selected at the time of the menu closing. It can be used
+#_to call the closed menu again in the same visible state.
 #_
 #_**Far API used:**
 #_  Menu, FMENU_USEEXT
@@ -7682,11 +7703,11 @@ nm=Mediator functions
 id=158
 lv=2
 dt=Text
-nm=LF_ClosePluginW
+nm=LF_ClosePlugin
 mtime=3480187996
 <article>
 #_<markdown>
-#_    void LF_ClosePluginW(lua_State* L, HANDLE hPlugin)
+#_    void LF_ClosePlugin(lua_State* L, HANDLE hPlugin)
 #_
 #_#### Parameters:
 #_      L:       Lua state
@@ -7708,11 +7729,11 @@ mtime=3480187996
 id=159
 lv=2
 dt=Text
-nm=LF_CompareW
+nm=LF_Compare
 mtime=3480188012
 <article>
 #_<markdown>
-#_    int LF_CompareW(
+#_    int LF_Compare(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        const PluginPanelItem *Item1,
@@ -7741,11 +7762,11 @@ mtime=3480188012
 id=160
 lv=2
 dt=Text
-nm=LF_ConfigureW
+nm=LF_Configure
 mtime=3480188026
 <article>
 #_<markdown>
-#_    int LF_ConfigureW(lua_State* L, int ItemNumber)
+#_    int LF_Configure(lua_State* L, int ItemNumber)
 #_
 #_#### Parameters:
 #_      L:       Lua state
@@ -7767,11 +7788,11 @@ mtime=3480188026
 id=161
 lv=2
 dt=Text
-nm=LF_DeleteFilesW
+nm=LF_DeleteFiles
 mtime=3480188042
 <article>
 #_<markdown>
-#_    int LF_DeleteFilesW(
+#_    int LF_DeleteFiles(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        PluginPanelItem *PanelItem,
@@ -7799,11 +7820,11 @@ mtime=3480188042
 id=162
 lv=2
 dt=Text
-nm=LF_ExitFARW
+nm=LF_ExitFAR
 mtime=3480188177
 <article>
 #_<markdown>
-#_    void LF_ExitFARW(lua_State* L)
+#_    void LF_ExitFAR(lua_State* L)
 #_
 #_#### Parameters:
 #_      L:       Lua state
@@ -7823,12 +7844,12 @@ mtime=3480188177
 id=368
 lv=2
 dt=Text
-nm=LF_FreeCustomDataW
+nm=LF_FreeCustomData
 ctime=3485769061
 mtime=3485769185
 <article>
 #_<markdown>
-#_    void LF_FreeCustomDataW(
+#_    void LF_FreeCustomData(
 #_        lua_State* L,
 #_        wchar_t* CustomData)
 #_
@@ -7852,11 +7873,11 @@ mtime=3485769185
 id=163
 lv=2
 dt=Text
-nm=LF_FreeFindDataW
+nm=LF_FreeFindData
 mtime=3480187835
 <article>
 #_<markdown>
-#_    void LF_FreeFindDataW(
+#_    void LF_FreeFindData(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        PluginPanelItem *PanelItems,
@@ -7882,11 +7903,11 @@ mtime=3480187835
 id=164
 lv=2
 dt=Text
-nm=LF_FreeVirtualFindDataW
+nm=LF_FreeVirtualFindData
 mtime=3480187899
 <article>
 #_<markdown>
-#_    void LF_FreeVirtualFindDataW(
+#_    void LF_FreeVirtualFindData(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        PluginPanelItem *PanelItems,
@@ -7913,12 +7934,12 @@ mtime=3480187899
 id=366
 lv=2
 dt=Text
-nm=LF_GetCustomDataW
+nm=LF_GetCustomData
 ctime=3485766195
 mtime=3485768994
 <article>
 #_<markdown>
-#_    int LF_GetCustomDataW(
+#_    int LF_GetCustomData(
 #_        lua_State* L, const wchar_t *FilePath, wchar_t **CustomData)
 #_
 #_#### Parameters:
@@ -7941,11 +7962,11 @@ mtime=3485768994
 id=165
 lv=2
 dt=Text
-nm=LF_GetFilesW
+nm=LF_GetFiles
 mtime=3480187923
 <article>
 #_<markdown>
-#_    int LF_GetFilesW(
+#_    int LF_GetFiles(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        PluginPanelItem *PanelItem,
@@ -7975,11 +7996,11 @@ mtime=3480187923
 id=166
 lv=2
 dt=Text
-nm=LF_GetFindDataW
+nm=LF_GetFindData
 mtime=3480187787
 <article>
 #_<markdown>
-#_    int LF_GetFindDataW(
+#_    int LF_GetFindData(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        PluginPanelItem **pPanelItem,
@@ -8006,11 +8027,11 @@ mtime=3480187787
 id=168
 lv=2
 dt=Text
-nm=LF_GetOpenPluginInfoW
+nm=LF_GetOpenPluginInfo
 mtime=3480187959
 <article>
 #_<markdown>
-#_    void LF_GetOpenPluginInfoW(
+#_    void LF_GetOpenPluginInfo(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        OpenPluginInfo *aInfo)
@@ -8034,11 +8055,11 @@ mtime=3480187959
 id=169
 lv=2
 dt=Text
-nm=LF_GetPluginInfoW
+nm=LF_GetPluginInfo
 mtime=3480188198
 <article>
 #_<markdown>
-#_    void LF_GetPluginInfoW(lua_State* L, PluginInfo *PI)
+#_    void LF_GetPluginInfo(lua_State* L, PluginInfo *PI)
 #_
 #_#### Parameters:
 #_      L:       Lua state
@@ -8059,11 +8080,11 @@ mtime=3480188198
 id=170
 lv=2
 dt=Text
-nm=LF_GetVirtualFindDataW
+nm=LF_GetVirtualFindData
 mtime=3480187862
 <article>
 #_<markdown>
-#_    int LF_GetVirtualFindDataW(
+#_    int LF_GetVirtualFindData(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        PluginPanelItem **pPanelItem,
@@ -8090,11 +8111,11 @@ mtime=3480187862
 id=171
 lv=2
 dt=Text
-nm=LF_MakeDirectoryW
+nm=LF_MakeDirectory
 mtime=3480188058
 <article>
 #_<markdown>
-#_    int LF_MakeDirectoryW(
+#_    int LF_MakeDirectory(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        const wchar_t **Name,
@@ -8118,12 +8139,37 @@ mtime=3480188058
 </article>
 </node>
 <node>
+id=448
+lv=2
+dt=Text
+nm=LF_MayExitFAR
+ctime=3852533773
+mtime=3852533888
+<article>
+#_<markdown>
+#_    int LF_MayExitFAR(lua_State* L)
+#_
+#_#### Parameters:
+#_      L:       Lua state
+#_
+#_#### Returns:
+#_      Value, according to FAR Plugins API.
+#_
+#_#### Description:
+#_
+#_If Lua function [`export.MayExitFAR`](447.html) exists, it is called.
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=172
 lv=2
 dt=Text
-nm=LF_OpenFilePluginW
+nm=LF_OpenFilePlugin
 <article>
-#_HANDLE LF_OpenFilePluginW(lua_State* L, const wchar_t *aName,
+#_HANDLE LF_OpenFilePlugin(lua_State* L, const wchar_t *aName,
 #_  const unsigned char *aData, int aDataSize, int aOpMode)
 #_<markdown>
 #_    HANDLE LF_OpenFilePlugin(
@@ -8155,11 +8201,11 @@ nm=LF_OpenFilePluginW
 id=173
 lv=2
 dt=Text
-nm=LF_OpenPluginW
+nm=LF_OpenPlugin
 mtime=3480187978
 <article>
 #_<markdown>
-#_    HANDLE LF_OpenPluginW(
+#_    HANDLE LF_OpenPlugin(
 #_        lua_State* L,
 #_        int OpenFrom,
 #_        int Item)
@@ -8185,11 +8231,11 @@ mtime=3480187978
 id=222
 lv=2
 dt=Text
-nm=LF_ProcessDialogEventW
+nm=LF_ProcessDialogEvent
 mtime=3480188287
 <article>
 #_<markdown>
-#_    int LF_ProcessDialogEventW (
+#_    int LF_ProcessDialogEvent (
 #_        lua_State* L,
 #_        int Event,
 #_        void* Param)
@@ -8213,11 +8259,11 @@ mtime=3480188287
 id=174
 lv=2
 dt=Text
-nm=LF_ProcessEditorEventW
+nm=LF_ProcessEditorEvent
 mtime=3480188250
 <article>
 #_<markdown>
-#_    int LF_ProcessEditorEventW (
+#_    int LF_ProcessEditorEvent (
 #_        lua_State* L,
 #_        int Event,
 #_        void* Param)
@@ -8241,11 +8287,11 @@ mtime=3480188250
 id=175
 lv=2
 dt=Text
-nm=LF_ProcessEditorInputW
+nm=LF_ProcessEditorInput
 mtime=3480188235
 <article>
 #_<markdown>
-#_    int LF_ProcessEditorInputW (
+#_    int LF_ProcessEditorInput (
 #_        lua_State* L,
 #_        const INPUT_RECORD *Rec)
 #_
@@ -8267,11 +8313,11 @@ mtime=3480188235
 id=176
 lv=2
 dt=Text
-nm=LF_ProcessEventW
+nm=LF_ProcessEvent
 mtime=3480188078
 <article>
 #_<markdown>
-#_    int LF_ProcessEventW(
+#_    int LF_ProcessEvent(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        int Event,
@@ -8297,11 +8343,11 @@ mtime=3480188078
 id=177
 lv=2
 dt=Text
-nm=LF_ProcessHostFileW
+nm=LF_ProcessHostFile
 mtime=3480188093
 <article>
 #_<markdown>
-#_    int LF_ProcessHostFileW(
+#_    int LF_ProcessHostFile(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        PluginPanelItem *PanelItem,
@@ -8328,11 +8374,11 @@ mtime=3480188093
 id=178
 lv=2
 dt=Text
-nm=LF_ProcessKeyW
+nm=LF_ProcessKey
 mtime=3480188114
 <article>
 #_<markdown>
-#_    int LF_ProcessKeyW(
+#_    int LF_ProcessKey(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        int Key,
@@ -8358,12 +8404,12 @@ mtime=3480188114
 id=318
 lv=2
 dt=Text
-nm=LF_ProcessSynchroEventW
+nm=LF_ProcessSynchroEvent
 ctime=3480185179
 mtime=3480188583
 <article>
 #_<markdown>
-#_    int LF_ProcessSynchroEventW (
+#_    int LF_ProcessSynchroEvent (
 #_        lua_State* L,
 #_        int Event,
 #_        void* Param)
@@ -8387,11 +8433,11 @@ mtime=3480188583
 id=179
 lv=2
 dt=Text
-nm=LF_ProcessViewerEventW
+nm=LF_ProcessViewerEvent
 mtime=3480188271
 <article>
 #_<markdown>
-#_    int LF_ProcessViewerEventW (
+#_    int LF_ProcessViewerEvent (
 #_        lua_State* L,
 #_        int Event,
 #_        void* Param)
@@ -8415,11 +8461,11 @@ mtime=3480188271
 id=180
 lv=2
 dt=Text
-nm=LF_PutFilesW
+nm=LF_PutFiles
 mtime=3480188130
 <article>
 #_<markdown>
-#_    int LF_PutFilesW(
+#_    int LF_PutFiles(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        PluginPanelItem *PanelItems,
@@ -8447,11 +8493,11 @@ mtime=3480188130
 id=181
 lv=2
 dt=Text
-nm=LF_SetDirectoryW
+nm=LF_SetDirectory
 mtime=3480188144
 <article>
 #_<markdown>
-#_    int LF_SetDirectoryW(
+#_    int LF_SetDirectory(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        const wchar_t *Dir,
@@ -8477,11 +8523,11 @@ mtime=3480188144
 id=182
 lv=2
 dt=Text
-nm=LF_SetFindListW
+nm=LF_SetFindList
 mtime=3480188161
 <article>
 #_<markdown>
-#_    int LF_SetFindListW(
+#_    int LF_SetFindList(
 #_        lua_State* L,
 #_        HANDLE hPlugin,
 #_        const PluginPanelItem *PanelItems,

@@ -221,7 +221,7 @@ void FillFindData(lua_State* L, struct PluginPanelItem **pPanelItems,
   *pPanelItems = ppi;
 }
 
-int LF_GetFindDataW(lua_State* L, HANDLE hPlugin, struct PluginPanelItem **pPanelItem,
+int LF_GetFindData(lua_State* L, HANDLE hPlugin, struct PluginPanelItem **pPanelItem,
                    int *pItemsNumber, int OpMode)
 {
   if (GetExportFunction(L, "GetFindData")) {   //+1: Func
@@ -240,7 +240,7 @@ int LF_GetFindDataW(lua_State* L, HANDLE hPlugin, struct PluginPanelItem **pPane
   return FALSE;
 }
 
-void LF_FreeFindDataW(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItems,
+void LF_FreeFindData(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItems,
                      int ItemsNumber)
 {
   (void)ItemsNumber;
@@ -249,7 +249,7 @@ void LF_FreeFindDataW(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *Pane
 }
 //---------------------------------------------------------------------------
 
-int LF_GetVirtualFindDataW (lua_State* L, HANDLE hPlugin,
+int LF_GetVirtualFindData (lua_State* L, HANDLE hPlugin,
   struct PluginPanelItem **pPanelItem, int *pItemsNumber, const wchar_t *Path)
 {
   if (GetExportFunction(L, "GetVirtualFindData")) {      //+1: Func
@@ -268,7 +268,7 @@ int LF_GetVirtualFindDataW (lua_State* L, HANDLE hPlugin,
   return FALSE;
 }
 
-void LF_FreeVirtualFindDataW(lua_State* L, HANDLE hPlugin,
+void LF_FreeVirtualFindData(lua_State* L, HANDLE hPlugin,
   struct PluginPanelItem *PanelItem, int ItemsNumber)
 {
   (void)ItemsNumber;
@@ -300,7 +300,7 @@ void UpdateFileSelection(lua_State* L, struct PluginPanelItem *PanelItem,
 }
 //---------------------------------------------------------------------------
 
-int LF_GetFilesW (lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItem,
+int LF_GetFiles (lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItem,
   int ItemsNumber, int Move, const wchar_t **DestPath, int OpMode)
 {
   if (GetExportFunction(L, "GetFiles")) {      //+1: Func
@@ -355,7 +355,7 @@ INT_PTR RegisterObject (lua_State* L)
   return ref;
 }
 
-HANDLE LF_OpenFilePluginW(lua_State* L, const wchar_t *aName,
+HANDLE LF_OpenFilePlugin(lua_State* L, const wchar_t *aName,
   const unsigned char *aData, int aDataSize, int OpMode)
 {
   if (!CheckReloadDefaultScript(L))
@@ -384,7 +384,7 @@ HANDLE LF_OpenFilePluginW(lua_State* L, const wchar_t *aName,
 }
 //---------------------------------------------------------------------------
 
-void LF_GetOpenPluginInfoW(lua_State* L, HANDLE hPlugin, struct OpenPluginInfo *aInfo)
+void LF_GetOpenPluginInfo(lua_State* L, HANDLE hPlugin, struct OpenPluginInfo *aInfo)
 {
   aInfo->StructSize = sizeof (struct OpenPluginInfo);
   if (!GetExportFunction(L, "GetOpenPluginInfo"))    //+1
@@ -527,7 +527,7 @@ void LF_GetOpenPluginInfoW(lua_State* L, HANDLE hPlugin, struct OpenPluginInfo *
 }
 //---------------------------------------------------------------------------
 
-HANDLE LF_OpenPluginW (lua_State* L, int OpenFrom, INT_PTR Item)
+HANDLE LF_OpenPlugin (lua_State* L, int OpenFrom, INT_PTR Item)
 {
   if (!CheckReloadDefaultScript(L) || !GetExportFunction(L, "OpenPlugin"))
     return INVALID_HANDLE_VALUE;
@@ -569,7 +569,7 @@ HANDLE LF_OpenPluginW (lua_State* L, int OpenFrom, INT_PTR Item)
   return INVALID_HANDLE_VALUE;
 }
 
-void LF_ClosePluginW(lua_State* L, HANDLE hPlugin)
+void LF_ClosePlugin(lua_State* L, HANDLE hPlugin)
 {
   if (GetExportFunction(L, "ClosePlugin")) { //+1: Func
     PushPluginPair(L, hPlugin);              //+3: Func,Pair
@@ -579,7 +579,7 @@ void LF_ClosePluginW(lua_State* L, HANDLE hPlugin)
   luaL_unref(L, LUA_REGISTRYINDEX, (INT_PTR)hPlugin);
 }
 
-int LF_CompareW(lua_State* L, HANDLE hPlugin, const struct PluginPanelItem *Item1,
+int LF_Compare(lua_State* L, HANDLE hPlugin, const struct PluginPanelItem *Item1,
                const struct PluginPanelItem *Item2, unsigned int Mode)
 {
   int res = -2; // default FAR compare function should be used
@@ -596,7 +596,7 @@ int LF_CompareW(lua_State* L, HANDLE hPlugin, const struct PluginPanelItem *Item
   return res;
 }
 
-int LF_ConfigureW(lua_State* L, int ItemNumber)
+int LF_Configure(lua_State* L, int ItemNumber)
 {
   int res = FALSE;
   if (GetExportFunction(L, "Configure")) { //+1: Func
@@ -609,7 +609,7 @@ int LF_ConfigureW(lua_State* L, int ItemNumber)
   return res;
 }
 
-int LF_DeleteFilesW(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItem,
+int LF_DeleteFiles(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItem,
   int ItemsNumber, int OpMode)
 {
   int res = FALSE;
@@ -628,7 +628,7 @@ int LF_DeleteFilesW(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelI
 // far.MakeDirectory returns 2 values:
 //    a) status (an integer; in accordance to FAR API), and
 //    b) new directory name (a string; optional)
-int LF_MakeDirectoryW (lua_State* L, HANDLE hPlugin, const wchar_t **Name, int OpMode)
+int LF_MakeDirectory (lua_State* L, HANDLE hPlugin, const wchar_t **Name, int OpMode)
 {
   int res = 0;
   if (GetExportFunction(L, "MakeDirectory")) { //+1: Func
@@ -650,7 +650,7 @@ int LF_MakeDirectoryW (lua_State* L, HANDLE hPlugin, const wchar_t **Name, int O
   return res;
 }
 
-int LF_ProcessEventW(lua_State* L, HANDLE hPlugin, int Event, void *Param)
+int LF_ProcessEvent(lua_State* L, HANDLE hPlugin, int Event, void *Param)
 {
   int res = FALSE;
   if (GetExportFunction(L, "ProcessEvent")) { //+1: Func
@@ -668,7 +668,7 @@ int LF_ProcessEventW(lua_State* L, HANDLE hPlugin, int Event, void *Param)
   return res;
 }
 
-int LF_ProcessHostFileW(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItem,
+int LF_ProcessHostFile(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItem,
   int ItemsNumber, int OpMode)
 {
   if (GetExportFunction(L, "ProcessHostFile")) {   //+1: Func
@@ -689,7 +689,7 @@ int LF_ProcessHostFileW(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *Pa
   return FALSE;
 }
 
-int LF_ProcessKeyW(lua_State* L, HANDLE hPlugin, int Key,
+int LF_ProcessKey(lua_State* L, HANDLE hPlugin, int Key,
   unsigned int ControlState)
 {
   if (GetExportFunction(L, "ProcessKey")) {   //+1: Func
@@ -704,7 +704,7 @@ int LF_ProcessKeyW(lua_State* L, HANDLE hPlugin, int Key,
   return FALSE;
 }
 
-int LF_PutFilesW(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItems,
+int LF_PutFiles(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItems,
   int ItemsNumber, int Move, int OpMode)
 {
   if (GetExportFunction(L, "PutFiles")) {   //+1: Func
@@ -726,7 +726,7 @@ int LF_PutFilesW(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItem
   return 0;
 }
 
-int LF_SetDirectoryW(lua_State* L, HANDLE hPlugin, const wchar_t *Dir, int OpMode)
+int LF_SetDirectory(lua_State* L, HANDLE hPlugin, const wchar_t *Dir, int OpMode)
 {
   if (GetExportFunction(L, "SetDirectory")) {   //+1: Func
     PushPluginPair(L, hPlugin);        //+3: Func,Pair
@@ -741,7 +741,7 @@ int LF_SetDirectoryW(lua_State* L, HANDLE hPlugin, const wchar_t *Dir, int OpMod
   return FALSE;
 }
 
-int LF_SetFindListW(lua_State* L, HANDLE hPlugin, const struct PluginPanelItem *PanelItems,
+int LF_SetFindList(lua_State* L, HANDLE hPlugin, const struct PluginPanelItem *PanelItems,
   int ItemsNumber)
 {
   if (GetExportFunction(L, "SetFindList")) {    //+1: Func
@@ -763,14 +763,27 @@ void LF_LuaClose(lua_State* L, void* dlopen_handle)
   dlclose(dlopen_handle);
 }
 
-void LF_ExitFARW(lua_State* L)
+void LF_ExitFAR(lua_State* L)
 {
   DestroyPluginInfoCollector(L);
   if (GetExportFunction(L, "ExitFAR"))   //+1: Func
     pcall_msg(L, 0, 0);                  //+0
 }
 
-void LF_GetPluginInfoW(lua_State* L, struct PluginInfo *aPI)
+int LF_MayExitFAR(lua_State* L)
+{
+  if (GetExportFunction(L, "MayExitFAR"))  { //+1: Func
+    int ret = pcall_msg(L, 0, 1);            //+1
+    if (ret == 0) {
+      ret = lua_toboolean(L,-1);
+      lua_pop(L,1);                          //+0
+      return ret;
+    }
+  }
+  return 1;
+}
+
+void LF_GetPluginInfo(lua_State* L, struct PluginInfo *aPI)
 {
   aPI->StructSize = sizeof (struct PluginInfo);
   if (!GetExportFunction(L, "GetPluginInfo"))    //+1
@@ -804,7 +817,7 @@ void LF_GetPluginInfoW(lua_State* L, struct PluginInfo *aPI)
   *aPI = *PI;
 }
 
-int LF_ProcessEditorInputW (lua_State* L, const INPUT_RECORD *Rec)
+int LF_ProcessEditorInput (lua_State* L, const INPUT_RECORD *Rec)
 {
   if (!GetExportFunction(L, "ProcessEditorInput"))   //+1: Func
     return 0;
@@ -839,7 +852,7 @@ int LF_ProcessEditorInputW (lua_State* L, const INPUT_RECORD *Rec)
   return 0;
 }
 
-int LF_ProcessEditorEventW (lua_State* L, int Event, void *Param)
+int LF_ProcessEditorEvent (lua_State* L, int Event, void *Param)
 {
   int ret = 0;
   if (GetExportFunction(L, "ProcessEditorEvent"))  { //+1: Func
@@ -867,7 +880,7 @@ int LF_ProcessEditorEventW (lua_State* L, int Event, void *Param)
   return ret;
 }
 
-int LF_ProcessViewerEventW (lua_State* L, int Event, void* Param)
+int LF_ProcessViewerEvent (lua_State* L, int Event, void* Param)
 {
   int ret = 0;
   if (GetExportFunction(L, "ProcessViewerEvent"))  { //+1: Func
@@ -886,7 +899,7 @@ int LF_ProcessViewerEventW (lua_State* L, int Event, void* Param)
   return ret;
 }
 
-int LF_ProcessDialogEventW (lua_State* L, int Event, void *Param)
+int LF_ProcessDialogEvent (lua_State* L, int Event, void *Param)
 {
   int ret = 0;
   if (GetExportFunction(L, "ProcessDialogEvent"))  { //+1: Func
@@ -909,7 +922,7 @@ int LF_ProcessDialogEventW (lua_State* L, int Event, void *Param)
   return ret;
 }
 
-int LF_ProcessSynchroEventW (lua_State* L, int Event, void *Param)
+int LF_ProcessSynchroEvent (lua_State* L, int Event, void *Param)
 {
   if (Event == SE_COMMONSYNCHRO) {
     TTimerData *td = (TTimerData*)Param;
@@ -930,7 +943,7 @@ int LF_ProcessSynchroEventW (lua_State* L, int Event, void *Param)
   return 0;
 }
 
-int LF_GetCustomDataW(lua_State* L, const wchar_t *FilePath, wchar_t **CustomData)
+int LF_GetCustomData(lua_State* L, const wchar_t *FilePath, wchar_t **CustomData)
 {
   if (GetExportFunction(L, "GetCustomData"))  { //+1: Func
     push_utf8_string(L, FilePath, -1);  //+2
@@ -949,7 +962,7 @@ int LF_GetCustomDataW(lua_State* L, const wchar_t *FilePath, wchar_t **CustomDat
   return FALSE;
 }
 
-void  LF_FreeCustomDataW(lua_State* L, wchar_t *CustomData)
+void  LF_FreeCustomData(lua_State* L, wchar_t *CustomData)
 {
   (void) L;
   if (CustomData) free(CustomData);

@@ -1,6 +1,6 @@
 # noembed.mak
 
-FAR_EXPORTS = OPENPLUGINW
+FAR_EXPORTS = OPENPLUGIN
 include ../../config.mak
 
 ifeq ($(DIRBIT),64)

@@ -2,7 +2,7 @@
 #  The target embeds Lua scripts and has dependencies on Lua
 #  and LuaFAR DLLs.
 
-FAR_EXPORTS = OPENPLUGINW
+FAR_EXPORTS = OPENPLUGIN
 include ../../config.mak
 
 TRG         = lfsearch_e-x$(DIRBIT).far-plug-wide

@@ -1,3 +1,4 @@
+-- coding: utf-8
 -- luacheck: max_line_length 160
 -- luacheck: read_globals far
 

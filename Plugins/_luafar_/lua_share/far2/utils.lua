@@ -62,13 +62,14 @@ local function OnError (msg)
   local caption = ("Error [used: %d Kb]"):format(collectgarbage "count")
   local ret = far.Message(msg, caption, buttons, "wl")
   if ret <= 1 then return end
+  ret = ret - 1 -- skip the leftmost button "OK"
 
   local file, line = jumps[ret].file, jumps[ret].line
   local luaScript = file=='[string "all text"]' or file=='[string "selection"]'
   if not luaScript then
     local trgInfo
     for i=1,far.AdvControl("ACTL_GETWINDOWCOUNT") do
-      local wInfo = far.AdvControl("ACTL_GETWINDOWINFO", i-1)
+      local wInfo = far.AdvControl("ACTL_GETWINDOWINFO", i)
       if wInfo.Type==F.WTYPE_EDITOR and
         wInfo.Name:gsub("/",dirsep) == file:gsub("/",dirsep)
       then

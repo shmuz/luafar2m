@@ -56,80 +56,80 @@ void LUAPLUG SetStartupInfoW(const struct PluginStartupInfo *aInfo)
 
 void LUAPLUG GetPluginInfoW(struct PluginInfo *Info)
 {
-  if(LS) LF_GetPluginInfoW (LS, Info);
+  if(LS) LF_GetPluginInfo (LS, Info);
 }
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_OPENPLUGINW
+#ifdef EXPORT_OPENPLUGIN
 HANDLE LUAPLUG OpenPluginW(int OpenFrom, INT_PTR Item)
 {
-  if(LS) return LF_OpenPluginW(LS, OpenFrom, Item);
+  if(LS) return LF_OpenPlugin(LS, OpenFrom, Item);
   return INVALID_HANDLE_VALUE;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_OPENFILEPLUGINW
+#ifdef EXPORT_OPENFILEPLUGIN
 HANDLE LUAPLUG OpenFilePluginW(const wchar_t *Name, const unsigned char *Data,
   int DataSize, int OpMode)
 {
-  if(LS) return LF_OpenFilePluginW(LS, Name, Data, DataSize, OpMode);
+  if(LS) return LF_OpenFilePlugin(LS, Name, Data, DataSize, OpMode);
   return INVALID_HANDLE_VALUE;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_GETFINDDATAW
+#ifdef EXPORT_GETFINDDATA
 int LUAPLUG GetFindDataW(HANDLE hPlugin, struct PluginPanelItem **pPanelItem,
                         int *pItemsNumber, int OpMode)
 {
-  if(LS) return LF_GetFindDataW(LS, hPlugin, pPanelItem, pItemsNumber, OpMode);
+  if(LS) return LF_GetFindData(LS, hPlugin, pPanelItem, pItemsNumber, OpMode);
   return FALSE;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_FREEFINDDATAW
+#ifdef EXPORT_FREEFINDDATA
 void LUAPLUG FreeFindDataW(HANDLE hPlugin, struct PluginPanelItem *PanelItem,
                          int ItemsNumber)
 {
-  if(LS) LF_FreeFindDataW(LS, hPlugin, PanelItem, ItemsNumber);
+  if(LS) LF_FreeFindData(LS, hPlugin, PanelItem, ItemsNumber);
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_CLOSEPLUGINW
+#ifdef EXPORT_CLOSEPLUGIN
 void LUAPLUG ClosePluginW(HANDLE hPlugin)
 {
-  if(LS) LF_ClosePluginW(LS, hPlugin);
+  if(LS) LF_ClosePlugin(LS, hPlugin);
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_GETFILESW
+#ifdef EXPORT_GETFILES
 int LUAPLUG GetFilesW(HANDLE hPlugin, struct PluginPanelItem *PanelItem,
   int ItemsNumber, int Move, const wchar_t **DestPath, int OpMode)
 {
   if(LS)
-    return LF_GetFilesW(LS,hPlugin,PanelItem,ItemsNumber,Move,DestPath,OpMode);
+    return LF_GetFiles(LS,hPlugin,PanelItem,ItemsNumber,Move,DestPath,OpMode);
   return 0;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_GETOPENPLUGININFOW
+#ifdef EXPORT_GETOPENPLUGININFO
 void LUAPLUG GetOpenPluginInfoW(HANDLE hPlugin, struct OpenPluginInfo *Info)
 {
-  if(LS) LF_GetOpenPluginInfoW(LS, hPlugin, Info);
+  if(LS) LF_GetOpenPluginInfo(LS, hPlugin, Info);
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_EXITFARW
+#ifdef EXPORT_EXITFAR
 void LUAPLUG ExitFARW()
 {
   if(LS) {
-    LF_ExitFARW(LS);
+    LF_ExitFAR(LS);
     LF_LuaClose(LS, dlopen_handle);
     LS = NULL;
   }
@@ -137,121 +137,131 @@ void LUAPLUG ExitFARW()
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_COMPAREW
+#ifdef EXPORT_MAYEXITFAR
+int LUAPLUG MayExitFARW()
+{
+  if(LS)
+    return LF_MayExitFAR(LS);
+  return 1;
+}
+#endif
+//---------------------------------------------------------------------------
+
+#ifdef EXPORT_COMPARE
 int LUAPLUG CompareW(HANDLE hPlugin, const struct PluginPanelItem *Item1,
                     const struct PluginPanelItem *Item2, unsigned int Mode)
 {
-  if(LS) return LF_CompareW(LS, hPlugin, Item1, Item2, Mode);
+  if(LS) return LF_Compare(LS, hPlugin, Item1, Item2, Mode);
   return 0;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_CONFIGUREW
+#ifdef EXPORT_CONFIGURE
 int LUAPLUG ConfigureW(int ItemNumber)
 {
-  if(LS) return LF_ConfigureW(LS, ItemNumber);
+  if(LS) return LF_Configure(LS, ItemNumber);
   return FALSE;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_DELETEFILESW
+#ifdef EXPORT_DELETEFILES
 int LUAPLUG DeleteFilesW(HANDLE hPlugin, struct PluginPanelItem *PanelItem,
   int ItemsNumber, int OpMode)
 {
-  if(LS) return LF_DeleteFilesW(LS, hPlugin, PanelItem, ItemsNumber, OpMode);
+  if(LS) return LF_DeleteFiles(LS, hPlugin, PanelItem, ItemsNumber, OpMode);
   return FALSE;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_FREEVIRTUALFINDDATAW
+#ifdef EXPORT_FREEVIRTUALFINDDATA
 void LUAPLUG FreeVirtualFindDataW(HANDLE hPlugin,
   struct PluginPanelItem *PanelItem, int ItemsNumber)
 {
-  if(LS) LF_FreeVirtualFindDataW(LS, hPlugin, PanelItem, ItemsNumber);
+  if(LS) LF_FreeVirtualFindData(LS, hPlugin, PanelItem, ItemsNumber);
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_GETVIRTUALFINDDATAW
+#ifdef EXPORT_GETVIRTUALFINDDATA
 int LUAPLUG GetVirtualFindDataW(HANDLE hPlugin,
   struct PluginPanelItem **pPanelItem, int *pItemsNumber, const wchar_t *Path)
 {
-  if(LS) return LF_GetVirtualFindDataW(LS,hPlugin,pPanelItem,pItemsNumber,Path);
+  if(LS) return LF_GetVirtualFindData(LS,hPlugin,pPanelItem,pItemsNumber,Path);
   return FALSE;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_MAKEDIRECTORYW
+#ifdef EXPORT_MAKEDIRECTORY
 int LUAPLUG MakeDirectoryW(HANDLE hPlugin, const wchar_t **Name, int OpMode)
 {
-  if(LS) return LF_MakeDirectoryW(LS, hPlugin, Name, OpMode);
+  if(LS) return LF_MakeDirectory(LS, hPlugin, Name, OpMode);
   return 0;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_PROCESSEVENTW
+#ifdef EXPORT_PROCESSEVENT
 int LUAPLUG ProcessEventW(HANDLE hPlugin, int Event, void *Param)
 {
-  if(LS) return LF_ProcessEventW(LS, hPlugin, Event, Param);
+  if(LS) return LF_ProcessEvent(LS, hPlugin, Event, Param);
   return FALSE;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_PROCESSHOSTFILEW
+#ifdef EXPORT_PROCESSHOSTFILE
 int LUAPLUG ProcessHostFileW(HANDLE hPlugin, struct PluginPanelItem *PanelItem,
   int ItemsNumber, int OpMode)
 {
-  if(LS) return LF_ProcessHostFileW(LS, hPlugin, PanelItem, ItemsNumber, OpMode);
+  if(LS) return LF_ProcessHostFile(LS, hPlugin, PanelItem, ItemsNumber, OpMode);
   return FALSE;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_PROCESSKEYW
+#ifdef EXPORT_PROCESSKEY
 int LUAPLUG ProcessKeyW(HANDLE hPlugin, int Key, unsigned int ControlState)
 {
-  if(LS) return LF_ProcessKeyW(LS, hPlugin, Key, ControlState);
+  if(LS) return LF_ProcessKey(LS, hPlugin, Key, ControlState);
   return FALSE;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_PUTFILESW
+#ifdef EXPORT_PUTFILES
 int LUAPLUG PutFilesW(HANDLE hPlugin, struct PluginPanelItem *PanelItem,
   int ItemsNumber, int Move, const wchar_t *SrcPath, int OpMode)
 {
-  if(LS) return LF_PutFilesW(LS, hPlugin, PanelItem, ItemsNumber, Move, OpMode);
+  if(LS) return LF_PutFiles(LS, hPlugin, PanelItem, ItemsNumber, Move, OpMode);
   return 0;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_SETDIRECTORYW
+#ifdef EXPORT_SETDIRECTORY
 int LUAPLUG SetDirectoryW(HANDLE hPlugin, const wchar_t *Dir, int OpMode)
 {
-  if(LS) return LF_SetDirectoryW(LS, hPlugin, Dir, OpMode);
+  if(LS) return LF_SetDirectory(LS, hPlugin, Dir, OpMode);
   return FALSE;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_SETFINDLISTW
+#ifdef EXPORT_SETFINDLIST
 int LUAPLUG SetFindListW(HANDLE hPlugin, const struct PluginPanelItem *PanelItem,
   int ItemsNumber)
 {
-  if(LS) return LF_SetFindListW(LS, hPlugin, PanelItem, ItemsNumber);
+  if(LS) return LF_SetFindList(LS, hPlugin, PanelItem, ItemsNumber);
   return FALSE;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_GETMINFARVERSIONW
+#ifdef EXPORT_GETMINFARVERSION
 int LUAPLUG GetMinFarVersionW (void)
 {
   return MINFARVERSION;
@@ -259,28 +269,28 @@ int LUAPLUG GetMinFarVersionW (void)
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_PROCESSEDITORINPUTW
+#ifdef EXPORT_PROCESSEDITORINPUT
 int LUAPLUG ProcessEditorInputW(const INPUT_RECORD *Rec)
 {
-  if(LS) return LF_ProcessEditorInputW(LS, Rec);
+  if(LS) return LF_ProcessEditorInput(LS, Rec);
   return 0;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_PROCESSEDITOREVENTW
+#ifdef EXPORT_PROCESSEDITOREVENT
 int LUAPLUG ProcessEditorEventW(int Event, void *Param)
 {
-  if(LS) return LF_ProcessEditorEventW(LS, Event, Param);
+  if(LS) return LF_ProcessEditorEvent(LS, Event, Param);
   return 0;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_PROCESSVIEWEREVENTW
+#ifdef EXPORT_PROCESSVIEWEREVENT
 int LUAPLUG ProcessViewerEventW(int Event, void *Param)
 {
-  if(LS) return LF_ProcessViewerEventW(LS, Event, Param);
+  if(LS) return LF_ProcessViewerEvent(LS, Event, Param);
   return 0;
 }
 #endif
@@ -289,30 +299,30 @@ int LUAPLUG ProcessViewerEventW(int Event, void *Param)
 //exported unconditionally to enable far.Timer's work
 int LUAPLUG ProcessSynchroEventW(int Event, void *Param)
 {
-  if(LS) return LF_ProcessSynchroEventW(LS, Event, Param);
+  if(LS) return LF_ProcessSynchroEvent(LS, Event, Param);
   return 0;
 }
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_PROCESSDIALOGEVENTW
+#ifdef EXPORT_PROCESSDIALOGEVENT
 int LUAPLUG ProcessDialogEventW(int Event, void *Param)
 {
-  if(LS) return LF_ProcessDialogEventW(LS, Event, Param);
+  if(LS) return LF_ProcessDialogEvent(LS, Event, Param);
   return 0;
 }
 #endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_GETCUSTOMDATAW
+#ifdef EXPORT_GETCUSTOMDATA
 int LUAPLUG GetCustomDataW(const wchar_t *FilePath, wchar_t **CustomData)
 {
-  if(LS) return LF_GetCustomDataW(LS, FilePath, CustomData);
+  if(LS) return LF_GetCustomData(LS, FilePath, CustomData);
   return 0;
 }
 
 void LUAPLUG FreeCustomDataW(wchar_t *CustomData)
 {
-  if(LS) LF_FreeCustomDataW(LS, CustomData);
+  if(LS) LF_FreeCustomData(LS, CustomData);
 }
 #endif
 //---------------------------------------------------------------------------

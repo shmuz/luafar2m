@@ -1147,7 +1147,6 @@ int far_Menu(lua_State *L)
   int X = -1, Y = -1, MaxHeight = 0;
   int Flags = FMENU_WRAPMODE | FMENU_AUTOHIGHLIGHT;
   const wchar_t *Title = L"Menu", *Bottom = NULL, *HelpTopic = NULL;
-  int SelectIndex = 0;
 
   lua_settop (L, 3);    // cut unneeded parameters; make stack predictable
   luaL_checktype(L, 1, LUA_TTABLE);
@@ -1172,11 +1171,13 @@ int far_Menu(lua_State *L)
   lua_getfield(L, 1, "HelpTopic");
   if(lua_isstring(L,-1))    HelpTopic = StoreTempString(L, 4, &store);
   lua_getfield(L, 1, "SelectIndex");
-  SelectIndex = lua_tointeger(L,-1);
+  int ItemsNumber = lua_objlen(L, 2);
+  int SelectIndex = lua_tointeger(L,-1) - 1;
+  if (!(SelectIndex >= 0 && SelectIndex < ItemsNumber))
+    SelectIndex = -1;
 
   // Items
   int i;
-  int ItemsNumber = lua_objlen(L, 2);
   struct FarMenuItemEx* Items = (struct FarMenuItemEx*)
     lua_newuserdata(L, ItemsNumber*sizeof(struct FarMenuItemEx));
   memset(Items, 0, ItemsNumber*sizeof(struct FarMenuItemEx));
@@ -1202,6 +1203,15 @@ int far_Menu(lua_State *L)
     else if (lua_toboolean(L,-1)) pItem->Flags |= MIF_CHECKED;
     lua_pop(L,1);
     //-------------------------------------------------------------------------
+    if (SelectIndex == -1) {
+      lua_getfield(L,-1,"selected");
+      if (lua_toboolean(L,-1)) {
+        pItem->Flags |= MIF_SELECTED;
+        SelectIndex = i;
+      }
+      lua_pop(L,1);
+    }
+    //-------------------------------------------------------------------------
     if (GetBoolFromTable(L, "separator")) pItem->Flags |= MIF_SEPARATOR;
     if (GetBoolFromTable(L, "disable"))   pItem->Flags |= MIF_DISABLE;
     if (GetBoolFromTable(L, "grayed"))    pItem->Flags |= MIF_GRAYED;
@@ -1211,8 +1221,8 @@ int far_Menu(lua_State *L)
     if (lua_isnumber(L,-1)) pItem->AccelKey = lua_tointeger(L,-1);
     lua_pop(L, 1);
   }
-  if (SelectIndex > 0 && SelectIndex <= ItemsNumber)
-    Items[SelectIndex-1].Flags |= MIF_SELECTED;
+  if (SelectIndex != -1)
+    Items[SelectIndex].Flags |= MIF_SELECTED;
 
   // Break Keys
   int BreakCode;
