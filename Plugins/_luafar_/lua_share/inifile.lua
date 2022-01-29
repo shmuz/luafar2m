@@ -26,14 +26,7 @@ function lib.New(fname, nocomment)
   for line in fp:lines() do
     local secname = get_secname(line)
     if secname then
-      local lname = secname:lower()
-      if self.map[lname] then
-        cursection = self.map[lname] -- this allows a section to appear multiple times in the file
-      else
-        cursection = { name=secname; lname=lname; map={}; }
-        setmetatable(cursection, mt_section)
-        self.map[lname] = cursection
-      end
+      cursection = self:add_section(secname) -- this allows a section to appear multiple times in the file
     elseif cursection then
       local key,val = get_key_val(line)
       if key then
@@ -49,9 +42,7 @@ function lib.New(fname, nocomment)
           val = val and val:gsub("%s+$","")
         end
         if val then
-          local lkey = key:lower()
-          local item = { name=key; lname=lkey; val=val; }
-          cursection.map[lkey] = item
+          cursection:set(key,val)
         end
       end
     end
@@ -60,6 +51,19 @@ function lib.New(fname, nocomment)
   fp:close()
   return self
 end
+
+
+function lib:add_section(name)
+  local lname = name:lower()
+  local sec = self.map[lname]
+  if not sec then
+    sec = { name=name; lname=lname; map={}; }
+    setmetatable(sec, mt_section)
+    self.map[lname] = sec
+  end
+  return sec
+end
+
 
 function lib:sections()
   local k,v
@@ -73,24 +77,42 @@ function lib:get_section(name)
   return self.map[name:lower()]
 end
 
+function lib:del_section(name)
+  self.map[name:lower()] = nil
+end
+
+function lib:clear()
+  self.map = {}
+end
+
+function section:clear()
+  self.map = {}
+end
+
+function section:set(key,val)
+  local lkey = key:lower()
+  self.map[lkey] = { name=key; lname=lkey; val=val; }
+end
+
 function section:records()
   local k,v
   return function()
     k,v = next(self.map, k)
-    return v
+    if k then return v.name, v.val end
+    return nil
   end
 end
 
 function section:write(fp)
   fp:write("[", self.name, "]\n")
-  for rec in self:records() do
-    fp:write(rec.name, "=", rec.val, "\n")
+  for k,v in self:records() do
+    fp:write(k, "=", v, "\n")
   end
 end
 
 function section:dict()
   local t = {}
-  for rec in self:records() do t[rec.name]=rec.val end
+  for k,v in self:records() do t[k]=v end
   return t
 end
 

@@ -383,6 +383,22 @@ int ustring_GetDriveType (lua_State *L)
   return 1;
 }
 
+// This function is used to achieve compatibility between Windows' GUID's and uuid_t values
+// (uuid_t is just a byte array, i.e. always big-endian)
+void shuffle_uuid(void* uuid)
+{
+  const unsigned char map[16] = {3,2,1,0,5,4,7,6,8,9,10,11,12,13,14,15};
+  unsigned char buf[16];
+  unsigned int tmp = 0xFF000000, idx;
+
+  if (*(unsigned char*)&tmp != 0xFF) { //little endian
+    char* ptr = (char*) uuid;
+    for(idx=0; idx<16; idx++)
+      buf[idx] = ptr[map[idx]];
+    memcpy(ptr, buf, 16);
+  }
+}
+
 int ustring_Uuid(lua_State* L)
 {
   uuid_t uuid;
@@ -392,6 +408,7 @@ int ustring_Uuid(lua_State* L)
   {
     // generate new UUID
     uuid_generate(uuid);
+    shuffle_uuid(uuid);
     lua_pushlstring(L, (const char*)&uuid, sizeof(uuid));
     return 1;
   }
@@ -404,15 +421,17 @@ int ustring_Uuid(lua_State* L)
     {
       // convert given UUID to string
       memcpy(uuid, arg1, len);
+      shuffle_uuid(uuid);
       uuid_unparse_lower(uuid, out);
       lua_pushstring(L, out);
       return 1;
     }
-    else
+    else if (len >= 2*sizeof(uuid))
     {
       // convert string UUID representation to UUID
       if(0 == uuid_parse(arg1, uuid))
       {
+        shuffle_uuid(uuid);
         lua_pushlstring(L, (const char*)uuid, sizeof(uuid));
         return 1;
       }

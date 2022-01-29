@@ -10,8 +10,7 @@ local far2_dialog = require "far2.dialog"
 local F = far.Flags
 local M = require "lf4ed_message"
 
--- {719ca394-ab79-4973-956b-54a1626e6bec}
-local dialogGuid = "\148\163\156\113\121\171\115\073\149\107\084\161\098\110\107\236"
+local dialogGuid = win.Uuid("719CA394-AB79-4973-956B-54A1626E6BEC")
 
 function Package.SortDialog (aData, columntype)
   local COLPAT_DEFAULT = "%S+"
@@ -60,7 +59,7 @@ function Package.SortDialog (aData, columntype)
   end
   ------------------------------------------------------------------------------
   local function SaveData(hDlg)
-    for i, v in ipairs(D) do far.GetDlgItem(hDlg, i-1, v) end
+    for i, v in ipairs(D) do far.GetDlgItem(hDlg, i, v) end
     D.cbxOnlySel._noautosave = not columntype
     far2_dialog.SaveData(D, aData)
   end

@@ -54,7 +54,38 @@ while true do
     local area,key = sec.name:match("KeyMacros/(%w+)/(%w+)")
     if area then
       data.WorkArea, data.MacroKey = area, key
-      mdialog(data)
+      local out = mdialog(data)
+      if out then
+        --local le = require "far2.lua_explorer"
+        --le(out, "out")
+        local secname = ("KeyMacros/%s/%s"):format(out.WorkArea, out.MacroKey)
+        if secname:lower() ~= sec.name:lower() then
+          local sec_existing = cfg:get_section(secname)
+          if sec_existing then
+            if 1 == far.Message("Replace the existing macro ["..secname.."] ?",
+                                "Confirm", ";YesNo", "w") then
+              sec = sec_existing
+            else
+              sec = nil
+            end
+          else
+            sec = cfg:add_section(secname)
+          end
+        end
+
+        if sec then
+          sec:clear()
+          out.WorkArea, out.MacroKey = nil, nil
+          for k,v in pairs(out) do
+            if type(v)=="number" then
+              sec:set(k, ("0x%X"):format(v))
+            else
+              sec:set(k,v)
+            end
+          end
+          --cfg:write(mfile)
+        end
+      end -- if the dialog wasn't canceled
     end
   end
 end

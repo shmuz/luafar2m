@@ -245,6 +245,18 @@ int CheckFlags(lua_State* L, int stackpos)
   return Flags;
 }
 
+void uuid_to_guid(const char *uuid, GUID *guid)
+{
+  //copy field-wise because uuid_t is always 16 bytes while GUID may be more than that
+  unsigned char buf[16];
+  memcpy(buf, uuid, 16);
+  memset( guid, 0, sizeof(GUID));
+  memcpy(&guid->Data1, buf+0, 4);
+  memcpy(&guid->Data2, buf+4, 2);
+  memcpy(&guid->Data3, buf+6, 2);
+  memcpy( guid->Data4, buf+8, 8);
+}
+
 int far_GetFileOwner (lua_State *L)
 {
   wchar_t Owner[512];
@@ -2705,11 +2717,10 @@ LONG_PTR WINAPI DlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2)
   }
 
   else if (Msg == DN_GETDIALOGINFO) {
-    ret = lua_isstring(L,-1) && lua_objlen(L,-1) >= sizeof(GUID);
+    ret = lua_isstring(L,-1) && lua_objlen(L,-1) >= 16;
     if (ret) {
       struct DialogInfo* di = (struct DialogInfo*) Param2;
-      //di->StructSize = sizeof(DialogInfo);
-      memcpy(&di->Id, lua_tostring(L,-1), sizeof(GUID));
+      uuid_to_guid(lua_tostring(L,-1), &di->Id);
     }
   }
 
