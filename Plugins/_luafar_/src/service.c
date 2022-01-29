@@ -16,12 +16,24 @@
 void Log(const char* str)
 {
   static int N = 0;
-  FILE* fp = fopen("/home/shmuel/far2l/_build/install/Plugins/_lfsearch_/mylog.txt", "a");
-  if (fp) {
-    if (++N == 1)
-      fprintf(fp, "\n--------------------------------\n");
-    fprintf(fp, "%d: %s\n", N, str);
-    fclose(fp);
+  const char* home = getenv("HOME");
+  if (home) {
+    char* buf = malloc(strlen(home) + 64);
+    if (buf) {
+      strcpy(buf, home);
+      strcat(buf, "/luafar_log.txt");
+      FILE* fp = fopen(buf, "a");
+      if (fp) {
+        if (++N == 1) {
+          time_t rtime;
+          time (&rtime);
+          fprintf(fp, "\n%s------------------------------\n", ctime(&rtime));
+        }
+        fprintf(fp, "%d: %s\n", N, str);
+        fclose(fp);
+      }
+      free(buf);
+    }
   }
 }
 
