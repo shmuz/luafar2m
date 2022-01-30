@@ -320,30 +320,16 @@ local function RunExitScriptHandlers()
   for i = 1,#t do t[i]() end
 end
 
-local function InsertHandler (env, name, target)
-  local f = rawget(env, name)
-  if type(f)=="function" then table.insert(target, f) end
-end
-
-local function MakeResident (source)
-  local env
-  local meta = { __index=_G }
-  local tp = type(source)
-  if tp == "string" then
-    local chunk, msg1 = loadfile(_ModuleDir .. source)
-    if not chunk then error(msg1, 2) end
-    env = setmetatable({}, meta)
-    local ok, msg2 = pcall(setfenv(chunk, env))
-    if not ok then error(msg2, 2) end
-  elseif tp == "table" then
-    env = setmetatable(source, meta)
-  else
-    return
+local function AddEvent (EventName, EventHandler)
+  if type(EventHandler) == "function" then
+    local env = setmetatable({}, { __index=_G })
+    setfenv(EventHandler, env)
+    if     EventName=="EditorInput" then table.insert(_Plugin.EditorInputHandlers, EventHandler)
+    elseif EventName=="EditorEvent" then table.insert(_Plugin.EditorEventHandlers, EventHandler)
+    elseif EventName=="ViewerEvent" then table.insert(_Plugin.ViewerEventHandlers, EventHandler)
+    elseif EventName=="ExitScript"  then table.insert(_Plugin.ExitScriptHandlers,  EventHandler)
+    end
   end
-  InsertHandler(env, "ProcessEditorInput", _Plugin.EditorInputHandlers)
-  InsertHandler(env, "ProcessEditorEvent", _Plugin.EditorEventHandlers)
-  InsertHandler(env, "ProcessViewerEvent", _Plugin.ViewerEventHandlers)
-  InsertHandler(env, "ExitScript",         _Plugin.ExitScriptHandlers)
 end
 
 local function MakeAddUserFile (aEnv, aItems)
@@ -421,7 +407,7 @@ local function fReloadUserFile()
   local env = setmetatable({}, {__index=_G})
   env.AddUserFile  = MakeAddUserFile(env, _Plugin.UserItems)
   env.AutoInstall  = MakeAutoInstall(env.AddUserFile)
-  env.MakeResident = MakeResident
+  env.AddEvent = AddEvent
   -----------------------------------------------------------------------------
   env.AddUserFile("_usermenu.lua")
 end

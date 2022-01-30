@@ -525,7 +525,7 @@ local luafar = {
 
 local lf4ed = {
   read_globals = {
-    "AddCommand", "AddToMenu", "AddUserFile", "AutoInstall", "MakeResident",
+    "AddCommand", "AddToMenu", "AddUserFile", "AutoInstall", "AddEvent",
   };
   globals = {
     "lf4ed", "_Plugin",

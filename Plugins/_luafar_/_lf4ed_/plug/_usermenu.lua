@@ -31,6 +31,8 @@ AddToMenu ("e", nil, "Home", SmartHome)
 
 AddCommand("macrobrowser", "scripts/macrobrowser.lua")
 AddCommand("reload", ReloadUserFile)
+AddUserFile("scripts/editor_events.lua")
+AddUserFile("scripts/dup_line.lua")
 
 -- WARNING: The following 2 utilities may rename or delete your files.
 --          They are not tested enough. Do not run them.

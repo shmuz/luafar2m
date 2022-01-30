@@ -78,14 +78,15 @@ id=36
 lv=1
 dt=Text
 nm=Installation functions
+mtime=3852664569
 <article>
 #_<markdown>
 #_
 #_[`AddToMenu`](13.html)<br>
 #_[`AddCommand`](57.html)<br>
+#_[`AddEvent`](20.html)<br>
 #_[`AddUserFile`](34.html)<br>
 #_[`AutoInstall`](35.html)<br>
-#_[`MakeResident`](20.html)<br>
 #_
 </article>
 </node>
@@ -190,6 +191,47 @@ mtime=3852046562
 </article>
 </node>
 <node>
+id=20
+lv=2
+dt=Text
+nm=AddEvent
+mtime=3852664455
+<article>
+#_<markdown>
+#_**`AddEvent (event_name, handler)`**
+#_
+#_Function `AddEvent` is available to the *_usermenu.lua* script.<br>
+#_It allows to add a function handler that will be further called on some FAR event.
+#_
+#_`event_name` can be one of the following strings:
+#_
+#_* `"EditorInput"`
+#_* `"EditorEvent"`
+#_* `"ViewerEvent"`
+#_* `"ExitScript"`
+#_
+#_### Notes about the handlers
+#_
+#_1. There can be multiple handlers for the same event type. They will
+#_   be called in the order their files are specified in
+#_   `_usermenu.lua`.
+#_1. The handlers' input parameters correspond to the *exported
+#_   functions* with the same names, e.g. `ViewerEvent`
+#_   corresponds to `export.ProcessViewerEvent`, etc. (see LuaFAR manual
+#_   for details). `ExitScript` has no parameters, no return value.
+#_1. If the return value of a handler's `EditorInput` is true,
+#_   the rest of `EditorInput` handlers are not called, and
+#_   true is returned to Far.
+#_1. The return values of `EditorEvent` and `ViewerEvent` handlers
+#_   are ignored.
+#_1. `EditorInput` handlers are not called when a user-defined
+#_   hot key is pressed.
+#_1. `ExitScript` is called when the plugin is about to be unloaded.
+#_   It is also called before the "Reload User file" operation.
+#_
+</article>
+</node>
+<node>
 id=34
 lv=2
 dt=Text
@@ -254,49 +296,6 @@ mtime=3491216961
 #_      AutoInstall ("scripts")
 #_      AutoInstall ("scripts", nil, 1)
 #_      AutoInstall ("scripts/cool", "^_.*menu%.lua$", 0)
-#_
-</article>
-</node>
-<node>
-id=20
-lv=2
-dt=Text
-nm=MakeResident
-mtime=3852034276
-<article>
-#_<markdown>
-#_**`MakeResident (filename | table)`**
-#_
-#_Function `MakeResident` is available to the *_usermenu.lua* script.<br>
-#_It allows to add either a file (its path is relative to the plugin directory) or a table, containing one or more handlers that will be further called on some FAR events.
-#_
-#_The following handlers are supported:
-#_
-#_* `ProcessEditorInput`
-#_* `ProcessEditorEvent`
-#_* `ProcessViewerEvent`
-#_* `ExitScript`
-#_
-#_### Notes about the handlers
-#_
-#_1. If the parameter is file name, handlers must be defined as global
-#_   functions.
-#_1. There can be multiple handlers for the same event type. They will
-#_   be called in the order their files are specified in
-#_   `_usermenu.lua`.
-#_1. The handlers' input parameters correspond to the *exported
-#_   functions* with the same names, e.g. `ProcessViewerEvent`
-#_   corresponds to `export.ProcessViewerEvent`, etc. (see LuaFAR manual
-#_   for details). `ExitScript` has no parameters, no return value.
-#_1. If the return value of a handler's `ProcessEditorInput` is true,
-#_   the rest of `ProcessEditorInput` handlers are not called, and
-#_   true is returned to Far.
-#_1. The return values of `ProcessEditorEvent` and `ProcessViewerEvent`
-#_   are ignored.
-#_1. `ProcessEditorInput` handlers are not called when a user-defined
-#_   hot key is pressed.
-#_1. `ExitScript` is called when the plugin is about to be unloaded.
-#_   It is also called before the "Reload User file" operation.
 #_
 </article>
 </node>
@@ -413,7 +412,7 @@ id=14
 lv=1
 dt=Text
 nm=Example of use
-mtime=3852235188
+mtime=3852664803
 <article>
 #_<markdown>
 #_### _usermenu.lua
@@ -424,12 +423,12 @@ mtime=3852235188
 #_    AddCommand("calen", "calendar.lua", "show")
 #_    AddUserFile("scripts/fl_scripts/_usermenu.lua")
 #_    AddUserFile("scripts/Rh_Scripts/_testmenu.lua")
-#_    MakeResident("handlers.lua")
+#_    AddUserFile("handlers.lua")
 #_
 #_### handlers.lua
 #_    local F = far.Flags
 #_
-#_    function ProcessEditorInput (Rec)
+#_    local function ReplaceChar (Rec)
 #_      if (Rec.EventType == F.FARMACRO_KEY_EVENT) or
 #_         (Rec.EventType == F.KEY_EVENT and Rec.KeyDown)
 #_      then
@@ -441,14 +440,15 @@ mtime=3852235188
 #_      end
 #_    end
 #_
-#_    function ProcessEditorEvent (Event, Param)
+#_    local function ShowTemplatesMenu (Event, Param)
 #_      if Event == F.EE_READ then
 #_        require 'fl_scripts/editor/template'
 #_        templates_menu()
 #_      end
 #_    end
 #_
-#_
+#_    AddEvent("EditorInput", ReplaceChar)
+#_    AddEvent("EditorEvent", ShowTemplatesMenu)
 </article>
 </node>
 <node>

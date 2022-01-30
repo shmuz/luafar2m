@@ -207,8 +207,7 @@ local function PrefixBlock (aPrefix)
 end
 
 
--- {6d5c7ec2-8c2f-413c-81e6-0cc8ffc0799a}
-local dialogGuid = "\194\126\092\109\047\140\060\065\129\230\012\200\255\192\121\154"
+local dialogGuid = win.Uuid("6D5C7EC2-8C2F-413C-81E6-0CC8FFC0799A")
 
 local function ExecuteWrapDialog (aData)
   local HIST_PREFIX = "LuaFAR\\Reformat\\Prefix"
