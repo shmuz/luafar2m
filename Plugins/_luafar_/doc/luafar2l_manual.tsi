@@ -4551,12 +4551,13 @@ lv=2
 dt=Text
 nm=far.MacroCheck
 ctime=3851440061
-mtime=3852390126
+mtime=3852803422
 <article>
-#_errCode, ... = far.MacroCheck(SequenceText)
+#_errCode, ... = far.MacroCheck(SequenceText, Flags)
 #_
 #_**Parameters:**
 #_  SequenceText: string
+#_  Flags:        integer (defaults to 0)
 #_
 #_**Returns:**
 #_  If successful:

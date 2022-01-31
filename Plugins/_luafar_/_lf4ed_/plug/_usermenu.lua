@@ -28,6 +28,7 @@ AddToMenu ("e", ("%-30s(Ctrl+E)" ):format("Match bracket"), "Ctrl+E", "scripts/b
 AddToMenu ("e", nil, "Ctrl+F9",       "scripts/calc.lua")
 AddToMenu ("e", nil, "Ctrl+Shift+F7", "scripts/editor_luacheck.lua")
 AddToMenu ("e", nil, "Home", SmartHome)
+AddToMenu ("depv", "Macro Browser", nil, "scripts/macrobrowser.lua")
 
 AddCommand("macrobrowser", "scripts/macrobrowser.lua")
 AddCommand("reload", ReloadUserFile)

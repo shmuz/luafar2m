@@ -4233,19 +4233,22 @@ int far_MacroSaveAll (lua_State *L) { return _MacroSimple(L, MCMD_SAVEALL);  }
 
 int far_MacroCheck(lua_State *L)
 {
+  int Flags;
   PSInfo *Info = GetPluginStartupInfo(L);
   struct ActlKeyMacro km;
   memset(&km, 0, sizeof(km));
   km.Command = MCMD_CHECKMACRO;
   km.Param.PlainText.SequenceText = check_utf8_string(L,1,NULL);
+  GetFlagCombination(L, 2, &Flags);
+  km.Param.PlainText.Flags = Flags;
   Info->AdvControl(Info->ModuleNumber, ACTL_KEYMACRO, &km);
   if (km.Param.MacroResult.ErrCode == MPEC_SUCCESS) {
     lua_pushinteger(L, MPEC_SUCCESS);
     return 1;
   }
   lua_pushinteger (L, km.Param.MacroResult.ErrCode);
-  lua_pushinteger (L, km.Param.MacroResult.ErrPos.X);
-  lua_pushinteger (L, km.Param.MacroResult.ErrPos.Y);
+  lua_pushinteger (L, km.Param.MacroResult.ErrPos.X + 1);
+  lua_pushinteger (L, km.Param.MacroResult.ErrPos.Y + 1);
   push_utf8_string(L, km.Param.MacroResult.ErrSrc, -1);
   return 4;
 }

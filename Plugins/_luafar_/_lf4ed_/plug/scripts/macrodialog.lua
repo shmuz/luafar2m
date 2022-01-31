@@ -4,6 +4,7 @@
 
 local sd = require "far2.simpledialog"
 local F = far.Flags
+local dsend = far.SendDlgMessage
 
 local AreaShortNames = {
   "Dialog", "Disks", "Editor", "Help", "Info", "MainMenu", "Menu", "QView", "Search", "Shell",
@@ -32,7 +33,7 @@ local function MacroDialog (input)
     {tp="vtext"; x1=hw+4; y1=2; y2=4; text="││┴"; },
     ------------------------------------------------------------------------------------------------
     {tp="text"; text="Sequen&ce"; y1=5; },
-    {tp="edit";   hist="MacroCmd";         name="Sequence"; focus=1; },
+    {tp="edit";   hist="MacroCmd";         name="Sequence"; focus=input; },
     {tp="text"; text="&Description"; },
     {tp="edit";   hist="MacroDescr";       name="Description"; },
     {tp="sep"; },
@@ -78,6 +79,27 @@ local function MacroDialog (input)
   -- Initialize from the input data
   ---------------------------------
   if type(input) ~= "table" then -- no input data
+    local area = far.MacroGetArea()
+    local item = items[Pos.WorkArea]
+    if     area == F.MACROAREA_DIALOG         then item.val =  1
+    elseif area == F.MACROAREA_DISKS          then item.val =  2
+    elseif area == F.MACROAREA_EDITOR         then item.val =  3
+    elseif area == F.MACROAREA_HELP           then item.val =  4
+    elseif area == F.MACROAREA_INFOPANEL      then item.val =  5
+    elseif area == F.MACROAREA_MAINMENU       then item.val =  6
+    elseif area == F.MACROAREA_MENU           then item.val =  7
+    elseif area == F.MACROAREA_QVIEWPANEL     then item.val =  8
+    elseif area == F.MACROAREA_SEARCH         then item.val =  9
+    elseif area == F.MACROAREA_SHELL          then item.val = 10
+    elseif area == F.MACROAREA_TREEPANEL      then item.val = 11
+    elseif area == F.MACROAREA_VIEWER         then item.val = 12
+    elseif area == F.MACROAREA_OTHER          then item.val = 13
+    elseif area == F.MACROAREA_FINDFOLDER     then item.val = 15
+    elseif area == F.MACROAREA_USERMENU       then item.val = 16
+    elseif area == F.MACROAREA_AUTOCOMPLETION then item.val = 17
+    else                                           item.val = 14 -- Common
+    end
+
     for _,v in ipairs(items) do
       if v.DefDialog then v.val=1 end
     end
@@ -112,11 +134,37 @@ local function MacroDialog (input)
   -------------------------------------
   -- Run the dialog and get output data
   -------------------------------------
+
+  local function CheckSeq(hDlg)
+    local seq = dsend(hDlg, "DM_GETTEXT", Pos.Sequence)
+    if far.MacroGetState() == F.MACROSTATE_NOMACRO then
+      return far.MacroCheck(seq) == 0
+    else
+      -- do silent check due to FAR's lock-screen bug
+      local code, posX, posY, msg = far.MacroCheck(seq,"KSFLAGS_SILENTCHECK")
+      if code == 0 then return true end
+      local errmsg = ("Line %d, Pos %d:\n%s"):format(posY, posX, msg)
+      local title  = ("Error parsing macro (code %d)"):format(code)
+      far.Message(errmsg, title, nil, "wl")
+      return false
+    end
+  end
+
   items.proc = function(hDlg, Msg, Par1, Par2) -- luacheck: ignore Par2
     if Msg == F.DN_BTNCLICK then
       if items[Par1].Action == "check" then
-        local seq = far.SendDlgMessage(hDlg, "DM_GETTEXT", Pos.Sequence)
-        far.MacroCheck(seq) -- it pops up a red message box if not OK
+        CheckSeq(hDlg)
+      end
+    elseif Msg == F.DN_CLOSE then
+      if items[Par1] and not items[Par1].cancel then
+        local nm = dsend(hDlg, "DM_GETTEXT", Pos.MacroKey) : match("^%s*(.-)%s*$")
+        if not far.NameToKey(nm) then
+          far.Message("Invalid Macro Key: "..nm, "Error", nil, "w")
+          return 0
+        end
+        if not CheckSeq(hDlg) then
+          return 0
+        end
       end
     end
   end

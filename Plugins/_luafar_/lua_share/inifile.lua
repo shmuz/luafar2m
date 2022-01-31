@@ -103,23 +103,34 @@ function section:records()
   end
 end
 
-function section:write(fp)
+function section:write(fp, sortmethod)
+  sortmethod = sortmethod or function(a,b) return a.lname < b.lname end
+  local arr = {}
+  for _,rec in pairs(self.map) do table.insert(arr, rec) end
+  table.sort(arr, sortmethod)
+
   fp:write("[", self.name, "]\n")
-  for k,v in self:records() do
-    fp:write(k, "=", v, "\n")
+  for _,rec in ipairs(arr) do
+    fp:write(rec.name, "=", rec.val, "\n")
   end
 end
 
 function section:dict()
   local t = {}
-  for k,v in self:records() do t[k]=v end
+  for _,rec in pairs(self.map) do t[rec.name]=rec.val end
   return t
 end
 
-function lib:write(fname)
+function lib:write(fname, sortmethod)
   local fp = io.open(fname, "w")
   if not fp then return nil end
-  for sec in self:sections() do
+
+  sortmethod = sortmethod or function(a,b) return a.lname < b.lname end
+  local arr = {}
+  for sec in self:sections() do table.insert(arr, sec) end
+  table.sort(arr, sortmethod)
+
+  for _,sec in ipairs(arr) do
     sec:write(fp)
     fp:write("\n")
   end
