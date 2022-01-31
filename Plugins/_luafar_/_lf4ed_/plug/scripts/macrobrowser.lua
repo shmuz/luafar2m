@@ -69,7 +69,7 @@ local function RunMenu()
       if modified then
         local r = far.Message("Do you want to save the changes?", Title, ";YesNoCancel", "w")
         if r == 1 then
-          cfg:write(mfile..".backup")
+          cfg:write(mfile)
           far.Timer(10, function(hnd) hnd:Close(); far.MacroLoadAll(); end) -- another bug in FAR ?
         end
         if r==1 or r==2 then
