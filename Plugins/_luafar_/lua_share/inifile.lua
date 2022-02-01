@@ -24,25 +24,27 @@ function lib.New(fname, nocomment)
   setmetatable(self, mt_lib)
   local cursection
   for line in fp:lines() do
-    local secname = get_secname(line)
-    if secname then
-      cursection = self:add_section(secname) -- this allows a section to appear multiple times in the file
-    elseif cursection then
-      local key,val = get_key_val(line)
-      if key then
-        local first = val:sub(1,1)
-        if first == '"' then
-          val = val:match('^"(.-)"') -- in double quotes
-        elseif first == "'" then
-          val = val:match("^'(.-)'") -- in single quotes
-        else
-          if not nocomment then
-            val = val:match("^[^;]+")  -- semicolon starts the comment
+    if not (line:find("^%s*;") or line:find("^%s*$")) then -- not comment or empty line
+      local secname = get_secname(line)
+      if secname then
+        cursection = self:add_section(secname) -- this allows a section to appear multiple times in the file
+      elseif cursection then
+        local key,val = get_key_val(line)
+        if key then
+          local first = val:sub(1,1)
+          if first == '"' then
+            val = val:match('^"(.-)"') -- in double quotes
+          elseif first == "'" then
+            val = val:match("^'(.-)'") -- in single quotes
+          else
+            if not nocomment then
+              val = val:match("^[^;]+")  -- semicolon starts the comment
+            end
+            val = val and val:gsub("%s+$","")
           end
-          val = val and val:gsub("%s+$","")
-        end
-        if val then
-          cursection:set(key,val)
+          if val then
+            cursection:set(key,val)
+          end
         end
       end
     end
@@ -79,6 +81,17 @@ end
 
 function lib:del_section(name)
   self.map[name:lower()] = nil
+end
+
+function lib:ren_section(name, newname)
+  local sec = self.map[name:lower()]
+  if sec then
+    self.map[name:lower()] = nil
+    self.map[newname:lower()] = sec
+    sec.name = newname
+    sec.lname = newname:lower()
+    -- sec.map stays unchanged
+  end
 end
 
 function lib:clear()

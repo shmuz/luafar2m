@@ -187,7 +187,7 @@ local function MacroDialog (input)
           if raw[i]==v then out[k]=1; break; end
         end
       elseif w.name then
-        if raw[w.name] then out[w.name]=1; end
+        if raw[w.name] then out[w.name]=1; end -- [x] Deactivate macro
       end
     end
   end
