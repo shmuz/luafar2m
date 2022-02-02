@@ -19,6 +19,7 @@ local function RemoveTrailingSpaces(Event, Param)
           editor.SetString(k,str,ln.StringEOL)
         end
       end
+      editor.SetPosition(info)
     end
   end
 end

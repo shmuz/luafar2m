@@ -18,18 +18,19 @@ local luafar = {
     ["far"] = {
       fields = {
         "AdvControl", "CmpName", "Colors", "ConvertPath", "CopyToClipboard",
-        "CPluginStartupInfo", "CreateFileFilter", "CreateUserControl", "DefDlgProc",
-        "Dialog", "DialogFree", "DialogInit", "DialogRun", "Flags", "ForcedLoadPlugin",
-        "GetCurrentDirectory", "GetDirList", "GetDlgItem", "GetFileOwner", "GetMsg",
-        "GetNumberOfLinks", "GetPathRoot", "GetPluginDirList", "GetReparsePointInfo",
-        "Guids", "InputBox", "InputRecordToKey", "Keys", "KeyToName", "LIsAlpha",
-        "LIsAlphanum", "LIsLower", "LIsUpper", "LLowerBuf", "LoadPlugin", "LStricmp",
-        "LStrnicmp", "LuafarVersion", "LUpperBuf", "MacroCheck", "MacroGetArea",
-        "MacroGetState", "MacroLoadAll", "MacroPost", "MacroSaveAll", "MakeMenuItems",
-        "Menu", "Message", "MkLink", "MkTemp", "NameToKey", "PasteFromClipboard",
-        "PluginStartupInfo", "ProcessName", "RecursiveSearch", "ReloadDefaultScript",
-        "RestoreScreen", "SaveScreen", "SendDlgMessage", "SetDlgItem", "Show", "ShowHelp",
-        "Text", "Timer", "TruncPathStr", "TruncStr", "UnloadPlugin", "XLat",
+        "CPluginStartupInfo", "CreateFileFilter", "CreateUserControl", "DefDlgProc", "Dialog",
+        "DialogFree", "DialogInit", "DialogRun", "Execute", "ExecuteLibrary",
+        "Flags", "ForcedLoadPlugin", "GetCurrentDirectory", "GetDirList", "GetDlgItem",
+        "GetFileOwner", "GetMsg", "GetNumberOfLinks", "GetPathRoot", "GetPluginDirList",
+        "GetReparsePointInfo", "Guids", "InputBox", "InputRecordToKey", "Keys",
+        "KeyToName", "LIsAlpha", "LIsAlphanum", "LIsLower", "LIsUpper",
+        "LLowerBuf", "LoadPlugin", "LStricmp", "LStrnicmp", "LuafarVersion",
+        "LUpperBuf", "MacroCheck", "MacroGetArea", "MacroGetState", "MacroLoadAll",
+        "MacroPost", "MacroSaveAll", "MakeMenuItems", "Menu", "Message",
+        "MkLink", "MkTemp", "NameToKey", "PasteFromClipboard", "PluginStartupInfo",
+        "ProcessName", "RecursiveSearch", "ReloadDefaultScript", "RestoreScreen", "SaveScreen",
+        "SendDlgMessage", "SetDlgItem", "Show", "ShowHelp", "Text",
+        "Timer", "TruncPathStr", "TruncStr", "UnloadPlugin", "XLat",
 
         ["Colors"] = {
           fields = {

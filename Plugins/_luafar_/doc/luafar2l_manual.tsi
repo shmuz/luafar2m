@@ -1664,7 +1664,7 @@ id=71
 lv=2
 dt=Text
 nm=far.SendDlgMessage
-mtime=3851944638
+mtime=3853002489
 <article>
 #_Result = far.SendDlgMessage (hDlg, Msg, Param1, Param2)
 #_
@@ -1735,6 +1735,14 @@ mtime=3851944638
 #_DM_GETCONSTTEXTPTR:
 #_    Param2:  none
 #_    Result:  string
+#_
+#_DM_GETCOLOR:
+#_    Param2:  none
+#_    Result:  integer
+#_
+#_DM_SETCOLOR:
+#_    Param2:  integer
+#_    Result:  integer
 #_
 #_DM_KEY:
 #_    Param2:  table (array of integers)
@@ -4783,6 +4791,31 @@ nm=Far Standard Functions
 </article>
 </node>
 <node>
+id=453
+lv=2
+dt=Text
+nm=far.BackgroundTask
+ctime=3852954289
+mtime=3852954473
+<article>
+#_far.BackgroundTask (Info, Started)
+#_
+#_**Parameters:**
+#_  Info:     string
+#_  Started:  boolean
+#_
+#_**Returns:**
+#_  nothing
+#_
+#_**Far API used:**
+#_  FSF.BackgroundTask
+#_
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=284
 lv=2
 dt=Text
@@ -4825,6 +4858,104 @@ nm=far.CopyToClipboard
 #_**Far API used:**
 #_  FSF.CopyToClipboard
 #_
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=452
+lv=2
+dt=Text
+nm=far.DispatchInterThreadCalls
+ctime=3852954168
+mtime=3852954258
+<article>
+#_result = DispatchInterThreadCalls()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  result:  integer
+#_
+#_**Far API used:**
+#_  FSF.DispatchInterThreadCalls
+#_
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=451
+lv=2
+dt=Text
+nm=far.DisplayNotification
+ctime=3852953930
+mtime=3852954119
+<article>
+#_far.DisplayNotification (action, object)
+#_
+#_**Parameters:**
+#_  action:  string
+#_  object:  string
+#_
+#_**Returns:**
+#_  nothing
+#_
+#_**Far API used:**
+#_  FSF.DisplayNotification
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=449
+lv=2
+dt=Text
+nm=far.Execute
+ctime=3852926106
+mtime=3852926344
+<article>
+#_result = far.Execute (CmdStr, ExecFlags)
+#_
+#_**Parameters:**
+#_  CmdStr:     string
+#_  ExecFlags:  flags
+#_
+#_**Returns:**
+#_  result:     integer
+#_
+#_**Far API used:**
+#_  FSF.Execute
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=450
+lv=2
+dt=Text
+nm=far.ExecuteLibrary
+ctime=3852926114
+mtime=3852926447
+<article>
+#_result = far.ExecuteLibrary (Library, Symbol, CmdStr, ExecFlags)
+#_
+#_**Parameters:**
+#_  Library:    string
+#_  Symbol:     string
+#_  CmdStr:     string
+#_  ExecFlags:  flags
+#_
+#_**Returns:**
+#_  result:     integer
+#_
+#_**Far API used:**
+#_  FSF.ExecuteLibrary
 #_
 #_@@@
 #_

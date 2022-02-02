@@ -2211,6 +2211,7 @@ int Is_DM_DialogItem(int Msg)
     case DM_EDITUNCHANGEDFLAG:
     case DM_ENABLE:
     case DM_GETCHECK:
+    case DM_GETCOLOR:
     case DM_GETCOMBOBOXEVENT:
     case DM_GETCONSTTEXTPTR:
     case DM_GETCURSORPOS:
@@ -2242,6 +2243,7 @@ int Is_DM_DialogItem(int Msg)
     case DM_LISTUPDATE:
     case DM_SET3STATE:
     case DM_SETCHECK:
+    case DM_SETCOLOR:
     case DM_SETCOMBOBOXEVENT:
     case DM_SETCURSORPOS:
     case DM_SETCURSORSIZE:
@@ -2269,6 +2271,7 @@ int far_SendDlgMessage (lua_State *L)
   LONG_PTR Param2=0;
   wchar_t buf[512];
   //---------------------------------------------------------------------------
+  DWORD                      dword;
   COORD                      coord;
   struct DialogInfo          dlg_info;
   struct EditorSelect        es;
@@ -2328,6 +2331,15 @@ int far_SendDlgMessage (lua_State *L)
     case DM_SHOWITEM:
     case DM_USER:
       Param2 = luaL_optlong(L, 4, 0);
+      break;
+
+    case DM_GETCOLOR:
+      Info->SendDlgMessage (hDlg, Msg, Param1, (LONG_PTR)&dword);
+      lua_pushinteger (L, dword);
+      return 1;
+
+    case DM_SETCOLOR:
+      Param2 = luaL_checkinteger(L, 4);
       break;
 
     case DM_LISTADDSTR:
@@ -4216,6 +4228,51 @@ int far_XLat (lua_State *L)
   return 1;
 }
 
+int far_Execute(lua_State *L)
+{
+  const wchar_t *CmdStr = check_utf8_string(L, 1, NULL);
+  int ExecFlags = CheckFlags(L, 2);
+  PSInfo *Info = GetPluginStartupInfo(L);
+  lua_pushinteger(L, Info->FSF->Execute(CmdStr, ExecFlags));
+  return 1;
+}
+
+int far_ExecuteLibrary(lua_State *L)
+{
+  const wchar_t *Library = check_utf8_string(L, 1, NULL);
+  const wchar_t *Symbol  = check_utf8_string(L, 2, NULL);
+  const wchar_t *CmdStr  = check_utf8_string(L, 3, NULL);
+  int ExecFlags = CheckFlags(L, 4);
+  PSInfo *Info = GetPluginStartupInfo(L);
+  lua_pushinteger(L, Info->FSF->ExecuteLibrary(Library, Symbol, CmdStr, ExecFlags));
+  return 1;
+}
+
+int far_DisplayNotification(lua_State *L)
+{
+  const wchar_t *action = check_utf8_string(L, 1, NULL);
+  const wchar_t *object  = check_utf8_string(L, 2, NULL);
+  PSInfo *Info = GetPluginStartupInfo(L);
+  Info->FSF->DisplayNotification(action, object);
+  return 0;
+}
+
+int far_DispatchInterThreadCalls(lua_State *L)
+{
+  PSInfo *Info = GetPluginStartupInfo(L);
+  lua_pushinteger(L, Info->FSF->DispatchInterThreadCalls());
+  return 1;
+}
+
+int far_BackgroundTask(lua_State *L)
+{
+  const wchar_t *Info = check_utf8_string(L, 1, NULL);
+  BOOL Started = lua_toboolean(L, 2);
+  PSInfo *psInfo = GetPluginStartupInfo(L);
+  psInfo->FSF->BackgroundTask(Info, Started);
+  return 0;
+}
+
 int _MacroSimple(lua_State *L, int Command)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
@@ -4593,6 +4650,11 @@ const luaL_reg far_funcs[] = {
   {"RecursiveSearch",     far_RecursiveSearch},
   {"ConvertPath",         far_ConvertPath},
   {"XLat",                far_XLat},
+  {"Execute",             far_Execute},
+  {"ExecuteLibrary",      far_ExecuteLibrary},
+  {"DisplayNotification", far_DisplayNotification},
+  {"DispatchInterThreadCalls", far_DispatchInterThreadCalls},
+  {"BackgroundTask",      far_BackgroundTask},
 
   {"CPluginStartupInfo",  far_CPluginStartupInfo},
   {"GetCurrentDirectory", far_GetCurrentDirectory},

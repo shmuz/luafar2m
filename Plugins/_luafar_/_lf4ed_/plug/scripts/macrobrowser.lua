@@ -5,6 +5,7 @@ local Title = "Macro Browser"
 local ini = require "inifile"
 local mdialog = require "scripts.macrodialog"
 local mfile = os.getenv("HOME") .. "/.config/far2l/settings/key_macros.ini"
+local F = far.Flags
 
 local cfg, msg1 = ini.New(mfile, "nocomment")
 if not cfg then far.Message(msg1, Title, nil, "w"); return; end
@@ -30,7 +31,8 @@ local function CreateItems()
 end
 
 local Items = CreateItems()
-local Props = { Title=Title, Bottom="F1, F4, ShiftF4, F8, Space" }
+local Props = { Title=Title; Bottom="F1, F4, ShiftF4, F8, Space";
+                Flags=F.FMENU_SHOWAMPERSAND+F.FMENU_WRAPMODE; }
 local Bkeys = {
   {BreakKey = "C+F1";  sortcol=1;  },
   {BreakKey = "C+F2";  sortcol=2;  },
