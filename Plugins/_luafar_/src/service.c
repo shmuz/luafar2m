@@ -2072,17 +2072,23 @@ void SetFarDialogItem(lua_State *L, struct FarDialogItem* Item, int itemindex,
     }
     lua_pop(L,1);
   }
-  else if (Item->Flags & DIF_HISTORY) {
-    lua_pushinteger(L, 7);   // +1
-    lua_gettable(L, -2);     // +1
-    if (!lua_isstring(L,-1))
-      luaLF_SlotError (L, 7, "string");
-    Item->History = check_utf8_string (L, -1, NULL); // +1
-    size_t len = lua_objlen(L, historyindex);
-    lua_rawseti (L, historyindex, len+1); // +0; put into "histories" table to avoid being gc'ed
-  }
-  else
+  else if (Item->Type == DI_CHECKBOX || Item->Type == DI_RADIOBUTTON) {
     Item->Selected = GetIntFromArray(L, 7);
+  }
+  else if (Item->Type == DI_EDIT || Item->Type == DI_FIXEDIT) {
+    if ((Item->Flags & DIF_HISTORY) ||
+        (Item->Type == DI_FIXEDIT && (Item->Flags & DIF_MASKEDIT)))
+    {
+      lua_pushinteger(L, 7);   // +1
+      lua_gettable(L, -2);     // +1
+      if (!lua_isstring(L,-1))
+        luaLF_SlotError (L, 7, "string");
+      Item->History = check_utf8_string (L, -1, NULL); // +1 --> Item->History and Item->Mask are aliases (union members)
+      size_t len = lua_objlen(L, historyindex);
+      lua_rawseti (L, historyindex, len+1); // +0; put into "histories" table to avoid being gc'ed
+    }
+  }
+
   Item->DefaultButton = GetIntFromArray(L, 9);
 
   Item->MaxLen = GetOptIntFromArray(L, 11, 0);
@@ -3082,10 +3088,10 @@ int far_GetMsg(lua_State *L)
 int far_Text(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  int X = luaL_checkinteger(L, 1);
-  int Y = luaL_checkinteger(L, 2);
-  int Color = 0xFF & luaL_checkinteger(L, 3);
-  const wchar_t* Str = opt_utf8_string(L, 4, L"");
+  int X = luaL_optinteger(L, 1, 0);
+  int Y = luaL_optinteger(L, 2, 0);
+  int Color = luaL_optinteger(L, 3, 0x0F);
+  const wchar_t* Str = opt_utf8_string(L, 4, NULL);
   Info->Text(X, Y, Color, Str);
   return 0;
 }

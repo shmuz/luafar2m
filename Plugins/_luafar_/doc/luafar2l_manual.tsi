@@ -1348,17 +1348,22 @@ id=76
 lv=2
 dt=Text
 nm=far.Text
+mtime=3853087975
 <article>
-#_far.Text (X, Y, Color [, Str])
+#_far.Text (X, Y, Color, Str)
 #_
 #_**Parameters:**
 #_  X:     integer
 #_  Y:     integer
 #_  Color: integer
-#_  Str:   string
+#_  Str:   string, or nil (if nil, NULL is passed to Far)
 #_
 #_**Returns:**
 #_  nothing
+#_
+#_**Note:**
+#_  All parameters are optional.
+#_  far.Text() is equivalent to far.Text(0,0,0x0F,nil).
 #_
 #_**Far API used:**
 #_  Text

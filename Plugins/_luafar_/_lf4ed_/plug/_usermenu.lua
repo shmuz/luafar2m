@@ -21,14 +21,12 @@ AddToMenu ("e", nil, "Ctrl+5", 5)
 AddToMenu ("e", nil, "Ctrl+6", 6)
 
 AddToMenu ("e", ":sep:")
-AddToMenu ("e", "Multiline Search",       "Ctrl+7", "scripts/multiline.lua")
-AddToMenu ("e", "Multiline Search Again", "Ctrl+8", "scripts/multiline.lua", true)
-AddToMenu ("e", "Test: Sort Lines", nil, "scripts/test_sortlines.lua")
-AddToMenu ("e", ("%-30s(Ctrl+E)" ):format("Match bracket"), "Ctrl+E", "scripts/bracket.lua")
+AddToMenu ("e", nil, "Ctrl+E",        "scripts/bracket.lua")
 AddToMenu ("e", nil, "Ctrl+F9",       "scripts/calc.lua")
 AddToMenu ("e", nil, "Ctrl+Shift+F7", "scripts/editor_luacheck.lua")
 AddToMenu ("e", nil, "Home", SmartHome)
 AddToMenu ("depv", "Macro Browser", nil, "scripts/macrobrowser.lua")
+AddToMenu ("depv", "Lua Calc",      nil, function() require("far2/calc")() end)
 
 AddCommand("macrobrowser", "scripts/macrobrowser.lua")
 AddCommand("reload", ReloadUserFile)
@@ -44,4 +42,9 @@ AddUserFile("scripts/dup_line.lua")
 --          "<"..PluginDir.."scripts/>Rename")      -- help topic
 
 ------------------------------------------------------------------------------
---MakeResident("scripts/scite_like.lua")
+if os.getenv("USER") == "shmuel" then
+  AddToMenu ("e", ":sep:")
+  AddToMenu ("e", "Test: Sort Lines",       nil,      "scripts/test_sortlines.lua")
+  AddToMenu ("e", "Multiline Search",       "Ctrl+7", "scripts/multiline.lua")
+  AddToMenu ("e", "Multiline Search Again", "Ctrl+8", "scripts/multiline.lua", true)
+end

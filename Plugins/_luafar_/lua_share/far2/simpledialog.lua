@@ -13,10 +13,7 @@ local IND_TYPE, IND_X1, IND_Y1, IND_X2, IND_Y2, IND_VALUE, IND_DATA = 1,2,3,4,5,
 -- @param ext      : extension of temporary file (affects syntax highlighting; optional)
 -- @return         : output text (or nil)
 local function OpenInEditor(text, ext)
-  local tempdir = win.GetEnv("TEMP")
-  if not tempdir then
-    far.Message("Environment variable TEMP is not set", "Error", nil, "w"); return nil
-  end
+  local tempdir = "/tmp"
   ext = type(ext)=="string" and ext or ".tmp"
   if ext~="" and ext:sub(1,1)~="." then ext = "."..ext; end
   local fname = ("%s/far2l-%s%s"):format(tempdir, win.Uuid(win.Uuid()):sub(1,8), ext)
@@ -24,18 +21,19 @@ local function OpenInEditor(text, ext)
   if fp then
     fp:write(text or "")
     fp:close()
+    text = nil
     local flags = {EF_DISABLEHISTORY=1}
     if editor.Editor(fname,nil,nil,nil,nil,nil,flags,nil,nil,65001) == F.EEC_MODIFIED then
       fp = io.open(fname)
       if fp then
         text = fp:read("*all")
         fp:close()
-        return text
       end
     end
+    far.AdvControl("ACTL_REDRAWALL")
     win.DeleteFile(fname)
+    return text
   end
-  return nil
 end
 
 -- @param txt     : string
@@ -395,21 +393,21 @@ local function Run (inData)
       end
 
     elseif Msg == F.DN_KEY then
-      --! if inData.keyaction and inData.keyaction(hDlg, Par1, far.InputRecordToName(Par2)) then
-      --!   return
-      --! end
-      --! local mod = band(Par2.ControlKeyState,0x1F) ~= 0
-      --! if Par2.VirtualKeyCode == VK.F1 and not mod then
-      --!   if type(inData.help) == "function" then
-      --!     inData.help()
-      --!   end
-      --! elseif Par2.VirtualKeyCode == VK.F4 and not mod then
-      --!   if outData[Par1][IND_TYPE] == F.DI_EDIT then
-      --!     local txt = far.SendDlgMessage(hDlg, "DM_GETTEXT", Par1)
-      --!     txt = OpenInEditor(txt, inData[Par1].ext)
-      --!     if txt then far.SendDlgMessage(hDlg, "DM_SETTEXT", Par1, txt); end
-      --!   end
-      --! end
+      local keyname = far.KeyToName(Par2)
+      if inData.keyaction and inData.keyaction(hDlg, Par1, keyname) then
+        return true
+      end
+      if keyname == "F1" then
+        if type(inData.help) == "function" then
+          inData.help()
+        end
+      elseif keyname == "F4" then
+        if outData[Par1][IND_TYPE] == F.DI_EDIT then
+          local txt = far.SendDlgMessage(hDlg, "DM_GETTEXT", Par1)
+          txt = OpenInEditor(txt, inData[Par1].ext)
+          if txt then far.SendDlgMessage(hDlg, "DM_SETTEXT", Par1, txt); end
+        end
+      end
 
     elseif Msg == F.DN_BTNCLICK then
       if inData[Par1].action then inData[Par1].action(hDlg,Par1,Par2); end
