@@ -64,6 +64,7 @@ const char FarFileFilterType[] = "FarFileFilter";
 const char FarDialogType[]     = "FarDialog";
 const char FAR_KEYINFO[]       = "far.info";
 const char FAR_VIRTUALKEYS[]   = "far.virtualkeys";
+const char FAR_DN_STORAGE[]    = "FAR_DN_STORAGE";
 
 //-------------------------------------------------------------
 // [Must have this global due to DlgProc limitations].
@@ -248,13 +249,19 @@ int CheckFlags(lua_State* L, int stackpos)
 void uuid_to_guid(const char *uuid, GUID *guid)
 {
   //copy field-wise because uuid_t is always 16 bytes while GUID may be more than that
-  unsigned char buf[16];
-  memcpy(buf, uuid, 16);
-  memset( guid, 0, sizeof(GUID));
-  memcpy(&guid->Data1, buf+0, 4);
-  memcpy(&guid->Data2, buf+4, 2);
-  memcpy(&guid->Data3, buf+6, 2);
-  memcpy( guid->Data4, buf+8, 8);
+  memcpy(&guid->Data1, uuid+0, 4);
+  memcpy(&guid->Data2, uuid+4, 2);
+  memcpy(&guid->Data3, uuid+6, 2);
+  memcpy( guid->Data4, uuid+8, 8);
+}
+
+void guid_to_uuid(const GUID *guid, char *uuid)
+{
+  //copy field-wise because uuid_t is always 16 bytes while GUID may be more than that
+  memcpy(uuid+0, &guid->Data1, 4);
+  memcpy(uuid+4, &guid->Data2, 2);
+  memcpy(uuid+6, &guid->Data3, 2);
+  memcpy(uuid+8,  guid->Data4, 8);
 }
 
 int far_GetFileOwner (lua_State *L)
@@ -320,11 +327,11 @@ const wchar_t* StoreTempString(lua_State *L, int store_stack_pos, int* index)
 void PushEditorSetPosition(lua_State *L, const struct EditorSetPosition *esp)
 {
   lua_createtable(L, 0, 6);
-  PutIntToTable(L, "CurLine",       esp->CurLine);
-  PutIntToTable(L, "CurPos",        esp->CurPos);
-  PutIntToTable(L, "CurTabPos",     esp->CurTabPos);
-  PutIntToTable(L, "TopScreenLine", esp->TopScreenLine);
-  PutIntToTable(L, "LeftPos",       esp->LeftPos);
+  PutIntToTable(L, "CurLine",       esp->CurLine + 1);
+  PutIntToTable(L, "CurPos",        esp->CurPos + 1);
+  PutIntToTable(L, "CurTabPos",     esp->CurTabPos + 1);
+  PutIntToTable(L, "TopScreenLine", esp->TopScreenLine + 1);
+  PutIntToTable(L, "LeftPos",       esp->LeftPos + 1);
   PutIntToTable(L, "Overtype",      esp->Overtype);
 }
 
@@ -1260,20 +1267,21 @@ int far_Menu(lua_State *L)
     // push breakkeys table on top
     lua_pushvalue(L, 3);              // vk=-2; bk=-1;
     char buf[32];
-    int ind; // used outside the following loop
-    for(ind=0; ind < NumBreakCodes; ind++) {
+    int ind, out; // used outside the following loop
+    for(ind=0,out=0; ind < NumBreakCodes; ind++) {
       // get next break key (optional modifier plus virtual key)
       lua_pushinteger(L,ind+1);       // vk=-3; bk=-2;
       lua_gettable(L,-2);             // vk=-3; bk=-2;
-      if(!lua_istable(L,-1)) break;
+      if(!lua_istable(L,-1))  { lua_pop(L,1); continue; }
       lua_getfield(L, -1, "BreakKey");// vk=-4; bk=-3;
-      if(!lua_isstring(L,-1)) break;
+      if(!lua_isstring(L,-1)) { lua_pop(L,2); continue; }
       // separate modifier and virtual key strings
       int mod = 0;
       const char* s = lua_tostring(L,-1);
-      if(strlen(s) >= sizeof(buf)) break;
-      strcpy(buf, s);
-      char* vk = strchr(buf, '+');  // virtual key
+      if(strlen(s) >= sizeof(buf)) { lua_pop(L,2); continue; }
+      char* vk = buf;
+      do *vk++ = toupper(*s); while(*s++); // copy and convert to upper case
+      vk = strchr(buf, '+');  // virtual key
       if (vk) {
         *vk++ = '\0';
         if(strchr(buf,'C')) mod |= PKF_CONTROL;
@@ -1286,10 +1294,10 @@ int far_Menu(lua_State *L)
       }
       // get virtual key and break key values
       lua_rawget(L,-4);               // vk=-4; bk=-3;
-      BreakKeys[ind] = lua_tointeger(L,-1) | mod;
+      BreakKeys[out++] = lua_tointeger(L,-1) | mod;
       lua_pop(L,2);                   // vk=-2; bk=-1;
     }
-    BreakKeys[ind] = 0; // required by FAR API
+    BreakKeys[out] = 0; // required by FAR API
     pBreakKeys = BreakKeys;
     pBreakCode = &BreakCode;
   }
@@ -2270,6 +2278,25 @@ int Is_DM_DialogItem(int Msg)
   return 0;
 }
 
+int PushDMParams (lua_State *L, int Msg, int Param1)
+{
+  if (! ((Msg>DM_FIRST && Msg<=DM_SETCOLOR) || Msg==DM_USER))
+    return 0;
+
+  // Msg
+  lua_pushinteger(L, Msg);                             //+1
+
+  // Param1
+  if (Msg == DM_CLOSE)
+    lua_pushinteger(L, Param1<=0 ? Param1 : Param1+1); //+2
+  else if (Is_DM_DialogItem(Msg))
+    lua_pushinteger(L, Param1+1);                      //+2
+  else
+    lua_pushinteger(L, Param1);                        //+2
+
+  return 1;
+}
+
 int far_SendDlgMessage (lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
@@ -2310,6 +2337,8 @@ int far_SendDlgMessage (lua_State *L)
       luaL_argerror(L, 2, "operation not implemented");
       break;
 
+    case DM_GETFOCUS:
+      res_incr = 1; // fall through
     case DM_CLOSE:
     case DM_EDITUNCHANGEDFLAG:
     case DM_ENABLE:
@@ -2319,7 +2348,6 @@ int far_SendDlgMessage (lua_State *L)
     case DM_GETCURSORSIZE:
     case DM_GETDLGDATA:
     case DM_GETDROPDOWNOPENED:
-    case DM_GETFOCUS:
     case DM_GETITEMDATA:
     case DM_GETTEXTLENGTH:
     case DM_LISTGETDATASIZE:
@@ -2374,9 +2402,10 @@ int far_SendDlgMessage (lua_State *L)
     case DM_GETDIALOGINFO:
       dlg_info.StructSize = sizeof(dlg_info);
       if (Info->SendDlgMessage (hDlg, Msg, Param1, (LONG_PTR)&dlg_info)) {
-        lua_createtable(L,0,2);
-        PutNumToTable(L, "StructSize", dlg_info.StructSize);
-        PutLStrToTable(L, "Id", (const char*)&dlg_info.Id, sizeof(dlg_info.Id));
+        char uuid[16];
+        guid_to_uuid(&dlg_info.Id, uuid);
+        lua_createtable(L,0,1);
+        PutLStrToTable(L, "Id", uuid, 16);
         return 1;
       }
       return lua_pushnil(L), 1;
@@ -2402,8 +2431,8 @@ int far_SendDlgMessage (lua_State *L)
       if (Info->SendDlgMessage (hDlg, Msg, Param1, (LONG_PTR)&es)) {
         lua_createtable(L,0,5);
         PutNumToTable(L, "BlockType", es.BlockType);
-        PutNumToTable(L, "BlockStartLine", es.BlockStartLine);
-        PutNumToTable(L, "BlockStartPos", es.BlockStartPos);
+        PutNumToTable(L, "BlockStartLine", es.BlockStartLine+1);
+        PutNumToTable(L, "BlockStartPos", es.BlockStartPos+1);
         PutNumToTable(L, "BlockWidth", es.BlockWidth);
         PutNumToTable(L, "BlockHeight", es.BlockHeight);
         return 1;
@@ -2630,6 +2659,144 @@ int far_SendDlgMessage (lua_State *L)
   res = Info->SendDlgMessage (hDlg, Msg, Param1, Param2);
   lua_pushinteger (L, res + res_incr);
   return 1;
+}
+
+int PushDNParams (lua_State *L, int Msg, int Param1, LONG_PTR Param2)
+{
+  // Param1
+  switch(Msg)
+  {
+    case DN_CTLCOLORDIALOG:
+    case DN_DRAGGED:
+    case DN_DRAWDIALOG:
+    case DN_DRAWDIALOGDONE:
+    case DN_ENTERIDLE:
+    case DN_GETDIALOGINFO:
+    case DN_MOUSEEVENT:
+    case DN_RESIZECONSOLE:
+      break;
+
+    case DN_BTNCLICK:
+    case DN_CLOSE:
+    case DN_CTLCOLORDLGITEM:
+    case DN_CTLCOLORDLGLIST:
+    case DN_DRAWDLGITEM:
+    case DN_EDITCHANGE:
+    case DN_GOTFOCUS:
+    case DN_HELP:
+    case DN_HOTKEY:
+    case DN_INITDIALOG:
+    case DN_KEY:
+    case DN_KILLFOCUS:
+    case DN_LISTCHANGE:
+    case DN_LISTHOTKEY:
+    case DN_MOUSECLICK:
+      if (Param1 >= 0)  // dialog element position
+        ++Param1;
+      break;
+
+    default:
+      return FALSE;
+  }
+
+  lua_pushinteger(L, Msg);             //+1
+  lua_pushinteger(L, Param1);          //+2
+
+  // Param2
+  switch(Msg)
+  {
+    case DN_DRAWDLGITEM:
+    case DN_EDITCHANGE:
+      PushDlgItem(L, (struct FarDialogItem*)Param2, FALSE);
+      break;
+
+    case DN_HELP:
+      push_utf8_string(L, Param2 ? (wchar_t*)Param2 : L"", -1);
+      break;
+
+    case DN_GETDIALOGINFO: {
+      char uuid[16];
+      struct DialogInfo* di = (struct DialogInfo*) Param2;
+      guid_to_uuid(&di->Id, uuid);
+      lua_pushlstring(L, uuid, 16);
+      break;
+    }
+
+    case DN_LISTCHANGE:
+    case DN_LISTHOTKEY:
+      lua_pushinteger(L, Param2+1);  // make list positions 1-based
+      break;
+
+    case DN_MOUSECLICK:
+    case DN_MOUSEEVENT:
+      PutMouseEvent(L, (MOUSE_EVENT_RECORD*)Param2, FALSE);
+      break;
+
+    case DN_RESIZECONSOLE:
+    {
+      COORD* coord = (COORD*)Param2;
+      lua_createtable(L, 0, 2);
+      PutIntToTable(L, "X", coord->X);
+      PutIntToTable(L, "Y", coord->Y);
+      break;
+    }
+
+    default:
+      lua_pushinteger(L, Param2);  //+3
+      break;
+  }
+
+  return TRUE;
+}
+
+int ProcessDNResult(lua_State *L, int Msg, LONG_PTR Param2)
+{
+  int ret = 0;
+  switch(Msg)
+  {
+    case DN_CTLCOLORDLGLIST:
+      if((ret = lua_istable(L,-1)) != 0)
+      {
+        struct FarListColors* flc = (struct FarListColors*) Param2;
+        int i;
+        size_t len = lua_objlen(L, -1);
+
+        if(len > flc->ColorCount) len = flc->ColorCount;
+
+        for(i = 0; i < (int)len; i++)
+        {
+          lua_rawgeti(L, -1, i+1);
+          flc->Colors[i] = lua_tointeger(L, -1);
+          lua_pop(L, 1);
+        }
+      }
+      break;
+
+    case DN_CTLCOLORDLGITEM:
+    case DN_CTLCOLORDIALOG:
+      if(lua_isnumber(L, -1))
+        ret = lua_tointeger(L, -1);
+      break;
+
+    case DN_HELP:
+      if((ret = (intptr_t)utf8_to_utf16(L, -1, NULL)) != 0)
+      {
+        lua_getfield(L, LUA_REGISTRYINDEX, FAR_DN_STORAGE);
+        lua_pushvalue(L, -2);                // keep stack balanced
+        lua_setfield(L, -2, "helpstring");   // protect from garbage collector
+        lua_pop(L, 1);
+      }
+      break;
+
+    case DN_KILLFOCUS:
+      ret = lua_tointeger(L, -1) - 1;
+      break;
+
+    default:
+      ret = lua_isnumber(L, -1) ? lua_tointeger(L, -1) : lua_toboolean(L, -1);
+      break;
+  }
+  return ret;
 }
 
 int DN_ConvertParam1(int Msg, int Param1)
@@ -3728,9 +3895,12 @@ int far_AdvControl (lua_State *L)
       break;
 
     case ACTL_GETCOLOR:
-    case ACTL_SETCURRENTWINDOW:
     case ACTL_WAITKEY:
       Param = (void*) luaL_checkinteger(L, 2);
+      break;
+
+    case ACTL_SETCURRENTWINDOW:
+      Param = (void*) luaL_checkinteger(L, 2) - 1;
       break;
 
     //case ACTL_SYNCHRO:
@@ -3801,7 +3971,7 @@ int far_AdvControl (lua_State *L)
       if (Command == ACTL_GETWINDOWINFO) {
         int r = Info->AdvControl(Info->ModuleNumber, Command, &wi);
         if (!r)
-          return lua_pushinteger(L,0), 1;
+          return lua_pushnil(L), 1;
         wi.TypeName = (wchar_t*)
           lua_newuserdata(L, (wi.TypeNameSize + wi.NameSize) * sizeof(wchar_t));
         wi.Name = wi.TypeName + wi.TypeNameSize;
@@ -3809,7 +3979,7 @@ int far_AdvControl (lua_State *L)
 
       int r = Info->AdvControl(Info->ModuleNumber, Command, &wi);
       if (!r)
-        return lua_pushinteger(L,0), 1;
+        return lua_pushnil(L), 1;
       lua_createtable(L,0,4);
       PutIntToTable(L, "Pos", wi.Pos + 1);
       PutIntToTable(L, "Type", wi.Type);
@@ -3847,7 +4017,7 @@ int far_AdvControl (lua_State *L)
       GetFlagCombination(L, -1, (int*)&fsc.Flags);
       fsc.ColorCount = lua_objlen(L, 2);
       fsc.Colors = (BYTE*)lua_newuserdata(L, fsc.ColorCount);
-    int i;
+      int i;
       for (i=0; i < fsc.ColorCount; i++) {
         lua_pushinteger(L,i+1);
         lua_gettable(L,2);
@@ -4701,6 +4871,9 @@ end";
 
 int luaopen_far (lua_State *L)
 {
+  lua_newtable(L);
+  lua_setfield(L, LUA_REGISTRYINDEX, FAR_DN_STORAGE);
+
   NewVirtualKeyTable(L, FALSE);
   lua_setfield(L, LUA_REGISTRYINDEX, FAR_VIRTUALKEYS);
   push_flags_table (L);

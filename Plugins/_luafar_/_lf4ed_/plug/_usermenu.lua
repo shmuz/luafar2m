@@ -47,4 +47,5 @@ if os.getenv("USER") == "shmuel" then
   AddToMenu ("e", "Test: Sort Lines",       nil,      "scripts/test_sortlines.lua")
   AddToMenu ("e", "Multiline Search",       "Ctrl+7", "scripts/multiline.lua")
   AddToMenu ("e", "Multiline Search Again", "Ctrl+8", "scripts/multiline.lua", true)
+  AddUserFile("scripts/lf_fin.lua")
 end

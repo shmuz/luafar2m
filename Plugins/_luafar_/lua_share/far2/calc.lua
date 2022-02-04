@@ -220,7 +220,7 @@ local function calculator()
       end
     })
   local cfunction = function(c) return environ[c] end
-  local keys = { Enter="btnCalc"; Ins="btnIns"; F5 = "btnCopy"; }
+  local keys = { Enter="btnCalc"; Num0="btnIns"; F5 = "btnCopy"; } -- "Num0" for Linux, "Ins" for Windows
 
   function dItems.btnCalc.Action(handle)
     if tonumber(result) then
@@ -235,7 +235,7 @@ local function calculator()
   end
 
   function dItems.btnIns.Action()
-    far.MacroPost(("print %q"):format(getdata(active_item)))
+    far.MacroPost(("print(%q)"):format(getdata(active_item)))
   end
 
   local function format(item, res)
@@ -389,14 +389,15 @@ local function calculator()
             end
           end
           set_language(handle)
-          SendMessage(handle, F.DM_SETFOCUS, dPos.calc)
+          far.Timer(10, function(h) -- timer is used due to FAR2 bug
+            h:Close() SendMessage(handle, F.DM_SETFOCUS, dPos.calc) end)
           do_chain(handle)
         end
       end
     ----------------------------------------------------------------------------
     elseif msg==F.DN_HOTKEY then
       if enable_custom_hotkeys then
-        local n = p2 - 0x2000030
+        local n = p2 - 0x2000030 -- 0x2000000 = Alt, 0x30 = '0'
         if n>=0 and n<=4 then
           if n==0 then
             SendMessage(handle, F.DM_SETFOCUS, dPos.calc)

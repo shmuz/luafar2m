@@ -201,7 +201,7 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
   Y = Y + 1
   D.btnOk       = {"DI_BUTTON",   0, Y, 0,0, 0, 0, "DIF_CENTERGROUP", 1, M.MOk}
   D.btnCancel   = {"DI_BUTTON",   0, Y, 0,0, 0, 0, "DIF_CENTERGROUP", 0, M.MCancel}
-  D.btnConfig   = {"DI_BUTTON",   0, Y, 0,0, 0, 0, "DIF_CENTERGROUP", 0, M.MDlgBtnConfig}
+--D.btnConfig   = {"DI_BUTTON",   0, Y, 0,0, 0, 0, "DIF_CENTERGROUP", 0, M.MDlgBtnConfig} -- TODO
   D.dblbox.Y2   = Y+1
   ------------------------------------------------------------------------------
   local function DlgProc (hDlg, msg, param1, param2)
@@ -233,7 +233,7 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
     elseif msg == F.DN_GETDIALOGINFO then
       return aReplace and replaceGuid or searchGuid
     elseif msg == F.DN_CLOSE then
-      if param1 == D.btnConfig.id then
+      if D.btnConfig and param1 == D.btnConfig.id then
         SendDlgMessage(hDlg, F.DM_SHOWDIALOG, 0)
         ConfigDialog(aHistory)
         SendDlgMessage(hDlg, F.DM_SHOWDIALOG, 1)

@@ -195,7 +195,7 @@ id=20
 lv=2
 dt=Text
 nm=AddEvent
-mtime=3852664455
+mtime=3853171692
 <article>
 #_<markdown>
 #_**`AddEvent (event_name, handler)`**
@@ -208,6 +208,7 @@ mtime=3852664455
 #_* `"EditorInput"`
 #_* `"EditorEvent"`
 #_* `"ViewerEvent"`
+#_* `"DialogEvent"`
 #_* `"ExitScript"`
 #_
 #_### Notes about the handlers
@@ -221,7 +222,7 @@ mtime=3852664455
 #_   for details). `ExitScript` has no parameters, no return value.
 #_1. If the return value of a handler's `EditorInput` is true,
 #_   the rest of `EditorInput` handlers are not called, and
-#_   true is returned to Far.
+#_   true is returned to Far. This is the same also for `DialogEvent`.
 #_1. The return values of `EditorEvent` and `ViewerEvent` handlers
 #_   are ignored.
 #_1. `EditorInput` handlers are not called when a user-defined

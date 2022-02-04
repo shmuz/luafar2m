@@ -327,6 +327,7 @@ local function AddEvent (EventName, EventHandler)
     if     EventName=="EditorInput" then table.insert(_Plugin.EditorInputHandlers, EventHandler)
     elseif EventName=="EditorEvent" then table.insert(_Plugin.EditorEventHandlers, EventHandler)
     elseif EventName=="ViewerEvent" then table.insert(_Plugin.ViewerEventHandlers, EventHandler)
+    elseif EventName=="DialogEvent" then table.insert(_Plugin.DialogEventHandlers, EventHandler)
     elseif EventName=="ExitScript"  then table.insert(_Plugin.ExitScriptHandlers,  EventHandler)
     end
   end
@@ -398,10 +399,11 @@ local function fReloadUserFile()
   package.path = _Plugin.PackagePath -- restore to original value
   _Plugin.HotKeyTable = {}
   _Plugin.CommandTable = {}
+  _Plugin.EditorInputHandlers = {}
   _Plugin.EditorEventHandlers = {}
   _Plugin.ViewerEventHandlers = {}
-  _Plugin.EditorInputHandlers = {}
-  _Plugin.ExitScriptHandlers = {}
+  _Plugin.DialogEventHandlers = {}
+  _Plugin.ExitScriptHandlers  = {}
   -----------------------------------------------------------------------------
   _Plugin.UserItems = { editor={},viewer={},panels={},config={},cmdline={},dialog={} }
   local env = setmetatable({}, {__index=_G})
@@ -729,6 +731,13 @@ local function export_ProcessViewerEvent (Event, Param)
   end
 end
 
+local function export_ProcessDialogEvent (Event, Param)
+  for _,f in ipairs(_Plugin.DialogEventHandlers) do
+    local ret = f(Event, Param)
+    if ret then return ret end
+  end
+end
+
 local function SetExportFunctions()
   export.Configure          = export_Configure
   export.ExitFAR            = export_ExitFAR
@@ -737,6 +746,7 @@ local function SetExportFunctions()
   export.ProcessEditorEvent = export_ProcessEditorEvent
   export.ProcessEditorInput = export_ProcessEditorInput
   export.ProcessViewerEvent = export_ProcessViewerEvent
+  export.ProcessDialogEvent = export_ProcessDialogEvent
 end
 
 local function InitUpvalues (_Plugin)

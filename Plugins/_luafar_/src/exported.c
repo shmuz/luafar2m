@@ -7,6 +7,9 @@
 
 extern void Log(const char* str);
 extern void LF_Error(lua_State *L, const wchar_t* aMsg);
+extern int  PushDMParams    (lua_State *L, int Msg, int Param1);
+extern int  PushDNParams    (lua_State *L, int Msg, int Param1, LONG_PTR Param2);
+extern int  ProcessDNResult (lua_State *L, int Msg, LONG_PTR Param2);
 
 // "Collector" is a Lua table referenced from the Plugin Object table by name.
 // Collector contains an array of lightuserdata which are pointers to new[]'ed
@@ -158,6 +161,7 @@ const wchar_t** CreateStringsArray(lua_State* L, int cpos, const char* field,
                                    int *numstrings)
 {
   const wchar_t **buf = NULL;
+  if(numstrings) *numstrings = 0;
   lua_getfield(L, -1, field);
   if(lua_istable(L, -1)) {
     int n = lua_objlen(L, -1);
@@ -902,23 +906,47 @@ int LF_ProcessViewerEvent (lua_State* L, int Event, void* Param)
 int LF_ProcessDialogEvent (lua_State* L, int Event, void *Param)
 {
   int ret = 0;
-  if (GetExportFunction(L, "ProcessDialogEvent"))  { //+1: Func
-    struct FarDialogEvent *fde = (struct FarDialogEvent*) Param;
-    lua_pushinteger(L, Event); //+2
-    lua_createtable(L, 0, 5);  //+3
-    NewDialogData(L, NULL, fde->hDlg, FALSE);
-    lua_setfield(L, -2, "hDlg"); //+3
+  struct FarDialogEvent *fde = (struct FarDialogEvent*) Param;
+  BOOL PushDN = FALSE;
+
+  if (!GetExportFunction(L, "ProcessDialogEvent")) //+1: Func
+    return 0;
+
+  lua_pushinteger(L, Event);       //+2
+  lua_createtable(L, 0, 5);        //+3
+  NewDialogData(L, NULL, fde->hDlg, FALSE);
+  lua_setfield(L, -2, "hDlg");     //+3
+
+  if (PushDNParams(L, fde->Msg, fde->Param1, fde->Param2)) //+6
+  {
+    PushDN = TRUE;
+    lua_setfield(L, -4, "Param2"); //+5
+    lua_setfield(L, -3, "Param1"); //+4
+    lua_setfield(L, -2, "Msg");    //+3
+  }
+  else if (PushDMParams(L, fde->Msg, fde->Param1)) //+5
+  {
+    lua_setfield(L, -3, "Param1"); //+4
+    lua_setfield(L, -2, "Msg");    //+3
+    PutIntToTable(L, "Param2", fde->Param2); //FIXME: temporary solution
+  }
+  else
+  {
     PutIntToTable(L, "Msg", fde->Msg);
     PutIntToTable(L, "Param1", fde->Param1);
     PutIntToTable(L, "Param2", fde->Param2);
-    PutIntToTable(L, "Result", fde->Result);
-    if (pcall_msg(L, 2, 2) == 0) {  //+2
-      ret = lua_isnumber(L,-2) ? lua_tointeger(L,-2) : lua_toboolean(L,-2);
-      if (ret != 0)
-        fde->Result = lua_tointeger(L,-1);
-      lua_pop(L,2);
-    }
   }
+
+  if(pcall_msg(L, 2, 1) == 0)      //+1
+  {
+    if((ret=lua_toboolean(L,-1)) != 0)
+    {
+      fde->Result = PushDN ? ProcessDNResult(L, fde->Msg, fde->Param2) : lua_tointeger(L,-1);
+    }
+
+    lua_pop(L,1);
+  }
+
   return ret;
 }
 

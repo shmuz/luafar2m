@@ -172,6 +172,7 @@ local FlagsMap = {
 -- @param inData table : contains an array part ("items") and a dictionary part ("properties")
 
 --    Supported properties for entire dialog (all are optional):
+--        guid          : string   : a text-form guid
 --        width         : number   : dialog width
 --        help          : string   : help topic
 --        flags         : flags    : dialog flags
@@ -204,6 +205,7 @@ local function Run (inData)
   assert(type(inData.flags)=="number", "'Data.flags' must be a number")
   local HMARGIN = (0 == band(inData.flags,F.FDLG_SMALLDIALOG)) and 3 or 0 -- horisontal margin
   local VMARGIN = (0 == band(inData.flags,F.FDLG_SMALLDIALOG)) and 1 or 0 -- vertical margin
+  local guid = inData.guid and win.Uuid(inData.guid) or ("\0"):rep(16)
   local W = inData.width or 76
   local Y, H = VMARGIN-1, 0
   local outData = {}
@@ -387,6 +389,9 @@ local function Run (inData)
     if Msg == F.DN_INITDIALOG then
       if inData.initaction then inData.initaction(hDlg); end
 
+    elseif Msg == F.DN_GETDIALOGINFO then
+      return guid
+      
     elseif Msg == F.DN_CLOSE then
       if inData.closeaction and inData[Par1] and not inData[Par1].cancel then
         return inData.closeaction(hDlg, Par1, get_dialog_state(hDlg))

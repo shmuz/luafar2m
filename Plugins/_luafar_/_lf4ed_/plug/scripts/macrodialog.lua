@@ -23,6 +23,7 @@ local AreaList = {
 local function MacroDialog (input)
   local hw = 33 -- half-width of space inside the double-box
   local items = {
+    guid = "E5DBC50D-DEAC-49C0-AE3A-357602A418AE";
     width=2*hw+10;
     {tp="dbox"; text="Macro settings"; },
     {tp="text"; text="Command of e&xecution"; width=hw-2; },

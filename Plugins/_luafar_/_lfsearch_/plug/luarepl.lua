@@ -19,6 +19,7 @@ local function FormatInt (num)
 end
 
 
+-- TODO: it always returns nil
 local function GetFarHistory (name)
   local lines = win.GetRegKey("HKCU", "SavedDialogHistory\\"..name, "lines")
   return lines and lines:match"^%Z*"
