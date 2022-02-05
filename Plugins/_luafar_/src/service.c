@@ -58,7 +58,6 @@ extern void push_keys_table (lua_State *L);
 #ifndef ARRAYSIZE
 #  define ARRAYSIZE(buff) (sizeof(buff)/sizeof(buff[0]))
 #endif
-#define OptHandle(L,i) ((HANDLE)luaL_optinteger (L,i,(INT_PTR)INVALID_HANDLE_VALUE))
 
 const char FarFileFilterType[] = "FarFileFilter";
 const char FarDialogType[]     = "FarDialog";
@@ -170,6 +169,37 @@ const char far_Guids[] = "far.Guids = {"
   "MoveFilesId      = '431A2F37-AC01-4ECD-BB6F-8CDE584E5A03';"
   "HardSymLinkId    = '5EB266F4-980D-46AF-B3D2-2C50E64BCA81';"
 "}";
+
+HANDLE OptHandlePos(lua_State *L, int pos)
+{
+  switch(lua_type(L,pos))
+  {
+    case LUA_TNONE:
+    case LUA_TNIL:
+      break;
+    case LUA_TNUMBER:
+    {
+      lua_Integer whatPanel = lua_tointeger(L,pos);
+      HANDLE hh = (HANDLE)whatPanel;
+      return (hh==PANEL_PASSIVE || hh==PANEL_ACTIVE) ? hh : whatPanel%2 ? PANEL_ACTIVE:PANEL_PASSIVE;
+    }
+    case LUA_TLIGHTUSERDATA:
+      return lua_touserdata(L,pos);
+    default:
+      luaL_typerror(L, pos, "integer or light userdata");
+  }
+  return NULL;
+}
+
+HANDLE OptHandle(lua_State *L)
+{
+  return OptHandlePos(L,1);
+}
+
+HANDLE OptHandle2(lua_State *L)
+{
+  return lua_isnoneornil(L,1) ? (luaL_checkinteger(L,2) % 2 ? PANEL_ACTIVE:PANEL_PASSIVE) : OptHandle(L);
+}
 
 const wchar_t* GetMsg (PSInfo *Info, int MsgId)
 {
@@ -1035,6 +1065,7 @@ int editor_SaveFile(lua_State *L)
   struct EditorSaveFile esf;
   esf.FileName = opt_utf8_string(L, 1, L"");
   esf.FileEOL = opt_utf8_string(L, 2, NULL);
+  esf.CodePage = luaL_optinteger(L, 3, CP_AUTODETECT);
   if (Info->EditorControl(ECTL_SAVEFILE, &esf))
     return lua_pushboolean(L, 1), 1;
   return 0;
@@ -1176,7 +1207,7 @@ int far_Menu(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   int X = -1, Y = -1, MaxHeight = 0;
-  int Flags = FMENU_WRAPMODE | FMENU_AUTOHIGHLIGHT;
+  int Flags;
   const wchar_t *Title = L"Menu", *Bottom = NULL, *HelpTopic = NULL;
 
   lua_settop (L, 3);    // cut unneeded parameters; make stack predictable
@@ -1323,122 +1354,129 @@ int far_Menu(lua_State *L)
 
 // Return:   -1 if escape pressed, else - button number chosen (0 based).
 int LF_Message(PSInfo *Info,
-  const wchar_t* aMsg,      // if multiline, then lines must be separated by '\n'
-  const wchar_t* aTitle,
-  const wchar_t* aButtons,  // if multiple, then captions must be separated by ';'
-  const char* aFlags,
-  const wchar_t* aHelpTopic)
+               const wchar_t* aMsg,      // if multiline, then lines must be separated by '\n'
+               const wchar_t* aTitle,
+               const wchar_t* aButtons,  // if multiple, then captions must be separated by ';'
+               const char*    aFlags,
+               const wchar_t* aHelpTopic)
 {
+  const wchar_t **items, **pItems;
+  wchar_t** allocLines;
+  int nAlloc;
+  wchar_t *lastDelim, *MsgCopy, *start, *pos;
   CONSOLE_SCREEN_BUFFER_INFO csbi;
   int ret = WINPORT(GetConsoleScreenBufferInfo)(NULL, &csbi);//GetStdHandle(STD_OUTPUT_HANDLE)
-  const int MAXLEN    = ret ? csbi.srWindow.Right - csbi.srWindow.Left+1-14 : 66;
-  const int MAX_ITEMS = ret ? csbi.srWindow.Bottom - csbi.srWindow.Top+1-3 : 22;
-  const wchar_t** items = (const wchar_t**) malloc(MAX_ITEMS * sizeof(wchar_t*));
-  const wchar_t** pItems = items;
-  int num_items = 0, num_buttons = 0;
-  unsigned Flags = 0;
-
-  // Title
-  *pItems++ = aTitle;
-  num_items++;
-
+  const int max_len   = ret ? csbi.srWindow.Right - csbi.srWindow.Left+1-14 : 66;
+  const int max_lines = ret ? csbi.srWindow.Bottom - csbi.srWindow.Top+1-5 : 20;
+  int num_lines = 0, num_buttons = 0;
+  UINT64 Flags = 0;
   // Buttons
   wchar_t *BtnCopy = NULL, *ptr = NULL;
-  if (*aButtons == L';') {
+  int wrap = !(aFlags && strchr(aFlags, 'n'));
+
+  if(*aButtons == L';')
+  {
     const wchar_t* p = aButtons + 1;
-    if      (!wcscasecmp(p, L"Ok"))               Flags = FMSG_MB_OK;                //was: _wcsicmp
-    else if (!wcscasecmp(p, L"OkCancel"))         Flags = FMSG_MB_OKCANCEL;          //+
-    else if (!wcscasecmp(p, L"AbortRetryIgnore")) Flags = FMSG_MB_ABORTRETRYIGNORE;  //+
-    else if (!wcscasecmp(p, L"YesNo"))            Flags = FMSG_MB_YESNO;             //+
-    else if (!wcscasecmp(p, L"YesNoCancel"))      Flags = FMSG_MB_YESNOCANCEL;       //+
-    else if (!wcscasecmp(p, L"RetryCancel"))      Flags = FMSG_MB_RETRYCANCEL;       //+
+
+    if(!wcscasecmp(p, L"Ok"))                    Flags = FMSG_MB_OK;
+    else if(!wcscasecmp(p, L"OkCancel"))         Flags = FMSG_MB_OKCANCEL;
+    else if(!wcscasecmp(p, L"AbortRetryIgnore")) Flags = FMSG_MB_ABORTRETRYIGNORE;
+    else if(!wcscasecmp(p, L"YesNo"))            Flags = FMSG_MB_YESNO;
+    else if(!wcscasecmp(p, L"YesNoCancel"))      Flags = FMSG_MB_YESNOCANCEL;
+    else if(!wcscasecmp(p, L"RetryCancel"))      Flags = FMSG_MB_RETRYCANCEL;
+    else
+      while(*aButtons == L';') aButtons++;
   }
-  else {
+  if(Flags == 0)
+  {
     // Buttons: 1-st pass, determining number of buttons
-    // (giving buttons priority over message lines).
-    BtnCopy = wcsdup(aButtons);
+    BtnCopy = _wcsdup(aButtons);
     ptr = BtnCopy;
-    while (*ptr && (num_buttons < MAX_ITEMS-2)) {
-      while (*ptr == L';')
+
+    while(*ptr && (num_buttons < 64))
+    {
+      while(*ptr == L';')
         ptr++; // skip semicolons
-      if (*ptr) {
+
+      if(*ptr)
+      {
         ++num_buttons;
         ptr = wcschr(ptr, L';');
-        if (!ptr) break;
+
+        if(!ptr) break;
       }
     }
-    num_items += num_buttons;
   }
 
+  items = (const wchar_t**) malloc((1+max_lines+num_buttons) * sizeof(wchar_t*));
+  allocLines = (wchar_t**) malloc(max_lines * sizeof(wchar_t*)); // array of pointers to allocated lines
+  nAlloc = 0;                                                    // number of allocated lines
+  pItems = items;
+  // Title
+  *pItems++ = aTitle;
   // Message lines
-  wchar_t* allocLines[MAX_ITEMS];       // array of pointers to allocated lines
-  int nAlloc = 0;                       // number of allocated lines
-  int lastSpace = -1, lastDelim = -1;   // positions; -1 stands for "invalid"
+  lastDelim = NULL;
+  MsgCopy = _wcsdup(aMsg);
+  start = pos = MsgCopy;
 
-  int pos;
-  wchar_t* MsgCopy = wcsdup(aMsg);
-  ptr = MsgCopy;
-  for (pos=0; num_items < MAX_ITEMS; ) {
-    if (ptr[pos] == 0) {     // end of the entire message
-      *pItems++ = ptr;
-      ++num_items;
+  while(num_lines < max_lines)
+  {
+    if(*pos == 0)                          // end of the entire message
+    {
+      *pItems++ = start;
+      ++num_lines;
       break;
     }
-    if (ptr[pos] == '\n') {     // end of a message line
-      *pItems++ = ptr;
-      ptr[pos] = '\0';
-      ++num_items;
-      ptr += pos+1;
-      pos = 0;
-      lastSpace = lastDelim = -1;
+    else if(*pos == L'\n')                 // end of a message line
+    {
+      *pItems++ = start;
+      *pos = L'\0';
+      ++num_lines;
+      start = ++pos;
+      lastDelim = NULL;
     }
-    else if (pos < MAXLEN) {    // characters inside the message
-      if (ptr[pos] == L' ' || ptr[pos] == L'\t') lastSpace = pos;
-      else if (!isalnum(ptr[pos]) && ptr[pos] != L'_') lastDelim = pos;
+    else if(pos-start < max_len)            // characters inside the line
+    {
+      if (wrap && !iswalnum(*pos) && *pos != L'_' && *pos != L'\'' && *pos != L'\"')
+        lastDelim = pos;
+
       pos++;
     }
-    else {                      // the 1-st character beyond the message
-      if (ptr[pos] == L' ' || ptr[pos] == L'\t') {    // is it a space?
-        *pItems++ = ptr;                              // -> split here
-        ptr[pos] = 0;
-        ++num_items;
-        ptr += pos+1;
-        pos = 0;
-        lastSpace = lastDelim = -1;
-      }
-      else if (lastSpace != -1) {                   // is lastSpace valid?
-        *pItems++ = ptr;                            // -> split at lastSpace
-        ptr[lastSpace] = 0;
-        ++num_items;
-        ptr += lastSpace+1;
-        pos = 0;
-        lastSpace = lastDelim = -1;
-      }
-      else {                                        // line allocation is needed
-        int len = lastDelim != -1 ? lastDelim+1 : pos;
-        wchar_t** q = &allocLines[nAlloc++];
-        *pItems++ = *q = (wchar_t*) malloc((len+1)*sizeof(wchar_t));
-        wcsncpy(*q, ptr, len);
-        (*q)[len] = '\0';
-        ++num_items;
-        ptr += len;
-        pos = 0;
-        lastSpace = lastDelim = -1;
-      }
+    else if (wrap)                          // the 1-st character beyond the line
+    {
+      size_t len;
+      wchar_t **q;
+      pos = lastDelim ? lastDelim+1 : pos;
+      len = pos - start;
+      q = &allocLines[nAlloc++]; // line allocation is needed
+      *pItems++ = *q = (wchar_t*) malloc((len+1)*sizeof(wchar_t));
+      wcsncpy(*q, start, len);
+      (*q)[len] = L'\0';
+      ++num_lines;
+      start = pos;
+      lastDelim = NULL;
     }
+    else
+      pos++;
   }
 
-  if (*aButtons != L';') {
+  if(*aButtons != L';')
+  {
     // Buttons: 2-nd pass.
     int i;
     ptr = BtnCopy;
-    for (i=0; i < num_buttons; i++) {
-      while (*ptr == ';')
+
+    for(i=0; i < num_buttons; i++)
+    {
+      while(*ptr == L';')
         ++ptr;
-      if (*ptr) {
+
+      if(*ptr)
+      {
         *pItems++ = ptr;
         ptr = wcschr(ptr, L';');
-        if (ptr)
+
+        if(ptr)
           *ptr++ = 0;
         else
           break;
@@ -1448,33 +1486,53 @@ int LF_Message(PSInfo *Info,
   }
 
   // Flags
-  if (aFlags) {
+  if(aFlags)
+  {
     if(strchr(aFlags, 'w')) Flags |= FMSG_WARNING;
     if(strchr(aFlags, 'e')) Flags |= FMSG_ERRORTYPE;
     if(strchr(aFlags, 'k')) Flags |= FMSG_KEEPBACKGROUND;
     if(strchr(aFlags, 'l')) Flags |= FMSG_LEFTALIGN;
   }
 
-  ret = Info->Message (Info->ModuleNumber, Flags, aHelpTopic, items,
-                       num_items, num_buttons);
+  ret = Info->Message(Info->ModuleNumber, Flags, aHelpTopic, items, 1+num_lines+num_buttons, num_buttons);
   free(BtnCopy);
+
   while(nAlloc) free(allocLines[--nAlloc]);
+
+  free(allocLines);
   free(MsgCopy);
   free(items);
   return ret;
 }
 
+// Taken from Lua 5.1 (luaL_gsub) and modified
+const wchar_t *LF_Gsub (lua_State *L, const wchar_t *s, const wchar_t *p, const wchar_t *r)
+{
+  const wchar_t *wild;
+  size_t l = wcslen(p);
+  size_t l2 = sizeof(wchar_t) * wcslen(r);
+  luaL_Buffer b;
+  luaL_buffinit(L, &b);
+  while ((wild = wcsstr(s, p)) != NULL) {
+    luaL_addlstring(&b, (void*)s, sizeof(wchar_t) * (wild - s));  /* push prefix */
+    luaL_addlstring(&b, (void*)r, l2);  /* push replacement in place of pattern */
+    s = wild + l;  /* continue after `p' */
+  }
+  luaL_addlstring(&b, (void*)s, sizeof(wchar_t) * wcslen(s));  /* push last suffix */
+  luaL_addlstring(&b, (void*)L"\0", sizeof(wchar_t));  /* push L'\0' */
+  luaL_pushresult(&b);
+  return (wchar_t*) lua_tostring(L, -1);
+}
+
 void LF_Error(lua_State *L, const wchar_t* aMsg)
 {
-  const wchar_t term = 0;
   PSInfo *Info = GetPluginStartupInfo(L);
   if (!aMsg) aMsg = L"<non-string error message>";
-  lua_pushlstring(L, (const char*)Info->ModuleName, sizeof(wchar_t) * wcslen(Info->ModuleName));
-  lua_pushlstring(L, (const char*)L":\n",           sizeof(wchar_t) * 2);
-  lua_pushlstring(L, (const char*)aMsg,             sizeof(wchar_t) * wcslen(aMsg));
-  lua_pushlstring(L, (const char*)&term,            sizeof(wchar_t));
-  lua_concat(L, 4);
-  LF_Message(Info, (const wchar_t*)lua_tostring(L,-1), L"Error", L"OK", "w", NULL);
+  lua_pushlstring(L, (void*)Info->ModuleName, sizeof(wchar_t) * wcslen(Info->ModuleName));
+  lua_pushlstring(L, (void*)L":\n", sizeof(wchar_t) * 2);
+  LF_Gsub(L, aMsg, L"\n\t", L"\n   ");
+  lua_concat(L, 3);
+  LF_Message(Info, (void*)lua_tostring(L,-1), L"Error", L"OK", "w", NULL);
   lua_pop(L, 1);
 }
 
@@ -1541,30 +1599,25 @@ int far_CmpName(lua_State *L)
 int panel_CheckPanelsExist(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
-  if (Info->Control(handle, FCTL_CHECKPANELSEXIST, 0, 0))
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  HANDLE handle = OptHandle(L);
+  lua_pushboolean(L, (int)Info->Control(handle, FCTL_CHECKPANELSEXIST, 0, 0));
+  return 1;
 }
 
 int panel_ClosePlugin(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
-  const wchar_t *dir = opt_utf8_string(L, 2, L".");
-  if (Info->Control(handle, FCTL_CLOSEPLUGIN, 0, (LONG_PTR)dir))
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  HANDLE handle = OptHandle(L);
+  const wchar_t *dir = opt_utf8_string(L, 2, NULL);
+  lua_pushboolean(L, Info->Control(handle, FCTL_CLOSEPLUGIN, 0, (LONG_PTR)dir));
+  return 1;
+
 }
 
 int panel_GetPanelInfo(lua_State *L /*, BOOL ShortInfo*/)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
-  if (handle == INVALID_HANDLE_VALUE) {
-    handle = (luaL_checkinteger(L,2) % 2) ? PANEL_ACTIVE:PANEL_PASSIVE;
-  }
-
+  HANDLE handle = OptHandle2(L);
   struct PanelInfo pi;
   int ret = Info->Control(handle, FCTL_GETPANELINFO, 0, (LONG_PTR)&pi);
   if(ret == 0)
@@ -1599,18 +1652,17 @@ int panel_GetPanelInfo(lua_State *L /*, BOOL ShortInfo*/)
 int get_panel_item(lua_State *L, int command)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
-  if (handle == INVALID_HANDLE_VALUE) {
-    handle = (luaL_checkinteger(L,2) % 2) ? PANEL_ACTIVE:PANEL_PASSIVE;
-  }
+  HANDLE handle = OptHandle2(L);
   int index = luaL_optinteger(L,3,1) - 1;
-  if (index < 0) index = 0;
-  int size = Info->Control(handle, command, index, 0);
-  if (size) {
-    struct PluginPanelItem* item = (struct PluginPanelItem*)lua_newuserdata(L, size);
-    if (Info->Control(handle, command, index, (LONG_PTR)item)) {
-      PushPanelItem(L, item);
-      return 1;
+  if(index >= 0 || command == FCTL_GETCURRENTPANELITEM)
+  {
+    int size = Info->Control(handle, command, index, 0);
+    if (size) {
+      struct PluginPanelItem* item = (struct PluginPanelItem*)lua_newuserdata(L, size);
+      if (Info->Control(handle, command, index, (LONG_PTR)item)) {
+        PushPanelItem(L, item);
+        return 1;
+      }
     }
   }
   return lua_pushnil(L), 1;
@@ -1631,10 +1683,7 @@ int panel_GetCurrentPanelItem(lua_State *L) {
 int get_string_info(lua_State *L, int command)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
-  if (handle == INVALID_HANDLE_VALUE) {
-    handle = (luaL_checkinteger(L,2) % 2) ? PANEL_ACTIVE:PANEL_PASSIVE;
-  }
+  HANDLE handle = OptHandle2(L);
   int size = Info->Control(handle, command, 0, 0);
   if (size) {
     wchar_t *buf = (wchar_t*)lua_newuserdata(L, size * sizeof(wchar_t));
@@ -1669,10 +1718,7 @@ int panel_GetColumnWidths(lua_State *L) {
 int panel_RedrawPanel(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
-  if (handle == INVALID_HANDLE_VALUE) {
-    handle = (luaL_checkinteger(L,2) % 2) ? PANEL_ACTIVE:PANEL_PASSIVE;
-  }
+  HANDLE handle = OptHandle2(L);
   LONG_PTR param2 = 0;
   struct PanelRedrawInfo pri;
   if (lua_istable(L, 3)) {
@@ -1689,10 +1735,7 @@ int panel_RedrawPanel(lua_State *L)
 int SetPanelBooleanProperty(lua_State *L, int command)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
-  if (handle == INVALID_HANDLE_VALUE) {
-    handle = (luaL_checkinteger(L,2) % 2) ? PANEL_ACTIVE:PANEL_PASSIVE;
-  }
+  HANDLE handle = OptHandle2(L);
   int param1 = lua_toboolean(L,3);
   lua_pushboolean(L, Info->Control(handle, command, param1, 0));
   return 1;
@@ -1701,10 +1744,7 @@ int SetPanelBooleanProperty(lua_State *L, int command)
 int SetPanelIntegerProperty(lua_State *L, int command)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
-  if (handle == INVALID_HANDLE_VALUE) {
-    handle = (luaL_checkinteger(L,2) % 2) ? PANEL_ACTIVE:PANEL_PASSIVE;
-  }
+  HANDLE handle = OptHandle2(L);
   int param1 = check_env_flag(L,3);
   lua_pushboolean(L, Info->Control(handle, command, param1, 0));
   return 1;
@@ -1722,6 +1762,11 @@ int panel_SetSortOrder(lua_State *L) {
   return SetPanelBooleanProperty(L, FCTL_SETSORTORDER);
 }
 
+int panel_SetDirectoriesFirst(lua_State *L)
+{
+	return SetPanelBooleanProperty(L, FCTL_SETDIRECTORIESFIRST);
+}
+
 int panel_UpdatePanel(lua_State *L) {
   return SetPanelBooleanProperty(L, FCTL_UPDATEPANEL);
 }
@@ -1734,13 +1779,10 @@ int panel_SetViewMode(lua_State *L) {
   return SetPanelIntegerProperty(L, FCTL_SETVIEWMODE);
 }
 
-int panel_SetPanelDir(lua_State *L)
+int panel_SetPanelDirectory(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
-  if (handle == INVALID_HANDLE_VALUE) {
-    handle = (luaL_checkinteger(L,2) % 2) ? PANEL_ACTIVE:PANEL_PASSIVE;
-  }
+  HANDLE handle = OptHandle2(L);
   LONG_PTR param2 = 0;
   if (lua_isstring(L, 3)) {
     const wchar_t* dir = check_utf8_string(L, 3, NULL);
@@ -1753,7 +1795,7 @@ int panel_SetPanelDir(lua_State *L)
 int panel_GetCmdLine(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
+  HANDLE handle = OptHandle(L);
   int size = Info->Control(handle, FCTL_GETCMDLINE, 0, 0);
   wchar_t *buf = (wchar_t*) malloc(size*sizeof(wchar_t));
   Info->Control(handle, FCTL_GETCMDLINE, size, (LONG_PTR)buf);
@@ -1765,7 +1807,7 @@ int panel_GetCmdLine(lua_State *L)
 int panel_SetCmdLine(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
+  HANDLE handle = OptHandle(L);
   const wchar_t* str = check_utf8_string(L, 2, NULL);
   lua_pushboolean(L, Info->Control(handle, FCTL_SETCMDLINE, 0, (LONG_PTR)str));
   return 1;
@@ -1774,7 +1816,7 @@ int panel_SetCmdLine(lua_State *L)
 int panel_GetCmdLinePos(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
+  HANDLE handle = OptHandle(L);
   int pos;
   Info->Control(handle, FCTL_GETCMDLINEPOS, 0, (LONG_PTR)&pos) ?
     lua_pushinteger(L, pos+1) : lua_pushnil(L);
@@ -1784,7 +1826,7 @@ int panel_GetCmdLinePos(lua_State *L)
 int panel_SetCmdLinePos(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
+  HANDLE handle = OptHandle(L);
   int pos = luaL_checkinteger(L, 2) - 1;
   int ret = Info->Control(handle, FCTL_SETCMDLINEPOS, pos, 0);
   return lua_pushboolean(L, ret), 1;
@@ -1793,7 +1835,7 @@ int panel_SetCmdLinePos(lua_State *L)
 int panel_InsertCmdLine(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
+  HANDLE handle = OptHandle(L);
   const wchar_t* str = check_utf8_string(L, 2, NULL);
   lua_pushboolean(L, Info->Control(handle, FCTL_INSERTCMDLINE, 0, (LONG_PTR)str));
   return 1;
@@ -1803,7 +1845,7 @@ int panel_GetCmdLineSelection(lua_State *L)
 {
   struct CmdLineSelect cms;
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
+  HANDLE handle = OptHandle(L);
   if (Info->Control(handle, FCTL_GETCMDLINESELECTION, 0, (LONG_PTR)&cms)) {
     if (cms.SelStart < 0) cms.SelStart = 0;
     if (cms.SelEnd < 0) cms.SelEnd = 0;
@@ -1818,7 +1860,7 @@ int panel_SetCmdLineSelection(lua_State *L)
 {
   struct CmdLineSelect cms;
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
+  HANDLE handle = OptHandle(L);
   cms.SelStart = luaL_checkinteger(L, 2) - 1;
   cms.SelEnd = luaL_checkinteger(L, 3);
   if (cms.SelStart < -1) cms.SelStart = -1;
@@ -1836,10 +1878,7 @@ int panel_SetCmdLineSelection(lua_State *L)
 int ChangePanelSelection(lua_State *L, BOOL op_set)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
-  if (handle == INVALID_HANDLE_VALUE) {
-    handle = (luaL_checkinteger(L,2) % 2) ? PANEL_ACTIVE:PANEL_PASSIVE;
-  }
+  HANDLE handle = OptHandle2(L);
   int itemindex = -1;
   if (lua_isnumber(L,3)) {
     itemindex = lua_tointeger(L,3) - 1;
@@ -1891,7 +1930,7 @@ int panel_ClearSelection(lua_State *L) {
 int panel_SetUserScreen(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
+  HANDLE handle = OptHandle(L);
   int ret = Info->Control(handle, FCTL_SETUSERSCREEN, 0, 0);
   if(ret)
     return lua_pushboolean(L, 1), 1;
@@ -1903,7 +1942,7 @@ int panel_SetUserScreen(lua_State *L)
 int panel_GetUserScreen(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
+  HANDLE handle = OptHandle(L);
   int ret = Info->Control(handle, FCTL_GETUSERSCREEN, 0, 0);
   if(ret)
     return lua_pushboolean(L, 1), 1;
@@ -1913,7 +1952,7 @@ int panel_GetUserScreen(lua_State *L)
 int panel_IsActivePanel(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle (L, 1);
+  HANDLE handle = OptHandle(L);
   return lua_pushboolean(L, Info->Control(handle, FCTL_ISACTIVEPANEL, 0, 0)), 1;
 }
 
@@ -1948,7 +1987,7 @@ int far_GetPluginDirList (lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   int PluginNumber = luaL_checkinteger (L, 1);
-  HANDLE handle = OptHandle (L, 2);
+  HANDLE handle = OptHandlePos(L, 2);
   const wchar_t *Dir = check_utf8_string (L, 3, NULL);
   struct PluginPanelItem *PanelItems;
   int ItemsNumber;
@@ -2447,16 +2486,21 @@ int far_SendDlgMessage (lua_State *L)
       }
       return lua_pushinteger(L,0), 1;
 
-    case DM_GETTEXT:
-      fdid.PtrData = buf;
-      fdid.PtrLength = sizeof(buf)/sizeof(buf[0]) - 1;
-      Info->SendDlgMessage (hDlg, Msg, Param1, (LONG_PTR)&fdid);
-      push_utf8_string(L, fdid.PtrData, -1);
+    case DM_GETTEXT: {
+      size_t size;
+      fdid.PtrLength = (size_t) Info->SendDlgMessage(hDlg, Msg, Param1, 0);
+      fdid.PtrData = (wchar_t*) malloc((fdid.PtrLength+1) * sizeof(wchar_t));
+      size = Info->SendDlgMessage(hDlg, Msg, Param1, (LONG_PTR)&fdid);
+      push_utf8_string(L, size ? fdid.PtrData : L"", size);
+      free(fdid.PtrData);
       return 1;
+    }
 
-    case DM_GETCONSTTEXTPTR:
-      push_utf8_string(L, (wchar_t*)Info->SendDlgMessage (hDlg, Msg, Param1, 0), -1);
-      return 1;
+    case DM_GETCONSTTEXTPTR: {
+			wchar_t *ptr = (wchar_t*)Info->SendDlgMessage(hDlg, Msg, Param1, 0);
+			push_utf8_string(L, ptr ? ptr:L"", -1);
+			return 1;
+    }
 
     case DM_SETTEXT:
       fdid.PtrData = (wchar_t*)check_utf8_string(L, 4, NULL);
@@ -3078,7 +3122,7 @@ int editor_Editor(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   const wchar_t* FileName = check_utf8_string(L, 1, NULL);
-  const wchar_t* Title    = opt_utf8_string(L, 2, FileName);
+  const wchar_t* Title    = opt_utf8_string(L, 2, NULL);
   int X1 = luaL_optinteger(L, 3, 0);
   int Y1 = luaL_optinteger(L, 4, 0);
   int X2 = luaL_optinteger(L, 5, -1);
@@ -4182,62 +4226,97 @@ int win_wcscmp (lua_State *L)
 int far_MakeMenuItems (lua_State *L)
 {
   int argn = lua_gettop(L);
-  lua_createtable(L, argn, 0);
-  if (argn > 0) {
-    wchar_t delim[] = { 9474, L'\0' };
-    wchar_t fmt1[64], fmt2[64], wbuf[64];
-    int maxno = (int)floor(log10(argn)) + 1;
-    swprintf(fmt1, 64, L"%%%dd%ls ", maxno, delim);
-    swprintf(fmt2, 64, L"%%%dls%ls ", maxno, delim);
+  lua_createtable(L, argn, 0);               //+1 (items)
+
+  if(argn > 0)
+  {
     int item = 1, i;
-    for (i=1; i<=argn; i++) {
-      lua_getglobal(L, "tostring");
-      if (i == 1 && lua_type(L,-1) != LUA_TFUNCTION)
+    char delim[] = { 226,148,130,0 };        // Unicode char 9474 in UTF-8
+    char buf_prefix[64], buf_space[64], buf_format[64];
+    int maxno = 0;
+    size_t len_prefix;
+
+    for (i=argn; i; maxno++,i/=10) {}
+    len_prefix = sprintf(buf_space, "%*s%s ", maxno, "", delim);
+    sprintf(buf_format, "%%%dd%%s ", maxno);
+
+    for(i=1; i<=argn; i++)
+    {
+      size_t j, len_arg;
+      const char *start;
+      char* str;
+
+      lua_getglobal(L, "tostring");          //+2
+
+      if(i == 1 && lua_type(L,-1) != LUA_TFUNCTION)
         luaL_error(L, "global `tostring' is not function");
-      lua_pushvalue(L, i);
-      if (0 != lua_pcall(L, 1, 1, 0))
+
+      lua_pushvalue(L, i);                   //+3
+
+      if(0 != lua_pcall(L, 1, 1, 0))         //+2 (items,str)
         luaL_error(L, lua_tostring(L, -1));
-      int len;
-      wchar_t *str = check_utf8_string(L, -1, &len), *start = str;
-      int j;
-      for (j=0; j<len; j++)
-        if (str[j] == 0) str[j] = L' ';
-      do {
-        wchar_t* nl = wcschr(start, L'\n');
-        if (nl) *nl = L'\0';
-        start == str ? swprintf(wbuf, 64, fmt1, i) : swprintf(wbuf, 64, fmt2, L"");
-        lua_newtable(L);
-        push_utf8_string(L, wbuf, -1);
-        push_utf8_string(L, start, nl ? (nl++) - start : len - (start-str));
-        lua_concat(L, 2);
-        lua_setfield(L, -2, "text");
-        lua_rawseti(L, argn+1, item++);
+
+      if(lua_type(L, -1) != LUA_TSTRING)
+        luaL_error(L, "tostring() returned a non-string value");
+
+      sprintf(buf_prefix, buf_format, i, delim);
+      start = lua_tolstring(L, -1, &len_arg);
+      str = (char*) malloc(len_arg + 1);
+      memcpy(str, start, len_arg + 1);
+
+      for (j=0; j<len_arg; j++)
+        if(str[j] == '\0') str[j] = ' ';
+
+      for (start=str; start; )
+      {
+        size_t len_text;
+        char *line;
+        const char* nl = strchr(start, '\n');
+
+        lua_newtable(L);                     //+3 (items,str,curr_item)
+        len_text = nl ? (nl++) - start : (str+len_arg) - start;
+        line = (char*) malloc(len_prefix + len_text);
+        memcpy(line, buf_prefix, len_prefix);
+        memcpy(line + len_prefix, start, len_text);
+
+        lua_pushlstring(L, line, len_prefix + len_text);
+        free(line);
+        lua_setfield(L, -2, "text");         //+3
+        lua_pushvalue(L, i);
+        lua_setfield(L, -2, "arg");          //+3
+        lua_rawseti(L, -3, item++);          //+2 (items,str)
+        strcpy(buf_prefix, buf_space);
         start = nl;
-      } while (start);
-      lua_pop(L, 1);
+      }
+
+      free(str);
+      lua_pop(L, 1);                         //+1 (items)
     }
   }
+
   return 1;
 }
 
 int far_Show (lua_State *L)
 {
+  const char* f =
+      "local items,n=...\n"
+      "local bottom=n==0 and 'No arguments' or n==1 and '1 argument' or n..' arguments'\n"
+      "return far.Menu({Title='',Bottom=bottom,Flags='FMENU_SHOWAMPERSAND'},items,"
+      "{{BreakKey='SPACE'}})";
   int argn = lua_gettop(L);
   far_MakeMenuItems(L);
 
-  const char* f =
-  "local items,n=...\n"
-  "local bottom=n==0 and 'No arguments' or n==1 and '1 argument' or n..' arguments'\n"
-  "far.Menu({Title='',Bottom=bottom,Flags={FMENU_SHOWAMPERSAND=1}},\n"
-    "items,{{BreakKey='RETURN'},{BreakKey='SPACE'}})";
-
-  if (luaL_loadstring(L, f) != 0)
+  if(luaL_loadstring(L, f) != 0)
     luaL_error(L, lua_tostring(L, -1));
+
   lua_pushvalue(L, -2);
   lua_pushinteger(L, argn);
-  if (lua_pcall(L, 2, 0, 0) != 0)
+
+  if(lua_pcall(L, 2, LUA_MULTRET, 0) != 0)
     luaL_error(L, lua_tostring(L, -1));
-  return 0;
+
+  return lua_gettop(L) - argn - 1;
 }
 
 void NewVirtualKeyTable(lua_State* L, BOOL twoways)
@@ -4701,11 +4780,12 @@ const luaL_Reg panel_funcs[] =
   {"RedrawPanel",             panel_RedrawPanel},
   {"SetNumericSort",          panel_SetNumericSort},
   {"SetCaseSensitiveSort",    panel_SetCaseSensitiveSort},
-  {"SetPanelDir",             panel_SetPanelDir},
+  {"SetPanelDirectory",       panel_SetPanelDirectory},
   {"SetSelection",            panel_SetSelection},
   {"ClearSelection",          panel_ClearSelection},
   {"SetSortMode",             panel_SetSortMode},
   {"SetSortOrder",            panel_SetSortOrder},
+  {"SetDirectoriesFirst",     panel_SetDirectoriesFirst},
   {"SetUserScreen",           panel_SetUserScreen},
   {"SetViewMode",             panel_SetViewMode},
   {"UpdatePanel",             panel_UpdatePanel},

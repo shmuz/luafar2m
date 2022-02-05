@@ -13,7 +13,6 @@ OBJ = \
   $(OUT)/farkeys.o     \
   $(OUT)/bit.o         \
   $(OUT)/exported.o    \
-  $(OUT)/lflua.o       \
   $(OUT)/lregex.o      \
   $(OUT)/service.o     \
   $(OUT)/slnunico.o    \

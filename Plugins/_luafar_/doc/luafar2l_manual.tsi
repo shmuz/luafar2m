@@ -1622,7 +1622,7 @@ id=65
 lv=2
 dt=Text
 nm=far.Message
-mtime=3851926808
+mtime=3853248148
 <article>
 #_result = far.Message (Msg, [Title], [Buttons], [Flags], [HelpTopic])
 #_
@@ -1646,19 +1646,25 @@ mtime=3851926808
 #_      'e' stands for FMSG_ERRORTYPE
 #_      'k' stands for FMSG_KEEPBACKGROUND
 #_      'l' stands for FMSG_LEFTALIGN
+#_      'n' stands for "no wrapping of long lines"
 #_
 #_  *HelpTopic:* string
 #_
 #_**Returns:**
 #_  *result:* integer (1-based)
 #_
-#_**Note:**
+#_**Note 1:**
 #_  Before calling FAR function *Message*, the function:
-#_    a) wraps long lines, and
+#_    a) wraps long lines (unless the flag 'n' is present), and
 #_    b) limits the maximal number of lines and buttons.
 #_
+#_**Note 2:**
+#_  As in the original `Message` function, every line in **Msg** parameter
+#_  that starts with \1 is treated as a single delimiter line;
+#_  a line starting with \2 as a double delimiter line.
+#_
 #_**Far API used:**
-#_  Message
+#_  `Message`
 #_
 #_@@@
 #_
@@ -3137,12 +3143,14 @@ id=41
 lv=2
 dt=Text
 nm=editor.SaveFile
+mtime=3853182596
 <article>
-#_result = editor.SaveFile (FileName, FileEOL)
+#_result = editor.SaveFile (FileName, FileEOL, CodePage)
 #_
 #_**Parameters:**
 #_  FileName: string, or nil
 #_  FileEOL:  string, or nil
+#_  CodePage: integer, or nil
 #_
 #_**Returns:**
 #_  result: boolean
@@ -3967,6 +3975,32 @@ mtime=3480451070
 </article>
 </node>
 <node>
+id=454
+lv=2
+dt=Text
+nm=panel.SetDirectoriesFirst
+ctime=3853224715
+mtime=3853225106
+<article>
+#_result = panel.SetDirectoriesFirst (handle, whatpanel [, setfirst])
+#_
+#_**Parameters:**
+#_  handle:     plugin handle, or nil
+#_  whatpanel:  1=active panel; 0=passive panel;
+#_  setfirst:   boolean (false=don't set directories first; true=set first;
+#_                       defaults to false)
+#_
+#_**Returns:**
+#_  result: boolean
+#_
+#_**Far API used:**
+#_  Control, FCTL_SETDIRECTORIESFIRST
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=146
 lv=2
 dt=Text
@@ -3993,9 +4027,10 @@ nm=panel.SetNumericSort
 id=13
 lv=2
 dt=Text
-nm=panel.SetPanelDir
+nm=panel.SetPanelDirectory
+mtime=3853244366
 <article>
-#_result = panel.SetPanelDir (handle, whatpanel, dir)
+#_result = panel.SetPanelDirectory (handle, whatpanel, dir)
 #_
 #_**Parameters:**
 #_  handle:    plugin handle, or nil
@@ -5848,7 +5883,7 @@ lv=2
 dt=Text
 nm=far.MakeMenuItems
 ctime=3476605549
-mtime=3476625213
+mtime=3853248473
 <article>
 #_Items = far.MakeMenuItems (...)
 #_
@@ -5858,16 +5893,16 @@ mtime=3476625213
 #_
 #_**Returns:**
 #_  Items: table (array of tables)
-#_           - each element is a table in the form { text=<string> }           
+#_           - each element is a table in the form
+#_             { text=<string>, arg=<argument value> }
 #_           - number of elements >= number of arguments, as one
 #_             argument can have a multiple line representation.
 #_
 #_**Description:**
 #_  This function returns representation of its arguments, suitable
-#_  for passing to function far.Menu as its *Items* parameter.
+#_  for passing to function `far.Menu` as its *Items* parameter.
 #_
 #_@@@
-#_<lua> Links = {  ["far.Menu"]="64.html" } </lua>
 #_
 </article>
 </node>
@@ -5904,26 +5939,28 @@ lv=2
 dt=Text
 nm=far.Show
 ctime=3476617735
-mtime=3476624928
+mtime=3853248750
 <article>
-#_far.Show (...)
+#_Item, Position = far.Show (...)
 #_
 #_**Parameters:**
 #_  Arbitrary number of arguments.
 #_  Each argument may be of any Lua type.
 #_
 #_**Returns:**
-#_  nothing
+#_  Item, Position - same as in `far.Menu`.
 #_
 #_**Description:**
 #_  This function shows representation of its arguments in a menu
 #_  window. It is handy for displaying multiple values at once, or
 #_  long multi-line strings.
-#_  The function calls far.MakeMenuItems internally, then far.Menu.
+#_
+#_  The function calls `far.MakeMenuItems` internally, then `far.Menu`.
+#_
+#_  Due to using `far.MakeMenuItems` the returned *Item* table contains
+#_  the value of the corresponding original argument under the field 'arg'.
 #_
 #_@@@
-#_<lua> Links = {  ["far.MakeMenuItems"]="280.html",
-#_["far.Menu"]="64.html" } </lua>
 #_
 </article>
 </node>

@@ -31,6 +31,7 @@ local FirstRun = not _Plugin
 local band, bor, bnot = bit.band, bit.bor, bit.bnot
 local dirsep = package.config:sub(1,1)
 lf4ed = lf4ed or {}
+local SetExportFunctions -- forward declaration
 
 local _Cfg, _History, _ModuleDir
 
@@ -412,6 +413,7 @@ local function fReloadUserFile()
   env.AddEvent = AddEvent
   -----------------------------------------------------------------------------
   env.AddUserFile("_usermenu.lua")
+  SetExportFunctions()
 end
 
 lf4ed.reload = fReloadUserFile
@@ -738,15 +740,19 @@ local function export_ProcessDialogEvent (Event, Param)
   end
 end
 
-local function SetExportFunctions()
+local function alive(t)
+  return t and t[1]
+end
+
+SetExportFunctions = function()
   export.Configure          = export_Configure
   export.ExitFAR            = export_ExitFAR
   export.GetPluginInfo      = export_GetPluginInfo
   export.OpenPlugin         = export_OpenPlugin
-  export.ProcessEditorEvent = export_ProcessEditorEvent
   export.ProcessEditorInput = export_ProcessEditorInput
-  export.ProcessViewerEvent = export_ProcessViewerEvent
-  export.ProcessDialogEvent = export_ProcessDialogEvent
+  export.ProcessEditorEvent = alive(_Plugin.EditorEventHandlers) and export_ProcessEditorEvent
+  export.ProcessViewerEvent = alive(_Plugin.ViewerEventHandlers) and export_ProcessViewerEvent
+  export.ProcessDialogEvent = alive(_Plugin.DialogEventHandlers) and export_ProcessDialogEvent
 end
 
 local function InitUpvalues (_Plugin)

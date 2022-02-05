@@ -5,7 +5,7 @@ local M = require "tmpp_message"
 local Package = {}
 
 -- UPVALUES : keep them above all function definitions !!
-local _Su     = require "sysutils"
+--### local _Su     = require "sysutils"
 local _Dialog = require "far2.dialog"
 
 local Opt = {
@@ -46,10 +46,10 @@ local function LTrim(s) return s:match "^%s*(.*)" end
 local function RTrim(s) return s:match "(.-)%s*$" end
 local function Trim(s) return s:match "^%s*(.-)%s*$" end
 local function Unquote(s) return (s:gsub("\"", "")) end
-local function ExtractFileName(s) return s:match "[^\\:]*$" end
-local function ExtractFileDir(s) return s:match ".*\\" or "" end
-local function ExtractFileExt(s) return s:match "%.[^.\\]+$" or "" end
-local function AddEndSlash(s) return (s:gsub("\\?$", "\\", 1)) end
+local function ExtractFileName(s) return s:match "[^/]*$" end
+local function ExtractFileDir(s) return s:match ".*/" or "" end
+local function ExtractFileExt(s) return s:match "%.[^./]+$" or "" end
+local function AddEndSlash(s) return (s:gsub("/?$", "/", 1)) end
 local function TruncStr(s, maxlen)
   local len = s:len()
   return len <= maxlen and s or s:sub(1,6) .. "..." .. s:sub (len - maxlen + 10)
@@ -142,15 +142,15 @@ local function CheckForCorrect (Name)
   end
 
   if p:find "%S" and not p:find "[?*]" and p ~= "\\" and p ~= ".." then
-    local q = p:gsub("\\$", "")
+    local q = p:gsub("/$", "")
     local data = win.GetFileInfo(q)
     if data then
       data.FileName = p
-      data.PackSize    = data.FileSize,
-      data.Description = "One of my files",
-      data.Owner       = "Joe Average",
-      --data.UserData  = numline,
-      --data.Flags     = { selected=true, },
+      data.PackSize    = data.FileSize
+      data.Description = "One of my files"
+      data.Owner       = "Joe Average"
+      --data.UserData  = numline
+      --data.Flags     = { selected=true, }
       return data
     end
   end
@@ -167,7 +167,7 @@ end
 local function GoToFile (Target, PanelNumber)
   local Dir  = Unquote (Trim (ExtractFileDir (Target)))
   if Dir ~= "" then
-    panel.SetPanelDir (nil, PanelNumber, Dir)
+    panel.SetPanelDirectory (nil, PanelNumber, Dir)
   end
 
   local PInfo = assert(panel.GetPanelInfo (nil, PanelNumber))
@@ -218,7 +218,7 @@ local function ShowMenuFromList (Name)
     local panelitem = CheckForCorrect (Item.action)
     if panelitem then
       if IsDirectory (panelitem) then
-        panel.SetPanelDir (nil, 1, Item.action)
+        panel.SetPanelDirectory (nil, 1, Item.action)
       else
         bShellExecute = true
       end
@@ -227,7 +227,7 @@ local function ShowMenuFromList (Name)
     end
   end
   if bShellExecute then
-    _Su.ShellExecute (nil, "open", Item.action, nil, nil, "SW_SHOW")
+    --### _Su.ShellExecute (nil, "open", Item.action, nil, nil, "SW_SHOW")
   end
 end
 --------------------------------------------------------------------------------
@@ -414,22 +414,22 @@ function Env:OpenPlugin (OpenFrom, Item)
         argv = argv:sub(2)
         return self:OpenPanelFromOutput (argv)
       else
-        argv = Unquote(argv)
-        local TMP = ExpandEnvironmentStr(argv)
-        local TmpPanelDir = ExtractFileDir(far.PluginStartupInfo().ModuleName)
-        local PathName = _Su.SearchPath (TmpPanelDir, TMP) or
-                         _Su.SearchPath (nil, TMP)
-        if PathName then
-          if newOpt.MenuForFilelist then
-            ShowMenuFromList (PathName)
-            return nil
-          else
-            local Panel = self:NewPanel(newOpt)
-            Panel:ProcessList (ReadFileList(PathName), newOpt.ReplaceMode)
-            return Panel
-          end
-        else return
-        end
+--~         argv = Unquote(argv)
+--~         local TMP = ExpandEnvironmentStr(argv)
+--~         local TmpPanelDir = ExtractFileDir(far.PluginStartupInfo().ModuleName)
+--~         local PathName = _Su.SearchPath (TmpPanelDir, TMP) or
+--~                          _Su.SearchPath (nil, TMP)
+--~         if PathName then
+--~           if newOpt.MenuForFilelist then
+--~             ShowMenuFromList (PathName)
+--~             return nil
+--~           else
+--~             local Panel = self:NewPanel(newOpt)
+--~             Panel:ProcessList (ReadFileList(PathName), newOpt.ReplaceMode)
+--~             return Panel
+--~           end
+--~         else return
+--~         end
       end
     end
   end
@@ -538,7 +538,7 @@ function TmpPanelBase:ProcessList (aList, aReplaceMode)
   for _,v in ipairs(aList) do
     local dir, name = v:match("^(.*[\\/])(.*)$")
     if not dir then dir, name = ".", v end
-    far.FarRecursiveSearch(dir, name, function(_, fullname)
+    far.RecursiveSearch(dir, name, function(_, fullname)
         if fullname:sub(-1) ~= "." then items[#items+1] = fullname end
         return true
       end)
@@ -613,10 +613,8 @@ end
 function TmpPanelBase:SaveListFile (Path)
   local hFile = io.open (Path, "wb")
   if hFile then
-    local NEWLINE = win.Utf8ToUtf16("\n")
-    hFile:write(BOM_UTF16LE)
     for _,v in ipairs(self:Items()) do
-      hFile:write (win.Utf8ToUtf16(v), NEWLINE)
+      hFile:write (v, "\n")
     end
     hFile:close()
   else
@@ -678,7 +676,7 @@ do
         if CurFileName ~= ".." then
           local currItem = assert(panel.GetCurrentPanelItem (Handle, 1))
           if IsDirectory (currItem) then
-            panel.SetPanelDir (nil, 2, CurFileName)
+            panel.SetPanelDirectory (nil, 2, CurFileName)
           else
             GoToFile(CurFileName, 2)
           end
@@ -784,7 +782,7 @@ function TmpPanelBase:PutOneFile (PanelItem)
   PanelItem = CheckForCorrect(CurName)
   if not PanelItem then return false end
 
-  local NameOnly = not CurName:match("\\")
+  local NameOnly = not CurName:match("/")
   CurName = PanelItem.FileName
   if NameOnly then
     CurName = AddEndSlash (far.GetCurrentDirectory()) .. CurName

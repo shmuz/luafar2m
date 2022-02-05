@@ -41,8 +41,8 @@ local function OnError (msg)
   local jumps, buttons = {}, "&OK"
   msg = tostring(msg):gsub("[^\n]+",
     function(line)
-      line = line:gsub("^\t", ""):gsub("(.-)%:(%d+)%:(%s*)",
-        function(file, numline, space)
+      line = line:gsub("^(\t?)(.-)%:(%d+)%:(%s*)",
+        function(_, file, numline, space)
           if #jumps < 9 then
             local file2 = file:sub(1,3) ~= "..." and file or repair(file:sub(4))
             if file2 then
@@ -56,7 +56,7 @@ local function OnError (msg)
           end
           return "[?]:" .. file .. ":" .. numline .. ":" .. space
         end)
-      return line
+      return (line:gsub("^\t", "   "))
     end)
   collectgarbage "collect"
   local caption = ("Error [used: %d Kb]"):format(collectgarbage "count")

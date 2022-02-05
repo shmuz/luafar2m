@@ -86,10 +86,8 @@ int LUAPLUG GetFindDataW(HANDLE hPlugin, struct PluginPanelItem **pPanelItem,
   if(LS) return LF_GetFindData(LS, hPlugin, pPanelItem, pItemsNumber, OpMode);
   return FALSE;
 }
-#endif
 //---------------------------------------------------------------------------
 
-#ifdef EXPORT_FREEFINDDATA
 void LUAPLUG FreeFindDataW(HANDLE hPlugin, struct PluginPanelItem *PanelItem,
                          int ItemsNumber)
 {

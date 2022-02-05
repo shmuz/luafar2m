@@ -18,7 +18,7 @@ const char COLLECTOR_FD[]  = "Collector_FindData";
 const char COLLECTOR_FVD[] = "Collector_FindVirtualData";
 const char COLLECTOR_OPI[] = "Collector_OpenPluginInfo";
 const char COLLECTOR_PI[]  = "Collector_PluginInfo";
-const char KEY_OBJECT[]    = "Object";
+const char KEY_OBJECT[]    = "Panel_Object";
 
 // taken from lua.c v5.1.2
 int traceback (lua_State *L) {
@@ -81,17 +81,26 @@ int pcall_msg (lua_State* L, int narg, int nret)
   return status;
 }
 
-inline void PushPluginTable (lua_State* L, HANDLE hPlugin)
+void PushPluginTable(lua_State* L, HANDLE hPlugin)
 {
-  lua_rawgeti(L, LUA_REGISTRYINDEX, (INT_PTR)hPlugin);
+  lua_pushlightuserdata(L, hPlugin);
+  lua_rawget(L, LUA_REGISTRYINDEX);
 }
 
-void PushPluginPair (lua_State* L, HANDLE hPlugin)
+void PushPluginObject(lua_State* L, HANDLE hPlugin)
 {
-  lua_rawgeti(L, LUA_REGISTRYINDEX, (INT_PTR)hPlugin);
-  lua_getfield(L, -1, KEY_OBJECT);
+  PushPluginTable(L, hPlugin);
+  if (lua_istable(L, -1))
+    lua_getfield(L, -1, KEY_OBJECT);
+  else
+    lua_pushnil(L);
   lua_remove(L, -2);
-  lua_pushinteger(L, (INT_PTR)hPlugin);
+}
+
+void PushPluginPair(lua_State* L, HANDLE hPlugin)
+{
+  PushPluginObject(L, hPlugin);
+  lua_pushlightuserdata(L, hPlugin);
 }
 
 void CreatePluginInfoCollector (lua_State* L)
@@ -349,14 +358,18 @@ BOOL CheckReloadDefaultScript (lua_State *L)
 // -- a new table is created, the object is put into it under the key KEY_OBJECT;
 // -- the table is put into the registry, and reference to it is obtained;
 // -- the function pops the object and returns the reference;
-INT_PTR RegisterObject (lua_State* L)
+HANDLE RegisterObject(lua_State* L)
 {
-  lua_newtable(L);               //+2: Obj,Tbl
-  lua_pushvalue(L,-2);           //+3: Obj,Tbl,Obj
-  lua_setfield(L,-2,KEY_OBJECT); //+2: Obj,Tbl
-  int ref = luaL_ref(L, LUA_REGISTRYINDEX); //+1: Obj
-  lua_pop(L,1);                  //+0
-  return ref;
+  void *ptr;
+  lua_newtable(L);                  //+2: Obj,Tbl
+  lua_pushvalue(L,-2);              //+3: Obj,Tbl,Obj
+  lua_setfield(L,-2,KEY_OBJECT);    //+2: Obj,Tbl
+  ptr = (void*)lua_topointer(L,-1); //+2
+  lua_pushlightuserdata(L, ptr);    //+3
+  lua_pushvalue(L,-2);              //+4
+  lua_rawset(L, LUA_REGISTRYINDEX); //+2
+  lua_pop(L,2);                     //+0
+  return ptr;
 }
 
 HANDLE LF_OpenFilePlugin(lua_State* L, const wchar_t *aName,
@@ -379,9 +392,9 @@ HANDLE LF_OpenFilePlugin(lua_State* L, const wchar_t *aName,
         lua_pop(L,1);
         return (HANDLE)(-2);
       }
-      if (lua_toboolean(L, -1))                           //+1
-        return (HANDLE)RegisterObject(L);                 //+0
-      lua_pop (L, 1);                                     //+0
+      if (lua_toboolean(L, -1))                   //+1
+        return RegisterObject(L);                 //+0
+      lua_pop (L, 1);                             //+0
     }
   }
   return INVALID_HANDLE_VALUE;
@@ -566,8 +579,8 @@ HANDLE LF_OpenPlugin (lua_State* L, int OpenFrom, INT_PTR Item)
       lua_pop(L,1);
       return (HANDLE) 0; // unload plugin
     }
-    if (lua_toboolean(L, -1))            //+1: Obj
-      return (HANDLE) RegisterObject(L); //+0
+    if (lua_toboolean(L, -1))   //+1: Obj
+      return RegisterObject(L); //+0
     lua_pop(L,1);
   }
   return INVALID_HANDLE_VALUE;
