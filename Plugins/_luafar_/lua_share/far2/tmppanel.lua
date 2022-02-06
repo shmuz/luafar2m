@@ -538,9 +538,9 @@ function TmpPanelBase:ProcessList (aList, aReplaceMode)
   for _,v in ipairs(aList) do
     local dir, name = v:match("^(.*[\\/])(.*)$")
     if not dir then dir, name = ".", v end
-    far.RecursiveSearch(dir, name, function(_, fullname)
+    far.RecursiveSearch(dir, name,
+      function(_, fullname)
         if fullname:sub(-1) ~= "." then items[#items+1] = fullname end
-        return true
       end)
   end
 end

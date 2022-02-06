@@ -27,7 +27,7 @@ extern int FUNC_OPENLIBS (lua_State*);
 struct PluginStartupInfo Info;
 struct FarStandardFunctions FSF;
 lua_State* LS;
-void* dlopen_handle;
+TPluginData PluginData;
 //---------------------------------------------------------------------------
 
 // This function must have __cdecl calling convention, it is not `LUAPLUG'.
@@ -38,18 +38,25 @@ int _export luaopen_luaplug (lua_State *L)
 }
 //---------------------------------------------------------------------------
 
+static LONG_PTR WINAPI DlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2)
+{
+  return LF_DlgProc(LS, hDlg, Msg, Param1, Param2);
+}
+
 void LUAPLUG SetStartupInfoW(const struct PluginStartupInfo *aInfo)
 {
   Info = *aInfo;
   FSF = *aInfo->FSF;
   Info.FSF = &FSF;
-  if (!LS)
-    LS = LF_LuaOpen(&Info, FUNC_OPENLIBS, ENV_PREFIX, &dlopen_handle); //includes opening "far" library
-  if (LS) {
-    if (LF_RunDefaultScript(LS) == FALSE) {
-      LF_LuaClose(LS, dlopen_handle);
-      LS = NULL;
-    }
+  PluginData.Info = &Info;
+  PluginData.DlgProc = DlgProc;
+
+  if (!LS && LF_LuaOpen(&PluginData, FUNC_OPENLIBS, ENV_PREFIX)) //includes opening "far" library
+    LS = PluginData.MainLuaState;
+
+  if (LS && !LF_RunDefaultScript(LS))  {
+    LF_LuaClose(&PluginData);
+    LS = NULL;
   }
 }
 //---------------------------------------------------------------------------
@@ -128,7 +135,7 @@ void LUAPLUG ExitFARW()
 {
   if(LS) {
     LF_ExitFAR(LS);
-    LF_LuaClose(LS, dlopen_handle);
+    LF_LuaClose(&PluginData);
     LS = NULL;
   }
 }

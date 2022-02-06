@@ -406,7 +406,7 @@ local function SearchFromPanel (aHistory)
   --===========================================================================
   local function ProcessFile(fdata, fullname)
     ---------------------------------------------------------------------------
-    if win.ExtractKey()=="ESCAPE" and ConfirmEsc() then return false end
+    if win.ExtractKey()=="ESCAPE" and ConfirmEsc() then return true end
     local len = fullname:len()
     local s = len<=WID and fullname..(" "):rep(WID-len) or
               fullname:sub(1,W1).. "..." .. fullname:sub(-W2)
@@ -415,18 +415,18 @@ local function SearchFromPanel (aHistory)
     local found = true
     if fdata.FileAttributes:find("d") then
       if (not dataPanels.bSearchFolders) or (dataMain.sSearchPat ~= "") then
-        return true
+        return false
       end
     else found = (dataMain.sSearchPat == "")
     end
     ---------------------------------------------------------------------------
     if not found then
       local fp = io.open(fullname, "rb")
-      if not fp then return true end
+      if not fp then return false end
       local str = ""
       repeat
         if win.ExtractKey() == "ESCAPE" and ConfirmEsc2() then
-          fp:close(); return (not userbreak)
+          fp:close(); return userbreak
         end
         if #str == BLOCKLEN then fp:seek("cur", OVERLAP) end
         str = fp:read(BLOCKLEN)
@@ -448,7 +448,7 @@ local function SearchFromPanel (aHistory)
     end
     ---------------------------------------------------------------------------
     if found then cnt = cnt+1; tOut[cnt] = fullname; end
-    return true
+    return false
     ---------------------------------------------------------------------------
   end
   --===========================================================================

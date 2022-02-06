@@ -1498,9 +1498,9 @@ lv=2
 dt=Text
 nm=far.DialogInit
 ctime=3490426716
-mtime=3492005385
+mtime=3853271662
 <article>
-#_handle = far.DialogInit (X1,Y1,X2,Y2,HelpTopic,Items,Flags,DlgProc)
+#_hDlg = far.DialogInit (X1,Y1,X2,Y2,HelpTopic,Items,Flags,DlgProc)
 #_
 #_**Parameters:**
 #_  X1:        integer
@@ -1521,7 +1521,18 @@ mtime=3492005385
 #_        ret    : depends on *Msg*
 #_
 #_**Returns:**
-#_  handle: userdata
+#_  hDlg:      userdata (or nil in case of failure)
+#_
+#_**Return value**
+#_  The dialog handle returned by this function has the following methods:
+#_  *__tostring*, *__gc*, *rawhandle* and *send*.
+#_
+#_  **hDlg:rawhandle()**
+#_    returns the original value of handle received from Far Manager
+#_    that is suitable for using with LuaJIT FFI and as a table key.
+#_
+#_  **hDlg:send(...)**
+#_    is equivalent to `far.SendDlgMessage`(hDlg, ...)
 #_
 #_**Far API used:**
 #_  DialogInit
@@ -1675,9 +1686,11 @@ id=71
 lv=2
 dt=Text
 nm=far.SendDlgMessage
-mtime=3853002489
+mtime=3853271530
 <article>
 #_Result = far.SendDlgMessage (hDlg, Msg, Param1, Param2)
+#_    or
+#_Result = hDlg:send (Msg, Param1, Param2)
 #_
 #_**Parameters:**
 #_  hDlg:   userdata
@@ -1818,13 +1831,15 @@ mtime=3853002489
 #_
 #_DM_LISTGETDATA:
 #_    Param2:  integer (1-based list index)
-#_    Result:  either value passed by the last DM_LISTSETDATA call
-#_             in the ["Data"] field of the table, or nil.
+#_    Result:  either of
+#_               - nil - if Far returned 0
+#_               - light userdata (raw data pointer) - if alien data detected
+#_               - value passed by the last DM_LISTSETDATA call
 #_
 #_DM_LISTSETDATA:
 #_    Param2:  table
 #_               ["Index"] - integer (1-based list index)
-#_               ["Data"]  - any Lua value
+#_               ["Data"]  - any Lua value except nil
 #_    Result:  integer (returned from Far)
 #_
 #_DM_GETDLGITEM:
@@ -3760,6 +3775,30 @@ nm=panel.GetPanelItem
 </article>
 </node>
 <node>
+id=455
+lv=2
+dt=Text
+nm=panel.GetPanelPluginHandle
+ctime=3853322264
+mtime=3853322663
+<article>
+#_panel_handle = panel.GetPanelPluginHandle ([handle], whatpanel)
+#_
+#_**Parameters:**
+#_  handle:        plugin handle, or nil
+#_  whatpanel:     1=active panel; 0=passive panel;
+#_
+#_**Returns:**
+#_  panel_handle:  lightuserdata, or nil
+#_
+#_**Far API used:**
+#_  Control, FCTL_GETPANELPLUGINHANDLE
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=254
 lv=2
 dt=Text
@@ -5443,29 +5482,33 @@ id=211
 lv=2
 dt=Text
 nm=far.RecursiveSearch
-mtime=3480263834
+mtime=3853267392
 <article>
-#_far.RecursiveSearch (InitDir, Mask, UserFunc [, Flags])
+#_far.RecursiveSearch (InitDir, Mask, UserFunc [, Flags [, ...]])
 #_
 #_**Parameters:**
 #_  InitDir:  string
-#_  Mask:     string
+#_  Mask:     string (can include attributes - see note below)
 #_  UserFunc: function
-#_  Flags:    flags combination
+#_  Flags:    flags
+#_  ...:      additional arguments, any Lua values
 #_
 #_**Returns:**
-#_  nothing
+#_  In case the search was stopped by *UserFunc*:  all values returned by *UserFunc*.
+#_  In case no more files left:                  nothing.
+#_  In case of error in *UserFunc*:                nothing.
 #_
 #_**Description:**
-#_  On every file found, *UserFunc* is called with 2 arguments
-#_  passed to it:
-#_      (1) a FindData table, and
-#_      (2) the full pathname of the found file.
-#_  If *UserFunc* returns *false* or *nil*, then the search
+#_  On every file found, *UserFunc* is called with the following arguments passed to it:
+#_      (1) a FindData table
+#_      (2) the full pathname of the found file
+#_      (3...) additional arguments (if any) that were passed to far.RecursiveSearch
+#_
+#_  If the 1-st return value of *UserFunc* is neither *false* nor *nil* then the search
 #_  is stopped.
 #_
 #_**Far API used:**
-#_  FSF.FarRecursiveSearch
+#_  FarRecursiveSearch
 #_
 #_@@@
 #_<lua> Links = { FindData="90.html" } </lua>
@@ -7491,6 +7534,27 @@ mtime=3851368689
 #_
 #_@@@
 #_
+#_
+</article>
+</node>
+<node>
+id=456
+lv=3
+dt=Text
+nm=win.IsProcess64bit
+ctime=3853330590
+mtime=3853330626
+<article>
+#_result = win.IsProcess64bit ()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  result: boolean
+#_
+#_**Description:**
+#_  Returns **true** if called from FAR x64, **false** otherwise.
 #_
 </article>
 </node>

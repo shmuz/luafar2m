@@ -10,6 +10,7 @@ extern void LF_Error(lua_State *L, const wchar_t* aMsg);
 extern int  PushDMParams    (lua_State *L, int Msg, int Param1);
 extern int  PushDNParams    (lua_State *L, int Msg, int Param1, LONG_PTR Param2);
 extern int  ProcessDNResult (lua_State *L, int Msg, LONG_PTR Param2);
+extern BOOL GetFlagCombination (lua_State *L, int stack_pos, int *trg);
 
 // "Collector" is a Lua table referenced from the Plugin Object table by name.
 // Collector contains an array of lightuserdata which are pointers to new[]'ed
@@ -294,17 +295,18 @@ void UpdateFileSelection(lua_State* L, struct PluginPanelItem *PanelItem,
   int ItemsNumber)
 {
   int i;
-  for (i=0; i<ItemsNumber; i++) {
+  for(i=0; i<(int)ItemsNumber; i++)
+  {
     lua_rawgeti(L, -1, i+1);           //+1
-    if(lua_istable(L,-1)) {
+    if(lua_istable(L,-1))
+    {
       lua_getfield(L,-1,"Flags");      //+2
-      if(lua_istable(L,-1)) {
-        lua_getfield(L,-1,"selected"); //+3
-        if(lua_toboolean(L,-1))
-          PanelItem[i].Flags |= PPIF_SELECTED;
-        else
+      if(lua_toboolean(L,-1))
+      {
+        int success = 0;
+        int Flags = GetFlagCombination(L,-1,&success);
+        if(success && ((Flags & PPIF_SELECTED) == 0))
           PanelItem[i].Flags &= ~PPIF_SELECTED;
-        lua_pop(L,1);       //+2
       }
       lua_pop(L,1);         //+1
     }
@@ -347,10 +349,15 @@ int LF_GetFiles (lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItem
 BOOL CheckReloadDefaultScript (lua_State *L)
 {
   // reload default script?
+  int reload = 0;
   lua_getglobal(L, "far");
-  lua_getfield(L, -1, "ReloadDefaultScript");
-  int reload = lua_toboolean(L, -1);
-  lua_pop (L, 2);
+  if (lua_istable(L, -1))
+  {
+    lua_getfield(L, -1, "ReloadDefaultScript");
+    reload = lua_toboolean(L, -1);
+    lua_pop(L, 1);
+  }
+  lua_pop(L, 1);
   return !reload || LF_RunDefaultScript(L);
 }
 
@@ -773,11 +780,12 @@ int LF_SetFindList(lua_State* L, HANDLE hPlugin, const struct PluginPanelItem *P
   return FALSE;
 }
 
-void LF_LuaClose(lua_State* L, void* dlopen_handle)
+void LF_LuaClose(TPluginData* aPlugData)
 {
+  lua_State *L = aPlugData->MainLuaState;
   DestroyPluginInfoCollector(L);
   lua_close(L);
-  dlclose(dlopen_handle);
+  dlclose(aPlugData->dlopen_handle);
 }
 
 void LF_ExitFAR(lua_State* L)

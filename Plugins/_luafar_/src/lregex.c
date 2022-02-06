@@ -136,11 +136,16 @@ int rx_find_match(lua_State *L, int op_find, int is_function)
   data.Count = Info->RegExpControl(fr->hnd, RECTL_BRACKETSCOUNT, 0);
   data.Match = (struct RegExpMatch*)lua_newuserdata(L, data.Count*sizeof(struct RegExpMatch));
   if (Info->RegExpControl(fr->hnd, RECTL_SEARCHEX, (LONG_PTR)&data)) {
+    int i, skip;
     if (op_find) {
       lua_pushinteger(L, data.Match[0].start+1);
       lua_pushinteger(L, data.Match[0].end);
     }
-    int i, skip = (op_find || data.Count>1) ? 1 : 0;
+
+    skip = (op_find || data.Count>1) ? 1 : 0;
+    if (!lua_checkstack(L, (int)data.Count - skip))
+      luaL_error(L, "cannot add %d stack slots", (int)data.Count - skip);
+
     for(i=skip; i<data.Count; i++) {
       if (data.Match[i].start >= 0)
         push_utf8_string(L, data.Text+data.Match[i].start, data.Match[i].end-data.Match[i].start);
