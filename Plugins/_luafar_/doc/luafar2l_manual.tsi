@@ -561,6 +561,7 @@ id=104
 lv=2
 dt=Text
 nm=export.GetOpenPluginInfo
+mtime=3853351003
 <article>
 #_OpenPluginInfo = export.GetOpenPluginInfo (object, handle)
 #_
@@ -569,7 +570,7 @@ nm=export.GetOpenPluginInfo
 #_  handle: plugin handle
 #_
 #_**Returns:**
-#_  OpenPluginInfo: table, or string "reuse" (if no changes occured)
+#_  OpenPluginInfo: table
 #_    fields of OpenPluginInfo:
 #_      Flags:            integer
 #_      HostFile:         string

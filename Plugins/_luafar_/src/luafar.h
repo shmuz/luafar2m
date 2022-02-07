@@ -15,18 +15,20 @@ extern "C" {
 #define DLLFUNC __attribute__ ((visibility ("default")))
 #endif
 
+typedef struct PluginStartupInfo PSInfo;
+
 typedef struct
 {
-  struct PluginStartupInfo *Info;
-  FARWINDOWPROC DlgProc;
-  lua_State    *MainLuaState;
-  void         *dlopen_handle;
+  PSInfo        *Info;
+  FARWINDOWPROC  DlgProc;
+  lua_State     *MainLuaState;
+  void          *dlopen_handle;
 } TPluginData;
 
 DLLFUNC int  LF_LuaOpen(TPluginData* aPlugData, lua_CFunction aOpenLibs, const char* aEnvPrefix);
-DLLFUNC void LF_InitLuaState(lua_State *L, struct PluginStartupInfo *Info, lua_CFunction aOpenLibs, const char* aEnvPrefix);
+DLLFUNC void LF_InitLuaState(lua_State *L, PSInfo *Info, lua_CFunction aOpenLibs, const char* aEnvPrefix);
 DLLFUNC void LF_LuaClose(TPluginData* aPlugData);
-DLLFUNC int  LF_Message(struct PluginStartupInfo *Info, const wchar_t* aMsg, const wchar_t* aTitle, const wchar_t* aButtons, const char* aFlags, const wchar_t* aHelpTopic);
+DLLFUNC int  LF_Message(PSInfo *Info, const wchar_t* aMsg, const wchar_t* aTitle, const wchar_t* aButtons, const char* aFlags, const wchar_t* aHelpTopic);
 DLLFUNC BOOL LF_RunDefaultScript(lua_State* L);
 DLLFUNC int  LF_LoadFile(lua_State *L, const wchar_t* filename);
 DLLFUNC const wchar_t *LF_Gsub (lua_State *L, const wchar_t *s, const wchar_t *p, const wchar_t *r);

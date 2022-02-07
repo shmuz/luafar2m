@@ -70,7 +70,7 @@ local F = far.Flags
 local KEEP_DIALOG_OPEN = 0
 local DISABLE_CHANGE = 0
 local HOTKEY_IS_DONE = 0
-local SendMessage = far.SendDlgMessage
+local dsend = far.SendDlgMessage
 
 local enable_custom_hotkeys = true -- for Far2 it's OK
 
@@ -222,9 +222,9 @@ local function calculator()
   local cfunction = function(c) return environ[c] end
   local keys = { Enter="btnCalc"; Num0="btnIns"; F5 = "btnCopy"; } -- "Num0" for Linux, "Ins" for Windows
 
-  function dItems.btnCalc.Action(handle)
+  function dItems.btnCalc.Action(hDlg)
     if tonumber(result) then
-      SendMessage(handle, F.DM_SETTEXT, dPos.calc, result)
+      dsend(hDlg, F.DM_SETTEXT, dPos.calc, result)
     end
     return KEEP_DIALOG_OPEN
   end
@@ -234,8 +234,13 @@ local function calculator()
     return KEEP_DIALOG_OPEN
   end
 
-  function dItems.btnIns.Action()
-    far.MacroPost(("print(%q)"):format(getdata(active_item)))
+  function dItems.btnIns.Action(hDlg)
+    local txt = getdata(active_item)
+    if txt ~= "" then
+      far.MacroPost(("print(%q)"):format(txt))
+    else
+      return KEEP_DIALOG_OPEN
+    end
   end
 
   local function format(item, res)
@@ -266,8 +271,8 @@ local function calculator()
     result = 0
   end
 
-  local function compile(handle)
-    local str = SendMessage(handle, F.DM_GETTEXT, dPos.calc)
+  local function compile(hDlg)
+    local str = dsend(hDlg, F.DM_GETTEXT, dPos.calc)
     if not str:find("%S") then str = "0" end
 
     if curlang == "Lua" then
@@ -323,10 +328,10 @@ local function calculator()
   end
 
   local chain={reset, compile, call, form}
-  local function do_chain(handle)
+  local function do_chain(hDlg)
     local ok, msg
     for _,f in ipairs(chain) do
-      ok, msg = pcall(f, handle)
+      ok, msg = pcall(f, hDlg)
       if not ok or getdata(dItems.status) then break end
     end
     if not ok then
@@ -336,39 +341,44 @@ local function calculator()
       setdata(dItems.status, msg)
     end
     for i,v in ipairs(items) do
-      if v.Update then SendMessage(handle, F.DM_SETTEXT, i, getdata(items[i])) end
+      if v.Update then dsend(hDlg, F.DM_SETTEXT, i, getdata(items[i])) end
     end
   end
 
-  local function set_language(handle)
-    curlang = SendMessage(handle,F.DM_GETCHECK,dPos.lng_lua)==1 and "Lua" or
-              SendMessage(handle,F.DM_GETCHECK,dPos.lng_c)==1 and "C" or "Python"
+  local function get_language(hDlg)
+    return dsend(hDlg,F.DM_GETCHECK,dPos.lng_lua)==1 and "Lua" or
+           dsend(hDlg,F.DM_GETCHECK,dPos.lng_c)==1 and "C" or "Python"
   end
 
-  items.keyaction = function(handle,p1,key)
+  local function SetFocusOnInput(hDlg)
+    far.Timer(10, function(h) -- timer is used due to FAR2 bug
+      h:Close() dsend(hDlg, F.DM_SETFOCUS, dPos.calc) end)
+  end
+
+  items.keyaction = function(hDlg,p1,key)
     if key == "F1" then
-      local txt = SendMessage(handle, F.DM_GETCHECK, dPos.lng_py)==1 and py_help or strhelp
+      local txt = dsend(hDlg, F.DM_GETCHECK, dPos.lng_py)==1 and py_help or strhelp
       far.Message(txt, M.mHelpDlgTitle, nil, 'l')
     else
       local name = keys[key]
-      if name then SendMessage(handle, F.DM_CLOSE, dPos[name]) end
+      if name then dsend(hDlg, F.DM_CLOSE, dPos[name]) end
     end
   end
 
-  items.proc = function(handle,msg,p1,p2)
+  items.proc = function(hDlg,msg,p1,p2)
     if msg==F.DN_INITDIALOG then
-      set_language(handle)
-      do_chain(handle)
+      curlang = get_language(hDlg)
+      do_chain(hDlg)
     ----------------------------------------------------------------------------
     elseif msg==F.DN_EDITCHANGE then
       setdata(items[p1], p2[10])
       if p1==dPos.calc then
-        do_chain(handle)
+        do_chain(hDlg)
       else
         local fmt=items[p1].Fmt
         if fmt then
           format(dItems[fmt], result)
-          SendMessage(handle, F.DM_SETTEXT, dPos[fmt], getdata(dItems[fmt]))
+          dsend(hDlg, F.DM_SETTEXT, dPos[fmt], getdata(dItems[fmt]))
         end
       end
     ----------------------------------------------------------------------------
@@ -379,19 +389,17 @@ local function calculator()
           active_item = dItems[btn.Item]
         elseif btn.name:find("^lng") then
           if btn.name == "lng_py" and not python then
-            local ok, py = pcall(require, Lib_Python)
-            if ok then
-              init_python(py)
-            else
-              SendMessage(handle, F.DM_SETFOCUS, dPos.calc)
-              far.Message(py:match("[^\n]+"), M.mError, nil, "w")
+            local ok, ret = pcall(require, Lib_Python)
+            if not ok then
+              far.Message(ret:match("[^\n]+"), M.mError, nil, "w")
+              SetFocusOnInput(hDlg)
               return DISABLE_CHANGE
             end
+            init_python(ret)
           end
-          set_language(handle)
-          far.Timer(10, function(h) -- timer is used due to FAR2 bug
-            h:Close() SendMessage(handle, F.DM_SETFOCUS, dPos.calc) end)
-          do_chain(handle)
+          curlang = get_language(hDlg)
+          SetFocusOnInput(hDlg)
+          do_chain(hDlg)
         end
       end
     ----------------------------------------------------------------------------
@@ -400,10 +408,10 @@ local function calculator()
         local n = p2 - 0x2000030 -- 0x2000000 = Alt, 0x30 = '0'
         if n>=0 and n<=4 then
           if n==0 then
-            SendMessage(handle, F.DM_SETFOCUS, dPos.calc)
+            dsend(hDlg, F.DM_SETFOCUS, dPos.calc)
           else
-            SendMessage(handle, F.DM_SETCHECK, dPos.decrad+n-1, 1)
-            SendMessage(handle, F.DM_SETFOCUS, dPos.decfmt+n-1)
+            dsend(hDlg, F.DM_SETCHECK, dPos.decrad+n-1, 1)
+            dsend(hDlg, F.DM_SETFOCUS, dPos.decfmt+n-1)
           end
           return HOTKEY_IS_DONE
         end
@@ -411,7 +419,7 @@ local function calculator()
     ----------------------------------------------------------------------------
     elseif msg==F.DN_CLOSE and p1>=1 then
       local btn=items[p1]
-      if btn.Action then return btn.Action(handle) end
+      if btn.Action then return btn.Action(hDlg) end
     end
   end
 

@@ -418,22 +418,8 @@ void LF_GetOpenPluginInfo(lua_State* L, HANDLE hPlugin, struct OpenPluginInfo *a
   if(pcall_msg(L, 2, 1) != 0)
     return;
 
-  if(lua_isstring(L,-1) && !strcmp("reuse", lua_tostring(L,-1))) {
-    PushPluginTable(L, hPlugin);                     //+2: reuse,Tbl
-    lua_getfield(L, -1, COLLECTOR_OPI);              //+3: reuse,Tbl,Coll
-    if (!lua_istable(L,-1)) {    // collector either not set, or destroyed
-      lua_pop(L,3);
-      return;
-    }
-    lua_rawgeti(L,-1,1);                             //+4: reuse,Tbl,Coll,OPI
-    struct OpenPluginInfo *Info = (struct OpenPluginInfo*)lua_touserdata(L,-1);
-    *aInfo = *Info;
-    lua_pop(L,4);
-    return;
-  }
   if(!lua_istable(L, -1)) {                          //+1: Info
     lua_pop(L, 1);
-    LF_Error(L, L"GetOpenPluginInfo should return a table");
     return;
   }
   DestroyCollector(L, hPlugin, COLLECTOR_OPI);

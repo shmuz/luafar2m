@@ -37,8 +37,6 @@ void Log(const char* str)
   }
 }
 
-typedef struct PluginStartupInfo PSInfo;
-
 extern int  luaopen_bit (lua_State *L);
 extern int  luaopen_unicode (lua_State *L);
 extern int  luaopen_utf8 (lua_State *L);
@@ -2243,11 +2241,10 @@ int SetDlgItem (lua_State *L, HANDLE hDlg, int numitem, int pos_table,
   return 1;
 }
 
-TDialogData* NewDialogData(lua_State* L, PSInfo *Info, HANDLE hDlg,
-                           BOOL isOwned)
+TDialogData* NewDialogData(lua_State* L, PSInfo *Info, HANDLE hDlg, BOOL isOwned)
 {
   TDialogData *dd = (TDialogData*) lua_newuserdata(L, sizeof(TDialogData));
-  dd->L        = L;
+  dd->L        = GetPluginData(L)->MainLuaState;
   dd->Info     = Info;
   dd->hDlg     = hDlg;
   dd->isOwned  = isOwned;
@@ -3032,6 +3029,14 @@ LONG_PTR LF_DlgProc(lua_State *L, HANDLE hDlg, int Msg, int Param1, LONG_PTR Par
   return ret;
 }
 
+void RemoveDialogFromRegistry(TDialogData *dd)
+{
+  dd->hDlg = INVALID_HANDLE_VALUE;
+  lua_pushlightuserdata(dd->L, dd);
+  lua_pushnil(dd->L);
+  lua_rawset(dd->L, LUA_REGISTRYINDEX);
+}
+
 int far_DialogInit(lua_State *L)
 {
   TPluginData *pd = GetPluginData(L);
@@ -3097,20 +3102,18 @@ int far_DialogInit(lua_State *L)
     }
     lua_rawset (L, LUA_REGISTRYINDEX);
   }
-  else
+  else {
+    RemoveDialogFromRegistry(dd);
     lua_pushnil(L);
+  }
   return 1;
 }
 
 void free_dialog (TDialogData* dd)
 {
-  lua_State* L = dd->L;
   if (dd->isOwned && dd->hDlg != INVALID_HANDLE_VALUE) {
     dd->Info->DialogFree(dd->hDlg);
-    dd->hDlg = INVALID_HANDLE_VALUE;
-    lua_pushlightuserdata(L, dd);
-    lua_pushnil (L);
-    lua_rawset (L, LUA_REGISTRYINDEX);
+    RemoveDialogFromRegistry(dd);
   }
 }
 
