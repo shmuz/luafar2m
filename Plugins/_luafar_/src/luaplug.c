@@ -79,7 +79,7 @@ HANDLE LUAPLUG OpenPluginW(int OpenFrom, INT_PTR Item)
 HANDLE LUAPLUG OpenFilePluginW(const wchar_t *Name, const unsigned char *Data,
   int DataSize, int OpMode)
 {
-  return LS ? LF_OpenFilePlugin(LS, OpenFrom, Item) : INVALID_HANDLE_VALUE;
+  return LS ? LF_OpenFilePlugin(LS, Name, Data, DataSize, OpMode) : INVALID_HANDLE_VALUE;
 }
 #endif
 //---------------------------------------------------------------------------

@@ -23,6 +23,7 @@ typedef struct
   FARWINDOWPROC  DlgProc;
   lua_State     *MainLuaState;
   void          *dlopen_handle;
+  char           Reserved[64];
 } TPluginData;
 
 DLLFUNC int  LF_LuaOpen(TPluginData* aPlugData, lua_CFunction aOpenLibs, const char* aEnvPrefix);
