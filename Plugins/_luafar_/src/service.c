@@ -164,9 +164,6 @@ HANDLE OptHandlePos(lua_State *L, int pos)
 {
   switch(lua_type(L,pos))
   {
-    case LUA_TNONE:
-    case LUA_TNIL:
-      break;
     case LUA_TNUMBER:
     {
       lua_Integer whatPanel = lua_tointeger(L,pos);
@@ -177,18 +174,13 @@ HANDLE OptHandlePos(lua_State *L, int pos)
       return lua_touserdata(L,pos);
     default:
       luaL_typerror(L, pos, "integer or light userdata");
+      return NULL;
   }
-  return NULL;
 }
 
 HANDLE OptHandle(lua_State *L)
 {
   return OptHandlePos(L,1);
-}
-
-HANDLE OptHandle2(lua_State *L)
-{
-  return lua_isnoneornil(L,1) ? (luaL_checkinteger(L,2) % 2 ? PANEL_ACTIVE:PANEL_PASSIVE) : OptHandle(L);
 }
 
 const wchar_t* GetMsg (PSInfo *Info, int MsgId)
@@ -1648,8 +1640,7 @@ int far_CmpName(lua_State *L)
 int panel_CheckPanelsExist(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle(L);
-  lua_pushboolean(L, (int)Info->Control(handle, FCTL_CHECKPANELSEXIST, 0, 0));
+  lua_pushboolean(L, (int)Info->Control(PANEL_ACTIVE, FCTL_CHECKPANELSEXIST, 0, 0));
   return 1;
 }
 
@@ -1666,7 +1657,7 @@ int panel_ClosePlugin(lua_State *L)
 int panel_GetPanelInfo(lua_State *L /*, BOOL ShortInfo*/)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle2(L);
+  HANDLE handle = OptHandle(L);
   HANDLE plug_handle;
   struct PanelInfo pi;
   if (!Info->Control(handle, FCTL_GETPANELINFO, 0, (LONG_PTR)&pi))
@@ -1707,8 +1698,8 @@ int panel_GetPanelInfo(lua_State *L /*, BOOL ShortInfo*/)
 int get_panel_item(lua_State *L, int command)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle2(L);
-  int index = luaL_optinteger(L,3,1) - 1;
+  HANDLE handle = OptHandle(L);
+  int index = luaL_optinteger(L,2,1) - 1;
   if(index >= 0 || command == FCTL_GETCURRENTPANELITEM)
   {
     int size = Info->Control(handle, command, index, 0);
@@ -1739,7 +1730,7 @@ int panel_GetCurrentPanelItem(lua_State *L) {
 int get_string_info(lua_State *L, int command)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle2(L);
+  HANDLE handle = OptHandle(L);
   int size = Info->Control(handle, command, 0, 0);
   if (size) {
     wchar_t *buf = (wchar_t*)lua_newuserdata(L, size * sizeof(wchar_t));
@@ -1774,14 +1765,14 @@ int panel_GetColumnWidths(lua_State *L) {
 int panel_RedrawPanel(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle2(L);
+  HANDLE handle = OptHandle(L);
   LONG_PTR param2 = 0;
   struct PanelRedrawInfo pri;
-  if (lua_istable(L, 3)) {
+  if (lua_istable(L, 2)) {
     param2 = (LONG_PTR)&pri;
-    lua_getfield(L, 3, "CurrentItem");
+    lua_getfield(L, 2, "CurrentItem");
     pri.CurrentItem = lua_tointeger(L, -1) - 1;
-    lua_getfield(L, 3, "TopPanelItem");
+    lua_getfield(L, 2, "TopPanelItem");
     pri.TopPanelItem = lua_tointeger(L, -1) - 1;
   }
   lua_pushboolean(L, Info->Control(handle, FCTL_REDRAWPANEL, 0, param2));
@@ -1791,8 +1782,8 @@ int panel_RedrawPanel(lua_State *L)
 int SetPanelBooleanProperty(lua_State *L, int command)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle2(L);
-  int param1 = lua_toboolean(L,3);
+  HANDLE handle = OptHandle(L);
+  int param1 = lua_toboolean(L,2);
   lua_pushboolean(L, Info->Control(handle, command, param1, 0));
   return 1;
 }
@@ -1800,8 +1791,8 @@ int SetPanelBooleanProperty(lua_State *L, int command)
 int SetPanelIntegerProperty(lua_State *L, int command)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle2(L);
-  int param1 = check_env_flag(L,3);
+  HANDLE handle = OptHandle(L);
+  int param1 = check_env_flag(L,2);
   lua_pushboolean(L, Info->Control(handle, command, param1, 0));
   return 1;
 }
@@ -1838,10 +1829,10 @@ int panel_SetViewMode(lua_State *L) {
 int panel_SetPanelDirectory(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle2(L);
+  HANDLE handle = OptHandle(L);
   LONG_PTR param2 = 0;
-  if (lua_isstring(L, 3)) {
-    const wchar_t* dir = check_utf8_string(L, 3, NULL);
+  if (lua_isstring(L, 2)) {
+    const wchar_t* dir = check_utf8_string(L, 2, NULL);
     param2 = (LONG_PTR)dir;
   }
   lua_pushboolean(L, Info->Control(handle, FCTL_SETPANELDIR, 0, param2));
@@ -1851,10 +1842,9 @@ int panel_SetPanelDirectory(lua_State *L)
 int panel_GetCmdLine(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle(L);
-  int size = Info->Control(handle, FCTL_GETCMDLINE, 0, 0);
+  int size = Info->Control(PANEL_ACTIVE, FCTL_GETCMDLINE, 0, 0);
   wchar_t *buf = (wchar_t*) malloc(size*sizeof(wchar_t));
-  Info->Control(handle, FCTL_GETCMDLINE, size, (LONG_PTR)buf);
+  Info->Control(PANEL_ACTIVE, FCTL_GETCMDLINE, size, (LONG_PTR)buf);
   push_utf8_string(L, buf, -1);
   free(buf);
   return 1;
@@ -1863,18 +1853,16 @@ int panel_GetCmdLine(lua_State *L)
 int panel_SetCmdLine(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle(L);
-  const wchar_t* str = check_utf8_string(L, 2, NULL);
-  lua_pushboolean(L, Info->Control(handle, FCTL_SETCMDLINE, 0, (LONG_PTR)str));
+  const wchar_t* str = check_utf8_string(L, 1, NULL);
+  lua_pushboolean(L, Info->Control(PANEL_ACTIVE, FCTL_SETCMDLINE, 0, (LONG_PTR)str));
   return 1;
 }
 
 int panel_GetCmdLinePos(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle(L);
   int pos;
-  Info->Control(handle, FCTL_GETCMDLINEPOS, 0, (LONG_PTR)&pos) ?
+  Info->Control(PANEL_ACTIVE, FCTL_GETCMDLINEPOS, 0, (LONG_PTR)&pos) ?
     lua_pushinteger(L, pos+1) : lua_pushnil(L);
   return 1;
 }
@@ -1882,18 +1870,16 @@ int panel_GetCmdLinePos(lua_State *L)
 int panel_SetCmdLinePos(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle(L);
-  int pos = luaL_checkinteger(L, 2) - 1;
-  int ret = Info->Control(handle, FCTL_SETCMDLINEPOS, pos, 0);
+  int pos = luaL_checkinteger(L, 1) - 1;
+  int ret = Info->Control(PANEL_ACTIVE, FCTL_SETCMDLINEPOS, pos, 0);
   return lua_pushboolean(L, ret), 1;
 }
 
 int panel_InsertCmdLine(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle(L);
-  const wchar_t* str = check_utf8_string(L, 2, NULL);
-  lua_pushboolean(L, Info->Control(handle, FCTL_INSERTCMDLINE, 0, (LONG_PTR)str));
+  const wchar_t* str = check_utf8_string(L, 1, NULL);
+  lua_pushboolean(L, Info->Control(PANEL_ACTIVE, FCTL_INSERTCMDLINE, 0, (LONG_PTR)str));
   return 1;
 }
 
@@ -1901,8 +1887,7 @@ int panel_GetCmdLineSelection(lua_State *L)
 {
   struct CmdLineSelect cms;
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle(L);
-  if (Info->Control(handle, FCTL_GETCMDLINESELECTION, 0, (LONG_PTR)&cms)) {
+  if (Info->Control(PANEL_ACTIVE, FCTL_GETCMDLINESELECTION, 0, (LONG_PTR)&cms)) {
     if (cms.SelStart < 0) cms.SelStart = 0;
     if (cms.SelEnd < 0) cms.SelEnd = 0;
     lua_pushinteger(L, cms.SelStart + 1);
@@ -1916,33 +1901,31 @@ int panel_SetCmdLineSelection(lua_State *L)
 {
   struct CmdLineSelect cms;
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle(L);
-  cms.SelStart = luaL_checkinteger(L, 2) - 1;
-  cms.SelEnd = luaL_checkinteger(L, 3);
+  cms.SelStart = luaL_checkinteger(L, 1) - 1;
+  cms.SelEnd = luaL_checkinteger(L, 2);
   if (cms.SelStart < -1) cms.SelStart = -1;
   if (cms.SelEnd < -1) cms.SelEnd = -1;
-  int ret = Info->Control(handle, FCTL_SETCMDLINESELECTION, 0, (LONG_PTR)&cms);
+  int ret = Info->Control(PANEL_ACTIVE, FCTL_SETCMDLINESELECTION, 0, (LONG_PTR)&cms);
   return lua_pushboolean(L, ret), 1;
 }
 
-// CtrlSetSelection   (handle, whatpanel, items, selection)
-// CtrlClearSelection (handle, whatpanel, items)
+// CtrlSetSelection   (handle, items, selection)
+// CtrlClearSelection (handle, items)
 //   handle:       handle
-//   whatpanel:    1=active_panel, 0=inactive_panel
 //   items:        either number of an item, or a list of item numbers
 //   selection:    boolean
 int ChangePanelSelection(lua_State *L, BOOL op_set)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle2(L);
+  HANDLE handle = OptHandle(L);
   int itemindex = -1;
-  if (lua_isnumber(L,3)) {
-    itemindex = lua_tointeger(L,3) - 1;
-    if (itemindex < 0) return luaL_argerror(L, 3, "non-positive index");
+  if (lua_isnumber(L,2)) {
+    itemindex = lua_tointeger(L,2) - 1;
+    if (itemindex < 0) return luaL_argerror(L, 2, "non-positive index");
   }
-  else if (!lua_istable(L,3))
-    return luaL_typerror(L, 3, "number or table");
-  int state = op_set ? lua_toboolean(L,4) : 0;
+  else if (!lua_istable(L,2))
+    return luaL_typerror(L, 2, "number or table");
+  int state = op_set ? lua_toboolean(L,3) : 0;
 
   // get panel info
   struct PanelInfo pi;
@@ -1955,10 +1938,10 @@ int ChangePanelSelection(lua_State *L, BOOL op_set)
   if (itemindex >= 0 && itemindex < numItems)
     Info->Control(handle, command, itemindex, state);
   else {
-    int i, len = lua_objlen(L,3);
+    int i, len = lua_objlen(L,2);
     for (i=1; i<=len; i++) {
       lua_pushinteger(L, i);
-      lua_gettable(L,3);
+      lua_gettable(L,2);
       if (lua_isnumber(L,-1)) {
         itemindex = lua_tointeger(L,-1) - 1;
         if (itemindex >= 0 && itemindex < numItems)
@@ -1981,38 +1964,28 @@ int panel_ClearSelection(lua_State *L) {
 
 int panel_BeginSelection(lua_State *L)
 {
-  int res = GetPluginData(L)->Info->Control(OptHandle2(L), FCTL_BEGINSELECTION, 0, 0);
+  int res = GetPluginData(L)->Info->Control(OptHandle(L), FCTL_BEGINSELECTION, 0, 0);
   return lua_pushboolean(L, res), 1;
 }
 
 int panel_EndSelection(lua_State *L)
 {
-  int res = GetPluginData(L)->Info->Control(OptHandle2(L), FCTL_ENDSELECTION, 0, 0);
+  int res = GetPluginData(L)->Info->Control(OptHandle(L), FCTL_ENDSELECTION, 0, 0);
   return lua_pushboolean(L, res), 1;
 }
 
-// CtrlSetUserScreen (handle)
-//   handle:       FALSE=INVALID_HANDLE_VALUE, TRUE=lua_State*
 int panel_SetUserScreen(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle(L);
-  int ret = Info->Control(handle, FCTL_SETUSERSCREEN, 0, 0);
-  if(ret)
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  int ret = Info->Control(PANEL_ACTIVE, FCTL_SETUSERSCREEN, 0, 0);
+  return lua_pushboolean(L, ret), 1;
 }
 
-// CtrlGetUserScreen (handle)
-//   handle:       FALSE=INVALID_HANDLE_VALUE, TRUE=lua_State*
 int panel_GetUserScreen(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE handle = OptHandle(L);
-  int ret = Info->Control(handle, FCTL_GETUSERSCREEN, 0, 0);
-  if(ret)
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  int ret = Info->Control(PANEL_ACTIVE, FCTL_GETUSERSCREEN, 0, 0);
+  return lua_pushboolean(L, ret), 1;
 }
 
 int panel_IsActivePanel(lua_State *L)
@@ -2026,7 +1999,7 @@ int panel_GetPanelPluginHandle(lua_State *L)
 {
   HANDLE plug_handle;
   PSInfo *Info = GetPluginStartupInfo(L);
-  Info->Control(OptHandle2(L), FCTL_GETPANELPLUGINHANDLE, 0, (LONG_PTR)&plug_handle);
+  Info->Control(OptHandle(L), FCTL_GETPANELPLUGINHANDLE, 0, (LONG_PTR)&plug_handle);
   if (plug_handle == INVALID_HANDLE_VALUE)
     lua_pushnil(L);
   else

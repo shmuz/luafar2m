@@ -274,13 +274,13 @@ end
 do
   local arg = ...
   local helpTopic = arg[1]
-  local panelInfo = panel.GetPanelInfo (nil, 1)
+  local panelInfo = panel.GetPanelInfo (1)
   if panelInfo.SelectedItemsNumber == 0 then return end
 
   -- prepare list of files to rename, to avoid recursive renaming
   local list = {}
   for i=1, panelInfo.SelectedItemsNumber do
-    local item = panel.GetSelectedPanelItem (nil, 1, i)
+    local item = panel.GetSelectedPanelItem (1, i)
     table.insert(list, item.FileName)
   end
 
@@ -289,7 +289,7 @@ do
   if not tParams then return end
   local sSearchPat, sReplacePat, num = data.sSearchPat, data.sReplacePat
 
-  local dir = panel.GetPanelDir(nil, 1)
+  local dir = panel.GetPanelDir(1)
   if not dir:find("[\\/]$") then dir = dir..dirsep end
 
   local log = assert( io.open("rename.log", "w") )
@@ -305,6 +305,6 @@ do
 
   log:write("\n")
   log:close()
-  panel.UpdatePanel (nil, 1, true)
-  panel.RedrawPanel (nil, 1)
+  panel.UpdatePanel (1, true)
+  panel.RedrawPanel (1)
 end

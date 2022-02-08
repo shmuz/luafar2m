@@ -143,10 +143,10 @@ local function GetCodePages (aData)
 end
 
 local function GetSearchAreas(dataPanels)
-  local Info = panel.GetPanelInfo(nil, 1)
+  local Info = panel.GetPanelInfo(1)
   local RootFolderItem = {}
   if Info.PanelType == F.PTYPE_FILEPANEL and not Info.Plugin then
-    RootFolderItem.Text = M.MSaRootFolder .. panel.GetPanelDir(nil,1):match("/[^/]*")
+    RootFolderItem.Text = M.MSaRootFolder .. panel.GetPanelDir(1):match("/[^/]*")
   else
     RootFolderItem.Text = M.MSaRootFolder
     RootFolderItem.Flags = F.LIF_GRAYED
@@ -315,14 +315,14 @@ end
 
 local function MakeItemList (panelInfo, area)
   local realNames = (bit.band(panelInfo.Flags, F.PFLAGS_REALNAMES) ~= 0)
-  local panelDir = panel.GetPanelDir(nil, 1) or ""
+  local panelDir = panel.GetPanelDir(1) or ""
   local itemList, flags = {}, F.FRS_RECUR
 
   if area == saFromCurrFolder or area == saOnlyCurrFolder then
     if realNames then
       if panelInfo.Plugin then
         for i=1, panelInfo.ItemsNumber do
-          local item = panel.GetPanelItem(nil, 1, i)
+          local item = panel.GetPanelItem(1, i)
           local name = item.FileName
           if name ~= ".." and name ~= "." then itemList[#itemList+1] = name end
         end
@@ -338,7 +338,7 @@ local function MakeItemList (panelInfo, area)
     if realNames then
       local curdir_slash = panelInfo.Plugin and "" or panelDir:gsub(dirsep.."?$", dirsep, 1)
       for i=1, panelInfo.SelectedItemsNumber do
-        local item = panel.GetSelectedPanelItem(nil, 1, i)
+        local item = panel.GetSelectedPanelItem(1, i)
         itemList[#itemList+1] = curdir_slash .. item.FileName
       end
     end
@@ -382,7 +382,7 @@ local function SearchFromPanel (aHistory)
     codePages = { win.GetOEMCP(), win.GetACP(), 1200, 1201, 65000, 65001 }
   end
   ----------------------------------------------------------------------------
-  local panelInfo = panel.GetPanelInfo(nil, 1)
+  local panelInfo = panel.GetPanelInfo(1)
   local area = dataPanels.iSearchArea or 1
   if area < 1 or area > 7 then area = 1 end
   local itemList, flags = MakeItemList(panelInfo, area)
@@ -481,7 +481,7 @@ local function SearchFromPanel (aHistory)
     local prefix = tp_settings.Prefix or "tmp"
 --~     local usercfg = ChangeTmpPanelSettings(aHistory)
     local cmd = ("%s: -menu %s"):format(prefix, fname)
-    panel.SetCmdLine (nil, cmd)
+    panel.SetCmdLine (cmd)
     far.AdvControl("ACTL_POSTKEYSEQUENCE", {FK.KEY_ENTER})
 --~     error"vbabva"
 --~     if type(usercfg.Macro) == "string" then

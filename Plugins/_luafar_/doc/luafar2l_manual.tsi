@@ -3430,8 +3430,15 @@ lv=1
 dt=Text
 nm=Panel functions
 ctime=3851349067
-mtime=3851349067
+mtime=3853513022
 <article>
+#_<markdown>
+#_All functions having their 1-st parameter named `handle` accept it in either of 2 variants:
+#_-------------------------------------------------------------------------------------------
+#_
+#_1. panel handle (light userdata)
+#_2. number: 1=active panel, 0=passive panel
+#_
 </article>
 </node>
 <node>
@@ -3440,13 +3447,12 @@ lv=2
 dt=Text
 nm=panel.BeginSelection
 ctime=3853444384
-mtime=3853444443
+mtime=3853511949
 <article>
-#_result = panel.BeginSelection (handle, whatpanel)
+#_result = panel.BeginSelection (handle)
 #_
 #_**Parameters:**
-#_  handle:       panel handle, or nil
-#_  whatpanel:    1=active_panel, 0=inactive_panel
+#_  handle:  panel handle
 #_
 #_**Returns:**
 #_  result: boolean
@@ -3463,11 +3469,12 @@ id=145
 lv=2
 dt=Text
 nm=panel.CheckPanelsExist
+mtime=3853511531
 <article>
-#_result = panel.CheckPanelsExist ([handle])
+#_result = panel.CheckPanelsExist ()
 #_
 #_**Parameters:**
-#_  handle: plugin handle
+#_  none
 #_
 #_**Returns:**
 #_  result: boolean
@@ -3485,15 +3492,14 @@ lv=2
 dt=Text
 nm=panel.ClearSelection
 ctime=3480322277
-mtime=3480322434
+mtime=3853511941
 <article>
-#_result = panel.ClearSelection (handle, whatpanel, items)
+#_result = panel.ClearSelection (handle, items)
 #_
 #_**Parameters:**
-#_  handle:       plugin handle, or nil
-#_  whatpanel:    1=active_panel, 0=inactive_panel
-#_  items:        integer (1-based item index),
-#_                or table (array of item indexes)
+#_  handle:  panel handle
+#_  items:   integer (1-based item index),
+#_           or table (array of item indexes)
 #_
 #_**Returns:**
 #_  result: boolean
@@ -3512,12 +3518,13 @@ id=4
 lv=2
 dt=Text
 nm=panel.ClosePlugin
+mtime=3853511972
 <article>
 #_result = panel.ClosePlugin (handle [, dir])
 #_
 #_**Parameters:**
-#_  handle: plugin handle
-#_  dir:    string (defaults to ".")
+#_  handle:  panel handle
+#_  dir:     string (defaults to ".")
 #_
 #_**Returns:**
 #_  result: boolean
@@ -3535,13 +3542,12 @@ lv=2
 dt=Text
 nm=panel.EndSelection
 ctime=3853444404
-mtime=3853444471
+mtime=3853511995
 <article>
-#_result = panel.EndSelection (handle, whatpanel)
+#_result = panel.EndSelection (handle)
 #_
 #_**Parameters:**
-#_  handle:       panel handle, or nil
-#_  whatpanel:    1=active_panel, 0=inactive_panel
+#_  handle:  panel handle
 #_
 #_**Returns:**
 #_  result: boolean
@@ -3558,11 +3564,12 @@ id=5
 lv=2
 dt=Text
 nm=panel.GetCmdLine
+mtime=3853512018
 <article>
-#_result = panel.GetCmdLine ([handle])
+#_result = panel.GetCmdLine ()
 #_
 #_**Parameters:**
-#_  handle: plugin handle
+#_  none
 #_
 #_**Returns:**
 #_  result: string (or nil)
@@ -3580,12 +3587,12 @@ id=6
 lv=2
 dt=Text
 nm=panel.GetCmdLinePos
-mtime=3480330205
+mtime=3853512036
 <article>
-#_pos = panel.GetCmdLinePos ([handle])
+#_pos = panel.GetCmdLinePos ()
 #_
 #_**Parameters:**
-#_  handle: plugin handle
+#_  none
 #_
 #_**Returns:**
 #_  pos: 1-based position (or nil)
@@ -3603,12 +3610,12 @@ lv=2
 dt=Text
 nm=panel.GetCmdLineSelection
 ctime=3480326038
-mtime=3480330696
+mtime=3853512053
 <article>
-#_SelStart, SelEnd = panel.GetCmdLineSelection ([handle])
+#_SelStart, SelEnd = panel.GetCmdLineSelection ()
 #_
 #_**Parameters:**
-#_  handle: plugin handle
+#_  none
 #_
 #_**Returns:**
 #_  SelStart: integer (1-based)
@@ -3626,12 +3633,12 @@ id=258
 lv=2
 dt=Text
 nm=panel.GetColumnTypes
+mtime=3853512078
 <article>
-#_ColumnTypes = panel.GetColumnTypes ([handle], whatpanel)
+#_ColumnTypes = panel.GetColumnTypes (handle)
 #_
 #_**Parameters:**
-#_  handle:      plugin handle, or nil
-#_  whatpanel:   1=active panel; 0=passive panel;
+#_  handle:      panel handle
 #_
 #_**Returns:**
 #_  ColumnTypes: string
@@ -3648,12 +3655,12 @@ id=259
 lv=2
 dt=Text
 nm=panel.GetColumnWidths
+mtime=3853512110
 <article>
-#_ColumnWidths = panel.GetColumnWidths ([handle], whatpanel)
+#_ColumnWidths = panel.GetColumnWidths (handle)
 #_
 #_**Parameters:**
-#_  handle:       plugin handle, or nil
-#_  whatpanel:    1=active panel; 0=passive panel;
+#_  handle:       panel handle
 #_
 #_**Returns:**
 #_  ColumnWidths: string
@@ -3670,12 +3677,12 @@ id=252
 lv=2
 dt=Text
 nm=panel.GetCurrentPanelItem
+mtime=3853512132
 <article>
-#_item = panel.GetCurrentPanelItem ([handle], whatpanel)
+#_item = panel.GetCurrentPanelItem (handle)
 #_
 #_**Parameters:**
-#_  handle:    plugin handle, or nil
-#_  whatpanel: 1=active panel; 0=passive panel;
+#_  handle:    panel handle
 #_
 #_**Returns:**
 #_  item:      PluginPanelItem
@@ -3693,12 +3700,12 @@ id=260
 lv=2
 dt=Text
 nm=panel.GetPanelDir
+mtime=3853512156
 <article>
-#_PanelDir = panel.GetPanelDir ([handle], whatpanel)
+#_PanelDir = panel.GetPanelDir (handle)
 #_
 #_**Parameters:**
-#_  handle:    plugin handle, or nil
-#_  whatpanel: 1=active panel; 0=passive panel;
+#_  handle:    panel handle
 #_
 #_**Returns:**
 #_  PanelDir:  string
@@ -3717,13 +3724,12 @@ lv=2
 dt=Text
 nm=panel.GetPanelFormat
 ctime=3492068593
-mtime=3492068684
+mtime=3853513155
 <article>
-#_PanelFormat = panel.GetPanelFormat ([handle], whatpanel)
+#_PanelFormat = panel.GetPanelFormat (handle)
 #_
 #_**Parameters:**
-#_  handle:    plugin handle, or nil
-#_  whatpanel: 1=active panel; 0=passive panel;
+#_  handle:       panel handle
 #_
 #_**Returns:**
 #_  PanelFormat:  string
@@ -3742,13 +3748,12 @@ lv=2
 dt=Text
 nm=panel.GetPanelHostFile
 ctime=3492068606
-mtime=3492068724
+mtime=3853512200
 <article>
-#_HostFile = panel.GetPanelHostFile ([handle], whatpanel)
+#_HostFile = panel.GetPanelHostFile (handle)
 #_
 #_**Parameters:**
-#_  handle:    plugin handle, or nil
-#_  whatpanel: 1=active panel; 0=passive panel;
+#_  handle:    panel handle
 #_
 #_**Returns:**
 #_  HostFile:  string
@@ -3766,13 +3771,12 @@ id=7
 lv=2
 dt=Text
 nm=panel.GetPanelInfo
-mtime=3853440699
+mtime=3853512219
 <article>
-#_PanelInfo = panel.GetPanelInfo ([handle], whatpanel)
+#_PanelInfo = panel.GetPanelInfo (handle)
 #_
 #_**Parameters:**
-#_  handle:    plugin handle, or nil
-#_  whatpanel: 1=active panel; 0=passive panel;
+#_  handle:    panel handle
 #_
 #_**Returns:**
 #_  PanelInfo: table, or nil
@@ -3806,12 +3810,12 @@ id=253
 lv=2
 dt=Text
 nm=panel.GetPanelItem
+mtime=3853512251
 <article>
-#_item = panel.GetPanelItem ([handle], whatpanel, itemindex)
+#_item = panel.GetPanelItem (handle, itemindex)
 #_
 #_**Parameters:**
-#_  handle:    plugin handle, or nil
-#_  whatpanel: 1=active panel; 0=passive panel;
+#_  handle:    panel handle
 #_  itemindex: integer (1-based)
 #_
 #_**Returns:**
@@ -3831,13 +3835,12 @@ lv=2
 dt=Text
 nm=panel.GetPanelPluginHandle
 ctime=3853322264
-mtime=3853322663
+mtime=3853513277
 <article>
-#_panel_handle = panel.GetPanelPluginHandle ([handle], whatpanel)
+#_panel_handle = panel.GetPanelPluginHandle (handle)
 #_
 #_**Parameters:**
-#_  handle:        plugin handle, or nil
-#_  whatpanel:     1=active panel; 0=passive panel;
+#_  handle:        panel handle
 #_
 #_**Returns:**
 #_  panel_handle:  lightuserdata, or nil
@@ -3854,12 +3857,12 @@ id=254
 lv=2
 dt=Text
 nm=panel.GetSelectedPanelItem
+mtime=3853512338
 <article>
-#_item = panel.GetSelectedPanelItem ([handle], whatpanel, itemindex)
+#_item = panel.GetSelectedPanelItem (handle, itemindex)
 #_
 #_**Parameters:**
-#_  handle:    plugin handle, or nil
-#_  whatpanel: 1=active panel; 0=passive panel;
+#_  handle:    panel handle
 #_  itemindex: integer (1-based)
 #_
 #_**Returns:**
@@ -3878,11 +3881,12 @@ id=228
 lv=2
 dt=Text
 nm=panel.GetUserScreen
+mtime=3853512521
 <article>
-#_result = panel.GetUserScreen ([handle])
+#_result = panel.GetUserScreen ()
 #_
 #_**Parameters:**
-#_  handle: plugin handle
+#_  none
 #_
 #_**Returns:**
 #_  result: boolean
@@ -3900,11 +3904,11 @@ id=9
 lv=2
 dt=Text
 nm=panel.InsertCmdLine
+mtime=3853512583
 <article>
-#_result = panel.InsertCmdLine (handle, str)
+#_result = panel.InsertCmdLine (str)
 #_
 #_**Parameters:**
-#_  handle: plugin handle, or nil
 #_  str:    string
 #_
 #_**Returns:**
@@ -3924,12 +3928,12 @@ lv=2
 dt=Text
 nm=panel.IsActivePanel
 ctime=3480215162
-mtime=3480215301
+mtime=3853512604
 <article>
-#_result = panel.IsActivePanel ([handle])
+#_result = panel.IsActivePanel (handle)
 #_
 #_**Parameters:**
-#_  handle: plugin handle
+#_  handle: panel handle
 #_
 #_**Returns:**
 #_  result: boolean
@@ -3947,12 +3951,12 @@ id=10
 lv=2
 dt=Text
 nm=panel.RedrawPanel
+mtime=3853512643
 <article>
-#_result = panel.RedrawPanel (handle, whatpanel [, redrawinfo])
+#_result = panel.RedrawPanel (handle [, redrawinfo])
 #_
 #_**Parameters:**
-#_  handle:     plugin handle, or nil
-#_  whatpanel:  1=active panel; 0=passive panel;
+#_  handle:     panel handle
 #_  redrawinfo: table with the following fields:
 #_                CurrentItem  : integer (1-based)
 #_                TopPanelItem : integer (1-based)
@@ -3974,13 +3978,12 @@ lv=2
 dt=Text
 nm=panel.SetCaseSensitiveSort
 ctime=3501391498
-mtime=3501391568
+mtime=3853513307
 <article>
-#_result = panel.SetCaseSensitiveSort (handle, whatpanel [, set])
+#_result = panel.SetCaseSensitiveSort (handle [, set])
 #_
 #_**Parameters:**
-#_  handle:    plugin handle, or nil
-#_  whatpanel: 1=active panel; 0=passive panel;
+#_  handle:    panel handle
 #_  set:       boolean, defaults to false
 #_
 #_**Returns:**
@@ -3998,11 +4001,11 @@ id=11
 lv=2
 dt=Text
 nm=panel.SetCmdLine
+mtime=3853512699
 <article>
-#_result = panel.SetCmdLine (handle, str)
+#_result = panel.SetCmdLine (str)
 #_
 #_**Parameters:**
-#_  handle: plugin handle, or nil
 #_  str:    string
 #_
 #_**Returns:**
@@ -4021,12 +4024,11 @@ id=12
 lv=2
 dt=Text
 nm=panel.SetCmdLinePos
-mtime=3480451106
+mtime=3853512711
 <article>
-#_result = panel.SetCmdLinePos (handle, pos)
+#_result = panel.SetCmdLinePos (pos)
 #_
 #_**Parameters:**
-#_  handle: plugin handle, or nil
 #_  pos:    1-based integer
 #_
 #_**Returns:**
@@ -4045,12 +4047,11 @@ lv=2
 dt=Text
 nm=panel.SetCmdLineSelection
 ctime=3480326063
-mtime=3480451070
+mtime=3853512722
 <article>
-#_result = panel.SetCmdLineSelection (handle, selStart, selEnd)
+#_result = panel.SetCmdLineSelection (selStart, selEnd)
 #_
 #_**Parameters:**
-#_  handle:   plugin handle, or nil
 #_  selStart: integer (1-based)
 #_  selEnd:   integer
 #_
@@ -4070,13 +4071,12 @@ lv=2
 dt=Text
 nm=panel.SetDirectoriesFirst
 ctime=3853224715
-mtime=3853225106
+mtime=3853512744
 <article>
-#_result = panel.SetDirectoriesFirst (handle, whatpanel [, setfirst])
+#_result = panel.SetDirectoriesFirst (handle [, setfirst])
 #_
 #_**Parameters:**
-#_  handle:     plugin handle, or nil
-#_  whatpanel:  1=active panel; 0=passive panel;
+#_  handle:     panel handle
 #_  setfirst:   boolean (false=don't set directories first; true=set first;
 #_                       defaults to false)
 #_
@@ -4095,12 +4095,12 @@ id=146
 lv=2
 dt=Text
 nm=panel.SetNumericSort
+mtime=3853512765
 <article>
-#_result = panel.SetNumericSort (handle, whatpanel [, set])
+#_result = panel.SetNumericSort (handle [, set])
 #_
 #_**Parameters:**
-#_  handle:    plugin handle, or nil
-#_  whatpanel: 1=active panel; 0=passive panel;
+#_  handle:    panel handle
 #_  set:       boolean, defaults to false
 #_
 #_**Returns:**
@@ -4118,13 +4118,12 @@ id=13
 lv=2
 dt=Text
 nm=panel.SetPanelDirectory
-mtime=3853244366
+mtime=3853512789
 <article>
-#_result = panel.SetPanelDirectory (handle, whatpanel, dir)
+#_result = panel.SetPanelDirectory (handle, dir)
 #_
 #_**Parameters:**
-#_  handle:    plugin handle, or nil
-#_  whatpanel: 1=active panel; 0=passive panel;
+#_  handle:    panel handle
 #_  dir:       string
 #_
 #_**Returns:**
@@ -4142,13 +4141,12 @@ id=14
 lv=2
 dt=Text
 nm=panel.SetSelection
-mtime=3480322462
+mtime=3853512829
 <article>
-#_result = panel.SetSelection (handle, whatpanel, items, selection)
+#_result = panel.SetSelection (handle, items, selection)
 #_
 #_**Parameters:**
-#_  handle:       plugin handle, or nil
-#_  whatpanel:    1=active_panel, 0=inactive_panel
+#_  handle:       panel handle
 #_  items:        integer (1-based item index),
 #_                or table (array of item indexes)
 #_  selection:    boolean
@@ -4170,13 +4168,12 @@ id=147
 lv=2
 dt=Text
 nm=panel.SetSortMode
-mtime=3504908133
+mtime=3853512871
 <article>
-#_result = panel.SetSortMode (handle, whatpanel, mode)
+#_result = panel.SetSortMode (handle, mode)
 #_
 #_**Parameters:**
-#_  handle:    plugin handle, or nil
-#_  whatpanel: 1=active panel; 0=passive panel;
+#_  handle:    panel handle
 #_  mode:      flag (integer or string)
 #_
 #_**Returns:**
@@ -4194,12 +4191,12 @@ id=148
 lv=2
 dt=Text
 nm=panel.SetSortOrder
+mtime=3853512890
 <article>
-#_result = panel.SetSortOrder (handle, whatpanel [, order])
+#_result = panel.SetSortOrder (handle [, order])
 #_
 #_**Parameters:**
-#_  handle:    plugin handle, or nil
-#_  whatpanel: 1=active panel; 0=passive panel;
+#_  handle:    panel handle
 #_  order:     boolean (false=direct order; true=reverse order;
 #_                      defaults to false)
 #_
@@ -4218,11 +4215,12 @@ id=15
 lv=2
 dt=Text
 nm=panel.SetUserScreen
+mtime=3853512537
 <article>
-#_result = panel.SetUserScreen ([handle])
+#_result = panel.SetUserScreen ()
 #_
 #_**Parameters:**
-#_  handle: plugin handle
+#_  none
 #_
 #_**Returns:**
 #_  result: boolean
@@ -4239,12 +4237,12 @@ id=16
 lv=2
 dt=Text
 nm=panel.SetViewMode
+mtime=3853512920
 <article>
-#_result = panel.SetViewMode (handle, whatpanel, mode)
+#_result = panel.SetViewMode (handle, mode)
 #_
 #_**Parameters:**
-#_  handle:    plugin handle, or nil
-#_  whatpanel: 1=active panel; 0=passive panel;
+#_  handle:    panel handle
 #_  mode:      integer (0...9)
 #_
 #_**Returns:**
@@ -4263,12 +4261,12 @@ id=17
 lv=2
 dt=Text
 nm=panel.UpdatePanel
+mtime=3853512944
 <article>
-#_result = panel.UpdatePanel (handle, whatpanel [, keepselection])
+#_result = panel.UpdatePanel (handle [, keepselection])
 #_
 #_**Parameters:**
-#_  handle:         plugin handle, or nil
-#_  whatpanel:      1=active panel; 0=passive panel;
+#_  handle:         panel handle
 #_  keepselection:  boolean, defaults to false
 #_
 #_**Returns:**

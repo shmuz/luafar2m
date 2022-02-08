@@ -49,13 +49,13 @@ local function DeleteTrees (aDirRegex)
   require "sysutils"
   local RecurseFunc = require "sysutils.recurse"
 
-  local panelInfo = panel.GetPanelInfo (nil, 1)
+  local panelInfo = panel.GetPanelInfo (1)
   local nFiles, nDirs, nFailed = 0, 0, 0
   local choice = "no"
   local depth = 0
 
   for i=1, panelInfo.SelectedItemsNumber do
-    local item = panel.GetSelectedPanelItem (nil, 1, i)
+    local item = panel.GetSelectedPanelItem (1, i)
     if item.FileAttributes:find("d") then
       for path,file,stage,control in RecurseFunc(item.FileName.."\\*", "bfE") do
         if stage == "b" then

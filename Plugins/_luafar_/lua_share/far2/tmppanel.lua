@@ -158,7 +158,7 @@ end
 
 
 local function IsCurrentFileCorrect (Handle)
-  local fname = panel.GetCurrentPanelItem(Handle, 1).FileName
+  local fname = panel.GetCurrentPanelItem(Handle).FileName
   local correct = (fname == "..") or (CheckForCorrect(fname) and true)
   return correct, fname
 end
@@ -167,15 +167,15 @@ end
 local function GoToFile (Target, PanelNumber)
   local Dir  = Unquote (Trim (ExtractFileDir (Target)))
   if Dir ~= "" then
-    panel.SetPanelDirectory (nil, PanelNumber, Dir)
+    panel.SetPanelDirectory (PanelNumber, Dir)
   end
 
-  local PInfo = assert(panel.GetPanelInfo (nil, PanelNumber))
+  local PInfo = assert(panel.GetPanelInfo (PanelNumber))
   local Name = Unquote (Trim (ExtractFileName (Target))):upper()
   for i=1, PInfo.ItemsNumber do
-    local item = panel.GetPanelItem (nil, PanelNumber, i)
+    local item = panel.GetPanelItem (PanelNumber, i)
     if Name == ExtractFileName (item.FileName):upper() then
-      panel.RedrawPanel (nil, PanelNumber, { CurrentItem=i, TopPanelItem=i })
+      panel.RedrawPanel (PanelNumber, { CurrentItem=i, TopPanelItem=i })
       return
     end
   end
@@ -218,12 +218,12 @@ local function ShowMenuFromList (Name)
     local panelitem = CheckForCorrect (Item.action)
     if panelitem then
       if IsDirectory (panelitem) then
-        panel.SetPanelDirectory (nil, 1, Item.action)
+        panel.SetPanelDirectory (1, Item.action)
       else
         bShellExecute = true
       end
     else
-      panel.SetCmdLine (nil, Item.action)
+      panel.SetCmdLine (Item.action)
     end
   end
   if bShellExecute then
@@ -274,9 +274,9 @@ function Env:OpenPanelFromOutput (command)
       table.insert (list, line)
     end
     h:close()
-    local panel = self:NewPanel()
-    panel:ProcessList (list, panel.Opt.ReplaceMode)
-    return panel
+    local newpanel = self:NewPanel()
+    newpanel:ProcessList (list, newpanel.Opt.ReplaceMode)
+    return newpanel
   end
 end
 
@@ -338,28 +338,28 @@ end
 
 
 function Env:NewPanel (aOptions)
-  local panel = {
+  local newpanel = {
     Env = self,
     LastOwnersRead = false,
     LastLinksRead = false,
     UpdateNeeded = true
   }
 
-  panel.Opt = setmetatable({}, self.OptMeta)
+  newpanel.Opt = setmetatable({}, self.OptMeta)
   if aOptions then
-    for k,v in pairs(aOptions) do panel.Opt[k] = v end
+    for k,v in pairs(aOptions) do newpanel.Opt[k] = v end
   end
 
   if self.StartupOptCommonPanel then
-    panel.Index = self.CurrentCommonPanel
-    panel.Items = TmpPanelBase.RefItems
-    panel.ReplaceFiles = TmpPanelBase.ReplaceRefFiles
+    newpanel.Index = self.CurrentCommonPanel
+    newpanel.Items = TmpPanelBase.RefItems
+    newpanel.ReplaceFiles = TmpPanelBase.ReplaceRefFiles
   else
-    panel.Files = {}
-    panel.Items = TmpPanelBase.OwnItems
-    panel.ReplaceFiles = TmpPanelBase.ReplaceOwnFiles
+    newpanel.Files = {}
+    newpanel.Items = TmpPanelBase.OwnItems
+    newpanel.ReplaceFiles = TmpPanelBase.ReplaceOwnFiles
   end
-  return setmetatable (panel, { __index = TmpPanelBase })
+  return setmetatable (newpanel, { __index = TmpPanelBase })
 end
 
 
@@ -587,9 +587,9 @@ end
 
 function TmpPanelBase:ProcessRemoveKey (Handle)
   local tb_out, tb_dict = {}, {}
-  local PInfo = assert(panel.GetPanelInfo (Handle, 1))
+  local PInfo = assert(panel.GetPanelInfo (Handle))
   for i=1, PInfo.SelectedItemsNumber do
-    local item = panel.GetSelectedPanelItem (Handle, 1, i)
+    local item = panel.GetSelectedPanelItem (Handle, i)
     tb_dict[item.FileName] = true
   end
   for _,v in ipairs(self:Items()) do
@@ -599,13 +599,13 @@ function TmpPanelBase:ProcessRemoveKey (Handle)
   end
   self:ReplaceFiles (tb_out)
 
-  panel.UpdatePanel (Handle, 1, true)
-  panel.RedrawPanel (Handle, 1)
+  panel.UpdatePanel (Handle, true)
+  panel.RedrawPanel (Handle)
 
-  PInfo = assert(panel.GetPanelInfo (Handle, 0))
+  PInfo = assert(panel.GetPanelInfo (0))
   if PInfo.PanelType == _F.PTYPE_QVIEWPANEL then
-    panel.UpdatePanel (Handle, 0, true)
-    panel.RedrawPanel (Handle, 0)
+    panel.UpdatePanel (0, true)
+    panel.RedrawPanel (0)
   end
 end
 
@@ -627,7 +627,7 @@ function TmpPanelBase:ProcessSaveListKey (Handle)
   if #self:Items() == 0 then return end
 
   -- default path: opposite panel directory\panel<index>.<mask extension>
-  local CurDir = panel.GetPanelDir(Handle, 0)
+  local CurDir = panel.GetPanelDir(0)
   local ListPath = AddEndSlash (CurDir) .. "panel"
   if self.Index then
     ListPath = ListPath .. (self.Index - 1)
@@ -643,8 +643,8 @@ function TmpPanelBase:ProcessSaveListKey (Handle)
       "TmpPanel.SaveList", ListPath, nil, nil, _F.FIB_BUTTONS)
   if ListPath then
     self:SaveListFile (ListPath)
-    panel.UpdatePanel (Handle, 0, true)
-    panel.RedrawPanel (Handle, 0)
+    panel.UpdatePanel (0, true)
+    panel.RedrawPanel (0)
   end
 end
 
@@ -674,13 +674,13 @@ do
       local Ok, CurFileName = IsCurrentFileCorrect (Handle)
       if Ok then
         if CurFileName ~= ".." then
-          local currItem = assert(panel.GetCurrentPanelItem (Handle, 1))
+          local currItem = assert(panel.GetCurrentPanelItem (Handle))
           if IsDirectory (currItem) then
-            panel.SetPanelDirectory (nil, 2, CurFileName)
+            panel.SetPanelDirectory (0, CurFileName)
           else
-            GoToFile(CurFileName, 2)
+            GoToFile(CurFileName, 0)
           end
-          panel.RedrawPanel (nil, 2)
+          panel.RedrawPanel (0)
           return true
         end
       end
@@ -814,7 +814,7 @@ end
 
 function TmpPanelBase:GetFindData (Handle, OpMode)
   self:RemoveDuplicates()
-  local types = panel.GetColumnTypes (Handle, 1)
+  local types = panel.GetColumnTypes (Handle)
   local PanelItems = self:UpdateItems (IsOwnersDisplayed (types), IsLinksDisplayed (types))
   return PanelItems
 end
@@ -835,13 +835,13 @@ end
 
 function TmpPanelBase:ProcessEvent (Handle, Event, Param)
   if Event == _F.FE_CHANGEVIEWMODE then
-    local types = panel.GetColumnTypes (Handle, 1)
+    local types = panel.GetColumnTypes (Handle)
     local UpdateOwners = IsOwnersDisplayed (types) and not self.LastOwnersRead
     local UpdateLinks = IsLinksDisplayed (types) and not self.LastLinksRead
     if UpdateOwners or UpdateLinks then
       self:UpdateItems (UpdateOwners, UpdateLinks)
-      panel.UpdatePanel (Handle, 1, true)
-      panel.RedrawPanel (Handle, 1)
+      panel.UpdatePanel (Handle, true)
+      panel.RedrawPanel (Handle)
     end
   end
   return false
@@ -929,8 +929,8 @@ function TmpPanelBase:SwitchToPanel (Handle, Index)
   if Index and Index ~= self.Index then
     self.Env.CurrentCommonPanel = Index
     self.Index = self.Env.CurrentCommonPanel
-    panel.UpdatePanel(Handle, 1, true)
-    panel.RedrawPanel(Handle, 1)
+    panel.UpdatePanel(Handle, true)
+    panel.RedrawPanel(Handle)
   end
 end
 
