@@ -46,7 +46,7 @@ int   luaLF_FieldError (lua_State *L, const char* key, const char* expected_type
 int   luaLF_SlotError (lua_State *L, int key, const char* expected_typename);
 void  PushAttrString(lua_State *L, int attr);
 void  PushPanelItem(lua_State *L, const struct PluginPanelItem *PanelItem);
-void  PushPanelItems(lua_State *L, const struct PluginPanelItem *PanelItems, int ItemsNumber);
+void  PushPanelItems(lua_State *L, HANDLE handle, const struct PluginPanelItem *PanelItems, int ItemsNumber);
 void  PutAttrToTable(lua_State *L, int attr);
 void  PutMouseEvent(lua_State *L, const MOUSE_EVENT_RECORD* rec, BOOL table_exist);
 uint64_t GetFileSizeFromTable(lua_State *L, const char *key);

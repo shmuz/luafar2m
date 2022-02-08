@@ -52,6 +52,7 @@ extern int  pcall_msg (lua_State* L, int narg, int nret);
 extern void push_flags_table (lua_State *L);
 extern void push_colors_table (lua_State *L);
 extern void push_keys_table (lua_State *L);
+extern void PushPluginTable(lua_State* L, HANDLE hPlugin);
 
 #ifndef ARRAYSIZE
 #  define ARRAYSIZE(buff) (sizeof(buff)/sizeof(buff[0]))
@@ -265,6 +266,30 @@ int CheckFlags(lua_State* L, int stackpos)
   return Flags;
 }
 
+int OptFlags(lua_State* L, int pos, int dflt)
+{
+  return lua_isnoneornil(L, pos) ? dflt : CheckFlags(L, pos);
+}
+
+int CheckFlagsFromTable(lua_State *L, int pos, const char* key)
+{
+  int f = 0;
+  lua_getfield(L, pos, key);
+  if (!lua_isnil(L, -1))
+    f = CheckFlags(L, -1);
+  lua_pop(L, 1);
+  return f;
+}
+
+int GetFlagsFromTable(lua_State *L, int pos, const char* key)
+{
+  int f;
+  lua_getfield(L, pos, key);
+  GetFlagCombination(L, -1, &f);
+  lua_pop(L, 1);
+  return f;
+}
+
 TPluginData* GetPluginData(lua_State* L)
 {
   lua_getfield(L, LUA_REGISTRYINDEX, FAR_KEYINFO);
@@ -426,10 +451,22 @@ void PushWinFindData (lua_State *L, const WIN32_FIND_DATAW *FData)
   PutWStrToTable(L, "FileName",              FData->cFileName, -1);
 }
 
+void PushOptPluginTable(lua_State *L, HANDLE handle, PSInfo *Info)
+{
+  HANDLE plug_handle = handle;
+  if (handle == PANEL_ACTIVE || handle == PANEL_PASSIVE)
+    Info->Control(handle, FCTL_GETPANELPLUGINHANDLE, 0, (LONG_PTR)&plug_handle);
+  if (plug_handle == INVALID_HANDLE_VALUE)
+    lua_pushnil(L);
+  else
+    PushPluginTable(L, plug_handle);
+}
+
+// either nil or plugin table is on stack top
 void PushPanelItem(lua_State *L, const struct PluginPanelItem *PanelItem)
 {
   lua_newtable(L); // "PanelItem"
-  //-----------------------------------------------------------------------
+
   PushFarFindData(L, &PanelItem->FindData);
   PutNumToTable(L, "Flags", PanelItem->Flags);
   PutNumToTable(L, "NumberOfLinks", PanelItem->NumberOfLinks);
@@ -437,7 +474,7 @@ void PushPanelItem(lua_State *L, const struct PluginPanelItem *PanelItem)
     PutWStrToTable(L, "Description",  PanelItem->Description, -1);
   if (PanelItem->Owner)
     PutWStrToTable(L, "Owner",  PanelItem->Owner, -1);
-  //-----------------------------------------------------------------------
+
   /* not clear why custom columns are defined on per-file basis */
   if (PanelItem->CustomColumnNumber > 0) {
     int j;
@@ -446,22 +483,24 @@ void PushPanelItem(lua_State *L, const struct PluginPanelItem *PanelItem)
       PutWStrToArray(L, j+1, PanelItem->CustomColumnData[j], -1);
     lua_setfield(L, -2, "CustomColumnData");
   }
-  //-----------------------------------------------------------------------
-  PutNumToTable(L, "UserData", PanelItem->UserData);
-  //-----------------------------------------------------------------------
-  /* skip PanelItem->Reserved for now */
-  //-----------------------------------------------------------------------
-}
-//---------------------------------------------------------------------------
 
-void PushPanelItems(lua_State *L, const struct PluginPanelItem *PanelItems, int ItemsNumber)
+  if (lua_type(L, -2) == LUA_TTABLE && PanelItem->UserData != LUA_NOREF) {
+    lua_rawgeti(L, -2, PanelItem->UserData);
+    lua_setfield(L, -2, "UserData");
+  }
+}
+
+void PushPanelItems(lua_State *L, HANDLE handle, const struct PluginPanelItem *PanelItems, int ItemsNumber)
 {
   int i;
-  lua_createtable(L, ItemsNumber, 0); // "PanelItems"
+  PSInfo *Info = GetPluginStartupInfo(L);
+  lua_createtable(L, ItemsNumber, 0);    //+1 "PanelItems"
+  PushOptPluginTable(L, handle, Info);   //+2
   for(i=0; i < ItemsNumber; i++) {
     PushPanelItem (L, PanelItems + i);
-    lua_rawseti(L, -2, i+1);
+    lua_rawseti(L, -3, i+1);
   }
+  lua_pop(L, 1);                         //+1
 }
 //---------------------------------------------------------------------------
 
@@ -470,7 +509,8 @@ int far_PluginStartupInfo(lua_State *L)
   PSInfo *Info = GetPluginStartupInfo(L);
   lua_createtable(L, 0, 3);
   PutWStrToTable(L, "ModuleName", Info->ModuleName, -1);
-  PutNumToTable(L, "ModuleNumber", Info->ModuleNumber);
+  lua_pushlightuserdata(L, (void*)Info->ModuleNumber);
+  lua_setfield(L, -2, "ModuleNumber");
   PutWStrToTable(L, "RootKey", Info->RootKey, -1);
   return 1;
 }
@@ -1627,12 +1667,18 @@ int panel_GetPanelInfo(lua_State *L /*, BOOL ShortInfo*/)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   HANDLE handle = OptHandle2(L);
+  HANDLE plug_handle;
   struct PanelInfo pi;
-  int ret = Info->Control(handle, FCTL_GETPANELINFO, 0, (LONG_PTR)&pi);
-  if(ret == 0)
+  if (!Info->Control(handle, FCTL_GETPANELINFO, 0, (LONG_PTR)&pi))
     return lua_pushnil(L), 1;
 
-  lua_createtable(L, 0, 13);
+  lua_createtable(L, 0, 14);
+  //-------------------------------------------------------------------------
+  Info->Control(handle, FCTL_GETPANELPLUGINHANDLE, 0, (LONG_PTR)&plug_handle);
+  if (plug_handle != INVALID_HANDLE_VALUE) {
+    lua_pushlightuserdata(L, plug_handle);
+    lua_setfield(L, -2, "PluginHandle");
+  }
   //-------------------------------------------------------------------------
   PutIntToTable(L, "PanelType", pi.PanelType);
   PutBoolToTable(L, "Plugin", pi.Plugin != 0);
@@ -1669,6 +1715,7 @@ int get_panel_item(lua_State *L, int command)
     if (size) {
       struct PluginPanelItem* item = (struct PluginPanelItem*)lua_newuserdata(L, size);
       if (Info->Control(handle, command, index, (LONG_PTR)item)) {
+        PushOptPluginTable(L, handle, Info);
         PushPanelItem(L, item);
         return 1;
       }
@@ -1905,7 +1952,6 @@ int ChangePanelSelection(lua_State *L, BOOL op_set)
   //---------------------------------------------------------------------------
   int numItems = op_set ? pi.ItemsNumber : pi.SelectedItemsNumber;
   int command  = op_set ? FCTL_SETSELECTION : FCTL_CLEARSELECTION;
-  Info->Control(handle, FCTL_BEGINSELECTION, 0, 0);
   if (itemindex >= 0 && itemindex < numItems)
     Info->Control(handle, command, itemindex, state);
   else {
@@ -1921,7 +1967,6 @@ int ChangePanelSelection(lua_State *L, BOOL op_set)
       lua_pop(L,1);
     }
   }
-  Info->Control(handle, FCTL_ENDSELECTION, 0, 0);
   //---------------------------------------------------------------------------
   return lua_pushboolean(L,1), 1;
 }
@@ -1932,6 +1977,18 @@ int panel_SetSelection(lua_State *L) {
 
 int panel_ClearSelection(lua_State *L) {
   return ChangePanelSelection(L, FALSE);
+}
+
+int panel_BeginSelection(lua_State *L)
+{
+  int res = GetPluginData(L)->Info->Control(OptHandle2(L), FCTL_BEGINSELECTION, 0, 0);
+  return lua_pushboolean(L, res), 1;
+}
+
+int panel_EndSelection(lua_State *L)
+{
+  int res = GetPluginData(L)->Info->Control(OptHandle2(L), FCTL_ENDSELECTION, 0, 0);
+  return lua_pushboolean(L, res), 1;
 }
 
 // CtrlSetUserScreen (handle)
@@ -2014,7 +2071,7 @@ int far_GetPluginDirList (lua_State *L)
   int ItemsNumber;
   int ret = Info->GetPluginDirList (PluginNumber, handle, Dir, &PanelItems, &ItemsNumber);
   if(ret) {
-    PushPanelItems (L, PanelItems, ItemsNumber);
+    PushPanelItems (L, handle, PanelItems, ItemsNumber);
     Info->FreePluginDirList (PanelItems, ItemsNumber);
     return 1;
   }
@@ -2563,10 +2620,14 @@ int far_SendDlgMessage (lua_State *L)
     }
 
     case DM_LISTDELETE:
-      luaL_checktype(L, 4, LUA_TTABLE);
-      fld.StartIndex = GetOptIntFromTable(L, "StartIndex", 1) - 1;
-      fld.Count = GetOptIntFromTable(L, "Count", 1);
-      Param2 = (LONG_PTR)&fld;
+      if (lua_isnoneornil(L, 4))
+        Param2 = 0;
+      else {
+        luaL_checktype(L, 4, LUA_TTABLE);
+        fld.StartIndex = GetOptIntFromTable(L, "StartIndex", 1) - 1;
+        fld.Count = GetOptIntFromTable(L, "Count", 1);
+        Param2 = (LONG_PTR)&fld;
+      }
       break;
 
     case DM_LISTFINDSTRING:
@@ -4686,6 +4747,13 @@ int far_MacroPost(lua_State *L)
   return 1;
 }
 
+int far_Log(lua_State *L)
+{
+  const char* txt = luaL_optstring(L, 1, "log message");
+  Log(txt);
+  return 0;
+}
+
 int win_GetConsoleScreenBufferInfo (lua_State* L)
 {
   CONSOLE_SCREEN_BUFFER_INFO info;
@@ -4895,8 +4963,10 @@ const luaL_Reg panel_funcs[] =
   {"SetNumericSort",          panel_SetNumericSort},
   {"SetCaseSensitiveSort",    panel_SetCaseSensitiveSort},
   {"SetPanelDirectory",       panel_SetPanelDirectory},
-  {"SetSelection",            panel_SetSelection},
+  {"BeginSelection",          panel_BeginSelection},
   {"ClearSelection",          panel_ClearSelection},
+  {"EndSelection",            panel_EndSelection},
+  {"SetSelection",            panel_SetSelection},
   {"SetSortMode",             panel_SetSortMode},
   {"SetSortOrder",            panel_SetSortOrder},
   {"SetDirectoriesFirst",     panel_SetDirectoriesFirst},
@@ -5041,6 +5111,7 @@ const luaL_reg far_funcs[] = {
   {"MacroSaveAll",        far_MacroSaveAll},
   {"MacroCheck",          far_MacroCheck},
   {"MacroPost",           far_MacroPost},
+  {"Log",                 far_Log},
 
   {NULL, NULL}
 };

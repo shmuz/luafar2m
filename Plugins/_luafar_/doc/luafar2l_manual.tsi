@@ -561,7 +561,7 @@ id=104
 lv=2
 dt=Text
 nm=export.GetOpenPluginInfo
-mtime=3853351003
+mtime=3853442561
 <article>
 #_OpenPluginInfo = export.GetOpenPluginInfo (object, handle)
 #_
@@ -583,7 +583,7 @@ mtime=3853351003
 #_      PanelModesArray:  table (array of PanelMode tables)
 #_      PanelModesNumber: integer
 #_      StartPanelMode:   integer
-#_      StartSortMode:    integer
+#_      StartSortMode:    flag
 #_      StartSortOrder:   integer
 #_
 #_@@@
@@ -1687,7 +1687,7 @@ id=71
 lv=2
 dt=Text
 nm=far.SendDlgMessage
-mtime=3853271530
+mtime=3853438638
 <article>
 #_Result = far.SendDlgMessage (hDlg, Msg, Param1, Param2)
 #_    or
@@ -1783,7 +1783,7 @@ mtime=3853271530
 #_          { Text="added line 2", Flags="LIF_CHECKED" } })
 #_
 #_DM_LISTDELETE:
-#_    Param2:  table
+#_    Param2:  table, or nil
 #_    Result:  integer
 #_    *Example:*
 #_      res = far.SendDlgMessage(hDlg, "DM_LISTDELETE", id,
@@ -3435,6 +3435,30 @@ mtime=3851349067
 </article>
 </node>
 <node>
+id=457
+lv=2
+dt=Text
+nm=panel.BeginSelection
+ctime=3853444384
+mtime=3853444443
+<article>
+#_result = panel.BeginSelection (handle, whatpanel)
+#_
+#_**Parameters:**
+#_  handle:       panel handle, or nil
+#_  whatpanel:    1=active_panel, 0=inactive_panel
+#_
+#_**Returns:**
+#_  result: boolean
+#_
+#_**Far API used:**
+#_  Control, FCTL_BEGINSELECTION
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=145
 lv=2
 dt=Text
@@ -3500,6 +3524,30 @@ nm=panel.ClosePlugin
 #_
 #_**Far API used:**
 #_  Control, FCTL_CLOSEPLUGIN
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=458
+lv=2
+dt=Text
+nm=panel.EndSelection
+ctime=3853444404
+mtime=3853444471
+<article>
+#_result = panel.EndSelection (handle, whatpanel)
+#_
+#_**Parameters:**
+#_  handle:       panel handle, or nil
+#_  whatpanel:    1=active_panel, 0=inactive_panel
+#_
+#_**Returns:**
+#_  result: boolean
+#_
+#_**Far API used:**
+#_  Control, FCTL_ENDSELECTION
 #_
 #_@@@
 #_
@@ -3718,6 +3766,7 @@ id=7
 lv=2
 dt=Text
 nm=panel.GetPanelInfo
+mtime=3853440699
 <article>
 #_PanelInfo = panel.GetPanelInfo ([handle], whatpanel)
 #_
@@ -3728,19 +3777,20 @@ nm=panel.GetPanelInfo
 #_**Returns:**
 #_  PanelInfo: table, or nil
 #_    fields of PanelInfo:
-#_      PanelType:       integer
-#_      Plugin:          boolean
-#_      PanelRect:       table (fields: left, top, right, bottom)
-#_      ItemsNumber:     integer
+#_      PluginHandle:        userdata, or nil
+#_      PanelType:           integer
+#_      PanelRect:           table (fields: left, top, right, bottom)
+#_      ItemsNumber:         integer
 #_      SelectedItemsNumber: integer
-#_      CurrentItem:     1-based integer
-#_      TopPanelItem:    1-based integer
-#_      Visible:         boolean
-#_      Focus:           boolean
-#_      ViewMode:        integer
-#_      ShortNames:      boolean
-#_      SortMode:        integer
-#_      Flags:           integer
+#_      CurrentItem:         1-based integer
+#_      TopPanelItem:        1-based integer
+#_      ViewMode:            integer
+#_      SortMode:            integer
+#_      Plugin:              boolean
+#_      Visible:             boolean
+#_      Focus:               boolean
+#_      ShortNames:          boolean
+#_      Flags:               integer
 #_
 #_**Far API used:**
 #_  Control, FCTL_GETPANELINFO
@@ -5886,6 +5936,29 @@ nm=far.CPluginStartupInfo
 </article>
 </node>
 <node>
+id=459
+lv=2
+dt=Text
+nm=far.Log
+ctime=3853503608
+mtime=3853503949
+<article>
+#_far.Log (message)
+#_
+#_**Parameters:**
+#_  message : string
+#_
+#_**Returns:**
+#_  nothing
+#_
+#_**Description:**
+#_  Writes <message> into the file **$HOME/luafar_log.txt**
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=191
 lv=2
 dt=Text
@@ -5955,6 +6028,7 @@ id=68
 lv=2
 dt=Text
 nm=far.PluginStartupInfo
+mtime=3853472945
 <article>
 #_Info = far.PluginStartupInfo ()
 #_
@@ -5965,7 +6039,7 @@ nm=far.PluginStartupInfo
 #_  Info: table
 #_    fields of Info:
 #_      ModuleName:   string
-#_      ModuleNumber: integer
+#_      ModuleNumber: light userdata
 #_      RootKey:      string
 #_
 #_**Description:**
