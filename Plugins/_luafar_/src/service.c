@@ -49,9 +49,9 @@ extern int  far_Match (lua_State*);
 extern int  far_Regex (lua_State*);
 extern int  luaopen_regex (lua_State*);
 extern int  pcall_msg (lua_State* L, int narg, int nret);
-extern void push_flags_table (lua_State *L);
-extern void push_colors_table (lua_State *L);
-extern void push_keys_table (lua_State *L);
+extern void add_flags (lua_State *L);
+extern void add_colors (lua_State *L);
+extern void add_keys (lua_State *L);
 extern void PushPluginTable(lua_State* L, HANDLE hPlugin);
 
 #ifndef ARRAYSIZE
@@ -183,13 +183,6 @@ HANDLE OptHandle(lua_State *L)
   return OptHandlePos(L,1);
 }
 
-const wchar_t* GetMsg (PSInfo *Info, int MsgId)
-{
-  if (MsgId >= 0) // (MsgId < 0) crashes FAR
-    return Info->GetMsg (Info->ModuleNumber, MsgId);
-  return NULL;
-}
-
 BOOL get_env_flag (lua_State *L, int stack_pos, int *trg)
 {
   *trg = 0;
@@ -215,7 +208,15 @@ BOOL get_env_flag (lua_State *L, int stack_pos, int *trg)
 int check_env_flag (lua_State *L, int stack_pos)
 {
   int trg;
-  if(!get_env_flag (L, stack_pos, &trg))
+  if (lua_isnoneornil(L, stack_pos) || !get_env_flag (L, stack_pos, &trg))
+    luaL_argerror(L, stack_pos, "invalid flag");
+  return trg;
+}
+
+int opt_env_flag (lua_State *L, int stack_pos, int dflt)
+{
+  int trg = dflt;
+  if (!lua_isnoneornil(L, stack_pos) && !get_env_flag (L, stack_pos, &trg))
     luaL_argerror(L, stack_pos, "invalid flag");
   return trg;
 }
@@ -2442,7 +2443,6 @@ int far_SendDlgMessage (lua_State *L)
     case DM_GETCHECK:
     case DM_GETCOMBOBOXEVENT:
     case DM_GETCURSORSIZE:
-    case DM_GETDLGDATA:
     case DM_GETDROPDOWNOPENED:
     case DM_GETITEMDATA:
     case DM_GETTEXTLENGTH:
@@ -2450,7 +2450,6 @@ int far_SendDlgMessage (lua_State *L)
     case DM_REDRAW:               // alias: DM_SETREDRAW
     case DM_SET3STATE:
     case DM_SETCURSORSIZE:
-    case DM_SETDLGDATA:
     case DM_SETDROPDOWNOPENED:
     case DM_SETFOCUS:
     case DM_SETITEMDATA:
@@ -2459,6 +2458,8 @@ int far_SendDlgMessage (lua_State *L)
     case DM_SHOWDIALOG:
     case DM_SHOWITEM:
     case DM_USER:
+    //case DM_GETDLGDATA: //Not supported as used internally by LuaFAR
+    //case DM_SETDLGDATA: //+++
       Param2 = luaL_optlong(L, 4, 0);
       break;
 
@@ -3397,10 +3398,10 @@ int far_InputBox(lua_State *L)
 int far_GetMsg(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  const wchar_t* msg = GetMsg (Info, luaL_checkinteger(L, 1));
-  if (msg)
-    return push_utf8_string(L, msg, -1), 1;
-  return 0;
+  int MsgId = luaL_checkinteger(L, 1);
+  const wchar_t* msg = (MsgId < 0) ? NULL : Info->GetMsg(Info->ModuleNumber, MsgId);
+  msg ? (void)push_utf8_string(L,msg,-1) : lua_pushnil(L);
+  return 1;
 }
 
 int far_Text(lua_State *L)
@@ -4046,6 +4047,7 @@ int far_AdvControl (lua_State *L)
   PSInfo *Info = GetPluginStartupInfo(L);
   lua_settop(L,2);  /* for proper calling GetOptIntFromTable and the like */
   int Command = check_env_flag (L, 1);
+  intptr_t int1;
   void *Param = NULL;
   wchar_t buf[300];
   struct ActlEjectMedia em;
@@ -4075,16 +4077,21 @@ int far_AdvControl (lua_State *L)
       break;
 
     case ACTL_GETCOLOR:
+      int1 = check_env_flag(L, 2);
+      Param = (void*)int1;
+      break;
+
     case ACTL_WAITKEY:
-      Param = (void*) luaL_checkinteger(L, 2);
+      int1 = opt_env_flag(L, 2, 0);
+      if (int1 < -1) //this prevents program freeze
+        int1 = -1;
+      Param = (void*)int1;
       break;
 
     case ACTL_SETCURRENTWINDOW:
-      Param = (void*) luaL_checkinteger(L, 2) - 1;
+      int1 = luaL_checkinteger(L, 2) - 1;
+      Param = (void*)int1;
       break;
-
-    //case ACTL_SYNCHRO:
-    //  not supported as it is used in far.Timer
 
     case ACTL_SETPROGRESSSTATE:
       Param = (void*)(INT_PTR) check_env_flag(L, 2);
@@ -4110,9 +4117,6 @@ int far_AdvControl (lua_State *L)
       Param = &em;
       break;
 
-    //case ACTL_KEYMACRO:
-    //  not supported as it's replaced by 6 separate functions far.MacroXxx
-
     case ACTL_GETARRAYCOLOR: {
       int size = Info->AdvControl(Info->ModuleNumber, Command, NULL);
       void *p = lua_newuserdata(L, size);
@@ -4129,16 +4133,14 @@ int far_AdvControl (lua_State *L)
 
     case ACTL_GETFARVERSION: {
       DWORD n = Info->AdvControl(Info->ModuleNumber, Command, 0);
-      int v1 = (n >> 8) & 0xff;
-      int v2 = n & 0xff;
-      int v3 = n >> 16;
+      int v1 = (n >> 16);
+      int v2 = n & 0xffff;
       if (lua_toboolean(L, 2)) {
         lua_pushinteger(L, v1);
         lua_pushinteger(L, v2);
-        lua_pushinteger(L, v3);
-        return 3;
+        return 2;
       }
-      lua_pushfstring(L, "%d.%d.%d", v1, v2, v3);
+      lua_pushfstring(L, "%d.%d", v1, v2);
       return 1;
     }
 
@@ -4237,6 +4239,9 @@ int far_AdvControl (lua_State *L)
       coord.Y = lua_tointeger(L, -1);
       Param = &coord;
       break;
+
+    //case ACTL_SYNCHRO:   //  not supported as it is used in far.Timer
+    //case ACTL_KEYMACRO:  //  not supported as it's replaced by 6 separate functions far.MacroXxx
   }
   lua_pushinteger(L, Info->AdvControl(Info->ModuleNumber, Command, Param));
   return 1;
@@ -4771,10 +4776,10 @@ int win_MoveFile (lua_State *L)
   const char* sFlags = luaL_optstring(L, 3, NULL);
   int flags = 0;
   if (sFlags) {
-    if      (strchr(sFlags, 'c')) flags |= MOVEFILE_COPY_ALLOWED;
-    else if (strchr(sFlags, 'd')) flags |= MOVEFILE_DELAY_UNTIL_REBOOT;
-    else if (strchr(sFlags, 'r')) flags |= MOVEFILE_REPLACE_EXISTING;
-    else if (strchr(sFlags, 'w')) flags |= MOVEFILE_WRITE_THROUGH;
+    if (strchr(sFlags, 'c')) flags |= MOVEFILE_COPY_ALLOWED;
+    if (strchr(sFlags, 'd')) flags |= MOVEFILE_DELAY_UNTIL_REBOOT;
+    if (strchr(sFlags, 'r')) flags |= MOVEFILE_REPLACE_EXISTING;
+    if (strchr(sFlags, 'w')) flags |= MOVEFILE_WRITE_THROUGH;
   }
   if (WINPORT(MoveFileEx)(src, trg, flags))
     return lua_pushboolean(L, 1), 1;
@@ -5012,6 +5017,7 @@ const luaL_reg win_funcs[] = {
   {"Utf8ToOem",                  ustring_Utf8ToOem},
   {"Utf8ToUtf16",                ustring_Utf8ToUtf16},
   {"Uuid",                       ustring_Uuid},
+  {"GetFileAttr",                ustring_GetFileAttr},
   {NULL, NULL},
 };
 
@@ -5116,17 +5122,22 @@ int luaopen_far (lua_State *L)
 
   NewVirtualKeyTable(L, FALSE);
   lua_setfield(L, LUA_REGISTRYINDEX, FAR_VIRTUALKEYS);
-  push_flags_table (L);
+
+  lua_createtable(L, 0, 1500);
+  add_flags(L);
+  add_colors(L);
+  add_keys(L);
+  lua_pushvalue(L, -1);
   lua_replace (L, LUA_ENVIRONINDEX);
+
+  luaL_register(L, "far", far_funcs);
+  lua_insert(L, -2);
+  lua_setfield(L, -2, "Flags");
+
+  (void)luaL_dostring(L, far_Guids);
 
   lua_newtable(L);
   lua_setglobal(L, "export");
-
-  luaL_register(L, "far", far_funcs);
-  push_flags_table  (L);  lua_setfield(L, -2, "Flags");
-  push_colors_table (L);  lua_setfield(L, -2, "Colors");
-  push_keys_table   (L);  lua_setfield(L, -2, "Keys");
-  (void) luaL_dostring(L, far_Guids);
 
   luaopen_regex(L);
   luaL_register(L, "regex",  regex_funcs);

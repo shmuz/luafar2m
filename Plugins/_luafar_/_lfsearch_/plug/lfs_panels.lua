@@ -4,7 +4,6 @@ local M           = require "lfs_message"
 local far2_dialog = require "far2.dialog"
 local luarepl     = require "luarepl"
 local F = far.Flags
-local FK = far.Keys
 local SendDlgMessage = far.SendDlgMessage
 local dirsep = package.config:sub(1,1)
 
@@ -22,9 +21,9 @@ local TmpPanelDefaults = {
   Macro = "CtrlF12 $Rep(12) Down $End +"
 }
 
-local KEY_INS     = FK.KEY_INS
-local KEY_NUMPAD0 = FK.KEY_NUMPAD0
-local KEY_SPACE   = FK.KEY_SPACE
+local KEY_INS     = F.KEY_INS
+local KEY_NUMPAD0 = F.KEY_NUMPAD0
+local KEY_SPACE   = F.KEY_SPACE
 
 -- search area
 local saFromCurrFolder, saOnlyCurrFolder, saSelectedItems, saRootFolder, saPathFolders = 1,2,3,4,5
@@ -482,7 +481,7 @@ local function SearchFromPanel (aHistory)
 --~     local usercfg = ChangeTmpPanelSettings(aHistory)
     local cmd = ("%s: -menu %s"):format(prefix, fname)
     panel.SetCmdLine (cmd)
-    far.AdvControl("ACTL_POSTKEYSEQUENCE", {FK.KEY_ENTER})
+    far.AdvControl("ACTL_POSTKEYSEQUENCE", {F.KEY_ENTER})
 --~     error"vbabva"
 --~     if type(usercfg.Macro) == "string" then
 --~       far.AdvControl("ACTL_KEYMACRO",

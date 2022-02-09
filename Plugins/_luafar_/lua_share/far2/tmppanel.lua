@@ -373,6 +373,7 @@ function Env:OpenFilePlugin (Name, Data)
         else
           local Panel = self:NewPanel()
           Panel:ProcessList (ReadFileList(Name), self.Opt.ReplaceMode)
+          Panel.HostFile = Name
           return Panel
         end
       end
@@ -387,21 +388,21 @@ function Env:OpenPlugin (OpenFrom, Item)
 
   self.StartupOpenFrom = OpenFrom
   if OpenFrom == _F.OPEN_COMMANDLINE then
-    local newOpt = setmetatable({}, OptMeta)
+    local newOpt = setmetatable({}, {__index=self.Opt})
     local ParamsTable = {
       safe="SafeModePanel", replace="ReplaceMode", menu="MenuForFilelist",
       full="FullScreenPanel" }
 
     local argv = Item
-    while #argv > 0 do
-      local switch, param, rest = argv:match "^%s*([+-])(%S*)(.*)"
+    while argv ~= "" do
+      local switch, param, rest = argv:match "^%s*([+%-])(%S*)(.*)"
       if not switch then break end
       argv = rest
       param = param:lower()
       if ParamsTable[param] then
         newOpt[ParamsTable[param]] = (switch == "+")
       else
-        local digit = param:sub(1,1):match "%d"
+        local digit = param:match "^%d"
         if digit then
           self.CurrentCommonPanel = tonumber(digit) + 1
         end
@@ -409,27 +410,26 @@ function Env:OpenPlugin (OpenFrom, Item)
     end
 
     argv = Trim(argv)
-    if #argv > 0 then
+    if argv ~= "" then
       if argv:sub(1,1) == "<" then
         argv = argv:sub(2)
         return self:OpenPanelFromOutput (argv)
       else
---~         argv = Unquote(argv)
---~         local TMP = ExpandEnvironmentStr(argv)
---~         local TmpPanelDir = ExtractFileDir(far.PluginStartupInfo().ModuleName)
---~         local PathName = _Su.SearchPath (TmpPanelDir, TMP) or
---~                          _Su.SearchPath (nil, TMP)
---~         if PathName then
---~           if newOpt.MenuForFilelist then
---~             ShowMenuFromList (PathName)
---~             return nil
---~           else
---~             local Panel = self:NewPanel(newOpt)
---~             Panel:ProcessList (ReadFileList(PathName), newOpt.ReplaceMode)
---~             return Panel
---~           end
---~         else return
---~         end
+        argv = Unquote(argv)
+        local PathName = ExpandEnvironmentStr(argv)
+        local attr = win.GetFileAttr(PathName)
+        if attr and not attr:find("d") then
+          if newOpt.MenuForFilelist then
+            ShowMenuFromList (PathName)
+            return nil
+          else
+            local Panel = self:NewPanel(newOpt)
+            Panel:ProcessList (ReadFileList(PathName), newOpt.ReplaceMode)
+            Panel.HostFile = PathName
+            return Panel
+          end
+        else return
+        end
       end
     end
   end
@@ -866,6 +866,10 @@ function TmpPanelBase:GetOpenPluginInfo (Handle)
     Format = M.MTempPanel,
     CurDir = "",
   }
+  if self.HostFile then
+    local cur = panel.GetCurrentPanelItem(1)
+    if cur and cur.FileName==".." then Info.HostFile=self.HostFile; end
+  end
   -----------------------------------------------------------------------------
   local TitleMode = self.Opt.SafeModePanel and "(R) " or ""
   if self.Index then

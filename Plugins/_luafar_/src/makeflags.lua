@@ -91,12 +91,10 @@ typedef struct {
 
 
 local file_bottom = [[
-// create a table; fill with flags; leave on stack
-void push_flags_table (lua_State *L)
+void add_flags (lua_State *L)
 {
   int i;
   const int nelem = sizeof(flags) / sizeof(flags[0]);
-  lua_createtable (L, 0, nelem);
   for (i=0; i<nelem; ++i) {
     lua_pushinteger(L, flags[i].val);
     lua_setfield(L, -2, flags[i].key);

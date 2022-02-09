@@ -95,17 +95,22 @@ int GetAttrFromTable(lua_State *L)
 
 void PushAttrString(lua_State *L, int attr)
 {
-  char buf[16], *p = buf;
-  if(attr & FILE_ATTRIBUTE_ARCHIVE)    *p++ = 'a';
-  if(attr & FILE_ATTRIBUTE_READONLY)   *p++ = 'r';
-  if(attr & FILE_ATTRIBUTE_HIDDEN)     *p++ = 'h';
-  if(attr & FILE_ATTRIBUTE_SYSTEM)     *p++ = 's';
-  if(attr & FILE_ATTRIBUTE_DIRECTORY)  *p++ = 'd';
-  if(attr & FILE_ATTRIBUTE_COMPRESSED) *p++ = 'c';
-  if(attr & FILE_ATTRIBUTE_OFFLINE)    *p++ = 'o';
-  if(attr & FILE_ATTRIBUTE_TEMPORARY)  *p++ = 't';
-  *p = '\0';
-  lua_pushstring(L, buf);
+  char buf[32], *p = buf;
+  if (attr & FILE_ATTRIBUTE_ARCHIVE)             *p++ = 'a';
+  if (attr & FILE_ATTRIBUTE_COMPRESSED)          *p++ = 'c';
+  if (attr & FILE_ATTRIBUTE_DIRECTORY)           *p++ = 'd';
+  if (attr & FILE_ATTRIBUTE_REPARSE_POINT)       *p++ = 'e';
+  if (attr & FILE_ATTRIBUTE_HIDDEN)              *p++ = 'h';
+  if (attr & FILE_ATTRIBUTE_NOT_CONTENT_INDEXED) *p++ = 'i';
+  if (attr & FILE_ATTRIBUTE_ENCRYPTED)           *p++ = 'n';
+  if (attr & FILE_ATTRIBUTE_OFFLINE)             *p++ = 'o';
+  if (attr & FILE_ATTRIBUTE_SPARSE_FILE)         *p++ = 'p';
+  if (attr & FILE_ATTRIBUTE_READONLY)            *p++ = 'r';
+  if (attr & FILE_ATTRIBUTE_SYSTEM)              *p++ = 's';
+  if (attr & FILE_ATTRIBUTE_TEMPORARY)           *p++ = 't';
+  if (attr & FILE_ATTRIBUTE_NO_SCRUB_DATA)       *p++ = 'u';
+  if (attr & FILE_ATTRIBUTE_VIRTUAL)             *p++ = 'v';
+  lua_pushlstring(L, buf, p-buf);
 }
 
 void PutAttrToTable(lua_State *L, int attr)

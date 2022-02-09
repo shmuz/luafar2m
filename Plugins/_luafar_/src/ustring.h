@@ -48,6 +48,7 @@ int ustring_Utf16ToUtf8 (lua_State *L);
 int ustring_Utf8ToOem (lua_State *L);
 int ustring_Utf8ToUtf16 (lua_State *L);
 int ustring_Uuid(lua_State* L);
+int ustring_GetFileAttr(lua_State *L);
 
 #ifdef __cplusplus
 }

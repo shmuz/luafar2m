@@ -6,7 +6,6 @@
 local _M = {} -- module
 
 local F = far.Flags
-local FK = far.Keys
 local SendDlgMessage = far.SendDlgMessage
 local min, max, floor, ceil = math.min, math.max, math.floor, math.ceil
 
@@ -15,45 +14,45 @@ local COL_MENUTEXT, COL_MENUSELECTEDTEXT, COL_MENUHIGHLIGHT,
   COL_MENUSELECTEDHIGHLIGHT, COL_MENUBOX, COL_MENUTITLE = 0,1,2,3,4,5
 
 -- Some keys
-local KEY_BS       = FK.KEY_BS
-local KEY_ENTER    = FK.KEY_ENTER
+local KEY_BS       = F.KEY_BS
+local KEY_ENTER    = F.KEY_ENTER
 ----
-local KEY_PGUP     = FK.KEY_PGUP
-local KEY_PGDN     = FK.KEY_PGDN
-local KEY_END      = FK.KEY_END
-local KEY_HOME     = FK.KEY_HOME
-local KEY_INS      = FK.KEY_INS
-local KEY_DEL      = FK.KEY_DEL
+local KEY_PGUP     = F.KEY_PGUP
+local KEY_PGDN     = F.KEY_PGDN
+local KEY_END      = F.KEY_END
+local KEY_HOME     = F.KEY_HOME
+local KEY_INS      = F.KEY_INS
+local KEY_DEL      = F.KEY_DEL
 ----
-local KEY_LEFT     = FK.KEY_LEFT
-local KEY_UP       = FK.KEY_UP
-local KEY_RIGHT    = FK.KEY_RIGHT
-local KEY_DOWN     = FK.KEY_DOWN
+local KEY_LEFT     = F.KEY_LEFT
+local KEY_UP       = F.KEY_UP
+local KEY_RIGHT    = F.KEY_RIGHT
+local KEY_DOWN     = F.KEY_DOWN
 ----
-local KEY_MULTIPLY = FK.KEY_MULTIPLY
-local KEY_ADD      = FK.KEY_ADD
-local KEY_SUBTRACT = FK.KEY_SUBTRACT
-local KEY_DIVIDE   = FK.KEY_DIVIDE
+local KEY_MULTIPLY = F.KEY_MULTIPLY
+local KEY_ADD      = F.KEY_ADD
+local KEY_SUBTRACT = F.KEY_SUBTRACT
+local KEY_DIVIDE   = F.KEY_DIVIDE
 ----
-local KEY_F6       = FK.KEY_F6
-local KEY_F7       = FK.KEY_F7
-local KEY_CTRLC    = FK.KEY_CTRLC
-local KEY_CTRLINS  = FK.KEY_CTRLINS
+local KEY_F6       = F.KEY_F6
+local KEY_F7       = F.KEY_F7
+local KEY_CTRLC    = F.KEY_CTRLC
+local KEY_CTRLINS  = F.KEY_CTRLINS
 ----
-local KEY_NUMPAD0  = FK.KEY_NUMPAD0
-local KEY_NUMPAD1  = FK.KEY_NUMPAD1
-local KEY_NUMPAD2  = FK.KEY_NUMPAD2
-local KEY_NUMPAD3  = FK.KEY_NUMPAD3
-local KEY_NUMPAD4  = FK.KEY_NUMPAD4
--- local KEY_NUMPAD5  = FK.KEY_NUMPAD5
-local KEY_NUMPAD6  = FK.KEY_NUMPAD6
-local KEY_NUMPAD7  = FK.KEY_NUMPAD7
-local KEY_NUMPAD8  = FK.KEY_NUMPAD8
-local KEY_NUMPAD9  = FK.KEY_NUMPAD9
-local KEY_NUMDEL   = FK.KEY_NUMDEL
-local KEY_NUMENTER = FK.KEY_NUMENTER
+local KEY_NUMPAD0  = F.KEY_NUMPAD0
+local KEY_NUMPAD1  = F.KEY_NUMPAD1
+local KEY_NUMPAD2  = F.KEY_NUMPAD2
+local KEY_NUMPAD3  = F.KEY_NUMPAD3
+local KEY_NUMPAD4  = F.KEY_NUMPAD4
+-- local KEY_NUMPAD5  = F.KEY_NUMPAD5
+local KEY_NUMPAD6  = F.KEY_NUMPAD6
+local KEY_NUMPAD7  = F.KEY_NUMPAD7
+local KEY_NUMPAD8  = F.KEY_NUMPAD8
+local KEY_NUMPAD9  = F.KEY_NUMPAD9
+local KEY_NUMDEL   = F.KEY_NUMDEL
+local KEY_NUMENTER = F.KEY_NUMENTER
 ----
-local KEY_CTRLF9   = FK.KEY_CTRLF9
+local KEY_CTRLF9   = F.KEY_CTRLF9
 ----
 
 local function GetColor (index)

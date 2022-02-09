@@ -1,5 +1,6 @@
 #include <uuid/uuid.h>
 #include "ustring.h"
+#include "util.h"
 
 #if 0
 // This function was initially taken from Lua 5.0.2 (loadlib.c)
@@ -439,5 +440,15 @@ int ustring_Uuid(lua_State* L)
   }
 
   lua_pushnil(L);
+  return 1;
+}
+
+int ustring_GetFileAttr(lua_State *L)
+{
+  DWORD attr = WINPORT(GetFileAttributes)(check_utf8_string(L,1,NULL));
+
+  if(attr == 0xFFFFFFFF) return SysErrorReturn(L);
+
+  PushAttrString(L, attr);
   return 1;
 }

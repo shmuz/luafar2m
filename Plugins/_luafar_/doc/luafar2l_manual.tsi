@@ -58,16 +58,15 @@ lv=1
 dt=Text
 nm=Flags
 ctime=3480257526
-mtime=3851360733
+mtime=3853580040
 <article>
 #_<markdown>
 #_
 #_As Far API makes wide use of named integer constants, there is
 #_a necessity to represent those constants in Lua. LuaFAR
 #_keeps the names and values of the constants in tables.
-#_Most constants are embedded into LuaFAR (in a tables
-#_[`far.Flags`](57.html), [`far.Colors`](412.html), and
-#_[`far.Keys`](414.html)).
+#_Most constants are embedded into LuaFAR (in a table
+#_[`far.Flags`](57.html)).
 #_
 #_This manual uses the term **flag** for a single named constant
 #_and the term **flags combination** for the bitwise OR of one or
@@ -990,7 +989,7 @@ id=153
 lv=2
 dt=Text
 nm=far.AdvControl
-mtime=3853152810
+mtime=3853593493
 <article>
 #_Result = far.AdvControl (Command, Param)
 #_
@@ -1019,10 +1018,16 @@ mtime=3853152810
 #_    Param:   none
 #_    Result:  integer
 #_
-#_ACTL_GETCOLOR,
-#_ACTL_SETCURRENTWINDOW,
-#_ACTL_WAITKEY,
+#_ACTL_GETCOLOR:
+#_    Param:   flag
+#_    Result:  integer
+#_
+#_ACTL_SETCURRENTWINDOW:
 #_    Param:   integer
+#_    Result:  integer
+#_
+#_ACTL_WAITKEY:
+#_    Param:   flag (optional; default=0)
 #_    Result:  integer
 #_
 #_ACTL_SYNCHRO:
@@ -1047,8 +1052,8 @@ mtime=3853152810
 #_
 #_ACTL_GETFARVERSION:
 #_    Param:   boolean (optional)
-#_    Result:  string (e.g. "1.70.2087"), if Param==false;
-#_             3 numbers (e.g. 1,70,2087), if Param==true;
+#_    Result:  string (e.g. "2.4"), if Param==false;
+#_             2 numbers (e.g. 2,4), if Param==true;
 #_
 #_ACTL_GETWINDOWINFO:
 #_    Param1:  window number; 1-based integer (optional; default=0)
@@ -1687,7 +1692,7 @@ id=71
 lv=2
 dt=Text
 nm=far.SendDlgMessage
-mtime=3853438638
+mtime=3853526653
 <article>
 #_Result = far.SendDlgMessage (hDlg, Msg, Param1, Param2)
 #_    or
@@ -1710,7 +1715,6 @@ mtime=3853438638
 #_DM_ENABLEREDRAW,
 #_DM_GETCHECK,
 #_DM_GETCURSORSIZE,
-#_DM_GETDLGDATA,
 #_DM_GETDROPDOWNOPENED,
 #_DM_GETFOCUS,
 #_DM_GETITEMDATA,
@@ -1720,7 +1724,6 @@ mtime=3853438638
 #_DM_REDRAW,
 #_DM_SET3STATE,
 #_DM_SETCURSORSIZE,
-#_DM_SETDLGDATA,
 #_DM_SETDROPDOWNOPENED,
 #_DM_SETFOCUS,
 #_DM_SETITEMDATA,
@@ -1894,6 +1897,10 @@ mtime=3853438638
 #_    *Example:*
 #_      res = far.SendDlgMessage(hDlg, "DM_SETEDITPOSITION", id,
 #_        { CurPos=3, Overtype=0 })
+#_
+#_DM_GETDLGDATA,
+#_DM_SETDLGDATA:
+#_    Not supported (used internally by LuaFAR)
 #_
 #_
 #_**Far API used:**
@@ -5531,13 +5538,13 @@ id=211
 lv=2
 dt=Text
 nm=far.RecursiveSearch
-mtime=3853267392
+mtime=3853601704
 <article>
 #_far.RecursiveSearch (InitDir, Mask, UserFunc [, Flags [, ...]])
 #_
 #_**Parameters:**
 #_  InitDir:  string
-#_  Mask:     string (can include attributes - see note below)
+#_  Mask:     string
 #_  UserFunc: function
 #_  Flags:    flags
 #_  ...:      additional arguments, any Lua values
@@ -6279,40 +6286,32 @@ mtime=3851358133
 </article>
 </node>
 <node>
-id=412
-lv=2
-dt=Text
-nm=far.Colors
-ctime=3851358147
-mtime=3851358345
-<article>
-#_far.Colors
-#_
-#_**Description:**
-#_  A table containing values of all constants (32 bit integers)
-#_  from *farcolor.hpp* indexed by their string names.
-#_
-#_**Example of use:**
-#_  local FC = far.Colors
-#_  far.AdvControl ("ACTL_SETARRAYCOLOR",
-#_      { Flags="FCLR_REDRAW", StartIndex=FC.COL_EDITORTEXT,
-#_        0x4E, 0xE4
-#_      })
-#_
-</article>
-</node>
-<node>
 id=57
 lv=2
 dt=Text
 nm=far.Flags
-mtime=3851358520
+mtime=3853579897
 <article>
 #_far.Flags
 #_
 #_**Description:**
 #_  A table containing values of various FAR and Windows console
-#_  constants keyed by their string names.
+#_  constants keyed by their string names. It includes constants
+#_  defined in the following Far2L files:
+#_  - farplug-wide.h
+#_  - farcolor.h
+#_  - farkeys.h
+#_
+#_**Example of use:**
+#_  local F = far.Flags
+#_  far.AdvControl ("ACTL_SETARRAYCOLOR",
+#_      { Flags="FCLR_REDRAW", StartIndex=F.COL_EDITORTEXT,
+#_        0x4E, 0xE4
+#_      })
+#_
+#_**Example of use:**
+#_  local F = far.Flags
+#_  editor.ProcessKey (F.KEY_CTRLEND)
 #_
 </article>
 </node>
@@ -6333,23 +6332,6 @@ mtime=3851421394
 #_    FindFileId = '8C9EAD29-910F-4B24-A669-EDAFBA6ED964'
 #_
 #_@@@
-#_
-</article>
-</node>
-<node>
-id=414
-lv=2
-dt=Text
-nm=far.Keys
-ctime=3851358169
-mtime=3851358725
-<article>
-#_A table containing values of all constants from *farkeys.hpp*
-#_indexed by their string names.
-#_
-#_**Example of use:**
-#_  local FK = far.Keys
-#_  editor.ProcessKey (FK.KEY_CTRLEND)
 #_
 </article>
 </node>
@@ -6795,6 +6777,30 @@ mtime=3504253386
 #_
 #_@@@
 #_
+#_
+</article>
+</node>
+<node>
+id=460
+lv=3
+dt=Text
+nm=win.GetFileAttr
+ctime=3853601291
+mtime=3853601761
+<article>
+#_attr = win.GetFileAttr (FileName)
+#_
+#_**Parameters:**
+#_  FileName: string
+#_
+#_**Returns:**
+#_  attr:     string (see FindData page), or nil
+#_
+#_**Windows API used:**
+#_  GetFileAttributesW
+#_
+#_@@@
+#_<lua> Links = { FindData="90.html" } </lua>
 #_
 </article>
 </node>
