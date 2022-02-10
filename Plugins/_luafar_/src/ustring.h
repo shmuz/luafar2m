@@ -2,6 +2,7 @@
 #define _USTRING_H
 
 #include <windows.h>
+#include "luafar.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,11 +30,12 @@ void   PutStrToTable      (lua_State *L, const char* key, const char* str);
 void   PutWStrToArray     (lua_State *L, int key, const wchar_t* str, int numchars);
 void   PutWStrToTable     (lua_State *L, const char* key, const wchar_t* str, int numchars);
 
-wchar_t* check_utf8_string (lua_State *L, int pos, int* pTrgSize);
+DLLFUNC wchar_t* check_utf8_string (lua_State *L, int pos, int* pTrgSize);
+DLLFUNC const wchar_t* opt_utf8_string (lua_State *L, int pos, const wchar_t* dflt);
+DLLFUNC char* push_utf8_string (lua_State* L, const wchar_t* str, int numchars);
+
 wchar_t* utf8_to_utf16 (lua_State *L, int pos, int* pTrgSize);
-const wchar_t* opt_utf8_string (lua_State *L, int pos, const wchar_t* dflt);
 wchar_t* oem_to_utf16 (lua_State *L, int pos, int* pTrgSize);
-char* push_utf8_string (lua_State* L, const wchar_t* str, int numchars);
 char* push_oem_string (lua_State* L, const wchar_t* str, int numchars);
 
 int ustring_EnumSystemCodePages (lua_State *L);

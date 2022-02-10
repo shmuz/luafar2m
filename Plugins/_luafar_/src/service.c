@@ -4048,7 +4048,6 @@ int far_AdvControl (lua_State *L)
   lua_settop(L,2);  /* for proper calling GetOptIntFromTable and the like */
   int Command = check_env_flag (L, 1);
   intptr_t int1;
-  void *Param = NULL;
   wchar_t buf[300];
   struct ActlEjectMedia em;
   struct KeySequence ks;
@@ -4061,7 +4060,6 @@ int far_AdvControl (lua_State *L)
     default:
       return luaL_argerror(L, 1, "command not supported");
 
-    case ACTL_COMMIT:
     case ACTL_GETFARHWND:
     case ACTL_GETCONFIRMATIONS:
     case ACTL_GETDESCSETTINGS:
@@ -4071,38 +4069,46 @@ int far_AdvControl (lua_State *L)
     case ACTL_GETPLUGINMAXREADDATA:
     case ACTL_GETSYSTEMSETTINGS:
     case ACTL_GETWINDOWCOUNT:
+      int1 = Info->AdvControl(Info->ModuleNumber, Command, NULL);
+      return lua_pushinteger(L, int1), 1;
+
+    case ACTL_COMMIT:
     case ACTL_PROGRESSNOTIFY:
     case ACTL_QUIT:
     case ACTL_REDRAWALL:
-      break;
+      int1 = Info->AdvControl(Info->ModuleNumber, Command, NULL);
+      return lua_pushboolean(L, int1), 1;
 
     case ACTL_GETCOLOR:
       int1 = check_env_flag(L, 2);
-      Param = (void*)int1;
-      break;
+      lua_pushinteger(L, Info->AdvControl(Info->ModuleNumber, Command, (void*)int1));
+      return 1;
 
     case ACTL_WAITKEY:
       int1 = opt_env_flag(L, 2, 0);
       if (int1 < -1) //this prevents program freeze
         int1 = -1;
-      Param = (void*)int1;
-      break;
+      lua_pushinteger(L, Info->AdvControl(Info->ModuleNumber, Command, (void*)int1));
+      return 1;
 
     case ACTL_SETCURRENTWINDOW:
       int1 = luaL_checkinteger(L, 2) - 1;
-      Param = (void*)int1;
-      break;
+      int1 = Info->AdvControl(Info->ModuleNumber, ACTL_SETCURRENTWINDOW, (void*)int1);
+      if (int1 && lua_toboolean(L, 3))
+        int1 = Info->AdvControl(Info->ModuleNumber, ACTL_COMMIT, NULL);
+      return lua_pushboolean(L, int1), 1;
 
     case ACTL_SETPROGRESSSTATE:
-      Param = (void*)(INT_PTR) check_env_flag(L, 2);
-      break;
+      int1 = check_env_flag(L, 2);
+      int1 = Info->AdvControl(Info->ModuleNumber, Command, (void*)int1);
+      return lua_pushboolean(L, int1), 1;
 
     case ACTL_SETPROGRESSVALUE:
       luaL_checktype(L, 2, LUA_TTABLE);
       pv.Completed = (uint64_t)GetOptNumFromTable(L, "Completed", 0.0);
       pv.Total = (uint64_t)GetOptNumFromTable(L, "Total", 100.0);
-      Param = &pv;
-      break;
+      lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, Command, &pv));
+      return 1;
 
     case ACTL_GETSYSWORDDIV:
       Info->AdvControl(Info->ModuleNumber, Command, buf);
@@ -4114,15 +4120,15 @@ int far_AdvControl (lua_State *L)
       em.Letter = lua_isstring(L,-1) ? lua_tostring(L,-1)[0] : '\0';
       lua_getfield(L, 2, "Flags");
       em.Flags = CheckFlags(L,-1);
-      Param = &em;
-      break;
+      lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, Command, &em));
+      return 1;
 
     case ACTL_GETARRAYCOLOR: {
+      int i;
       int size = Info->AdvControl(Info->ModuleNumber, Command, NULL);
       void *p = lua_newuserdata(L, size);
       Info->AdvControl(Info->ModuleNumber, Command, p);
       lua_createtable(L, size, 0);
-      int i;
       for (i=0; i < size; i++) {
         lua_pushinteger(L, i+1);
         lua_pushinteger(L, ((BYTE*)p)[i]);
@@ -4175,21 +4181,23 @@ int far_AdvControl (lua_State *L)
     }
 
     case ACTL_POSTKEYSEQUENCE: {
+      int i;
+      DWORD* sequence;
       luaL_checktype(L, 2, LUA_TTABLE);
       lua_getfield(L, 2, "Flags");
-      GetFlagCombination(L, -1, (int*)&ks.Flags);
+      GetFlagCombination(L, -1, &i);
+      ks.Flags = i;
       ks.Count = lua_objlen(L,2);
-      DWORD* sequence = (DWORD*)lua_newuserdata(L, sizeof(DWORD)*ks.Count);
+      sequence = (DWORD*)lua_newuserdata(L, sizeof(DWORD)*ks.Count);
       ks.Sequence = sequence;
-      int i;
       for (i=0; i < ks.Count; i++) {
         lua_pushinteger(L,i+1);
         lua_gettable(L,2);
         sequence[i] = lua_tointeger(L,-1);
         lua_pop(L,1);
       }
-      Param = &ks;
-      break;
+      lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, Command, &ks));
+      return 1;
     }
 
     case ACTL_SETARRAYCOLOR:
@@ -4206,8 +4214,8 @@ int far_AdvControl (lua_State *L)
         fsc.Colors[i] = lua_tointeger(L,-1);
         lua_pop(L,1);
       }
-      Param = &fsc;
-      break;
+      lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, Command, &fsc));
+      return 1;
 
     case ACTL_GETFARRECT:
       if (Info->AdvControl(Info->ModuleNumber, Command, &sr)) {
@@ -4237,14 +4245,12 @@ int far_AdvControl (lua_State *L)
       coord.X = lua_tointeger(L, -1);
       lua_getfield(L, 2, "Y");
       coord.Y = lua_tointeger(L, -1);
-      Param = &coord;
-      break;
+      lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, Command, &coord));
+      return 1;
 
     //case ACTL_SYNCHRO:   //  not supported as it is used in far.Timer
     //case ACTL_KEYMACRO:  //  not supported as it's replaced by 6 separate functions far.MacroXxx
   }
-  lua_pushinteger(L, Info->AdvControl(Info->ModuleNumber, Command, Param));
-  return 1;
 }
 
 int far_CPluginStartupInfo(lua_State *L)

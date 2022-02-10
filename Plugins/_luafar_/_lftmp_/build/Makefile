@@ -7,5 +7,4 @@ FAR_EXPORTS = \
   OPENFILEPLUGIN  OPENPLUGIN  PROCESSEVENT  PROCESSKEY  PUTFILES  \
   SETDIRECTORY  SETFINDLIST
 
-include ../../config.mak
 include ../../plugin.mak

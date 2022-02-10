@@ -118,11 +118,11 @@ id=214
 lv=1
 dt=Text
 nm=Generic LuaFAR plugin
-mtime=3851409721
+mtime=3853669600
 <article>
 #_<markdown>
 #_
-#_There are two files in the LuaFAR distribution (**`luaplug.c`** and **`luaplug.mak`**) that do not participate in the build of LuaFAR DLL, they comprise the "generic LuaFAR plugin". It is called generic, since most of a LuaFAR plugin functionality is contained in its Lua part, and its C-part is more or less the same for most LuaFAR plugins.
+#_The LuaFAR distribution has a **`luaplug.c`** file that is not involved in building the LuaFAR DLL. It's called "generic LuaFAR plugin". Since most of the functionality of LuaFAR plugins is contained in their Lua parts, their C parts are more or less the same for most LuaFAR plugins. **`luaplug.c`** is a working example of this C-part and can be used by plugin developers.
 #_
 #_- [Customizing the generic plugin](425.html)
 #_- [Extra exported functions](426.html)
@@ -135,30 +135,31 @@ lv=2
 dt=Text
 nm=Customizing the generic plugin
 ctime=3851409449
-mtime=3851416711
+mtime=3853672465
 <article>
 #_<markdown>
 #_
 #_<a name="customizing"></a>
 #_### Customizing the generic plugin
-#_The easiest way to build a LuaFAR plugin DLL is via `luaplug.mak`
-#_makefile. This makefile can be used either directly or included in another makefile.
+#_The easiest way to build a LuaFAR plugin DLL is via `plugin.mak`
+#_makefile. This makefile should be included in another makefile.
 #_It accepts the following parameters:
 #_
-#_- **`TARGET`** - name of the resulting DLL, e.g.:<br>
-#_  "`TARGET = helloworld.dll`".<br>
-#_  Defaults to `luaplug.dll`.
+#_- **`PLUGNAME`** - name of the plugin, e.g.:<br>
+#_  `PLUGNAME = hello`<br>
+#_  will result in `hello.far-plug-wide` DLL.
 #_
 #_- **`FAR_EXPORTS`** - list of functions that should be exported by the plugin
 #_(in uppercase, whitespace-separated), e.g.:<br>
-#_  "`FAR_EXPORTS = OPENPLUGIN EXITFAR`".<br>
+#_  `FAR_EXPORTS = OPENPLUGIN EXITFAR`<br>
 #_(The functions *SetStartupInfoW*, *GetPluginInfoW* and *ProcessSynchroEventW*
 #_are always exported, so there's no need to include them in the list.)
 #_
 #_- **`MINFARVERSION`** - the minimum FAR version to be accepted by the plugin, e.g.:<br>
-#_  "`MINFARVERSION = 2,0,1420`"<br>
-#_(This setting is used only if `FAR_EXPORTS` includes GETMINFARVERSION`.)
+#_  `MINFARVERSION = 2,0`<br>
+#_(This setting is used only if `FAR_EXPORTS` includes `GETMINFARVERSION`.)
 #_
+#_@@@
 #_- **`PATH_LUAFAR`** - root directory of the LuaFAR distribution.
 #_
 #_- **`ENV_PREFIX`** - prefix for LuaFAR-specific environment variables.
@@ -989,9 +990,9 @@ id=153
 lv=2
 dt=Text
 nm=far.AdvControl
-mtime=3853593493
+mtime=3853697136
 <article>
-#_Result = far.AdvControl (Command, Param)
+#_Result = far.AdvControl (Command, Param [, Param2])
 #_
 #_**Parameters:**
 #_  Command:  flag (integer or string)
@@ -1002,7 +1003,6 @@ mtime=3853593493
 #_
 #_**Details:**
 #_
-#_ACTL_COMMIT,
 #_ACTL_GETFARHWND,
 #_ACTL_GETCONFIRMATIONS,
 #_ACTL_GETDESCSETTINGS,
@@ -1011,27 +1011,29 @@ mtime=3853593493
 #_ACTL_GETPANELSETTINGS,
 #_ACTL_GETPLUGINMAXREADDATA,
 #_ACTL_GETSYSTEMSETTINGS,
-#_ACTL_GETWINDOWCOUNT,
+#_ACTL_GETWINDOWCOUNT:
+#_    Param:   none
+#_    Result:  integer
+#_
+#_ACTL_COMMIT,
 #_ACTL_PROGRESSNOTIFY,
 #_ACTL_QUIT,
 #_ACTL_REDRAWALL:
 #_    Param:   none
-#_    Result:  integer
+#_    Result:  boolean
 #_
 #_ACTL_GETCOLOR:
 #_    Param:   flag
 #_    Result:  integer
 #_
 #_ACTL_SETCURRENTWINDOW:
-#_    Param:   integer
-#_    Result:  integer
+#_    Param:   integer (1-based)
+#_    Param2:  boolean (if true then ACTL_COMMIT is called after ACTL_SETCURRENTWINDOW)
+#_    Result:  boolean
 #_
 #_ACTL_WAITKEY:
 #_    Param:   flag (optional; default=0)
 #_    Result:  integer
-#_
-#_ACTL_SYNCHRO:
-#_    not supported as it is used internally in far.Timer
 #_
 #_ACTL_GETSYSWORDDIV:
 #_    Param:   none
@@ -1041,10 +1043,11 @@ mtime=3853593493
 #_    Param:   table (see its fields below)
 #_        Letter:  string (only the first character matters)
 #_        Flags:   flags combination
-#_    Result:  integer    
+#_    Result:  boolean
 #_
-#_ACTL_KEYMACRO:
-#_    not supported, replaced by 6 separate MacroControl functions
+#_ACTL_KEYMACRO: not supported, replaced by 6 separate MacroControl functions
+#_
+#_ACTL_SYNCHRO: not supported as it is used internally in far.Timer
 #_
 #_ACTL_GETARRAYCOLOR:
 #_    Param:   none
@@ -1077,23 +1080,23 @@ mtime=3853593493
 #_    Param:   table (see its fields below;
 #_             its array part contains integers)
 #_        Flags:   flags combination
-#_    Result:  integer
+#_    Result:  boolean
 #_
 #_ACTL_SETARRAYCOLOR:
 #_    Param:   table (see its fields below;
 #_             its array part contains integers)
 #_        Flags:       flags combination
 #_        StartIndex:  integer
-#_    Result:  integer    
+#_    Result:  boolean
 #_
 #_ACTL_SETPROGRESSSTATE:
 #_    Param:   flag
-#_    Result:  integer    
+#_    Result:  boolean
 #_
 #_ACTL_SETPROGRESSVALUE:
 #_    Param:   table (see its fields below)
 #_        Completed, Total:  numbers
-#_    Result:  integer    
+#_    Result:  boolean
 #_
 #_ACTL_GETFARRECT:
 #_    Param:   none
@@ -1108,7 +1111,7 @@ mtime=3853593493
 #_ACTL_SETCURSORPOS:
 #_    Param:   table (see its fields below)
 #_        X, Y: integers
-#_    Result:  integer    
+#_    Result:  boolean
 #_
 #_**Far API used:**
 #_  AdvControl
