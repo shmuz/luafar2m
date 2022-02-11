@@ -561,7 +561,7 @@ id=104
 lv=2
 dt=Text
 nm=export.GetOpenPluginInfo
-mtime=3853442561
+mtime=3853777018
 <article>
 #_OpenPluginInfo = export.GetOpenPluginInfo (object, handle)
 #_
@@ -587,7 +587,7 @@ mtime=3853442561
 #_      StartSortOrder:   integer
 #_
 #_@@@
-#_<lua> Links = { ["\\bInfoLine\\b"]="120.html", ["\\bPanelMode\\b"]="121.html" } </lua>
+#_<lua> Links = { InfoLine="120.html", PanelMode="121.html" } </lua>
 #_
 #_
 </article>
@@ -2797,7 +2797,7 @@ id=29
 lv=2
 dt=Text
 nm=editor.GetInfo
-mtime=3851869393
+mtime=3853743777
 <article>
 #_Info = editor.GetInfo ()
 #_
@@ -2817,7 +2817,7 @@ mtime=3851869393
 #_      CurTabPos:      integer, 1-based
 #_      TopScreenLine:  integer, 1-based
 #_      LeftPos:        integer, 1-based
-#_      Overtype:       boolean
+#_      Overtype:       integer
 #_      BlockType:      integer
 #_      BlockStartLine: integer, 1-based
 #_      Options:        integer
@@ -4662,7 +4662,7 @@ lv=2
 dt=Text
 nm=f:IsFileInFilter
 ctime=3480243336
-mtime=3480252400
+mtime=3853777078
 <article>
 #_result = f:IsFileInFilter (fileData)
 #_
@@ -4677,7 +4677,7 @@ mtime=3480252400
 #_  FileFilterControl, FFCTL_ISFILEINFILTER
 #_
 #_@@@
-#_<lua> Links = { ["\\bFindData\\b"]="90.html", } </lua>
+#_<lua> Links = { FindData="90.html", } </lua>
 #_
 </article>
 </node>
@@ -5211,7 +5211,7 @@ id=186
 lv=2
 dt=Text
 nm=far.InputRecordToKey
-mtime=3851604080
+mtime=3853777092
 <article>
 #_Key = far.InputRecordToKey (Input)
 #_
@@ -5229,7 +5229,7 @@ mtime=3851604080
 #_  FSF.FarInputRecordToKey
 #_
 #_@@@
-#_<lua> Links = { ["\\bInputRecord\\b"]="187.html", } </lua>
+#_<lua> Links = { InputRecord="187.html", } </lua>
 #_
 </article>
 </node>
@@ -5944,6 +5944,34 @@ nm=far.CPluginStartupInfo
 </article>
 </node>
 <node>
+id=461
+lv=2
+dt=Text
+nm=far.InputRecordToName
+ctime=3853775362
+mtime=3853776891
+<article>
+#_Name = far.InputRecordToName(Rec)
+#_
+#_**Parameters:**
+#_  Rec:  table InputRecord
+#_
+#_**Returns:**
+#_  Name: string, or nil
+#_
+#_**Description:**
+#_  The function returns a string representation of an InputRecord.
+#_
+#_**Note:**
+#_  Currently, processing is only implemented for records of types
+#_  *KEY_EVENT* and *FARMACRO_KEY_EVENT*.
+#_
+#_@@@
+#_<lua> Links = { InputRecord="187.html" } </lua>
+#_
+</article>
+</node>
+<node>
 id=459
 lv=2
 dt=Text
@@ -6096,7 +6124,7 @@ lv=2
 dt=Text
 nm=far.Timer
 ctime=3482124061
-mtime=3851400705
+mtime=3853777127
 <article>
 #_timer = far.Timer (interval, handler)
 #_
@@ -6134,7 +6162,7 @@ mtime=3851400705
 #_
 #_@@@
 #_<lua> Links = {
-#_["\\bexport.ProcessSynchroEvent\\b"]="319.html",
+#_["export.ProcessSynchroEvent"]="319.html",
 #_} </lua>
 #_
 #_
@@ -6472,7 +6500,7 @@ id=187
 lv=2
 dt=Text
 nm=InputRecord
-mtime=3851603799
+mtime=3853778103
 <article>
 #_This table is used in the functions:
 #_editor.ProcessInput, editor.ReadInput,
@@ -6487,8 +6515,7 @@ mtime=3851603799
 #_  RepeatCount:       integer
 #_  VirtualKeyCode:    integer
 #_  VirtualScanCode:   integer
-#_  AsciiChar:         integer
-#_  UnicodeChar:       integer
+#_  UnicodeChar:       string
 #_  ControlKeyState:   integer
 #_
 #_  *--if EventType is MOUSE_EVENT:*
@@ -7393,6 +7420,7 @@ id=215
 lv=3
 dt=Text
 nm=win.FileTimeToSystemTime
+mtime=3853777145
 <article>
 #_result = win.FileTimeToSystemTime (filetime)
 #_
@@ -7407,7 +7435,7 @@ nm=win.FileTimeToSystemTime
 #_  FileTimeToSystemTime
 #_
 #_@@@
-#_<lua> Links = { ["\\bSystemTime\\b"]="218.html" } </lua>
+#_<lua> Links = { SystemTime="218.html" } </lua>
 #_
 #_
 #_
@@ -7418,6 +7446,7 @@ id=217
 lv=3
 dt=Text
 nm=win.GetSystemTime
+mtime=3853777154
 <article>
 #_result = win.GetSystemTime ([asFileTime])
 #_
@@ -7437,7 +7466,7 @@ nm=win.GetSystemTime
 #_  GetSystemTime, SystemTimeToFileTime
 #_
 #_@@@
-#_<lua> Links = { ["\\bSystemTime\\b"]="218.html" } </lua>
+#_<lua> Links = { SystemTime="218.html" } </lua>
 #_
 #_
 </article>
@@ -7447,6 +7476,7 @@ id=216
 lv=3
 dt=Text
 nm=win.SystemTimeToFileTime
+mtime=3853777163
 <article>
 #_result = win.SystemTimeToFileTime (systemtime)
 #_
@@ -7461,7 +7491,7 @@ nm=win.SystemTimeToFileTime
 #_  SystemTimeToFileTime
 #_
 #_@@@
-#_<lua> Links = { ["\\bSystemTime\\b"]="218.html" } </lua>
+#_<lua> Links = { SystemTime="218.html" } </lua>
 #_
 #_
 </article>

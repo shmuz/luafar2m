@@ -24,11 +24,11 @@ void   PutBoolToTable     (lua_State *L, const char* key, int num);
 void   PutIntToArray      (lua_State *L, int key, int val);
 void   PutIntToTable      (lua_State *L, const char *key, int val);
 void   PutLStrToTable     (lua_State *L, const char* key, const void* str, size_t len);
-void   PutNumToTable      (lua_State *L, const char* key, double num);
+DLLFUNC void PutNumToTable (lua_State *L, const char* key, double num);
 void   PutStrToArray      (lua_State *L, int key, const char* str);
 void   PutStrToTable      (lua_State *L, const char* key, const char* str);
 void   PutWStrToArray     (lua_State *L, int key, const wchar_t* str, int numchars);
-void   PutWStrToTable     (lua_State *L, const char* key, const wchar_t* str, int numchars);
+DLLFUNC void PutWStrToTable (lua_State *L, const char* key, const wchar_t* str, int numchars);
 
 DLLFUNC wchar_t* check_utf8_string (lua_State *L, int pos, int* pTrgSize);
 DLLFUNC const wchar_t* opt_utf8_string (lua_State *L, int pos, const wchar_t* dflt);

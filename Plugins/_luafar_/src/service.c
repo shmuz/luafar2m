@@ -147,6 +147,25 @@ const char* VirtualKeyStrings[256] = {
   "NONAME", "PA1", "OEM_CLEAR", NULL,
 };
 
+const char* FarKeyStrings[128] = {
+/* 0x00 */ NULL,    NULL,   NULL,   NULL,                NULL,    NULL,    NULL,    NULL,
+/* 0x08 */ "BS",    "Tab",  NULL,   NULL,                NULL,    "Enter", NULL,    NULL,
+/* 0x10 */ NULL,    NULL,   NULL,   NULL,                NULL,    NULL,    NULL,    NULL,
+/* 0x18 */ NULL,    NULL,   NULL,   "Esc",               NULL,    NULL,    NULL,    NULL,
+/* 0x20 */ "Space", "PgUp", "PgDn", "End",               "Home",  "Left",  "Up",    "Right",
+/* 0x28 */ "Down",  NULL,   NULL,   NULL,                NULL,    "Ins",   "Del",   NULL,
+/* 0x30 */ "0",     "1",    "2",    "3",                 "4",     "5",     "6",     "7",
+/* 0x38 */ "8",     "9",    NULL,   NULL,                NULL,    NULL,    NULL,    NULL,
+/* 0x40 */ NULL,    "A",    "B",    "C",                 "D",     "E",     "F",     "G",
+/* 0x48 */ "H",     "I",    "J",    "K",                 "L",     "M",     "N",     "O",
+/* 0x50 */ "P",     "Q",    "R",    "S",                 "T",     "U",     "V",     "W",
+/* 0x58 */ "X",     "Y",    "Z",    NULL,                NULL,    NULL,    NULL,    NULL,
+/* 0x60 */ "Num0",  "Num1", "Num2", "Num3",              "Num4",  "Clear", "Num6",  "Num7",
+/* 0x68 */ "Num8",  "Num9", "Multiply", "Add",           NULL, "Subtract", "NumDel", "Divide",
+/* 0x70 */ "F1",    "F2",   "F3",   "F4",                "F5",    "F6",    "F7",    "F8",
+/* 0x78 */ "F9",    "F10",  "F11",  "F12",               "F13",   "F14",   "F15",   "F16",
+};
+
 const char far_Guids[] = "far.Guids = {"
   "FindFileId       = '8C9EAD29-910F-4B24-A669-EDAFBA6ED964';"
   "CopyOverwriteId  = '9FBCB7E1-ACA2-475D-B40D-0F7365B632FF';"
@@ -559,7 +578,7 @@ int editor_GetInfo(lua_State *L)
   PutNumToTable(L, "CurTabPos", ei.CurTabPos + 1);
   PutNumToTable(L, "TopScreenLine", ei.TopScreenLine + 1);
   PutNumToTable(L, "LeftPos", ei.LeftPos + 1);
-  PutBoolToTable(L, "Overtype", ei.Overtype);
+  PutNumToTable(L, "Overtype", ei.Overtype);
   PutNumToTable(L, "BlockType", ei.BlockType);
   PutNumToTable(L, "BlockStartLine", ei.BlockStartLine + 1);
   PutNumToTable(L, "Options", ei.Options);
@@ -1127,7 +1146,7 @@ int editor_ReadInput(lua_State *L)
       PutNumToTable(L, "RepeatCount", ir.Event.KeyEvent.wRepeatCount);
       PutNumToTable(L, "VirtualKeyCode", ir.Event.KeyEvent.wVirtualKeyCode);
       PutNumToTable(L, "VirtualScanCode", ir.Event.KeyEvent.wVirtualScanCode);
-      PutNumToTable(L, "UnicodeChar", ir.Event.KeyEvent.uChar.UnicodeChar);
+      PutWStrToTable(L, "UnicodeChar", &ir.Event.KeyEvent.uChar.UnicodeChar, 1);
       PutNumToTable(L, "AsciiChar", ir.Event.KeyEvent.uChar.AsciiChar);
       PutNumToTable(L, "ControlKeyState", ir.Event.KeyEvent.dwControlKeyState);
       break;
@@ -1165,10 +1184,9 @@ void FillInputRecord(lua_State *L, int pos, INPUT_RECORD *ir)
   luaL_checktype(L, pos, LUA_TTABLE);
   memset(ir, 0, sizeof(INPUT_RECORD));
 
-  BOOL hasKey;
   // determine event type
   lua_getfield(L, pos, "EventType");
-  int temp;
+  int temp, size;
   if(!get_env_flag(L, -1, &temp))
     luaL_argerror(L, pos, "EventType field is missing or invalid");
   lua_pop(L, 1);
@@ -1181,15 +1199,15 @@ void FillInputRecord(lua_State *L, int pos, INPUT_RECORD *ir)
       ir->Event.KeyEvent.wRepeatCount = GetOptIntFromTable(L, "RepeatCount", 1);
       ir->Event.KeyEvent.wVirtualKeyCode = GetOptIntFromTable(L, "VirtualKeyCode", 0);
       ir->Event.KeyEvent.wVirtualScanCode = GetOptIntFromTable(L, "VirtualScanCode", 0);
-      // prevent simultaneous setting of both UnicodeChar and AsciiChar
+
       lua_getfield(L, -1, "UnicodeChar");
-      hasKey = !(lua_isnil(L, -1));
-      lua_pop(L, 1);
-      if(hasKey)
-        ir->Event.KeyEvent.uChar.UnicodeChar = GetOptIntFromTable(L, "UnicodeChar", 0);
-      else {
-        ir->Event.KeyEvent.uChar.AsciiChar = GetOptIntFromTable(L, "AsciiChar", 0);
+      if (lua_type(L,-1) == LUA_TSTRING) {
+        wchar_t* ptr = utf8_to_utf16(L, -1, &size);
+        if (ptr && size>=1)
+          ir->Event.KeyEvent.uChar.UnicodeChar = ptr[0];
       }
+      lua_pop(L, 1);
+
       ir->Event.KeyEvent.dwControlKeyState = GetOptIntFromTable(L, "ControlKeyState", 0);
       break;
 
@@ -4470,6 +4488,72 @@ int far_Show (lua_State *L)
   return lua_gettop(L) - argn - 1;
 }
 
+int far_InputRecordToName(lua_State* L)
+{
+  char buf[32] = "";
+  char uchar[8] = "";
+  const char *vk_name;
+  DWORD state;
+  WORD vk_code;
+  int event;
+
+  luaL_checktype(L, 1, LUA_TTABLE);
+  lua_settop(L, 1);
+
+  lua_getfield(L, 1, "EventType");
+  get_env_flag(L, -1, &event);
+  if (! (event==0 || event==KEY_EVENT || event==FARMACRO_KEY_EVENT))
+    return lua_pushnil(L), 1;
+
+  lua_getfield(L, 1, "ControlKeyState");
+  state = lua_tointeger(L,-1);
+  if (state & 0x1F)
+  {
+    if      (state & 0x04) strcat(buf, "RCtrl");
+    else if (state & 0x08) strcat(buf, "Ctrl");
+    if      (state & 0x01) strcat(buf, "RAlt");
+    else if (state & 0x02) strcat(buf, "Alt");
+    if      (state & 0x10) strcat(buf, "Shift");
+  }
+
+  lua_getfield(L, 1, "VirtualKeyCode");
+  vk_code = lua_tointeger(L,-1);
+  vk_name = (vk_code < ARRAYSIZE(FarKeyStrings)) ? FarKeyStrings[vk_code] : NULL;
+
+  lua_getfield(L, 1, "UnicodeChar");
+  if (lua_isstring(L, -1))
+    strcpy(uchar, lua_tostring(L,-1));
+
+  lua_getfield(L, 1, "KeyDown");
+  if (lua_toboolean(L, -1))
+  {
+    if (vk_name)
+    {
+      if ((state & 0x0F) || strlen(vk_name) > 1)  // Alt || Ctrl || virtual key is longer than 1 byte
+      {
+        strcat(buf, vk_name);
+        lua_pushstring(L, buf);
+        return 1;
+      }
+    }
+    if (uchar[0])
+    {
+      lua_pushstring(L, uchar);
+      return 1;
+    }
+  }
+  else
+  {
+    if (!vk_name && (state & 0x1F) && !uchar[0])
+    {
+      lua_pushstring(L, buf);
+      return 1;
+    }
+  }
+  lua_pushnil(L);
+  return 1;
+}
+
 void NewVirtualKeyTable(lua_State* L, BOOL twoways)
 {
   int i;
@@ -5059,6 +5143,7 @@ const luaL_reg far_funcs[] = {
   {"KeyToName",           far_KeyToName},
   {"NameToKey",           far_NameToKey},
   {"InputRecordToKey",    far_InputRecordToKey},
+  {"InputRecordToName",   far_InputRecordToName},
   {"LStricmp",            far_LStricmp},
   {"LStrnicmp",           far_LStrnicmp},
   {"ProcessName",         far_ProcessName},
