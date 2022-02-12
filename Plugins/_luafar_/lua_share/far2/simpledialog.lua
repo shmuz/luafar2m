@@ -365,7 +365,7 @@ local function Run (inData)
     for i,v in ipairs(inData) do
       local tp = type(v.name)
       if tp=="string" or tp=="number" then
-        local item = far.GetDlgItem(hDlg, i)
+        local item = hDlg:GetDlgItem(i)
         tp = item[IND_TYPE]
         if tp==F.DI_CHECKBOX then
           out[v.name] = (item[IND_VALUE]==2) and 2 or (item[IND_VALUE] ~= 0) -- false,true,2
@@ -374,7 +374,7 @@ local function Run (inData)
         elseif tp==F.DI_EDIT or tp==F.DI_FIXEDIT or tp==F.DI_PSWEDIT then
           out[v.name] = item[IND_DATA] -- string
         elseif tp==F.DI_COMBOBOX or tp==F.DI_LISTBOX then
-          local pos = far.SendDlgMessage(hDlg, "DM_LISTGETCURPOS", i, 0)
+          local pos = hDlg:ListGetCurPos(i)
           out[v.name] = pos.SelectPos
         end
       end
@@ -408,9 +408,9 @@ local function Run (inData)
         end
       elseif keyname == "F4" then
         if outData[Par1][IND_TYPE] == F.DI_EDIT then
-          local txt = far.SendDlgMessage(hDlg, "DM_GETTEXT", Par1)
+          local txt = hDlg:GetText(Par1)
           txt = OpenInEditor(txt, inData[Par1].ext)
-          if txt then far.SendDlgMessage(hDlg, "DM_SETTEXT", Par1, txt); end
+          if txt then hDlg:SetText(Par1, txt); end
         end
       end
 

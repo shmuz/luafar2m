@@ -21,7 +21,7 @@ local luafar = {
         "AdvControl", "CmpName", "Colors", "ConvertPath", "CopyToClipboard",
         "CPluginStartupInfo", "CreateFileFilter", "CreateUserControl", "DefDlgProc", "Dialog",
         "DialogFree", "DialogInit", "DialogRun", "Execute", "ExecuteLibrary",
-        "Flags", "ForcedLoadPlugin", "GetCurrentDirectory", "GetDirList", "GetDlgItem",
+        "Flags", "ForcedLoadPlugin", "GetCurrentDirectory", "GetDirList",
         "GetFileOwner", "GetMsg", "GetNumberOfLinks", "GetPathRoot", "GetPluginDirList",
         "GetReparsePointInfo", "Guids", "InputBox", "InputRecordToKey", "Keys",
         "KeyToName", "LIsAlpha", "LIsAlphanum", "LIsLower", "LIsUpper",
@@ -30,7 +30,7 @@ local luafar = {
         "MacroPost", "MacroSaveAll", "MakeMenuItems", "Menu", "Message",
         "MkLink", "MkTemp", "NameToKey", "PasteFromClipboard", "PluginStartupInfo",
         "ProcessName", "RecursiveSearch", "ReloadDefaultScript", "RestoreScreen", "SaveScreen",
-        "SendDlgMessage", "SetDlgItem", "Show", "ShowHelp", "Text",
+        "SendDlgMessage", "Show", "ShowHelp", "Text",
         "Timer", "TruncPathStr", "TruncStr", "UnloadPlugin", "XLat",
 
         ["Flags"] = {

@@ -2,7 +2,6 @@
 
 local Package = {}
 local F = far.Flags
-local SendDlgMessage = far.SendDlgMessage
 
 --------------------------------------------------------------------------------
 -- @param item : dialog item (a table)
@@ -40,7 +39,7 @@ local item_meta = {
 }
 
 function item_map:GetCheck (hDlg)
-  return (F.BSTATE_CHECKED==SendDlgMessage(hDlg,"DM_GETCHECK",self.id,0))
+  return (F.BSTATE_CHECKED==hDlg:GetCheck(self.id))
 end
 
 function item_map:SaveCheck (hDlg, tData)
@@ -48,16 +47,15 @@ function item_map:SaveCheck (hDlg, tData)
 end
 
 function item_map:SetCheck (hDlg, check)
-  SendDlgMessage(hDlg, "DM_SETCHECK", self.id,
-    check and F.BSTATE_CHECKED or F.BSTATE_UNCHECKED)
+  hDlg:SetCheck(self.id, check and F.BSTATE_CHECKED or F.BSTATE_UNCHECKED)
 end
 
 function item_map:Enable (hDlg, enbl)
-  SendDlgMessage(hDlg, "DM_ENABLE", self.id, enbl and 1 or 0)
+  hDlg:Enable(self.id, enbl and 1 or 0)
 end
 
 function item_map:GetText (hDlg)
-  return SendDlgMessage(hDlg, "DM_GETTEXT", self.id)
+  return hDlg:GetText(self.id)
 end
 
 function item_map:SaveText (hDlg, tData)
@@ -65,11 +63,11 @@ function item_map:SaveText (hDlg, tData)
 end
 
 function item_map:SetText (hDlg, str)
-  return SendDlgMessage(hDlg, "DM_SETTEXT", self.id, str)
+  return hDlg:SetText(self.id, str)
 end
 
 function item_map:GetListCurPos (hDlg)
-  local pos = SendDlgMessage(hDlg, "DM_LISTGETCURPOS", self.id, 0)
+  local pos = hDlg:ListGetCurPos(self.id)
   return pos.SelectPos
 end
 

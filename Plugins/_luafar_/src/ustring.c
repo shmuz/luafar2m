@@ -2,10 +2,10 @@
 #include "ustring.h"
 #include "util.h"
 
-#if 0
 // This function was initially taken from Lua 5.0.2 (loadlib.c)
 void pusherrorcode(lua_State *L, int error)
 {
+#if 0
   const int BUFSZ = 256;
   wchar_t buffer[BUFSZ];
   int num = FormatMessageW(FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM,
@@ -13,24 +13,14 @@ void pusherrorcode(lua_State *L, int error)
   if (num)
     push_utf8_string(L, buffer, num);
   else
+#endif
     lua_pushfstring(L, "system error %d\n", error);
 }
-#endif
-
-#if 0
-void pusherror(lua_State *L)
-{
-  pusherrorcode(L, GetLastError());
-}
-#endif
 
 int SysErrorReturn(lua_State *L)
 {
-//$  int last_error = GetLastError();
-//$  lua_pushnil(L);
-//$  pusherrorcode(L, last_error);
   lua_pushnil(L);
-  lua_pushinteger(L, 2022);
+  pusherrorcode(L, WINPORT(GetLastError)());
   return 2;
 }
 

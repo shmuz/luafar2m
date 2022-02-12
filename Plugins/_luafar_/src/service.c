@@ -518,9 +518,15 @@ void PushPanelItems(lua_State *L, HANDLE handle, const struct PluginPanelItem *P
 
 int far_PluginStartupInfo(lua_State *L)
 {
+  const wchar_t *slash;
   PSInfo *Info = GetPluginStartupInfo(L);
   lua_createtable(L, 0, 3);
   PutWStrToTable(L, "ModuleName", Info->ModuleName, -1);
+
+  slash = wcsrchr(Info->ModuleName, L'/');
+  if (slash)
+    PutWStrToTable(L, "ModuleDir", Info->ModuleName, slash + 1 - Info->ModuleName);
+
   lua_pushlightuserdata(L, (void*)Info->ModuleNumber);
   lua_setfield(L, -2, "ModuleNumber");
   PutWStrToTable(L, "RootKey", Info->RootKey, -1);
@@ -2256,26 +2262,7 @@ void PushDlgItem (lua_State *L, const struct FarDialogItem* pItem, BOOL table_ex
   PutIntToArray  (L, 11, pItem->MaxLen);
 }
 
-void PushDlgItemNum (lua_State *L, HANDLE hDlg, int numitem, int pos_table,
-  PSInfo *Info)
-{
-  int size = Info->SendDlgMessage(hDlg, DM_GETDLGITEM, numitem, 0);
-  if (size > 0) {
-    struct FarDialogItem* pItem = (struct FarDialogItem*) lua_newuserdata(L, size);
-    Info->SendDlgMessage(hDlg, DM_GETDLGITEM, numitem, (LONG_PTR)pItem);
-
-    BOOL table_exist = lua_istable(L, pos_table);
-    if (table_exist)
-      lua_pushvalue(L, pos_table);
-    PushDlgItem(L, pItem, table_exist);
-    lua_remove(L, -2);
-  }
-  else
-    lua_pushnil(L);
-}
-
-int SetDlgItem (lua_State *L, HANDLE hDlg, int numitem, int pos_table,
-  PSInfo *Info)
+int SetDlgItem (lua_State *L, HANDLE hDlg, int numitem, int pos_table, PSInfo *Info)
 {
   struct FarDialogItem DialogItem;
   lua_newtable(L);
@@ -2411,13 +2398,14 @@ int PushDMParams (lua_State *L, int Msg, int Param1)
   return 1;
 }
 
-int far_SendDlgMessage (lua_State *L)
+int DoSendDlgMessage (lua_State *L, int Msg, int delta)
 {
   typedef struct { void *Id; int Ref; } listdata_t;
   PSInfo *Info = GetPluginStartupInfo(L);
-  int Msg, Param1, res, res_incr=0, tmpint;
+  int Param1, res, res_incr=0, tmpint;
   LONG_PTR Param2=0;
   wchar_t buf[512];
+  int pos2 = 2-delta, pos3 = 3-delta, pos4 = 4-delta;
   //---------------------------------------------------------------------------
   DWORD                      dword;
   COORD                      coord;
@@ -2436,20 +2424,23 @@ int far_SendDlgMessage (lua_State *L)
   struct FarListItemData     flid;
   SMALL_RECT                 small_rect;
   //---------------------------------------------------------------------------
-  lua_settop(L, 4);
+  lua_settop(L, pos4);
   HANDLE hDlg = CheckDialogHandle(L, 1);
-  get_env_flag (L, 2, &Msg);
+  if (delta == 0)
+    get_env_flag (L, 2, &Msg);
   if (Msg == DM_CLOSE) {
-    Param1 = luaL_optinteger(L,3,-1);
+    Param1 = luaL_optinteger(L,pos3,-1);
     if (Param1>0) --Param1;
   }
   else
-    Param1 = Is_DM_DialogItem(Msg) ? luaL_optinteger(L,3,1)-1 : luaL_optinteger(L,3,0);
+    Param1 = Is_DM_DialogItem(Msg) ? luaL_optinteger(L,pos3,1)-1 : luaL_optinteger(L,pos3,0);
 
   //Param2 and the rest
   switch(Msg) {
     default:
-      luaL_argerror(L, 2, "operation not implemented");
+    case DM_GETDLGDATA: //Not supported as used internally by LuaFAR
+    case DM_SETDLGDATA: //+++
+      luaL_argerror(L, pos2, "operation not implemented");
       break;
 
     case DM_GETFOCUS:
@@ -2476,9 +2467,7 @@ int far_SendDlgMessage (lua_State *L)
     case DM_SHOWDIALOG:
     case DM_SHOWITEM:
     case DM_USER:
-    //case DM_GETDLGDATA: //Not supported as used internally by LuaFAR
-    //case DM_SETDLGDATA: //+++
-      Param2 = luaL_optlong(L, 4, 0);
+      Param2 = luaL_optlong(L, pos4, 0);
       break;
 
     case DM_GETCOLOR:
@@ -2487,7 +2476,7 @@ int far_SendDlgMessage (lua_State *L)
       return 1;
 
     case DM_SETCOLOR:
-      Param2 = luaL_checkinteger(L, 4);
+      Param2 = luaL_checkinteger(L, pos4);
       break;
 
     case DM_LISTADDSTR:
@@ -2495,12 +2484,12 @@ int far_SendDlgMessage (lua_State *L)
     case DM_ADDHISTORY:
     case DM_SETHISTORY:
     case DM_SETTEXTPTR:
-      Param2 = (LONG_PTR) opt_utf8_string(L, 4, NULL);
+      Param2 = (LONG_PTR) opt_utf8_string(L, pos4, NULL);
       break;
 
     case DM_LISTSETMOUSEREACTION:
     case DM_SETCHECK:
-      get_env_flag (L, 4, &tmpint);
+      get_env_flag (L, pos4, &tmpint);
       Param2 = tmpint;
       break;
 
@@ -2554,8 +2543,8 @@ int far_SendDlgMessage (lua_State *L)
       return lua_pushnil(L), 1;
 
     case DM_SETSELECTION:
-      luaL_checktype(L, 4, LUA_TTABLE);
-      if (SetEditorSelect(L, 4, &es)) {
+      luaL_checktype(L, pos4, LUA_TTABLE);
+      if (SetEditorSelect(L, pos4, &es)) {
         Param2 = (LONG_PTR)&es;
         break;
       }
@@ -2578,20 +2567,20 @@ int far_SendDlgMessage (lua_State *L)
     }
 
     case DM_SETTEXT:
-      fdid.PtrData = (wchar_t*)check_utf8_string(L, 4, NULL);
+      fdid.PtrData = (wchar_t*)check_utf8_string(L, pos4, NULL);
       fdid.PtrLength = 0; // wcslen(fdid.PtrData);
       Param2 = (LONG_PTR)&fdid;
       break;
 
     case DM_KEY: {
-      luaL_checktype(L, 4, LUA_TTABLE);
-      res = lua_objlen(L, 4);
+      luaL_checktype(L, pos4, LUA_TTABLE);
+      res = lua_objlen(L, pos4);
       if (res) {
         DWORD* arr = (DWORD*)lua_newuserdata(L, res * sizeof(DWORD));
         int i;
         for(i=0; i<res; i++) {
           lua_pushinteger(L,i+1);
-          lua_gettable(L,4);
+          lua_gettable(L,pos4);
           arr[i] = lua_tointeger(L,-1);
           lua_pop(L,1);
         }
@@ -2602,10 +2591,10 @@ int far_SendDlgMessage (lua_State *L)
 
     case DM_LISTADD:
     case DM_LISTSET: {
-      luaL_checktype(L, 4, LUA_TTABLE);
+      luaL_checktype(L, pos4, LUA_TTABLE);
       lua_createtable(L,1,0); // "history table"
       lua_replace(L,1);
-      lua_settop(L,4);
+      lua_settop(L,pos4);
       struct FarList *list = CreateList(L, 1);
       Param2 = (LONG_PTR)list;
       break;
@@ -2615,7 +2604,7 @@ int far_SendDlgMessage (lua_State *L)
       if (lua_isnoneornil(L, 4))
         Param2 = 0;
       else {
-        luaL_checktype(L, 4, LUA_TTABLE);
+        luaL_checktype(L, pos4, LUA_TTABLE);
         fld.StartIndex = GetOptIntFromTable(L, "StartIndex", 1) - 1;
         fld.Count = GetOptIntFromTable(L, "Count", 1);
         Param2 = (LONG_PTR)&fld;
@@ -2623,11 +2612,11 @@ int far_SendDlgMessage (lua_State *L)
       break;
 
     case DM_LISTFINDSTRING:
-      luaL_checktype(L, 4, LUA_TTABLE);
+      luaL_checktype(L, pos4, LUA_TTABLE);
       flf.StartIndex = GetOptIntFromTable(L, "StartIndex", 1) - 1;
-      lua_getfield(L, 4, "Pattern");
+      lua_getfield(L, pos4, "Pattern");
       flf.Pattern = check_utf8_string(L, -1, NULL);
-      lua_getfield(L, 4, "Flags");
+      lua_getfield(L, pos4, "Flags");
       get_env_flag(L, -1, (int*)&flf.Flags);
       res = Info->SendDlgMessage (hDlg, Msg, Param1, (LONG_PTR)&flf);
       res < 0 ? lua_pushnil(L) : lua_pushinteger (L, res+1);
@@ -2641,7 +2630,7 @@ int far_SendDlgMessage (lua_State *L)
       return 1;
 
     case DM_LISTGETITEM:
-      flgi.ItemIndex = luaL_checkinteger(L, 4) - 1;
+      flgi.ItemIndex = luaL_checkinteger(L, pos4) - 1;
       res = Info->SendDlgMessage (hDlg, Msg, Param1, (LONG_PTR)&flgi);
       if (res) {
         lua_createtable(L,0,2);
@@ -2666,10 +2655,10 @@ int far_SendDlgMessage (lua_State *L)
       return lua_pushnil(L), 1;
 
     case DM_LISTSETTITLES:
-      luaL_checktype(L, 4, LUA_TTABLE);
-      lua_getfield(L, 4, "Title");
+      luaL_checktype(L, pos4, LUA_TTABLE);
+      lua_getfield(L, pos4, "Title");
       flt.Title = lua_isstring(L,-1) ? check_utf8_string(L,-1,NULL) : NULL;
-      lua_getfield(L, 4, "Bottom");
+      lua_getfield(L, pos4, "Bottom");
       flt.Bottom = lua_isstring(L,-1) ? check_utf8_string(L,-1,NULL) : NULL;
       Param2 = (LONG_PTR)&flt;
       break;
@@ -2689,45 +2678,45 @@ int far_SendDlgMessage (lua_State *L)
       return lua_pushnil(L), 1;
 
     case DM_LISTINSERT:
-      luaL_checktype(L, 4, LUA_TTABLE);
+      luaL_checktype(L, pos4, LUA_TTABLE);
       flins.Index = GetOptIntFromTable(L, "Index", 1) - 1;
-      lua_getfield(L, 4, "Text");
+      lua_getfield(L, pos4, "Text");
       flins.Item.Text = lua_isstring(L,-1) ? check_utf8_string(L,-1,NULL) : NULL;
-      lua_getfield(L, 4, "Flags"); //+1
+      lua_getfield(L, pos4, "Flags"); //+1
       flins.Item.Flags = CheckFlags(L, -1);
       res = Info->SendDlgMessage (hDlg, Msg, Param1, (LONG_PTR)&flins);
       res < 0 ? lua_pushnil(L) : lua_pushinteger (L, res);
       return 1;
 
     case DM_LISTUPDATE:
-      luaL_checktype(L, 4, LUA_TTABLE);
+      luaL_checktype(L, pos4, LUA_TTABLE);
       flu.Index = GetOptIntFromTable(L, "Index", 1) - 1;
-      lua_getfield(L, 4, "Text");
+      lua_getfield(L, pos4, "Text");
       flu.Item.Text = lua_isstring(L,-1) ? check_utf8_string(L,-1,NULL) : NULL;
-      lua_getfield(L, 4, "Flags"); //+1
+      lua_getfield(L, pos4, "Flags"); //+1
       flu.Item.Flags = CheckFlags(L, -1);
       lua_pushboolean(L, Info->SendDlgMessage (hDlg, Msg, Param1, (LONG_PTR)&flu));
       return 1;
 
     case DM_LISTSETCURPOS:
       res_incr = 1;
-      luaL_checktype(L, 4, LUA_TTABLE);
+      luaL_checktype(L, pos4, LUA_TTABLE);
       flp.SelectPos = GetOptIntFromTable(L, "SelectPos", 1) - 1;
       flp.TopPos = GetOptIntFromTable(L, "TopPos", 1) - 1;
       Param2 = (LONG_PTR)&flp;
       break;
 
     case DM_LISTGETDATASIZE:
-      Param2 = luaL_checkinteger(L, 4) - 1;
+      Param2 = luaL_checkinteger(L, pos4) - 1;
       break;
 
     case DM_LISTSETDATA: {
       listdata_t Data, *oldData;
       int Index;
-      luaL_checktype(L, 4, LUA_TTABLE);
+      luaL_checktype(L, pos4, LUA_TTABLE);
       Index = GetOptIntFromTable(L, "Index", 1) - 1;
       lua_getfenv(L, 1);
-      lua_getfield(L, 4, "Data");
+      lua_getfield(L, pos4, "Data");
       if (lua_isnil(L,-1)) { // nil is not allowed
         lua_pushinteger(L,0);
         return 1;
@@ -2749,7 +2738,7 @@ int far_SendDlgMessage (lua_State *L)
     }
 
     case DM_LISTGETDATA: {
-      int Index = (int)luaL_checkinteger(L, 4) - 1;
+      int Index = (int)luaL_checkinteger(L, pos4) - 1;
       listdata_t *Data = (listdata_t*)Info->SendDlgMessage(hDlg, DM_LISTGETDATA, Param1, Index);
       if (Data) {
         if (sizeof(listdata_t) == Info->SendDlgMessage(hDlg, DM_LISTGETDATASIZE, Param1, Index) &&
@@ -2766,16 +2755,28 @@ int far_SendDlgMessage (lua_State *L)
       return 1;
     }
 
-    case DM_GETDLGITEM:
-      return PushDlgItemNum(L, hDlg, Param1, 4, Info), 1;
+    case DM_GETDLGITEM: {
+      int size = Info->SendDlgMessage(hDlg, DM_GETDLGITEM, Param1, 0);
+      if (size > 0) {
+        BOOL table_exist = lua_istable(L, pos4);
+        struct FarDialogItem* pItem = (struct FarDialogItem*) lua_newuserdata(L, size);
+        Info->SendDlgMessage(hDlg, DM_GETDLGITEM, Param1, (LONG_PTR)pItem);
+        if (table_exist)
+          lua_pushvalue(L, pos4);
+        PushDlgItem(L, pItem, table_exist);
+      }
+      else
+        lua_pushnil(L);
+      return 1;
+    }
 
     case DM_SETDLGITEM:
-      return SetDlgItem(L, hDlg, Param1, 4, Info);
+      return SetDlgItem(L, hDlg, Param1, pos4, Info);
 
     case DM_MOVEDIALOG:
     case DM_RESIZEDIALOG:
     case DM_SETCURSORPOS: {
-      luaL_checktype(L, 4, LUA_TTABLE);
+      luaL_checktype(L, pos4, LUA_TTABLE);
       coord.X = GetOptIntFromTable(L, "X", 0);
       coord.Y = GetOptIntFromTable(L, "Y", 0);
       Param2 = (LONG_PTR)&coord;
@@ -2789,7 +2790,7 @@ int far_SendDlgMessage (lua_State *L)
     }
 
     case DM_SETITEMPOSITION:
-      luaL_checktype(L, 4, LUA_TTABLE);
+      luaL_checktype(L, pos4, LUA_TTABLE);
       small_rect.Left = GetOptIntFromTable(L, "Left", 0);
       small_rect.Top = GetOptIntFromTable(L, "Top", 0);
       small_rect.Right = GetOptIntFromTable(L, "Right", 0);
@@ -2798,12 +2799,12 @@ int far_SendDlgMessage (lua_State *L)
       break;
 
     case DM_SETCOMBOBOXEVENT:
-      Param2 = CheckFlags(L, 4);
+      Param2 = CheckFlags(L, pos4);
       break;
 
     case DM_SETEDITPOSITION:
-      luaL_checktype(L, 4, LUA_TTABLE);
-      lua_settop(L, 4);
+      luaL_checktype(L, pos4, LUA_TTABLE);
+      lua_settop(L, pos4);
       FillEditorSetPosition(L, &esp);
       Param2 = (LONG_PTR)&esp;
       break;
@@ -2814,6 +2815,82 @@ int far_SendDlgMessage (lua_State *L)
   lua_pushinteger (L, res + res_incr);
   return 1;
 }
+
+#define DlgMethod(name,msg,delta) \
+int dlg_##name(lua_State *L) { return DoSendDlgMessage(L,msg,delta); }
+
+int far_SendDlgMessage(lua_State *L) { return DoSendDlgMessage(L,0,0); }
+
+DlgMethod( AddHistory,             DM_ADDHISTORY, 1)
+DlgMethod( Close,                  DM_CLOSE, 1)
+DlgMethod( EditUnchangedFlag,      DM_EDITUNCHANGEDFLAG, 1)
+DlgMethod( Enable,                 DM_ENABLE, 1)
+DlgMethod( EnableRedraw,           DM_ENABLEREDRAW, 1)
+DlgMethod( First,                  DM_FIRST, 1)
+DlgMethod( GetCheck,               DM_GETCHECK, 1)
+DlgMethod( GetColor,               DM_GETCOLOR, 1)
+DlgMethod( GetComboboxEvent,       DM_GETCOMBOBOXEVENT, 1)
+DlgMethod( GetConstTextPtr,        DM_GETCONSTTEXTPTR, 1)
+DlgMethod( GetCursorPos,           DM_GETCURSORPOS, 1)
+DlgMethod( GetCursorSize,          DM_GETCURSORSIZE, 1)
+DlgMethod( GetDialogInfo,          DM_GETDIALOGINFO, 1)
+DlgMethod( GetDlgItem,             DM_GETDLGITEM, 1)
+DlgMethod( GetDlgRect,             DM_GETDLGRECT, 1)
+DlgMethod( GetDropdownOpened,      DM_GETDROPDOWNOPENED, 1)
+DlgMethod( GetEditPosition,        DM_GETEDITPOSITION, 1)
+DlgMethod( GetFocus,               DM_GETFOCUS, 1)
+DlgMethod( GetItemData,            DM_GETITEMDATA, 1)
+DlgMethod( GetItemPosition,        DM_GETITEMPOSITION, 1)
+DlgMethod( GetSelection,           DM_GETSELECTION, 1)
+DlgMethod( GetText,                DM_GETTEXT, 1)
+DlgMethod( GetTextLength,          DM_GETTEXTLENGTH, 1)
+DlgMethod( GetTextPtr,             DM_GETTEXTPTR, 1)
+DlgMethod( Key,                    DM_KEY, 1)
+DlgMethod( ListAdd,                DM_LISTADD, 1)
+DlgMethod( ListAddStr,             DM_LISTADDSTR, 1)
+DlgMethod( ListDelete,             DM_LISTDELETE, 1)
+DlgMethod( ListFindString,         DM_LISTFINDSTRING, 1)
+DlgMethod( ListGetCurPos,          DM_LISTGETCURPOS, 1)
+DlgMethod( ListGetData,            DM_LISTGETDATA, 1)
+DlgMethod( ListGetDataSize,        DM_LISTGETDATASIZE, 1)
+DlgMethod( ListGetItem,            DM_LISTGETITEM, 1)
+DlgMethod( ListGetTitles,          DM_LISTGETTITLES, 1)
+DlgMethod( ListInfo,               DM_LISTINFO, 1)
+DlgMethod( ListInsert,             DM_LISTINSERT, 1)
+DlgMethod( ListSet,                DM_LISTSET, 1)
+DlgMethod( ListSetCurPos,          DM_LISTSETCURPOS, 1)
+DlgMethod( ListSetData,            DM_LISTSETDATA, 1)
+DlgMethod( ListSetMouseReaction,   DM_LISTSETMOUSEREACTION, 1)
+DlgMethod( ListSetTitles,          DM_LISTSETTITLES, 1)
+DlgMethod( ListSort,               DM_LISTSORT, 1)
+DlgMethod( ListUpdate,             DM_LISTUPDATE, 1)
+DlgMethod( MoveDialog,             DM_MOVEDIALOG, 1)
+DlgMethod( Redraw,                 DM_REDRAW, 1)
+DlgMethod( ResizeDialog,           DM_RESIZEDIALOG, 1)
+DlgMethod( Set3State,              DM_SET3STATE, 1)
+DlgMethod( SetCheck,               DM_SETCHECK, 1)
+DlgMethod( SetColor,               DM_SETCOLOR, 1)
+DlgMethod( SetComboboxEvent,       DM_SETCOMBOBOXEVENT, 1)
+DlgMethod( SetCursorPos,           DM_SETCURSORPOS, 1)
+DlgMethod( SetCursorSize,          DM_SETCURSORSIZE, 1)
+DlgMethod( SetDlgItem,             DM_SETDLGITEM, 1)
+DlgMethod( SetDropdownOpened,      DM_SETDROPDOWNOPENED, 1)
+DlgMethod( SetEditPosition,        DM_SETEDITPOSITION, 1)
+DlgMethod( SetFocus,               DM_SETFOCUS, 1)
+DlgMethod( SetHistory,             DM_SETHISTORY, 1)
+DlgMethod( SetItemData,            DM_SETITEMDATA, 1)
+DlgMethod( SetItemPosition,        DM_SETITEMPOSITION, 1)
+DlgMethod( SetMaxTextLength,       DM_SETMAXTEXTLENGTH, 1)
+DlgMethod( SetMouseEventNotify,    DM_SETMOUSEEVENTNOTIFY, 1)
+DlgMethod( SetSelection,           DM_SETSELECTION, 1)
+DlgMethod( SetText,                DM_SETTEXT, 1)
+DlgMethod( SetTextPtr,             DM_SETTEXTPTR, 1)
+DlgMethod( ShowDialog,             DM_SHOWDIALOG, 1)
+DlgMethod( ShowItem,               DM_SHOWITEM, 1)
+DlgMethod( User,                   DM_USER, 1)
+
+
+
 
 int PushDNParams (lua_State *L, int Msg, int Param1, LONG_PTR Param2)
 {
@@ -3223,23 +3300,6 @@ int far_DefDlgProc(lua_State *L)
   PSInfo *Info = GetPluginStartupInfo(L);
   lua_pushinteger(L, Info->DefDlgProc(hDlg, Msg, Param1, Param2));
   return 1;
-}
-
-int far_GetDlgItem(lua_State *L)
-{
-  PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE hDlg = CheckDialogHandle(L,1);
-  int numitem = luaL_checkinteger(L,2) - 1;
-  PushDlgItemNum(L, hDlg, numitem, 3, Info);
-  return 1;
-}
-
-int far_SetDlgItem(lua_State *L)
-{
-  PSInfo *Info = GetPluginStartupInfo(L);
-  HANDLE hDlg = CheckDialogHandle(L,1);
-  int numitem = luaL_checkinteger(L,2) - 1;
-  return SetDlgItem(L, hDlg, numitem, 3, Info);
 }
 
 int editor_Editor(lua_State *L)
@@ -4895,18 +4955,18 @@ BOOL makedir (const wchar_t* path)
   const wchar_t* src = path;
   wchar_t *p = wcsdup(path), *trg = p;
   while (*src) {
-    if (*src == L'\\' || *src == L'/') {
-      *trg++ = L'\\';
-      do src++; while (*src == L'\\' || *src == L'/');
+    if (*src == L'/') {
+      *trg++ = L'/';
+      do src++; while (*src == L'/');
     }
     else *trg++ = *src++;
   }
-  if (trg > p && trg[-1] == '\\') trg--;
+  if (trg > p && trg[-1] == '/') trg--;
   *trg = 0;
 
   wchar_t* q;
-  for (q=p; *q; *q++=L'\\') {
-    q = wcschr(q, L'\\');
+  for (q=p; *q; *q++=L'/') {
+    q = wcschr(q, L'/');
     if (q != NULL)  *q = 0;
     if (q != p && !dir_exist(p) && !WINPORT(CreateDirectory)(p, NULL)) break;
     if (q == NULL) { result=TRUE; break; }
@@ -4952,10 +5012,78 @@ const luaL_reg filefilter_methods[] = {
 };
 
 const luaL_reg dialog_methods[] = {
-  {"__gc",             far_DialogFree},
-  {"__tostring",       dialog_tostring},
-  {"rawhandle",        dialog_rawhandle},
-  {"send",             far_SendDlgMessage},
+  {"__gc",                 far_DialogFree},
+  {"__tostring",           dialog_tostring},
+  {"rawhandle",            dialog_rawhandle},
+  {"send",                 far_SendDlgMessage},
+
+  {"AddHistory",           dlg_AddHistory},
+  {"Close",                dlg_Close},
+  {"EditUnchangedFlag",    dlg_EditUnchangedFlag},
+  {"Enable",               dlg_Enable},
+  {"EnableRedraw",         dlg_EnableRedraw},
+  {"First",                dlg_First},
+  {"GetCheck",             dlg_GetCheck},
+  {"GetColor",             dlg_GetColor},
+  {"GetComboboxEvent",     dlg_GetComboboxEvent},
+  {"GetConstTextPtr",      dlg_GetConstTextPtr},
+  {"GetCursorPos",         dlg_GetCursorPos},
+  {"GetCursorSize",        dlg_GetCursorSize},
+  {"GetDialogInfo",        dlg_GetDialogInfo},
+  {"GetDlgItem",           dlg_GetDlgItem},
+  {"GetDlgRect",           dlg_GetDlgRect},
+  {"GetDropdownOpened",    dlg_GetDropdownOpened},
+  {"GetEditPosition",      dlg_GetEditPosition},
+  {"GetFocus",             dlg_GetFocus},
+  {"GetItemData",          dlg_GetItemData},
+  {"GetItemPosition",      dlg_GetItemPosition},
+  {"GetSelection",         dlg_GetSelection},
+  {"GetText",              dlg_GetText},
+  {"GetTextLength",        dlg_GetTextLength},
+  {"GetTextPtr",           dlg_GetTextPtr},
+  {"Key",                  dlg_Key},
+  {"ListAdd",              dlg_ListAdd},
+  {"ListAddStr",           dlg_ListAddStr},
+  {"ListDelete",           dlg_ListDelete},
+  {"ListFindString",       dlg_ListFindString},
+  {"ListGetCurPos",        dlg_ListGetCurPos},
+  {"ListGetData",          dlg_ListGetData},
+  {"ListGetDataSize",      dlg_ListGetDataSize},
+  {"ListGetItem",          dlg_ListGetItem},
+  {"ListGetTitles",        dlg_ListGetTitles},
+  {"ListInfo",             dlg_ListInfo},
+  {"ListInsert",           dlg_ListInsert},
+  {"ListSet",              dlg_ListSet},
+  {"ListSetCurPos",        dlg_ListSetCurPos},
+  {"ListSetData",          dlg_ListSetData},
+  {"ListSetMouseReaction", dlg_ListSetMouseReaction},
+  {"ListSetTitles",        dlg_ListSetTitles},
+  {"ListSort",             dlg_ListSort},
+  {"ListUpdate",           dlg_ListUpdate},
+  {"MoveDialog",           dlg_MoveDialog},
+  {"Redraw",               dlg_Redraw},
+  {"ResizeDialog",         dlg_ResizeDialog},
+  {"Set3State",            dlg_Set3State},
+  {"SetCheck",             dlg_SetCheck},
+  {"SetColor",             dlg_SetColor},
+  {"SetComboboxEvent",     dlg_SetComboboxEvent},
+  {"SetCursorPos",         dlg_SetCursorPos},
+  {"SetCursorSize",        dlg_SetCursorSize},
+  {"SetDlgItem",           dlg_SetDlgItem},
+  {"SetDropdownOpened",    dlg_SetDropdownOpened},
+  {"SetEditPosition",      dlg_SetEditPosition},
+  {"SetFocus",             dlg_SetFocus},
+  {"SetHistory",           dlg_SetHistory},
+  {"SetItemData",          dlg_SetItemData},
+  {"SetItemPosition",      dlg_SetItemPosition},
+  {"SetMaxTextLength",     dlg_SetMaxTextLength},
+  {"SetMouseEventNotify",  dlg_SetMouseEventNotify},
+  {"SetSelection",         dlg_SetSelection},
+  {"SetText",              dlg_SetText},
+  {"SetTextPtr",           dlg_SetTextPtr},
+  {"ShowDialog",           dlg_ShowDialog},
+  {"ShowItem",             dlg_ShowItem},
+  {"User",                 dlg_User},
   {NULL, NULL},
 };
 
@@ -5119,8 +5247,6 @@ const luaL_reg far_funcs[] = {
   {"DialogRun",           far_DialogRun},
   {"DialogFree",          far_DialogFree},
   {"SendDlgMessage",      far_SendDlgMessage},
-  {"GetDlgItem",          far_GetDlgItem},
-  {"SetDlgItem",          far_SetDlgItem},
   {"GetDirList",          far_GetDirList},
   {"GetMsg",              far_GetMsg},
   {"GetPluginDirList",    far_GetPluginDirList},
@@ -5193,7 +5319,7 @@ const char far_Dialog[] =
 \n\
   local ret = far.DialogRun(hDlg)\n\
   for i, item in ipairs(Items) do\n\
-    local newitem = far.GetDlgItem(hDlg, i)\n\
+    local newitem = hDlg:GetDlgItem(i)\n\
     if type(item[7]) == 'table' then\n\
       item[7].SelectIndex = newitem[7].SelectIndex\n\
     else\n\
@@ -5370,8 +5496,8 @@ void LF_InitLuaState (lua_State *L, PSInfo *aInfo,
   lua_CFunction func_arr[] = { luaopen_far, luaopen_bit, luaopen_unicode, luaopen_utf8 };
 
   // open Lua libraries
+  luaL_openlibs(L);
   if (aOpenLibs) aOpenLibs(L);
-  else luaL_openlibs(L);
 
   // open "far", "bit", "unicode" and utf8 libraries
   for (idx=0; idx < ARRAYSIZE(func_arr); idx++) {

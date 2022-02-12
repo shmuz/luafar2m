@@ -4,7 +4,6 @@
 
 local sd = require "far2.simpledialog"
 local F = far.Flags
-local dsend = far.SendDlgMessage
 
 local AreaShortNames = {
   "Dialog", "Disks", "Editor", "Help", "Info", "MainMenu", "Menu", "QView", "Search", "Shell",
@@ -137,7 +136,7 @@ local function MacroDialog (input)
   -------------------------------------
 
   local function CheckSeq(hDlg)
-    local seq = dsend(hDlg, "DM_GETTEXT", Pos.Sequence)
+    local seq = hDlg:GetText(Pos.Sequence)
     if far.MacroGetState() == F.MACROSTATE_NOMACRO then
       return far.MacroCheck(seq) == 0
     else
@@ -158,7 +157,7 @@ local function MacroDialog (input)
       end
     elseif Msg == F.DN_CLOSE then
       if items[Par1] and not items[Par1].cancel then
-        local nm = dsend(hDlg, "DM_GETTEXT", Pos.MacroKey) : match("^%s*(.-)%s*$")
+        local nm = hDlg:GetText(Pos.MacroKey) : match("^%s*(.-)%s*$")
         if not far.NameToKey(nm) then
           far.Message("Invalid Macro Key: "..nm, "Error", nil, "w")
           return 0

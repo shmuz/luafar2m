@@ -1445,7 +1445,7 @@ id=20
 lv=2
 dt=Text
 nm=far.Dialog
-mtime=3851925986
+mtime=3853813215
 <article>
 #_result = far.Dialog (X1,Y1,X2,Y2,HelpTopic,Items,Flags,DlgProc)
 #_
@@ -1455,11 +1455,9 @@ mtime=3851925986
 #_**Returns:**
 #_  result: 1-based integer (or nil in case of failure)
 #_
-#_**Notes:**
-#_  1. The function exists to preserve backward compatibility
-#_     with LuaFAR versions 2.4 and older.
-#_  2. The function updates the *Items* array to the values
-#_     the dialog items have at the moment of dialog closing.
+#_**Note:**
+#_  The function updates the *Items* array to the values
+#_  the dialog items have at the moment of dialog closing.
 #_
 #_**Far API used:**
 #_  DialogInit, DialogRun, DialogFree
@@ -1577,36 +1575,6 @@ mtime=3851925690
 </article>
 </node>
 <node>
-id=54
-lv=2
-dt=Text
-nm=far.GetDlgItem
-mtime=3851926296
-<article>
-#_result = far.GetDlgItem (hDlg, numitem [,item])
-#_
-#_**Parameters:**
-#_  hDlg:    userdata
-#_  numitem: integer (1-based)
-#_  item:    table, or nil
-#_
-#_**Returns:**
-#_  result: table, or nil
-#_
-#_**Note:**
-#_  This function is equivalent to
-#_    far.SendDlgMessage(hDlg, "DM_GETDLGITEM", numitem, item)
-#_
-#_**Far API used:**
-#_  SendDlgMessage, DM_GETDLGITEM
-#_
-#_@@@
-#_<lua> Links = { ["far.SendDlgMessage"]="71.html" } </lua>
-#_
-#_
-</article>
-</node>
-<node>
 id=62
 lv=2
 dt=Text
@@ -1695,7 +1663,7 @@ id=71
 lv=2
 dt=Text
 nm=far.SendDlgMessage
-mtime=3853526653
+mtime=3853855663
 <article>
 #_Result = far.SendDlgMessage (hDlg, Msg, Param1, Param2)
 #_    or
@@ -1851,19 +1819,14 @@ mtime=3853526653
 #_
 #_DM_GETDLGITEM:
 #_    Param2:  table, or nil
-#_    Result:  table, or nil
+#_    Result:  table
 #_    *Note:*
-#_      res = SendDlgMessage(hDlg, "DM_GETDLGITEM", numitem, item)
-#_          *is equivalent to*
-#_      res = far.GetDlgItem(hDlg, numitem, item)
+#_      If Param2 is a table then it will be reused as an output table,
+#_      i.e. its content will be modified.
 #_
 #_DM_SETDLGITEM:
 #_    Param2:  table
 #_    Result:  boolean
-#_    *Note:*
-#_      res = SendDlgMessage(hDlg, "DM_SETDLGITEM", numitem, item)
-#_          *is equivalent to*
-#_      res = far.SetDlgItem(hDlg, numitem, item)
 #_
 #_DM_RESIZEDIALOG,
 #_DM_MOVEDIALOG:
@@ -1910,41 +1873,98 @@ mtime=3853526653
 #_  SendDlgMessage
 #_
 #_@@@
-#_<lua> Links = { ["far.GetDlgItem"]="54.html",
-#_                ["far.SetDlgItem"]="72.html",
-#_                ["editor.Select"]="42.html" }
-#_</lua>
-#_
+#_<lua> Links = { ["editor.Select"]="42.html"; } </lua>
 #_
 </article>
 </node>
 <node>
-id=72
-lv=2
+id=462
+lv=3
 dt=Text
-nm=far.SetDlgItem
-mtime=3851945242
+nm=Methods of dialog handle
+ctime=3853816798
+mtime=3853817758
 <article>
-#_result = far.SetDlgItem (hDlg, numitem, item)
+#_Besides passing the dialog handle as a parameter to far.SendDlgMessage
+#_there is an alternative way: using dialog handle methods. The latter
+#_is shorter and more expressive, e.g. the following 2 calls do the same
+#_thing:
+#_    1) far.SendDlgMessage(hDlg, "DM_SETTEXT", item2, "Hello")
+#_    2) hDlg:SetText(item2, "Hello")
 #_
-#_**Parameters:**
-#_  hDlg:    userdata
-#_  numitem: integer (1-based)
-#_  item:    table
+#_Below is a table of correspondence between dialog messages
+#_and dialog handle methods:
 #_
-#_**Returns:**
-#_  result: boolean
-#_
-#_**Note:**
-#_  This function is equivalent to
-#_    far.SendDlgMessage(hDlg, "DM_SETDLGITEM", numitem, item)
-#_
-#_**Far API used:**
-#_  SendDlgMessage, DM_SETDLGITEM
+#_  AddHistory              DM_ADDHISTORY
+#_  Close                   DM_CLOSE
+#_  EditUnchangedFlag       DM_EDITUNCHANGEDFLAG
+#_  Enable                  DM_ENABLE
+#_  EnableRedraw            DM_ENABLEREDRAW
+#_  First                   DM_FIRST
+#_  GetCheck                DM_GETCHECK
+#_  GetColor                DM_GETCOLOR
+#_  GetComboboxEvent        DM_GETCOMBOBOXEVENT
+#_  GetConstTextPtr         DM_GETCONSTTEXTPTR
+#_  GetCursorPos            DM_GETCURSORPOS
+#_  GetCursorSize           DM_GETCURSORSIZE
+#_  GetDialogInfo           DM_GETDIALOGINFO
+#_  GetDlgItem              DM_GETDLGITEM
+#_  GetDlgRect              DM_GETDLGRECT
+#_  GetDropdownOpened       DM_GETDROPDOWNOPENED
+#_  GetEditPosition         DM_GETEDITPOSITION
+#_  GetFocus                DM_GETFOCUS
+#_  GetItemData             DM_GETITEMDATA
+#_  GetItemPosition         DM_GETITEMPOSITION
+#_  GetSelection            DM_GETSELECTION
+#_  GetText                 DM_GETTEXT
+#_  GetTextLength           DM_GETTEXTLENGTH
+#_  GetTextPtr              DM_GETTEXTPTR
+#_  Key                     DM_KEY
+#_  ListAdd                 DM_LISTADD
+#_  ListAddStr              DM_LISTADDSTR
+#_  ListDelete              DM_LISTDELETE
+#_  ListFindString          DM_LISTFINDSTRING
+#_  ListGetCurPos           DM_LISTGETCURPOS
+#_  ListGetData             DM_LISTGETDATA
+#_  ListGetDataSize         DM_LISTGETDATASIZE
+#_  ListGetItem             DM_LISTGETITEM
+#_  ListGetTitles           DM_LISTGETTITLES
+#_  ListInfo                DM_LISTINFO
+#_  ListInsert              DM_LISTINSERT
+#_  ListSet                 DM_LISTSET
+#_  ListSetCurPos           DM_LISTSETCURPOS
+#_  ListSetData             DM_LISTSETDATA
+#_  ListSetMouseReaction    DM_LISTSETMOUSEREACTION
+#_  ListSetTitles           DM_LISTSETTITLES
+#_  ListSort                DM_LISTSORT
+#_  ListUpdate              DM_LISTUPDATE
+#_  MoveDialog              DM_MOVEDIALOG
+#_  Redraw                  DM_REDRAW
+#_  ResizeDialog            DM_RESIZEDIALOG
+#_  Set3State               DM_SET3STATE
+#_  SetCheck                DM_SETCHECK
+#_  SetColor                DM_SETCOLOR
+#_  SetComboboxEvent        DM_SETCOMBOBOXEVENT
+#_  SetCursorPos            DM_SETCURSORPOS
+#_  SetCursorSize           DM_SETCURSORSIZE
+#_  SetDlgItem              DM_SETDLGITEM
+#_  SetDropdownOpened       DM_SETDROPDOWNOPENED
+#_  SetEditPosition         DM_SETEDITPOSITION
+#_  SetFocus                DM_SETFOCUS
+#_  SetHistory              DM_SETHISTORY
+#_  SetItemData             DM_SETITEMDATA
+#_  SetItemPosition         DM_SETITEMPOSITION
+#_  SetMaxTextLength        DM_SETMAXTEXTLENGTH
+#_  SetMouseEventNotify     DM_SETMOUSEEVENTNOTIFY
+#_  SetSelection            DM_SETSELECTION
+#_  SetText                 DM_SETTEXT
+#_  SetTextPtr              DM_SETTEXTPTR
+#_  ShowDialog              DM_SHOWDIALOG
+#_  ShowItem                DM_SHOWITEM
+#_  User                    DM_USER
 #_
 #_@@@
-#_<lua> Links = { ["far.SendDlgMessage"]="71.html" } </lua>
-#_
+#_<lua> Links = { ["far.SendDlgMessage"]="71.html"; } </lua>
 #_
 </article>
 </node>
@@ -6064,7 +6084,7 @@ id=68
 lv=2
 dt=Text
 nm=far.PluginStartupInfo
-mtime=3853472945
+mtime=3853788622
 <article>
 #_Info = far.PluginStartupInfo ()
 #_
@@ -6075,6 +6095,7 @@ mtime=3853472945
 #_  Info: table
 #_    fields of Info:
 #_      ModuleName:   string
+#_      ModuleDir:    string (has a slash at the end)
 #_      ModuleNumber: light userdata
 #_      RootKey:      string
 #_

@@ -3,7 +3,9 @@
 #include "lua.h"
 #include "luafar.h"
 
-#define LUAPLUG _export
+#ifndef LUAPLUG
+#define LUAPLUG __attribute__ ((visibility ("default")))
+#endif
 
 // define the minimum FAR version required by the plugin
 #ifndef MINFARVERSION

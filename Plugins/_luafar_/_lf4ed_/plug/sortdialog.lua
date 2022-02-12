@@ -59,7 +59,7 @@ function Package.SortDialog (aData, columntype)
   end
   ------------------------------------------------------------------------------
   local function SaveData(hDlg)
-    for i, v in ipairs(D) do far.GetDlgItem(hDlg, i, v) end
+    for i, v in ipairs(D) do hDlg:GetDlgItem(i, v) end
     D.cbxOnlySel._noautosave = not columntype
     far2_dialog.SaveData(D, aData)
   end
@@ -83,7 +83,7 @@ function Package.SortDialog (aData, columntype)
       elseif param1 == D.cbxFileName.id then Check (hDlg, D.cbxFileName, D.labFileName, D.edtFileName)
       elseif param1 == D.btnColPat.id then
         D.edtColPat.Data = COLPAT_DEFAULT
-        far.SetDlgItem (hDlg, D.edtColPat.id, D.edtColPat)
+        hDlg:SetText (D.edtColPat.id, COLPAT_DEFAULT)
       end
     elseif msg == F.DN_GETDIALOGINFO then
       return dialogGuid
