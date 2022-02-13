@@ -9,7 +9,7 @@ end
 
 local function CloseHelperEditor()
   editor.Quit()
-  far.AdvControl("ACTL_COMMIT")
+  actl.Commit()
 end
 
 local function ProtectedError(msg, level)

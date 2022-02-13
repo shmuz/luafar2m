@@ -481,14 +481,7 @@ local function SearchFromPanel (aHistory)
 --~     local usercfg = ChangeTmpPanelSettings(aHistory)
     local cmd = ("%s: -menu %s"):format(prefix, fname)
     panel.SetCmdLine (cmd)
-    far.AdvControl("ACTL_POSTKEYSEQUENCE", {F.KEY_ENTER})
---~     error"vbabva"
---~     if type(usercfg.Macro) == "string" then
---~       far.AdvControl("ACTL_KEYMACRO",
---~         { Command      = "MCMD_POSTMACROSTRING",
---~           Flags        = "KSFLAGS_DISABLEOUTPUT",
---~           SequenceText = usercfg.Macro })
---~     end
+    actl.PostKeySequence {F.KEY_ENTER}
      far.Timer(1000,
        function(h)
          h:Close()
@@ -496,7 +489,7 @@ local function SearchFromPanel (aHistory)
 ---         RestoreTmpPanelSettings(tp_settings)
        end)
   else
-    far.AdvControl("ACTL_REDRAWALL")
+    actl.RedrawAll()
     if userbreak or 1==far.Message(M.MNoFilesFound,M.MMenuTitle,M.MButtonsNewSearch) then
       return SearchFromPanel(aHistory)
     end

@@ -2,7 +2,7 @@ local function ReloadUserFile()
   lf4ed.reload()
   far.Message("User file reloaded","LF4Ed","")
   win.Sleep(600)
-  far.AdvControl("ACTL_REDRAWALL")
+  actl.RedrawAll()
 end
 
 local function SmartHome()
@@ -49,4 +49,5 @@ if os.getenv("USER") == "shmuel" then
   AddToMenu ("e", "Multiline Search Again", "Ctrl+8", "scripts/multiline.lua", true)
   AddUserFile("scripts/lf_fin.lua")
   AddUserFile("scripts/scite_like.lua")
+  AddUserFile("scripts/dupfighter/dupfighter.lua")
 end

@@ -13,7 +13,6 @@ local OptFileName = "_luacheckrc"
 local MenuMaxHeight = 5
 
 local F = far.Flags
---local FarBuild = select(4, far.AdvControl("ACTL_GETFARMANAGERVERSION",true))
 
 local menuflags = bit.bor(F.FMENU_SHOWAMPERSAND,F.FMENU_WRAPMODE)
 --if FarBuild >= 5505 then
@@ -102,7 +101,7 @@ local function CheckEditor()
     }
 
     local function show_found()
-      local R = far.AdvControl("ACTL_GETFARRECT")
+      local R = actl.GetFarRect()
       props.Y = (R.Bottom-R.Top+1) - (props.MaxHeight+3)
       props.X = (R.Right-R.Left+1) - (maxlen+6)
       local info = items[props.SelectIndex].info

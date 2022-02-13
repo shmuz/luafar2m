@@ -39,7 +39,7 @@ local function OnError (msg)
   end
 
   local jumps, buttons = {}, "&OK"
-  msg = tostring(msg):gsub("[^\n]+",
+  msg = string.gsub(tostring(msg), "[^\n]+", -- use string.gsub to avoid "invalid UTF-8 code" error
     function(line)
       line = line:gsub("^(\t?)(.-)%:(%d+)%:(%s*)",
         function(_, file, numline, space)
@@ -68,8 +68,8 @@ local function OnError (msg)
   local luaScript = file=='[string "all text"]' or file=='[string "selection"]'
   if not luaScript then
     local trgInfo
-    for i=1,far.AdvControl("ACTL_GETWINDOWCOUNT") do
-      local wInfo = far.AdvControl("ACTL_GETWINDOWINFO", i)
+    for i=1,actl.GetWindowCount() do
+      local wInfo = actl.GetWindowInfo(i)
       if wInfo.Type==F.WTYPE_EDITOR and
         wInfo.Name:gsub("/",dirsep) == file:gsub("/",dirsep)
       then
@@ -79,8 +79,7 @@ local function OnError (msg)
     end
     if trgInfo then
       if not trgInfo.Current then
-        far.AdvControl("ACTL_SETCURRENTWINDOW", trgInfo.Pos)
-        far.AdvControl("ACTL_COMMIT")
+        actl.SetCurrentWindow(trgInfo.Pos, true)
       end
     else
       editor.Editor(file, nil,nil,nil,nil,nil, {EF_NONMODAL=1,EF_IMMEDIATERETURN=1})

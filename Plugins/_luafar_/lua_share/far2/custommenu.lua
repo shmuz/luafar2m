@@ -55,10 +55,6 @@ local KEY_NUMENTER = F.KEY_NUMENTER
 local KEY_CTRLF9   = F.KEY_CTRLF9
 ----
 
-local function GetColor (index)
-  return far.AdvControl("ACTL_GETCOLOR", index)
-end
-
 local function SendRedrawMessage (hDlg)
   SendDlgMessage(hDlg, "DM_REDRAW", 0, 0)
 end
@@ -122,10 +118,10 @@ function _M.NewList (props, items, bkeys, startId)
   end
 
   self.autocenter= P.autocenter
-  self.col_highlight         = P.col_highlight or GetColor(COL_MENUHIGHLIGHT)
-  self.col_selectedhighlight = P.col_selectedhighlight or GetColor(COL_MENUSELECTEDHIGHLIGHT)
-  self.col_selectedtext      = P.col_selectedtext or GetColor(COL_MENUSELECTEDTEXT)
-  self.col_text              = P.col_text or GetColor(COL_MENUTEXT)
+  self.col_highlight         = P.col_highlight or actl.GetColor(COL_MENUHIGHLIGHT)
+  self.col_selectedhighlight = P.col_selectedhighlight or actl.GetColor(COL_MENUSELECTEDHIGHLIGHT)
+  self.col_selectedtext      = P.col_selectedtext or actl.GetColor(COL_MENUSELECTEDTEXT)
+  self.col_text              = P.col_text or actl.GetColor(COL_MENUTEXT)
   self.ellipsis  = (P.ellipsis or 1) % 4
   self.filterlines = P.filterlines
   self.margin    = P.margin or "  "

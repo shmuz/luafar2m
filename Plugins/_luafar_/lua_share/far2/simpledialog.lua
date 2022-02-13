@@ -30,7 +30,7 @@ local function OpenInEditor(text, ext)
         fp:close()
       end
     end
-    far.AdvControl("ACTL_REDRAWALL")
+    actl.RedrawAll()
     win.DeleteFile(fname)
     return text
   end
@@ -43,7 +43,7 @@ end
 -- @return 2      : number: usercontrol width
 -- @return 3      : number: usercontrol height
 local function usercontrol2 (txt, h_char, h_color)
-  local COLOR_NORMAL = far.AdvControl("ACTL_GETCOLOR", F.COL_DIALOGTEXT)
+  local COLOR_NORMAL = actl.GetColor(F.COL_DIALOGTEXT)
   local CELL_BLANK = { Char=" "; Attributes=COLOR_NORMAL }
   h_char = h_char or "#"
   h_color = h_color or 0xF0
@@ -334,7 +334,7 @@ local function Run (inData)
     if type(v.colors) == "table" then
       outData[i].colors = {}
       for j,w in ipairs(v.colors) do
-        outData[i].colors[j] = far.AdvControl(F.ACTL_GETCOLOR, F[w] or w)
+        outData[i].colors[j] = actl.GetColor(F[w] or w)
       end
     end
 

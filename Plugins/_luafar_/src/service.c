@@ -2424,10 +2424,10 @@ int DoSendDlgMessage (lua_State *L, int Msg, int delta)
   struct FarListItemData     flid;
   SMALL_RECT                 small_rect;
   //---------------------------------------------------------------------------
-  lua_settop(L, pos4);
+  lua_settop(L, pos4); //many cases below rely on top==pos4
   HANDLE hDlg = CheckDialogHandle(L, 1);
   if (delta == 0)
-    get_env_flag (L, 2, &Msg);
+    Msg = check_env_flag (L, 2);
   if (Msg == DM_CLOSE) {
     Param1 = luaL_optinteger(L,pos3,-1);
     if (Param1>0) --Param1;
@@ -2482,8 +2482,11 @@ int DoSendDlgMessage (lua_State *L, int Msg, int delta)
     case DM_LISTADDSTR:
       res_incr=1;
     case DM_ADDHISTORY:
-    case DM_SETHISTORY:
     case DM_SETTEXTPTR:
+      Param2 = (LONG_PTR) check_utf8_string(L, pos4, NULL);
+      break;
+
+    case DM_SETHISTORY:
       Param2 = (LONG_PTR) opt_utf8_string(L, pos4, NULL);
       break;
 
@@ -2561,13 +2564,13 @@ int DoSendDlgMessage (lua_State *L, int Msg, int delta)
     }
 
     case DM_GETCONSTTEXTPTR: {
-			wchar_t *ptr = (wchar_t*)Info->SendDlgMessage(hDlg, Msg, Param1, 0);
+			const wchar_t *ptr = (wchar_t*)Info->SendDlgMessage(hDlg, Msg, Param1, 0);
 			push_utf8_string(L, ptr ? ptr:L"", -1);
 			return 1;
     }
 
     case DM_SETTEXT:
-      fdid.PtrData = (wchar_t*)check_utf8_string(L, pos4, NULL);
+      fdid.PtrData = check_utf8_string(L, pos4, NULL);
       fdid.PtrLength = 0; // wcslen(fdid.PtrData);
       Param2 = (LONG_PTR)&fdid;
       break;
@@ -2592,16 +2595,15 @@ int DoSendDlgMessage (lua_State *L, int Msg, int delta)
     case DM_LISTADD:
     case DM_LISTSET: {
       luaL_checktype(L, pos4, LUA_TTABLE);
-      lua_createtable(L,1,0); // "history table"
-      lua_replace(L,1);
-      lua_settop(L,pos4);
-      struct FarList *list = CreateList(L, 1);
+      lua_createtable(L, 1, 0); // "history table"
+      lua_insert(L, pos4);
+      struct FarList *list = CreateList(L, pos4);
       Param2 = (LONG_PTR)list;
       break;
     }
 
     case DM_LISTDELETE:
-      if (lua_isnoneornil(L, 4))
+      if (lua_isnoneornil(L, pos4))
         Param2 = 0;
       else {
         luaL_checktype(L, pos4, LUA_TTABLE);
@@ -4120,11 +4122,10 @@ int win_SetEnv (lua_State *L)
   return 1;
 }
 
-int far_AdvControl (lua_State *L)
+int DoAdvControl (lua_State *L, int Command, int Delta)
 {
+  int pos2 = 2-Delta, pos3 = 3-Delta;
   PSInfo *Info = GetPluginStartupInfo(L);
-  lua_settop(L,2);  /* for proper calling GetOptIntFromTable and the like */
-  int Command = check_env_flag (L, 1);
   intptr_t int1;
   wchar_t buf[300];
   struct ActlEjectMedia em;
@@ -4133,6 +4134,9 @@ int far_AdvControl (lua_State *L)
   struct PROGRESSVALUE pv;
   SMALL_RECT sr;
   COORD coord;
+
+  if (Delta == 0)
+    Command = check_env_flag(L, 1);
 
   switch (Command) {
     default:
@@ -4158,33 +4162,34 @@ int far_AdvControl (lua_State *L)
       return lua_pushboolean(L, int1), 1;
 
     case ACTL_GETCOLOR:
-      int1 = check_env_flag(L, 2);
+      int1 = check_env_flag(L, pos2);
       lua_pushinteger(L, Info->AdvControl(Info->ModuleNumber, Command, (void*)int1));
       return 1;
 
     case ACTL_WAITKEY:
-      int1 = opt_env_flag(L, 2, 0);
+      int1 = opt_env_flag(L, pos2, 0);
       if (int1 < -1) //this prevents program freeze
         int1 = -1;
       lua_pushinteger(L, Info->AdvControl(Info->ModuleNumber, Command, (void*)int1));
       return 1;
 
     case ACTL_SETCURRENTWINDOW:
-      int1 = luaL_checkinteger(L, 2) - 1;
+      int1 = luaL_checkinteger(L, pos2) - 1;
       int1 = Info->AdvControl(Info->ModuleNumber, ACTL_SETCURRENTWINDOW, (void*)int1);
-      if (int1 && lua_toboolean(L, 3))
+      if (int1 && lua_toboolean(L, pos3))
         int1 = Info->AdvControl(Info->ModuleNumber, ACTL_COMMIT, NULL);
       return lua_pushboolean(L, int1), 1;
 
     case ACTL_SETPROGRESSSTATE:
-      int1 = check_env_flag(L, 2);
+      int1 = check_env_flag(L, pos2);
       int1 = Info->AdvControl(Info->ModuleNumber, Command, (void*)int1);
       return lua_pushboolean(L, int1), 1;
 
     case ACTL_SETPROGRESSVALUE:
-      luaL_checktype(L, 2, LUA_TTABLE);
-      pv.Completed = (uint64_t)GetOptNumFromTable(L, "Completed", 0.0);
-      pv.Total = (uint64_t)GetOptNumFromTable(L, "Total", 100.0);
+      luaL_checktype(L, pos2, LUA_TTABLE);
+      lua_settop(L, pos2);
+      pv.Completed = GetOptNumFromTable(L, "Completed", 0.0);
+      pv.Total = GetOptNumFromTable(L, "Total", 100.0);
       lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, Command, &pv));
       return 1;
 
@@ -4193,10 +4198,10 @@ int far_AdvControl (lua_State *L)
       return push_utf8_string(L,buf,-1), 1;
 
     case ACTL_EJECTMEDIA:
-      luaL_checktype(L, 2, LUA_TTABLE);
-      lua_getfield(L, 2, "Letter");
+      luaL_checktype(L, pos2, LUA_TTABLE);
+      lua_getfield(L, pos2, "Letter");
       em.Letter = lua_isstring(L,-1) ? lua_tostring(L,-1)[0] : '\0';
-      lua_getfield(L, 2, "Flags");
+      lua_getfield(L, pos2, "Flags");
       em.Flags = CheckFlags(L,-1);
       lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, Command, &em));
       return 1;
@@ -4219,7 +4224,7 @@ int far_AdvControl (lua_State *L)
       DWORD n = Info->AdvControl(Info->ModuleNumber, Command, 0);
       int v1 = (n >> 16);
       int v2 = n & 0xffff;
-      if (lua_toboolean(L, 2)) {
+      if (lua_toboolean(L, pos2)) {
         lua_pushinteger(L, v1);
         lua_pushinteger(L, v2);
         return 2;
@@ -4232,7 +4237,7 @@ int far_AdvControl (lua_State *L)
     case ACTL_GETSHORTWINDOWINFO: {
       struct WindowInfo wi;
       memset(&wi, 0, sizeof(wi));
-      wi.Pos = luaL_optinteger(L, 2, 0) - 1;
+      wi.Pos = luaL_checkinteger(L, pos2) - 1;
 
       if (Command == ACTL_GETWINDOWINFO) {
         int r = Info->AdvControl(Info->ModuleNumber, Command, &wi);
@@ -4261,16 +4266,16 @@ int far_AdvControl (lua_State *L)
     case ACTL_POSTKEYSEQUENCE: {
       int i;
       DWORD* sequence;
-      luaL_checktype(L, 2, LUA_TTABLE);
-      lua_getfield(L, 2, "Flags");
+      luaL_checktype(L, pos2, LUA_TTABLE);
+      lua_getfield(L, pos2, "Flags");
       GetFlagCombination(L, -1, &i);
       ks.Flags = i;
-      ks.Count = lua_objlen(L,2);
+      ks.Count = lua_objlen(L, pos2);
       sequence = (DWORD*)lua_newuserdata(L, sizeof(DWORD)*ks.Count);
       ks.Sequence = sequence;
       for (i=0; i < ks.Count; i++) {
         lua_pushinteger(L,i+1);
-        lua_gettable(L,2);
+        lua_gettable(L,pos2);
         sequence[i] = lua_tointeger(L,-1);
         lua_pop(L,1);
       }
@@ -4279,16 +4284,17 @@ int far_AdvControl (lua_State *L)
     }
 
     case ACTL_SETARRAYCOLOR:
-      luaL_checktype(L, 2, LUA_TTABLE);
+      luaL_checktype(L, pos2, LUA_TTABLE);
+      lua_settop(L, pos2);
       fsc.StartIndex = GetOptIntFromTable(L, "StartIndex", 0);
-      lua_getfield(L, 2, "Flags");
+      lua_getfield(L, pos2, "Flags");
       GetFlagCombination(L, -1, (int*)&fsc.Flags);
-      fsc.ColorCount = lua_objlen(L, 2);
+      fsc.ColorCount = lua_objlen(L, pos2);
       fsc.Colors = (BYTE*)lua_newuserdata(L, fsc.ColorCount);
       int i;
       for (i=0; i < fsc.ColorCount; i++) {
         lua_pushinteger(L,i+1);
-        lua_gettable(L,2);
+        lua_gettable(L,pos2);
         fsc.Colors[i] = lua_tointeger(L,-1);
         lua_pop(L,1);
       }
@@ -4318,10 +4324,10 @@ int far_AdvControl (lua_State *L)
       return 1;
 
     case ACTL_SETCURSORPOS:
-      luaL_checktype(L, 2, LUA_TTABLE);
-      lua_getfield(L, 2, "X");
+      luaL_checktype(L, pos2, LUA_TTABLE);
+      lua_getfield(L, pos2, "X");
       coord.X = lua_tointeger(L, -1);
-      lua_getfield(L, 2, "Y");
+      lua_getfield(L, pos2, "Y");
       coord.Y = lua_tointeger(L, -1);
       lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, Command, &coord));
       return 1;
@@ -4330,6 +4336,41 @@ int far_AdvControl (lua_State *L)
     //case ACTL_KEYMACRO:  //  not supported as it's replaced by 6 separate functions far.MacroXxx
   }
 }
+
+#define AdvCommand(name,command,delta) \
+int adv_##name(lua_State *L) { return DoAdvControl(L,command,delta); }
+
+int far_AdvControl(lua_State *L) { return DoAdvControl(L,0,0); }
+
+AdvCommand( Commit,                 ACTL_COMMIT, 1)
+AdvCommand( EjectMedia,             ACTL_EJECTMEDIA, 1)
+AdvCommand( GetArrayColor,          ACTL_GETARRAYCOLOR, 1)
+AdvCommand( GetColor,               ACTL_GETCOLOR, 1)
+AdvCommand( GetConfirmations,       ACTL_GETCONFIRMATIONS, 1)
+AdvCommand( GetCursorPos,           ACTL_GETCURSORPOS, 1)
+AdvCommand( GetDescSettings,        ACTL_GETDESCSETTINGS, 1)
+AdvCommand( GetDialogSettings,      ACTL_GETDIALOGSETTINGS, 1)
+AdvCommand( GetFarHwnd,             ACTL_GETFARHWND, 1)
+AdvCommand( GetFarRect,             ACTL_GETFARRECT, 1)
+AdvCommand( GetFarVersion,          ACTL_GETFARVERSION, 1)
+AdvCommand( GetInterfaceSettings,   ACTL_GETINTERFACESETTINGS, 1)
+AdvCommand( GetPanelSettings,       ACTL_GETPANELSETTINGS, 1)
+AdvCommand( GetPluginMaxReadData,   ACTL_GETPLUGINMAXREADDATA, 1)
+AdvCommand( GetShortWindowInfo,     ACTL_GETSHORTWINDOWINFO, 1)
+AdvCommand( GetSystemSettings,      ACTL_GETSYSTEMSETTINGS, 1)
+AdvCommand( GetSysWordDiv,          ACTL_GETSYSWORDDIV, 1)
+AdvCommand( GetWindowCount,         ACTL_GETWINDOWCOUNT, 1)
+AdvCommand( GetWindowInfo,          ACTL_GETWINDOWINFO, 1)
+AdvCommand( PostKeySequence,        ACTL_POSTKEYSEQUENCE, 1)
+AdvCommand( ProgressNotify,         ACTL_PROGRESSNOTIFY, 1)
+AdvCommand( Quit,                   ACTL_QUIT, 1)
+AdvCommand( RedrawAll,              ACTL_REDRAWALL, 1)
+AdvCommand( SetArrayColor,          ACTL_SETARRAYCOLOR, 1)
+AdvCommand( SetCurrentWindow,       ACTL_SETCURRENTWINDOW, 1)
+AdvCommand( SetCursorPos,           ACTL_SETCURSORPOS, 1)
+AdvCommand( SetProgressState,       ACTL_SETPROGRESSSTATE, 1)
+AdvCommand( SetProgressValue,       ACTL_SETPROGRESSVALUE, 1)
+AdvCommand( WaitKey,                ACTL_WAITKEY, 1)
 
 int far_CPluginStartupInfo(lua_State *L)
 {
@@ -5087,6 +5128,40 @@ const luaL_reg dialog_methods[] = {
   {NULL, NULL},
 };
 
+const luaL_Reg actl_funcs[] =
+{
+  {"Commit",                adv_Commit},
+  {"EjectMedia",            adv_EjectMedia},
+  {"GetArrayColor",         adv_GetArrayColor},
+  {"GetColor",              adv_GetColor},
+  {"GetConfirmations",      adv_GetConfirmations},
+  {"GetCursorPos",          adv_GetCursorPos},
+  {"GetDescSettings",       adv_GetDescSettings},
+  {"GetDialogSettings",     adv_GetDialogSettings},
+  {"GetFarHwnd",            adv_GetFarHwnd},
+  {"GetFarRect",            adv_GetFarRect},
+  {"GetFarVersion",         adv_GetFarVersion},
+  {"GetInterfaceSettings",  adv_GetInterfaceSettings},
+  {"GetPanelSettings",      adv_GetPanelSettings},
+  {"GetPluginMaxReadData",  adv_GetPluginMaxReadData},
+  {"GetShortWindowInfo",    adv_GetShortWindowInfo},
+  {"GetSystemSettings",     adv_GetSystemSettings},
+  {"GetSysWordDiv",         adv_GetSysWordDiv},
+  {"GetWindowCount",        adv_GetWindowCount},
+  {"GetWindowInfo",         adv_GetWindowInfo},
+  {"PostKeySequence",       adv_PostKeySequence},
+  {"ProgressNotify",        adv_ProgressNotify},
+  {"Quit",                  adv_Quit},
+  {"RedrawAll",             adv_RedrawAll},
+  {"SetArrayColor",         adv_SetArrayColor},
+  {"SetCurrentWindow",      adv_SetCurrentWindow},
+  {"SetCursorPos",          adv_SetCursorPos},
+  {"SetProgressState",      adv_SetProgressState},
+  {"SetProgressValue",      adv_SetProgressValue},
+  {"WaitKey",               adv_WaitKey},
+  {NULL, NULL},
+};
+
 const luaL_Reg regex_funcs[] =
 {
   {"find",   far_Find},
@@ -5362,6 +5437,7 @@ int luaopen_far (lua_State *L)
   luaL_register(L, "viewer", viewer_funcs);
   luaL_register(L, "panel",  panel_funcs);
   luaL_register(L, "win",    win_funcs);
+  luaL_register(L, "actl",   actl_funcs);
 
   luaL_newmetatable(L, FarFileFilterType);
   lua_pushvalue(L,-1);

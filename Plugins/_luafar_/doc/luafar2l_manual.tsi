@@ -990,7 +990,7 @@ id=153
 lv=2
 dt=Text
 nm=far.AdvControl
-mtime=3853697136
+mtime=3853933101
 <article>
 #_Result = far.AdvControl (Command, Param [, Param2])
 #_
@@ -1059,7 +1059,7 @@ mtime=3853697136
 #_             2 numbers (e.g. 2,4), if Param==true;
 #_
 #_ACTL_GETWINDOWINFO:
-#_    Param1:  window number; 1-based integer (optional; default=0)
+#_    Param1:  window number; 1-based integer
 #_    Result:  table (see its fields below), or nil
 #_        Type:      integer
 #_        Pos:       integer (1-based)
@@ -1069,7 +1069,7 @@ mtime=3853697136
 #_        Name:      string
 #_
 #_ACTL_GETSHORTWINDOWINFO:
-#_    Param1:  window number; 1-based integer (optional; default=0)
+#_    Param1:  window number; 1-based integer
 #_    Result:  table (see its fields below), or nil
 #_        Type:      integer
 #_        Pos:       integer (1-based)
@@ -1119,6 +1119,59 @@ mtime=3853697136
 #_@@@
 #_<lua> Links = { MacroControl="428.html", } </lua>
 #_
+#_
+</article>
+</node>
+<node>
+id=463
+lv=3
+dt=Text
+nm=actl namespace
+ctime=3853931289
+mtime=3853936518
+<article>
+#_There is an alternative interface to FAR's advanced control commands.
+#_It is shorter and more expressive, e.g. the following 2 calls do the
+#_same thing:
+#_    1) info = far.AdvControl("ACTL_GETWINDOWINFO", 2)
+#_    2) info = actl.GetWindowInfo(2)
+#_
+#_**actl** is a global table containing those alternative functions.
+#_Below is a table of correspondence between **ACTL_** messages
+#_and functions from the **actl** table:
+#_
+#_  Commit                  ACTL_COMMIT
+#_  EjectMedia              ACTL_EJECTMEDIA
+#_  GetArrayColor           ACTL_GETARRAYCOLOR
+#_  GetColor                ACTL_GETCOLOR
+#_  GetConfirmations        ACTL_GETCONFIRMATIONS
+#_  GetCursorPos            ACTL_GETCURSORPOS
+#_  GetDescSettings         ACTL_GETDESCSETTINGS
+#_  GetDialogSettings       ACTL_GETDIALOGSETTINGS
+#_  GetFarHwnd              ACTL_GETFARHWND
+#_  GetFarRect              ACTL_GETFARRECT
+#_  GetFarVersion           ACTL_GETFARVERSION
+#_  GetInterfaceSettings    ACTL_GETINTERFACESETTINGS
+#_  GetPanelSettings        ACTL_GETPANELSETTINGS
+#_  GetPluginMaxReadData    ACTL_GETPLUGINMAXREADDATA
+#_  GetShortWindowInfo      ACTL_GETSHORTWINDOWINFO
+#_  GetSystemSettings       ACTL_GETSYSTEMSETTINGS
+#_  GetSysWordDiv           ACTL_GETSYSWORDDIV
+#_  GetWindowCount          ACTL_GETWINDOWCOUNT
+#_  GetWindowInfo           ACTL_GETWINDOWINFO
+#_  PostKeySequence         ACTL_POSTKEYSEQUENCE
+#_  ProgressNotify          ACTL_PROGRESSNOTIFY
+#_  Quit                    ACTL_QUIT
+#_  RedrawAll               ACTL_REDRAWALL
+#_  SetArrayColor           ACTL_SETARRAYCOLOR
+#_  SetCurrentWindow        ACTL_SETCURRENTWINDOW
+#_  SetCursorPos            ACTL_SETCURSORPOS
+#_  SetProgressState        ACTL_SETPROGRESSSTATE
+#_  SetProgressValue        ACTL_SETPROGRESSVALUE
+#_  WaitKey                 ACTL_WAITKEY
+#_
+#_@@@
+#_<lua> Links = { ["far.SendDlgMessage"]="71.html"; } </lua>
 #_
 </article>
 </node>
@@ -1663,7 +1716,7 @@ id=71
 lv=2
 dt=Text
 nm=far.SendDlgMessage
-mtime=3853855663
+mtime=3853943200
 <article>
 #_Result = far.SendDlgMessage (hDlg, Msg, Param1, Param2)
 #_    or
@@ -1708,10 +1761,13 @@ mtime=3853855663
 #_
 #_DM_ADDHISTORY,
 #_DM_LISTADDSTR,
-#_DM_SETHISTORY,
 #_DM_SETTEXT,
 #_DM_SETTEXTPTR:
 #_    Param2:  string
+#_    Result:  integer
+#_
+#_DM_SETHISTORY:
+#_    Param2:  string (optional; nil causes passing NULL to FAR)
 #_    Result:  integer
 #_
 #_DM_LISTSETMOUSEREACTION:

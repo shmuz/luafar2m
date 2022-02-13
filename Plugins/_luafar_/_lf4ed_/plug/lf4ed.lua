@@ -780,7 +780,7 @@ local function main()
   if FirstRun then
     local ok, msg = pcall(fReloadUserFile) -- here pcall leaves plugin alive in case of errors in the user file
     if not ok then
-      msg = msg:gsub("\t", "    ")
+      msg = string.gsub(msg, "\t", "    ") -- use string.gsub to avoid "invalid UTF-8 code" error
       far.Message(msg, M.MPluginName, nil, "wl")
     end
     FirstRun = false -- needed when (ReloadDefaultScript == false)
