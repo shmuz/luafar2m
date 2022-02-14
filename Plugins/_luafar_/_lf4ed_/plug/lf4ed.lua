@@ -50,8 +50,10 @@ end
 
 local RequireWithReload, ResetPackageLoaded do
   local bypass_reload = {
-    string=1,table=1,os=1,coroutine=1,math=1,io=1,debug=1,_G=1,package=1,
-    far=1,panel=1,editor=1,viewer=1,regex=1,bit=1,utf8=1,win=1,
+    -- Lua global tables --
+    _G=1; coroutine=1; debug=1; io=1; math=1; os=1; package=1; string=1; table=1;
+    -- LuaFAR global tables --
+     actl=1; bit=1; editor=1; far=1; panel=1; regex=1; utf8=1; viewer=1; win=1;
   }
 
   RequireWithReload = function(name)
@@ -129,24 +131,14 @@ local function RunFile (filespec, aArg)
 end
 
 local function RunUserFunc (aArgTable, aItem, ...)
-  assert(aItem.action or aItem.filename, "no action and no file name")
-  assert(aItem.env, "no environment")
-  -- compile the file (or the string)
-  local chunk, msg
-  if aItem.action then
-    chunk = aItem.action
-  else
-    chunk, msg = loadfile(aItem.filename)
-    if not chunk then error(msg,2) end
-  end
+  assert(aItem.action, "no action")
   -- copy "fixed" arguments
   local argCopy = ShallowCopy(aArgTable)
   for i,v in ipairs(aItem.arg) do argCopy[i] = v end
   -- append "variable" arguments
   for i=1,select("#", ...) do argCopy[#argCopy+1] = select(i, ...) end
   -- run the chunk
-  setfenv(chunk, aItem.env)
-  chunk(argCopy)
+  aItem.action(argCopy)
 end
 
 local function fSort (aArg)
@@ -250,38 +242,29 @@ local function SplitCommandLine (str)
 end
 
 local function MakeAddCommand (Items, Env)
-  return function (aCommand, aCode, ...)
-    if type(aCommand)=="string" then
-      local tt = { env = Env; arg = {...}; }
-      if type(aCode) == "string" then
-        tt.filename = _ModuleDir..aCode
-      elseif type(aCode) == "function" then
-        tt.action = aCode
-      else
-        return
-      end
-      _Plugin.CommandTable[aCommand] = tt
+  return function (aCommand, aAction, ...)
+    if type(aCommand)=="string" and type(aAction)=="function" then
+      setfenv(aAction, Env)
+      _Plugin.CommandTable[aCommand] = { arg = {...}; action = aAction; }
     end
   end
 end
 
 local function MakeAddToMenu (Items, Env)
-  local function AddToMenu (aWhere, aItemText, aHotKey, aFileName, ...)
+  local function AddToMenu (aWhere, aItemText, aHotKey, aHandler, ...)
     if type(aWhere) ~= "string" then return end
     aWhere = aWhere:lower()
     if not aWhere:find("[evpdc]") then return end
     ---------------------------------------------------------------------------
-    local tp = type(aFileName)
+    local tp = type(aHandler)
     local SepText = type(aItemText)=="string" and aItemText:match("^:sep:(.*)")
     local tUserItem, bInternal
     if not SepText then
       if tp == "number" then
         bInternal = true
-      elseif tp=="string" or tp=="function" then
-        tUserItem = {env=Env; arg={...}}
-        if     tp=="string"   then tUserItem.filename = _ModuleDir..aFileName
-        elseif tp=="function" then tUserItem.action = aFileName
-        end
+      elseif tp=="function" then
+        setfenv(aHandler, Env)
+        tUserItem = { arg={...}; useritem=true; action=aHandler; }
       end
     end
     if not (SepText or tUserItem or bInternal) then
@@ -294,7 +277,7 @@ local function MakeAddToMenu (Items, Env)
       if tUserItem then
         HotKeyTable[aHotKey] = tUserItem
       else
-        HotKeyTable[aHotKey] = aFileName
+        HotKeyTable[aHotKey] = aHandler
       end
     end
     ---------------------------------------------------------------------------
@@ -347,11 +330,12 @@ local function MakeAddUserFile (aEnv, aItems)
     ---------------------------------------------------------------------------
     local chunk, msg1 = loadfile(filename)
     if not chunk then error(msg1, 3) end
+    setfenv(chunk, aEnv)
     ---------------------------------------------------------------------------
     uStack[uDepth] = setmetatable({}, uMeta)
     aEnv.AddToMenu = MakeAddToMenu(aItems, uStack[uDepth])
     aEnv.AddCommand = MakeAddCommand(aItems, uStack[uDepth])
-    local ok, msg2 = pcall(setfenv(chunk, aEnv))
+    local ok, msg2 = pcall(chunk, filename)
     if not ok then error(msg2, 3) end
     uDepth = uDepth - 1
   end
@@ -427,10 +411,10 @@ local function RunMenuItem(aArg, aItem, aRestoreConfig)
   local restoreConfig = aRestoreConfig and lf4ed.config()
 
   local function wrapfunc()
-    if aItem.action then
-      return aItem.action(aArg)
+    if aItem.useritem then
+      return RunUserFunc(aArg, aItem)
     end
-    return RunUserFunc(aArg, aItem)
+    return aItem.action(aArg)
   end
 
   local ok, result = xpcall(wrapfunc, traceback3)
@@ -552,12 +536,12 @@ local function ProcessCommand (source, sFrom)
       opt, param = v:match("^%-([aelr])(.*)")
       if not opt then return CommandSyntaxMessage() end
     else
-      local fileobject = _Plugin.CommandTable[v]
-      if not fileobject then return CommandSyntaxMessage() end
+      local object = _Plugin.CommandTable[v]
+      if not object then return CommandSyntaxMessage() end
       if pass2 then
         local oldConfig = lf4ed.config()
         local wrapfunc = function()
-          return RunUserFunc({From=sFrom}, fileobject, unpack(args, i+1))
+          return RunUserFunc({From=sFrom}, object, unpack(args, i+1))
         end
         local ok, res = xpcall(wrapfunc, traceback3)
         lf4ed.config(oldConfig)

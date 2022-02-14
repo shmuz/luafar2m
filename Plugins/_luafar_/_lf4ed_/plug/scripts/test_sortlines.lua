@@ -146,7 +146,7 @@ local data3, result3 = {
   "1234  7\n"
 }
 
-do
+local function DoTest()
 package.loaded["sortlines"]=nil
   local filename = far.PluginStartupInfo().ModuleName:match(".+"..dirsep).."temp1.tmp"
   if not PrepareFile(filename) then return end
@@ -218,3 +218,4 @@ package.loaded["sortlines"]=nil
   far.Message"Success!"
 end
 
+AddToMenu ("e", "Test: Sort Lines", nil, DoTest)

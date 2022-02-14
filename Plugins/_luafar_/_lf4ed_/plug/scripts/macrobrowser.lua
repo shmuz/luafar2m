@@ -244,4 +244,5 @@ F1        - Help window]],
   end
 end
 
-RunMenu()
+AddToMenu("depv", "Macro Browser", nil, RunMenu)
+AddCommand("macrobrowser", RunMenu)

@@ -72,5 +72,4 @@ local function FindBracket()
   editor.Redraw()
 end
 
-FindBracket()
-
+AddToMenu ("e", nil, "Ctrl+E", FindBracket)

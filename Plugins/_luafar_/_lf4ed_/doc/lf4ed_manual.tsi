@@ -95,7 +95,7 @@ id=13
 lv=2
 dt=Text
 nm=AddToMenu
-mtime=3852463666
+mtime=3853967294
 <article>
 #_<markdown>
 #_**`AddToMenu (where, text, hotkey, handler [, ...])`**
@@ -127,9 +127,7 @@ mtime=3852463666
 #_provided that no macro is assigned to that key.
 #_
 #_1. `handler`<br>
-#_  -- Either name of a Lua script file to run upon this item activation
-#_(its path is relative to the plugin's directory), or<br>
-#_  -- a Lua function, or<br>
+#_  -- either a Lua function, or<br>
 #_  -- the number of a built-in utility (1 to 6).
 #_
 #_1. Extra parameters (optional)<br>
@@ -139,11 +137,10 @@ mtime=3852463666
 #_
 #_### Examples
 #_
-#_      AddToMenu ("e", "Count words", nil, "countw.lua")
-#_      AddToMenu ("e", "Count letters", "Alt+F2", "countl.lua")
-#_      AddToMenu ("e", "Search", "Ctrl+F", "search.lua", "search")
-#_      AddToMenu ("p", "Rename Files", nil, "rename.lua")
-#_      AddToMenu ("evp", "Calendar", "Alt+F12", "calendar.lua", "show")
+#_      AddToMenu ("e", "Count words", nil, count_words)
+#_      AddToMenu ("e", "Search", "Ctrl+F", search, "search")
+#_      AddToMenu ("p", "Rename Files", nil, rename)
+#_      AddToMenu ("evp", "Calendar", "Alt+F12", calendar, "show")
 #_
 #_To assign a hot key to a built-in utility, supply `text` as `nil`
 #_and specify the number of the built-in utility via `handler`:
@@ -156,7 +153,7 @@ id=57
 lv=2
 dt=Text
 nm=AddCommand
-mtime=3852046562
+mtime=3853967420
 <article>
 #_<markdown>
 #_**`AddCommand (command, handler [, ...])`**
@@ -172,8 +169,7 @@ mtime=3852046562
 #_The first command line parameter after the plugin's prefix.
 #_
 #_1. `handler`<br>
-#_Either name of a Lua script file (its path is relative to the plugin's directory),
-#_or a Lua function.
+#_A Lua function.
 #_
 #_1. Extra parameters (optional)<br>
 #_Values that will be passed to the handler (they are passed in a table).
@@ -185,7 +181,7 @@ mtime=3852046562
 #_arguments will be passed on to the handler.
 #_
 #_### Examples
-#_      AddCommand("calc", "scripts/calc.lua")
+#_      AddCommand("calc", calc)
 #_      AddCommand("hello", function() far.Message("Hello") end)
 #_
 </article>
@@ -237,12 +233,16 @@ id=34
 lv=2
 dt=Text
 nm=AddUserFile
-mtime=3491216844
+mtime=3853952196
 <article>
 #_<markdown>
 #_**`AddUserFile (filename)`**
 #_
 #_Function `AddUserFile` is available to the *_usermenu.lua* script.
+#_
+#_This function executes the script `filename` passing `filename` as the argument.
+#_The script can set some top-level variable to this value so that script's
+#_functions could use it.
 #_
 #_Parameter `filename` (its path is relative to the plugin's directory)
 #_specifies a file that is treated as an additional *_usermenu.lua* file.
@@ -413,15 +413,18 @@ id=14
 lv=1
 dt=Text
 nm=Example of use
-mtime=3852664803
+mtime=3853967770
 <article>
 #_<markdown>
 #_### _usermenu.lua
-#_    AddToMenu("e", "Count words", nil, "countw.lua")
-#_    AddToMenu("e", "Count letters", "Alt+F2", "countl.lua")
-#_    AddToMenu("evp", "Calendar", "Alt+F12", "calendar.lua", "show")
-#_    AddToMenu("c", "Calendar", nil, "calendar.lua", "config")
-#_    AddCommand("calen", "calendar.lua", "show")
+#_    local function SmartHome()
+#_      local info, str = editor.GetInfo(), editor.GetString()
+#_      local pos = str.StringText:find("%S") or 1
+#_      editor.SetPosition(nil, pos==info.CurPos and 1 or pos)
+#_      editor.Redraw()
+#_    end
+#_    AddToMenu("e", nil, "Home", SmartHome)
+#_
 #_    AddUserFile("scripts/fl_scripts/_usermenu.lua")
 #_    AddUserFile("scripts/Rh_Scripts/_testmenu.lua")
 #_    AddUserFile("handlers.lua")

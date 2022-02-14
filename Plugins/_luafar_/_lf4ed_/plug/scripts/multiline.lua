@@ -1,3 +1,4 @@
+-- coding: utf-8
 --[[
 1. +++ Установки диалога не запоминаются в файле.
 2. Не работает "Wrap around"; пока поиск только - от курсора и до конца буфера;
@@ -159,13 +160,6 @@ local function ErrorMsg (text, title)
   far.Message (text, title or M.MError, nil, "w")
 end
 
-local function SplitVersion(v)
-  local v1,v2,v3 = v:match("(%d+)%.(%d+)%.(%d+)")
-  assert(v1, "SplitVersion error")
-  return tonumber(v1), tonumber(v2), tonumber(v3)
-end
-
-
 local function CheckLuafarVersion()
   if far.LuafarVersion then
     local v1, v2 = far.LuafarVersion():match("^(%d+)%.(%d+)")
@@ -178,8 +172,9 @@ end
 
 -- change in Far version 2.0.1208
 local function HasChange1208()
-  local v1,v2,v3 = SplitVersion(far.AdvControl("ACTL_GETFARVERSION"))
-  return v1>2 or (v1==2 and (v2>0 or v3>=1208))
+  --local v1,v2,v3 = SplitVersion(far.AdvControl("ACTL_GETFARVERSION"))
+  --return v1>2 or (v1==2 and (v2>0 or v3>=1208))
+  return true
 end
 
 
@@ -609,12 +604,13 @@ end
 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-do
-  local params = ...
-  local PluginDir = far.PluginStartupInfo().ModuleName:match(".+[\\/]")
+local function Run(params)
+  local PluginDir = far.PluginStartupInfo().ModuleDir
   local h = history.new(PluginDir.."multiline.data")
   local field = h:field("params")
   MultilineSearch (params[1] and "repeat" or "search", field, nil)
   h:save()
 end
 
+AddToMenu ("e", "Multiline Search",       "Ctrl+7", Run)
+AddToMenu ("e", "Multiline Search Again", "Ctrl+8", Run, true)

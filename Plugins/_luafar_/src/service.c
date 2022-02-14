@@ -147,7 +147,7 @@ const char* VirtualKeyStrings[256] = {
   "NONAME", "PA1", "OEM_CLEAR", NULL,
 };
 
-const char* FarKeyStrings[128] = {
+const char* FarKeyStrings[] = {
 /* 0x00 */ NULL,    NULL,   NULL,   NULL,                NULL,    NULL,    NULL,    NULL,
 /* 0x08 */ "BS",    "Tab",  NULL,   NULL,                NULL,    "Enter", NULL,    NULL,
 /* 0x10 */ NULL,    NULL,   NULL,   NULL,                NULL,    NULL,    NULL,    NULL,
@@ -164,6 +164,7 @@ const char* FarKeyStrings[128] = {
 /* 0x68 */ "Num8",  "Num9", "Multiply", "Add",           NULL, "Subtract", "NumDel", "Divide",
 /* 0x70 */ "F1",    "F2",   "F3",   "F4",                "F5",    "F6",    "F7",    "F8",
 /* 0x78 */ "F9",    "F10",  "F11",  "F12",               "F13",   "F14",   "F15",   "F16",
+/* 0x80 */ "F17",   "F18",  "F19",  "F20",               "F21",   "F22",   "F23",   "F24",
 };
 
 const char far_Guids[] = "far.Guids = {"

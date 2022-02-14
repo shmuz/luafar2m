@@ -146,4 +146,5 @@ end
 --  area="Editor"; key=MacroKey; filemask="*.lua";
 --  action=function() CheckEditor() end;
 --}
-CheckEditor()
+
+AddToMenu ("e", nil, "Ctrl+Shift+F7", CheckEditor)

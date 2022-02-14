@@ -73,4 +73,4 @@ Aver. abs. deviation: %s]]
   end
 end
 
-ShowSumAndAverage()
+AddToMenu ("e", nil, "Ctrl+F9", ShowSumAndAverage)
