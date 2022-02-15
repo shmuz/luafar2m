@@ -6,7 +6,6 @@
 local _M = {} -- module
 
 local F = far.Flags
-local SendDlgMessage = far.SendDlgMessage
 local min, max, floor, ceil = math.min, math.max, math.floor, math.ceil
 
 -- Some color indexes; taken from "farcolor.lua";
@@ -54,10 +53,6 @@ local KEY_NUMENTER = F.KEY_NUMENTER
 ----
 local KEY_CTRLF9   = F.KEY_CTRLF9
 ----
-
-local function SendRedrawMessage (hDlg)
-  SendDlgMessage(hDlg, "DM_REDRAW", 0, 0)
-end
 
 local function FlagsToInt (input)
   local tp, ret = type(input), 0
@@ -165,7 +160,7 @@ function List:OnResizeConsole (hDlg, consoleSize)
     self.wmax, self.hmax = max(4, consoleSize.X - 8), max(1, consoleSize.Y - 6)
     self:SetSize()
     self:SetUpperItem()
-    SendDlgMessage(hDlg, "DM_RESIZEDIALOG", 0, {X=self.w + 6, Y=self.h + 4})
+    hDlg:ResizeDialog(0, {X=self.w + 6, Y=self.h + 4})
   end
 end
 
@@ -342,7 +337,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
 
   local function MakeScrollFunction (key)
     self:Key(hDlg, key, true)
-    SendRedrawMessage(hDlg)
+    hDlg:Redraw()
     local first = true
     return function(tmr)
       if first then
@@ -353,7 +348,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
                (Y >= y + 2 + self.slider_start) and
                (Y  < y + 2 + self.slider_start + self.slider_len) ) then
         self:Key(hDlg, key, true)
-        SendRedrawMessage(hDlg)
+        hDlg:Redraw()
       end
     end
   end
@@ -405,7 +400,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
         local index = self.upper + (Y - y) - 1
         local item = self.drawitems[index]
         if item and not item.separator then self.sel = index end
-        SendRedrawMessage(hDlg)
+        hDlg:Redraw()
       end
     end
   ------------------------------------------------------------------------------
@@ -413,8 +408,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
     if LEFT then
       if MOVED then
         if self.clickX then
-          SendDlgMessage(hDlg, "DM_MOVEDIALOG", 0,
-            { X = X - self.clickX, Y = Y - self.clickY })
+          hDlg:MoveDialog(0, { X = X - self.clickX, Y = Y - self.clickY })
           self.clickX, self.clickY = X, Y
         end
       end
@@ -431,7 +425,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
         self.upper = floor(1 + self.slider_start * (#self.drawitems - self.h) / n)
         self.sel = self.upper + self.slider_start
         self.clickY = Y
-        SendRedrawMessage(hDlg)
+        hDlg:Redraw()
       end
       return 0
     else
@@ -445,7 +439,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
           local index = self.upper + (Y - y) - 1
           local item = self.drawitems[index]
           if item and not item.separator then self.sel = index end
-          SendRedrawMessage(hDlg)
+          hDlg:Redraw()
         end
       end
     else
@@ -499,19 +493,17 @@ function List:UpdateSizePos (hDlg)
 
   local dim
   if self.resizeW or self.resizeH then
-    dim = SendDlgMessage(hDlg, "DM_RESIZEDIALOG",
-      0, { X=self.w+6, Y=self.h+4 })
+    dim = hDlg:ResizeDialog(0, { X=self.w+6, Y=self.h+4 })
     self.w = min (dim.X-6, self.w)
     self.h = min (dim.Y-4, self.h)
   end
   self:SetUpperItem()
 
   if self.autocenter then
-    SendDlgMessage(hDlg, "DM_MOVEDIALOG", 1, { X=-1, Y=-1 })
+    hDlg:MoveDialog(1, { X=-1, Y=-1 })
   end
   if self.resizeW or self.resizeH then
-    SendDlgMessage(hDlg, "DM_SETITEMPOSITION", self.startId,
-      { Left=2, Top=1, Right=dim.X-3, Bottom=dim.Y-2 })
+    hDlg:SetItemPosition(self.startId, { Left=2, Top=1, Right=dim.X-3, Bottom=dim.Y-2 })
   end
 end
 
@@ -714,7 +706,7 @@ function List:Key (hDlg, key, nowrap)
 
 --~   elseif key == KEY_CTRLF9 then -- make dump
 --~     local serial = require "serial"
---~     serial.SaveInFile("e:/bb/f/today/custommenu.dump", "list", self)
+--~     serial.SaveToFile("e:/bb/f/today/custommenu.dump", "list", self)
 
   elseif self.filterlines then
 
@@ -753,11 +745,11 @@ function _M.Menu (props, list)
   ------------------------------------------------------------------------------
   local function DlgProc (hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
-      SendDlgMessage(hDlg, F.DM_SETMOUSEEVENTNOTIFY, 1, 0)
+      hDlg:SetMouseEventNotify(1, 0)
       list:OnInitDialog (hDlg)
 
     elseif msg == F.DN_DRAWDIALOG then
-      Rect = SendDlgMessage(hDlg, "DM_GETDLGRECT", 0, 0)
+      Rect = hDlg:GetDlgRect()
 
     elseif msg == F.DN_CTLCOLORDIALOG then
       return list.col_text
@@ -774,16 +766,16 @@ function _M.Menu (props, list)
       if param1 == UId then
         ret_item, ret_pos = list:Key(hDlg, param2)
         if not ret_item then
-          SendRedrawMessage(hDlg)
+          hDlg:Redraw()
         else
-          SendDlgMessage(hDlg, "DM_CLOSE", -1, 0)
+          hDlg:Close(-1, 0)
         end
       end
 
     elseif msg == F.DN_MOUSEEVENT then
       local ret
       ret, ret_item, ret_pos = list:MouseEvent(hDlg, param2, Rect.Left, Rect.Top)
-      if ret_item then SendDlgMessage(hDlg, "DM_CLOSE", -1, 0) end
+      if ret_item then hDlg:Close(-1, 0) end
       return ret
 
     elseif msg == F.DN_GOTFOCUS then

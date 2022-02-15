@@ -5,6 +5,9 @@
 local PluginVersion = "2.9.0"
 local ReqLuafarVer = "2.8"
 
+local SETTINGS_KEY = "shmuz"
+local SETTINGS_NAME = "plugin_lf4ed"
+
 -- CONFIGURATION : keep it at the file top !!
 local DefaultCfg = {
   -- Default script will be recompiled and run every time OpenPlugin/OpenFilePlugin
@@ -23,8 +26,9 @@ local DefaultCfg = {
 }
 
 -- UPVALUES : keep them above all function definitions !!
-local Utils = require "far2.utils"
-local M     = require "lf4ed_message"
+local settings = require "far2.settings"
+local Utils    = require "far2.utils"
+local M        = require "lf4ed_message"
 local F = far.Flags
 local VK = win.GetVirtualKeys()
 local FirstRun = not _Plugin
@@ -33,7 +37,9 @@ local dirsep = package.config:sub(1,1)
 lf4ed = lf4ed or {}
 local SetExportFunctions -- forward declaration
 
-local _Cfg, _History, _ModuleDir
+local _Cfg
+local _History
+local _ModuleDir
 
 local function ErrMsg(msg, buttons, flags)
   return far.Message(msg, "Error", buttons, flags or "w")
@@ -41,6 +47,14 @@ end
 
 local function ScriptErrMsg(msg)
   (type(export.OnError)=="function" and export.OnError or ErrMsg)(msg)
+end
+
+local function field(t, ...)
+  for _, key in ipairs {...} do
+    t[key] = t[key] or {}
+    t = t[key]
+  end
+  return t
 end
 
 local function ShallowCopy (src)
@@ -88,7 +102,7 @@ end
 -- @param newcfg: if given, it is a table with configuration parameters to set.
 -- @return: a copy of the configuration table (as it was before the call).
 -------------------------------------------------------------------------------
-function lf4ed.config (newcfg)
+local function plug_config (newcfg)
   assert(not newcfg or (type(newcfg) == "table"))
   local t = {}
   for k in pairs(DefaultCfg) do t[k] = _Cfg[k] end
@@ -99,10 +113,6 @@ function lf4ed.config (newcfg)
     OnConfigChange(_Cfg)
   end
   return t
-end
-
-function lf4ed.version()
-  return PluginVersion
 end
 
 local function ConvertUserHotkey(str)
@@ -143,7 +153,7 @@ end
 
 local function fSort (aArg)
   local sortlines = require "sortlines"
-  aArg[1] = _History:field("SortDialog")
+  aArg[1] = field(_History, "SortDialog")
   repeat
     local normal, msg = pcall(sortlines.SortWithDialog, aArg)
     if not normal then
@@ -154,27 +164,27 @@ local function fSort (aArg)
 end
 
 local function fWrap (aArg)
-  aArg[1] = _History:field("WrapDialog")
+  aArg[1] = field(_History, "WrapDialog")
   return RunFile("<wrap|wrap.lua", aArg)
 end
 
 local function fBlockSum (aArg)
-  aArg[1], aArg[2] = "BlockSum", _History:field("BlockSum")
+  aArg[1], aArg[2] = "BlockSum", field(_History, "BlockSum")
   return RunFile("<expression|expression.lua", aArg)
 end
 
 local function fExpr (aArg)
-  aArg[1], aArg[2] = "LuaExpr", _History:field("LuaExpression")
+  aArg[1], aArg[2] = "LuaExpr", field(_History, "LuaExpression")
   return RunFile("<expression|expression.lua", aArg)
 end
 
 local function fScript (aArg)
-  aArg[1], aArg[2] = "LuaScript", _History:field("LuaScript")
+  aArg[1], aArg[2] = "LuaScript", field(_History, "LuaScript")
   return RunFile("<expression|expression.lua", aArg)
 end
 
 local function fScriptParams (aArg)
-  aArg[1], aArg[2] = "ScriptParams", _History:field("LuaScript")
+  aArg[1], aArg[2] = "ScriptParams", field(_History, "LuaScript")
   return RunFile("<expression|expression.lua", aArg)
 end
 
@@ -400,15 +410,13 @@ local function fReloadUserFile()
   SetExportFunctions()
 end
 
-lf4ed.reload = fReloadUserFile
-
 local function traceback3(msg)
   return debug.traceback(msg, 3)
 end
 
 local function RunMenuItem(aArg, aItem, aRestoreConfig)
   aArg = ShallowCopy(aArg) -- prevent parasite connection between utilities
-  local restoreConfig = aRestoreConfig and lf4ed.config()
+  local restoreConfig = aRestoreConfig and plug_config()
 
   local function wrapfunc()
     if aItem.useritem then
@@ -420,7 +428,7 @@ local function RunMenuItem(aArg, aItem, aRestoreConfig)
   local ok, result = xpcall(wrapfunc, traceback3)
   local result2 = _Cfg.ReturnToMainMenu
   if restoreConfig then
-    lf4ed.config(restoreConfig)
+    plug_config(restoreConfig)
   end
   if not ok then
     ScriptErrMsg(result)
@@ -449,7 +457,9 @@ local function Configure (aArg)
     if not item then return end
     local ok, result = RunMenuItem(aArg, item, false)
     if not ok then return end
-    if result then _History:save() end
+    if result then
+      settings.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
+    end
     if item.action == fReloadUserFile then return "reloaded" end
     properties.SelectIndex = pos
   end
@@ -539,12 +549,12 @@ local function ProcessCommand (source, sFrom)
       local object = _Plugin.CommandTable[v]
       if not object then return CommandSyntaxMessage() end
       if pass2 then
-        local oldConfig = lf4ed.config()
+        local oldConfig = plug_config()
         local wrapfunc = function()
           return RunUserFunc({From=sFrom}, object, unpack(args, i+1))
         end
         local ok, res = xpcall(wrapfunc, traceback3)
-        lf4ed.config(oldConfig)
+        plug_config(oldConfig)
         if not ok then ScriptErrMsg(res) end
       end
       break
@@ -626,7 +636,7 @@ local function export_OpenPlugin (aFrom, aItem)
 
   -----------------------------------------------------------------------------
   local sFrom = map[aFrom]
-  local history = _History:field("menu." .. sFrom)
+  local history = field(_History, "Menu", sFrom)
   local properties, items, keys = MakeMainMenu(sFrom)
   properties.SelectIndex = history.position
   while true do
@@ -640,7 +650,7 @@ local function export_OpenPlugin (aFrom, aItem)
     local ok, result, bRetToMainMenu = RunMenuItem(arg, item, item.action~=Configure)
     if not ok then break end
 
-    _History:save()
+    settings.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
     if not (bRetToMainMenu or item.action==Configure) then break end
 
     if item.action==Configure and result=="reloaded" then
@@ -670,7 +680,7 @@ end
 
 local function export_ExitFAR()
   RunExitScriptHandlers()
-  _History:save()
+  settings.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
 end
 
 local function KeyComb (Rec)
@@ -742,19 +752,19 @@ end
 local function InitUpvalues (_Plugin)
   _ModuleDir = _Plugin.ModuleDir
   _History = _Plugin.History
-  _Cfg = _History:field("PluginSettings")
+  _Cfg = field(_History, "Settings")
   setmetatable(_Cfg, { __index=DefaultCfg })
 end
 
 local function main()
   if FirstRun then
-    _Plugin = Utils.InitPlugin("LuaFAR for Editor")
-    if not Utils.CheckLuafarVersion(ReqLuafarVer, M.MPluginName) then
-      return
-    end
-    local rep = (";%sscripts%s?.lua;"):format(_Plugin.ModuleDir, dirsep)
-    _Plugin.PackagePath = package.path:gsub(";", rep, 1)
+    export.OnError = Utils.OnError
+    _Plugin = {}
+    _Plugin.ModuleDir = far.PluginStartupInfo().ModuleDir
+    local repvalue = (";%sscripts%s?.lua;"):format(_Plugin.ModuleDir, dirsep)
+    _Plugin.PackagePath = package.path:gsub(";", repvalue, 1)
     _Plugin.OriginalRequire = require
+    _Plugin.History = settings.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
   end
 
   InitUpvalues(_Plugin)
@@ -770,5 +780,9 @@ local function main()
     FirstRun = false -- needed when (ReloadDefaultScript == false)
   end
 end
+
+lf4ed.config  = plug_config
+lf4ed.reload  = fReloadUserFile
+lf4ed.version = function() return PluginVersion end
 
 main()

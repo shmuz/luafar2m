@@ -18,7 +18,7 @@ function Package.CheckLuafarVersion (reqVersion, msgTitle)
   return false
 end
 
-local function OnError (msg)
+function Package.OnError (msg)
   local tPaths = { PluginDir }
   for dir in package.path:gmatch("[^;]+") do
     tPaths[#tPaths+1] = dir:gsub("[^\\/]+$", "")
@@ -99,14 +99,13 @@ local function OnError (msg)
 end
 
 function Package.InitPlugin (workDir)
-  export.OnError = OnError
+  export.OnError = Package.OnError
 
   local plugin = {}
   plugin.ModuleDir = PluginDir
-  plugin.WorkDir = assert(os.getenv("HOME")).."/.config/far2l/plugins/lf4ed/"..workDir
-  --assert(win.CreateDir(plugin.WorkDir, true))
-  os.execute(("mkdir -p '%s'"):format(plugin.WorkDir))
-  plugin.History = history.new(plugin.WorkDir.."/mplugin.data")
+  plugin.WorkDir = assert(os.getenv("HOME")).."/.config/far2l/plugins/luafar/"..workDir
+  assert(win.CreateDir(plugin.WorkDir, true))
+  plugin.History = history.newfile(plugin.WorkDir.."/mplugin.data")
   return plugin
 end
 

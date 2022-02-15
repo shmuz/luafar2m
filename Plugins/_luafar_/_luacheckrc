@@ -7,7 +7,6 @@ if (...)=="far" then -- running from Far environment
 else
   local cfg = require "far2.luacheck_config"
   stds.luafar = cfg.luafar
-  stds.luamacro = cfg.lf4ed
   std = "max+luafar+lf4ed"
 
 end

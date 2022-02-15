@@ -904,10 +904,10 @@ id=23
 lv=1
 dt=Text
 nm=history
+mtime=3854093066
 <article>
 #_<markdown>
-#_Module `history` saves specified plugin data to files and loads the data from files. The module API consists of the only function [`new`][1] and the 3 methods: [`hobj:field`][2], [`hobj:setfield`][3] and
-#_[`hobj:save`][4].
+#_Module `history` saves specified plugin data to files and loads the data from files. The module API consists of the only function [`newfile`][1] and the 3 methods: [`obj:field`][2], [`obj:setfield`][3] and [`obj:save`][4].
 #_
 #_The module is loaded as follows:<br>
 #_`require "history"`
@@ -924,16 +924,16 @@ nm=history
 id=28
 lv=2
 dt=Text
-nm=new
-mtime=3478521182
+nm=newfile
+mtime=3854092980
 <article>
-#_hobj = history.new (filename)
+#_obj = history.newfile (filename)
 #_
 #_**Parameters:**
 #_  filename : string
 #_
 #_**Returns:**
-#_  hobj     : history object (a table).
+#_  obj     : history object (a table).
 #_
 #_**Description:**
 #_  - The function executes *filename* as a Lua script, in an empty
@@ -948,12 +948,12 @@ mtime=3478521182
 #_  - If the file *filename* was absent or failed to compile, then
 #_    the field *Data* of the returned object is an empty table.
 #_
-#_  - The returned history object *hobj* has three methods:
-#_    hobj:field, hobj:setfield and hobj:save.
+#_  - The returned history object *obj* has three methods:
+#_    obj:field, obj:setfield and obj:save.
 #_
 #_@@@
-#_<lua> Links = { ["hobj:field"]="29.html", ["hobj:save"]="30.html", 
-#_["hobj:setfield"]="58.html"}
+#_<lua> Links = { ["obj:field"]="29.html", ["obj:save"]="30.html", 
+#_["obj:setfield"]="58.html"}
 #_</lua>
 #_
 #_local history = {}
@@ -968,7 +968,7 @@ mtime=3478521182
 #_  end
 #_end
 #_
-#_function new (filename)
+#_function newfile (filename)
 #_  local self = load (filename) or { Data = {} }
 #_  self.FileName = filename
 #_  return setmetatable(self, meta)
@@ -981,21 +981,21 @@ mtime=3478521182
 id=29
 lv=2
 dt=Text
-nm=hobj:field
-mtime=3478525904
+nm=obj:field
+mtime=3854093082
 <article>
-#_val = hobj:field (name)
+#_val = obj:field (name)
 #_
 #_**Parameters:**
 #_  name   : sequence of dot-delimitered fields;
 #_
 #_**Returns:**
-#_  val    : value of the given nested field in history object *hobj*
+#_  val    : value of the given nested field in history object *obj*
 #_           (will be created if absent).
 #_
 #_**Description:**
-#_  - hobj:field("key1.key2 ... keyN") returns the equivalent of
-#_    hobj["key1"]["key2"]...["keyN"].
+#_  - obj:field("key1.key2 ... keyN") returns the equivalent of
+#_    obj["key1"]["key2"]...["keyN"].
 #_
 #_  - If at any stage of retrieving some intermediate nested field
 #_    "keyM", its value is nil, then both that and all subsequent
@@ -1016,10 +1016,10 @@ mtime=3478525904
 id=58
 lv=2
 dt=Text
-nm=hobj:setfield
-mtime=3499591303
+nm=obj:setfield
+mtime=3854093085
 <article>
-#_val = hobj:setfield (name, val)
+#_val = obj:setfield (name, val)
 #_
 #_**Parameters:**
 #_  name  : sequence of dot-delimitered fields;
@@ -1029,8 +1029,8 @@ mtime=3499591303
 #_  val
 #_
 #_**Description:**
-#_  - hobj:setfield("key1.key2  ... keyN", val) does the equivalent of
-#_    hobj["key1"]["key2"]...["keyN"] = val.
+#_  - obj:setfield("key1.key2  ... keyN", val) does the equivalent of
+#_    obj["key1"]["key2"]...["keyN"] = val.
 #_
 #_  - If at any stage of retrieving some intermediate nested field
 #_    "keyM", its value is nil, then both that and all subsequent
@@ -1044,9 +1044,10 @@ mtime=3499591303
 id=30
 lv=2
 dt=Text
-nm=hobj:save
+nm=obj:save
+mtime=3854092848
 <article>
-#_hobj:save ()
+#_obj:save ()
 #_
 #_**Parameters:**
 #_  none
@@ -1057,20 +1058,20 @@ nm=hobj:save
 #_**Description:**
 #_  - The method saves (serializes) the "history object" into
 #_    the file whose name was given upon the object creation
-#_    (see new function). If the file exists, its contents is
+#_    (see newfile function). If the file exists, its contents is
 #_    overwritten.
 #_
-#_  - Only "Data" field of the *hobj* is saved.
+#_  - Only "Data" field of the *obj* is saved.
 #_    - Within it, values of the following types are saved:
 #_      numbers, strings, booleans and tables (recursively).
 #_    - Not saved: functions, coroutines and userdatas.
 #_    - Not saved: metatable relations.
 #_
 #_@@@
-#_<lua> Links = { ["new"]="28.html", }
+#_<lua> Links = { ["newfile"]="28.html", }
 #_</lua>
 #_function history:save()
-#_  serial.SaveInFile (self.FileName, "Data", self.Data)
+#_  serial.SaveToFile (self.FileName, "Data", self.Data)
 #_end
 #_
 </article>

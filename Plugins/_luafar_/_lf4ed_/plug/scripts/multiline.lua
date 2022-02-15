@@ -22,10 +22,12 @@
 
 -- started: 2009-11-25 by Shmuel Zeigerman
 
+local SETTINGS_KEY = "shmuz"
+local SETTINGS_NAME = "multiline_search"
+
 local fgsub = require "fgsub"
 local far2_dialog = require "far2.dialog"
 local rex = require "rex_pcre"
-local history = require "history"
 
 local _RequiredLuafarVersion = "1.0.0" -- earlier versions had a bug (DM_GETTEXT crash)
 
@@ -605,11 +607,10 @@ end
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 local function Run(params)
-  local PluginDir = far.PluginStartupInfo().ModuleDir
-  local h = history.new(PluginDir.."multiline.data")
-  local field = h:field("params")
-  MultilineSearch (params[1] and "repeat" or "search", field, nil)
-  h:save()
+  local libSettings = require("far2.settings")
+  local ST = libSettings.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
+  MultilineSearch (params[1] and "repeat" or "search", ST, nil)
+  libSettings.msave(SETTINGS_KEY, SETTINGS_NAME, ST)
 end
 
 AddToMenu ("e", "Multiline Search",       "Ctrl+7", Run)

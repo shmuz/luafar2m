@@ -1,3 +1,4 @@
+-- coding: utf-8
 ------------------------------------------------------------------------------------------------
 -- Started:                 2015-10-29
 -- Author:                  Shmuel Zeigerman
@@ -8,13 +9,10 @@
 -- Depends on:              Lua modules 'far2.simpledialog' and 'far2.settings'
 ------------------------------------------------------------------------------------------------
 
--- OPTIONS --
-local OptAddToPluginsMenu = true
-local OptUseMacro = true
--- END OF OPTIONS --
+local SETTINGS_KEY = "shmuz"
+local SETTINGS_NAME = "duplicate_fighter"
 
 local F = far.Flags
-local SendMsg = far.SendDlgMessage
 local thisDir = (...):match(".*/")
 
 local mEng = {
@@ -147,9 +145,8 @@ local STdefault = { -- default settings
 local function Main()
   M = SetLanguage()
   local sDialog     = require("far2.simpledialog")
---TODO  local libSettings = require("far2.settings")
---TODO  local ST = libSettings.mload("Duplicate Fighter", "settings") or STdefault
-  local ST = STdefault
+  local libSettings = require("far2.settings")
+  local ST = libSettings.mload(SETTINGS_KEY, SETTINGS_NAME) or STdefault
 
   local dItems = {
     guid = "85FA90FE-4068-4FFB-962E-F961F46BE867";
@@ -178,29 +175,29 @@ local function Main()
   dItems.initaction = function(hDlg)
     if not (ST.method>=1 and ST.method<=4) then ST.method=1; end
     local rb = Pos.remdup + ST.method - 1
-    SendMsg(hDlg, "DM_SETCHECK", rb, 1)
-    SendMsg(hDlg, "DM_SETFOCUS", rb)
+    hDlg:SetCheck(rb, 1)
+    hDlg:SetFocus(rb)
 
-    SendMsg(hDlg, "DM_SETCHECK", Pos.cbEmpty, ST.keepempty  and 1 or 0)
-    SendMsg(hDlg, "DM_SETCHECK", Pos.cbStat,  ST.statistics and 1 or 0)
-    SendMsg(hDlg, "DM_SETCHECK", Pos.cbExpr,  ST.useexpr    and 1 or 0)
-    SendMsg(hDlg, "DM_SETCHECK", Pos.cbBool,  ST.toboolean  and 1 or 0)
-    SendMsg(hDlg, "DM_ENABLE",   Pos.cbBool,  ST.useexpr    and 1 or 0)
-    SendMsg(hDlg, "DM_ENABLE",   Pos.lbExpr,  ST.useexpr    and 1 or 0)
-    SendMsg(hDlg, "DM_ENABLE",   Pos.edExpr,  ST.useexpr    and 1 or 0)
+    hDlg:SetCheck(Pos.cbEmpty, ST.keepempty  and 1 or 0)
+    hDlg:SetCheck(Pos.cbStat,  ST.statistics and 1 or 0)
+    hDlg:SetCheck(Pos.cbExpr,  ST.useexpr    and 1 or 0)
+    hDlg:SetCheck(Pos.cbBool,  ST.toboolean  and 1 or 0)
+    hDlg:Enable  (Pos.cbBool,  ST.useexpr    and 1 or 0)
+    hDlg:Enable  (Pos.lbExpr,  ST.useexpr    and 1 or 0)
+    hDlg:Enable  (Pos.edExpr,  ST.useexpr    and 1 or 0)
   end
 
   Elem.cbExpr.action = function(hDlg, p1, p2)
-    SendMsg(hDlg, "DM_ENABLE", Pos.cbBool, p2)
-    SendMsg(hDlg, "DM_ENABLE", Pos.lbExpr, p2)
-    SendMsg(hDlg, "DM_ENABLE", Pos.edExpr, p2)
+    hDlg:Enable(Pos.cbBool, p2)
+    hDlg:Enable(Pos.lbExpr, p2)
+    hDlg:Enable(Pos.edExpr, p2)
   end
 
   dItems.help = function() far.ShowHelp(thisDir, nil, F.FHELP_CUSTOMPATH) end
 
   dItems.closeaction = function(hDlg, p1, tOut)
-    if SendMsg(hDlg, "DM_GETCHECK", Pos.cbExpr) ~= 0 then
-      local expr = "return " .. SendMsg(hDlg, "DM_GETTEXT", Pos.edExpr)
+    if hDlg:GetCheck(Pos.cbExpr) ~= 0 then
+      local expr = "return " .. hDlg:GetText(Pos.edExpr)
       local f, msg = loadstring(expr)
       if not f then
         far.Message(msg, M.TITLE, nil, "w"); return 0;
@@ -222,30 +219,11 @@ local function Main()
     end
     if op then
       ST.method = method
---TODO      libSettings.msave("Duplicate Fighter", "settings", ST)
+      libSettings.msave(SETTINGS_KEY, SETTINGS_NAME, ST)
       local func = ST.useexpr and loadstring("local L=... return "..out.edExpr)
       HandleDups(op, removeFirst, ST.keepempty, ST.statistics, func, ST.toboolean)
     end
   end
 end
 
-if Macro then
-  if OptUseMacro then
-    Macro {
-      description = M.TITLE;
-      area="Editor"; key="CtrlShiftP"; action=Main;
-    }
-  end
-  if OptAddToPluginsMenu and MenuItem then
-    MenuItem {
-      description = M.TITLE;
-      menu   = "Plugins";
-      area   = "Editor";
-      guid   = "D1F37D2D-20F4-4151-820E-236E7B4A42CC";
-      text   = function(menu, area) M = SetLanguage(); return M.TITLE; end;
-      action = function(OpenFrom, Item) mf.postmacro(Main) end;
-    }
-  end
-else
-  AddToMenu("e", mEng.TITLE, "Ctrl+Shift+P", Main)
-end
+AddToMenu("e", mEng.TITLE, "Ctrl+Shift+P", Main)

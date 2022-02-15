@@ -1,44 +1,69 @@
 --[=[
-  Functions:
-    *  h = history.new (filename)
-       *  description:  create a new history object
-       *  parameters:   a file name
-       *  returns:      an object
+  Library functions:
+    *  hobj = history.newfile (filename)
+       *  description:   create a new history object from file
+       *  @param filename: file name
+       *  @return:       history object
 
-  Methods:
-    *  h:field (name)
-       *  description:  get or create a field
-       *  parameters:   name (sequence of fields delimitered with dots)
-       *  returns:      a table
-       *  example:      hist:field("mydialog.namelist").width = 120
+  Methods of history object:
+    *  value = hobj:field (name)
+       *  description:   get or create a field
+       *  @param name:   name (sequence of fields delimitered with dots)
+       *  @return:       either value of existing field or a new table
+       *  example:       hist:field("mydialog.namelist").width = 120
 
-    *  h:setfield (name, value)
-       *  description:  set a field
-       *  parameters:   name (sequence of fields delimitered with dots)
-       *  returns:      value
-       *  example:      hist:setfield("mydialog.namelist", {})
+    *  value = hobj:getfield (name)
+       *  description:   get a field
+       *  @param name:   name (sequence of fields delimitered with dots)
+       *  @return:       value of a field
+       *  example:       local namelist = hist:field("mydialog.namelist")
 
-    *  h:save()
-       *  description:  save history object in file
-       *  parameters:   none
-       *  returns:      none
+    *  value = hobj:setfield (name, value)
+       *  description:   set a field
+       *  @param name:   name (sequence of fields delimitered with dots)
+       *  @param value:  value to set the field
+       *  @return:       value
+       *  example:       hist:setfield("mydialog.namelist.width", 120)
+
+    *  hobj:save()
+       *  description:   save history object
+
+    *  str = hobj:serialize()
+       *  description:   serialize history object
+       *  @return:       serialized history object
 --]=]
 
-local Package = {}
 local serial  = require "serial"
 
 local history = {}
 local meta = { __index = history }
 
-local function GetOrCreateField (tb, name)
-  for v in name:gmatch("[^.]+") do
+function history:serialize()
+  return serial.SaveToString("Data", self.Data)
+end
+
+function history:field (fieldname)
+  local tb = self.Data
+  for v in fieldname:gmatch("[^.]+") do
     tb[v] = tb[v] or {}
     tb = tb[v]
   end
   return tb
 end
 
-local function SetField (tb, name, val)
+function history:getfield (fieldname)
+  local tb = self.Data
+  for v in fieldname:gmatch("[^.]+") do
+    if type(tb) ~= "table" then
+      return nil
+    end
+    tb = tb[v]
+  end
+  return tb
+end
+
+function history:setfield (name, val)
+  local tb = self.Data
   local part1, part2 = name:match("^(.-)([^.]*)$")
   for v in part1:gmatch("[^.]+") do
     tb[v] = tb[v] or {}
@@ -48,33 +73,30 @@ local function SetField (tb, name, val)
   return val
 end
 
-local function load (filename)
-  local f = loadfile (filename)
-  if f then
-    local env = {}
-    setfenv (f, env)()
-    return env
+local function new (chunk)
+  local self
+  if chunk then
+    self = {}
+    setfenv(chunk, self)()
+    if type(self.Data) ~= "table" then self = nil end
   end
-end
-
-function history:save()
-  serial.SaveInFile (self.FileName, "Data", self.Data)
-end
-
-function history:field (fieldname)
-  return GetOrCreateField (self.Data, fieldname)
-end
-
-function history:setfield (name, val)
-  return SetField (self.Data, name, val)
-end
-
-function Package.new (filename)
-  assert(type(filename) == "string")
-  local self = load (filename) or { Data = {} }
-  if type(self.Data) ~= "table" then self.Data = {} end
-  self.FileName = filename
+  self = self or { Data={} }
   return setmetatable(self, meta)
 end
 
-return Package
+local function newfile (FileName)
+  assert(type(FileName) == "string")
+  local self = new(loadfile(FileName))
+  self.FileName = FileName
+  return self
+end
+
+function history:save()
+  if self.FileName then
+    serial.SaveToFile (self.FileName, "Data", self.Data)
+  end
+end
+
+return {
+  newfile = newfile,
+}

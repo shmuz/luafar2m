@@ -4,7 +4,6 @@ local M           = require "lfs_message"
 local far2_dialog = require "far2.dialog"
 local luarepl     = require "luarepl"
 local F = far.Flags
-local SendDlgMessage = far.SendDlgMessage
 local dirsep = package.config:sub(1,1)
 
 local TmpPanelRegKey = "Plugins\\TmpPanel"
@@ -52,8 +51,7 @@ local function ConfigDialog (aHistory)
   D.btnDefaults = {"DI_BUTTON",  0,10, 0,0,  0,0,"DIF_CENTERGROUP", 0, M.MBtnDefaults}
 
   local function DlgProc (hDlg, msg, param1, param2)
-    if msg == F.DN_INITDIALOG then
-    elseif msg == F.DN_CLOSE then
+    if msg == F.DN_CLOSE then
       if param1 == D.btnDefaults.id then
         far2_dialog.LoadDataDyn (hDlg, D, TmpPanelDefaults)
         return 0
@@ -205,12 +203,12 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
   ------------------------------------------------------------------------------
   local function DlgProc (hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
-      SendDlgMessage(hDlg, F.DM_SETCOMBOBOXEVENT, D.cmbCodePage.id, F.CBET_KEY)
+      hDlg:SetComboboxEvent(D.cmbCodePage.id, F.CBET_KEY)
       local t = {}
       for i,v in ipairs(D.cmbCodePage.ListItems) do
         if v.CodePage then
           t.Index, t.Data = i, v.CodePage
-          SendDlgMessage(hDlg, F.DM_LISTSETDATA, D.cmbCodePage.id, t)
+          hDlg:ListSetData(D.cmbCodePage.id, t)
         end
       end
       D.sFileMask:SetText(hDlg, dataPanels.sFileMask or "")
@@ -220,12 +218,12 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
     elseif msg == F.DN_KEY then
       if param1 == D.cmbCodePage.id then
         if param2==KEY_INS or param2==KEY_NUMPAD0 or param2==KEY_SPACE then
-          local pos = SendDlgMessage(hDlg, F.DM_LISTGETCURPOS, param1)
+          local pos = hDlg:ListGetCurPos(param1)
           if pos.SelectPos ~= 1 then -- if not "All code pages"
-            local item = SendDlgMessage(hDlg, F.DM_LISTGETITEM, param1, pos.SelectPos)
+            local item = hDlg:ListGetItem(param1, pos.SelectPos)
             item.Flags = bit.bxor(item.Flags, F.LIF_CHECKED)
             item.Index = pos.SelectPos
-            SendDlgMessage(hDlg, F.DM_LISTUPDATE, param1, item)
+            hDlg:ListUpdate(param1, item)
           end
         end
       end
@@ -233,10 +231,10 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
       return aReplace and replaceGuid or searchGuid
     elseif msg == F.DN_CLOSE then
       if D.btnConfig and param1 == D.btnConfig.id then
-        SendDlgMessage(hDlg, F.DM_SHOWDIALOG, 0)
+        hDlg:ShowDialog(0)
         ConfigDialog(aHistory)
-        SendDlgMessage(hDlg, F.DM_SHOWDIALOG, 1)
-        SendDlgMessage(hDlg, F.DM_SETFOCUS, D.btnOk.id)
+        hDlg:ShowDialog(1)
+        hDlg:SetFocus(D.btnOk.id)
         return 0
       elseif param1 == D.btnOk.id then
         if not D.sFileMask:GetText(hDlg):find("%S") then
@@ -244,10 +242,10 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
           return 0
         end
         ------------------------------------------------------------------------
-        local pos = SendDlgMessage(hDlg, F.DM_LISTGETCURPOS, D.cmbCodePage.id)
+        local pos = hDlg:ListGetCurPos(D.cmbCodePage.id)
         dataPanels.iCodePage = D.cmbCodePage.ListItems[pos.SelectPos].CodePage
         ------------------------------------------------------------------------
-        local pos = SendDlgMessage(hDlg, F.DM_LISTGETCURPOS, D.cmbSearchArea.id)
+        local pos = hDlg:ListGetCurPos(D.cmbSearchArea.id)
         dataPanels.iSearchArea = pos.SelectPos
         ------------------------------------------------------------------------
         D.sFileMask:SaveText(hDlg, dataPanels)
@@ -257,11 +255,11 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
       --------------------------------------------------------------------------
       -- store selected code pages no matter what user pressed: OK or Esc.
       dataPanels.SelectedCodePages = {}
-      local info = SendDlgMessage(hDlg, F.DM_LISTINFO, D.cmbCodePage.id)
+      local info = hDlg:ListInfo(D.cmbCodePage.id)
       for i=1,info.ItemsNumber do
-        local item = SendDlgMessage(hDlg, F.DM_LISTGETITEM, D.cmbCodePage.id, i)
+        local item = hDlg:ListGetItem(D.cmbCodePage.id, i)
         if 0 ~= bit.band(item.Flags, F.LIF_CHECKED) then
-          local t = SendDlgMessage(hDlg, F.DM_LISTGETDATA, D.cmbCodePage.id, i)
+          local t = hDlg:ListGetData(D.cmbCodePage.id, i)
           if t then dataPanels.SelectedCodePages[t] = true end
         end
       end

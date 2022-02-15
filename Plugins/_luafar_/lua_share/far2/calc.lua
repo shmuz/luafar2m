@@ -70,7 +70,6 @@ local F = far.Flags
 local KEEP_DIALOG_OPEN = 0
 local DISABLE_CHANGE = 0
 local HOTKEY_IS_DONE = 0
-local dsend = far.SendDlgMessage
 
 local enable_custom_hotkeys = true -- for Far2 it's OK
 
@@ -224,7 +223,7 @@ local function calculator()
 
   function dItems.btnCalc.Action(hDlg)
     if tonumber(result) then
-      dsend(hDlg, F.DM_SETTEXT, dPos.calc, result)
+      hDlg:SetText(dPos.calc, result)
     end
     return KEEP_DIALOG_OPEN
   end
@@ -272,7 +271,7 @@ local function calculator()
   end
 
   local function compile(hDlg)
-    local str = dsend(hDlg, F.DM_GETTEXT, dPos.calc)
+    local str = hDlg:GetText(dPos.calc)
     if not str:find("%S") then str = "0" end
 
     if curlang == "Lua" then
@@ -341,27 +340,27 @@ local function calculator()
       setdata(dItems.status, msg)
     end
     for i,v in ipairs(items) do
-      if v.Update then dsend(hDlg, F.DM_SETTEXT, i, getdata(items[i])) end
+      if v.Update then hDlg:SetText(i, getdata(items[i])) end
     end
   end
 
   local function get_language(hDlg)
-    return dsend(hDlg,F.DM_GETCHECK,dPos.lng_lua)==1 and "Lua" or
-           dsend(hDlg,F.DM_GETCHECK,dPos.lng_c)==1 and "C" or "Python"
+    return hDlg:GetCheck(dPos.lng_lua)==1 and "Lua" or
+           hDlg:GetCheck(dPos.lng_c)==1 and "C" or "Python"
   end
 
   local function SetFocusOnInput(hDlg)
     far.Timer(10, function(h) -- timer is used due to FAR2 bug
-      h:Close() dsend(hDlg, F.DM_SETFOCUS, dPos.calc) end)
+      h:Close() hDlg:SetFocus(dPos.calc) end)
   end
 
   items.keyaction = function(hDlg,p1,key)
     if key == "F1" then
-      local txt = dsend(hDlg, F.DM_GETCHECK, dPos.lng_py)==1 and py_help or strhelp
+      local txt = hDlg:GetCheck(dPos.lng_py)==1 and py_help or strhelp
       far.Message(txt, M.mHelpDlgTitle, nil, 'l')
     else
       local name = keys[key]
-      if name then dsend(hDlg, F.DM_CLOSE, dPos[name]) end
+      if name then hDlg:Close(dPos[name]) end
     end
   end
 
@@ -378,7 +377,7 @@ local function calculator()
         local fmt=items[p1].Fmt
         if fmt then
           format(dItems[fmt], result)
-          dsend(hDlg, F.DM_SETTEXT, dPos[fmt], getdata(dItems[fmt]))
+          hDlg:SetText(dPos[fmt], getdata(dItems[fmt]))
         end
       end
     ----------------------------------------------------------------------------
@@ -408,10 +407,10 @@ local function calculator()
         local n = p2 - 0x2000030 -- 0x2000000 = Alt, 0x30 = '0'
         if n>=0 and n<=4 then
           if n==0 then
-            dsend(hDlg, F.DM_SETFOCUS, dPos.calc)
+            hDlg:SetFocus(dPos.calc)
           else
-            dsend(hDlg, F.DM_SETCHECK, dPos.decrad+n-1, 1)
-            dsend(hDlg, F.DM_SETFOCUS, dPos.decfmt+n-1)
+            hDlg:SetCheck(dPos.decrad+n-1, 1)
+            hDlg:SetFocus(dPos.decfmt+n-1)
           end
           return HOTKEY_IS_DONE
         end
