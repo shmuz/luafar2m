@@ -363,7 +363,7 @@ local luafar = {
         "GetPanelInfo", "GetPanelItem", "GetSelectedPanelItem", "GetUserScreen",
         "InsertCmdLine", "IsActivePanel", "RedrawPanel", "SetCaseSensitiveSort",
         "SetCmdLine", "SetCmdLinePos", "SetCmdLineSelection", "SetNumericSort",
-        "SetPanelDir", "SetSelection", "SetSortMode", "SetSortOrder", "SetUserScreen",
+        "SetPanelDirectory", "SetSelection", "SetSortMode", "SetSortOrder", "SetUserScreen",
         "SetViewMode", "UpdatePanel",
       };
     };
@@ -405,8 +405,8 @@ local luafar = {
       fields = {
         "CompareString", "CreateDir", "DeleteFile", "DeleteRegKey", "EnumSystemCodePages",
         "ExtractKey", "FileTimeToSystemTime", "GetACP", "GetConsoleScreenBufferInfo",
-        "GetCPInfo", "GetCurrentDir", "GetDriveType", "GetEnv", "GetFileInfo", "GetOEMCP",
-        "GetRegKey", "GetSystemTime", "GetVirtualKeys", "MoveFile", "MultiByteToWideChar",
+        "GetCPInfo", "GetCurrentDir", "GetDriveType", "GetEnv", "GetFileAttr", "GetFileInfo",
+        "GetOEMCP", "GetRegKey", "GetSystemTime", "GetVirtualKeys", "MoveFile", "MultiByteToWideChar",
         "OemToUtf8", "RemoveDir", "RenameFile", "SetCurrentDir", "SetEnv", "SetRegKey",
         "Sleep", "SystemTimeToFileTime", "Utf16ToUtf8", "Utf8ToOem", "Utf8ToUtf16",
         "Uuid", "wcscmp",

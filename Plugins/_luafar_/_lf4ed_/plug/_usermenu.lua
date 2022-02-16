@@ -25,7 +25,7 @@ AddToMenu ("e", nil, "Ctrl+6", 6)
 AddToMenu ("e", ":sep:")
 AddUserFile("scripts/calc.lua")
 AddUserFile("scripts/editor_luacheck.lua")
-AddUserFile("scripts/macrobrowser.lua")
+AddUserFile("scripts/macrobrowser/macrobrowser.lua")
 AddUserFile("scripts/dupfighter/dupfighter.lua")
 
 AddToMenu ("depv", "Lua Calc", nil, require("far2.calc"))

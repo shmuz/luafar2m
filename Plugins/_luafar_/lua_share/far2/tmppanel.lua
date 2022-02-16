@@ -26,7 +26,6 @@ local Opt = {
   Prefix                    = "tmp2",
   SavePanels                = true, --> new
 }
-local OptMeta = { __index = Opt }
 local Env = {}
 local EnvMeta = { __index = Env }
 local TmpPanelBase = {} -- "class" TmpPanelBase
@@ -35,7 +34,7 @@ local _Message = far.Message -- functions
 local band, bor = bit.band, bit.bor
 
 -- variables
-local _F = far.Flags
+local F = far.Flags
 
 -- constants
 local COMMONPANELSNUMBER = 10
@@ -43,12 +42,10 @@ local BOM_UTF16LE = "\255\254"
 local BOM_UTF8 = "\239\187\191"
 
 local function LTrim(s) return s:match "^%s*(.*)" end
-local function RTrim(s) return s:match "(.-)%s*$" end
 local function Trim(s) return s:match "^%s*(.-)%s*$" end
 local function Unquote(s) return (s:gsub("\"", "")) end
 local function ExtractFileName(s) return s:match "[^/]*$" end
 local function ExtractFileDir(s) return s:match ".*/" or "" end
-local function ExtractFileExt(s) return s:match "%.[^./]+$" or "" end
 local function AddEndSlash(s) return (s:gsub("/?$", "/", 1)) end
 local function TruncStr(s, maxlen)
   local len = s:len()
@@ -58,17 +55,6 @@ end
 local function ExpandEnvironmentStr (str)
   return ( str:gsub("%%([^%%]*)%%", win.GetEnv) )
 end
-
-local function ShowTable (tbl, title)
-  title = title or "Table View"
-  local t, i = {}, 0
-  for k,v in pairs(tbl) do
-    i = i + 1
-    t[i] = tostring(k) .. " = " .. tostring(v)
-  end
-  far.Message (table.concat(t, "\n"), title, "Ok", "l")
-end
-
 
 local function IsDirectory (PanelItem)
   return PanelItem.FileAttributes:find"d" and true
@@ -387,7 +373,7 @@ function Env:OpenPlugin (OpenFrom, Item)
   --  GetOptions (PluginRootKey)
 
   self.StartupOpenFrom = OpenFrom
-  if OpenFrom == _F.OPEN_COMMANDLINE then
+  if OpenFrom == F.OPEN_COMMANDLINE then
     local newOpt = setmetatable({}, {__index=self.Opt})
     local ParamsTable = {
       safe="SafeModePanel", replace="ReplaceMode", menu="MenuForFilelist",
@@ -603,7 +589,7 @@ function TmpPanelBase:ProcessRemoveKey (Handle)
   panel.RedrawPanel (Handle)
 
   PInfo = assert(panel.GetPanelInfo (0))
-  if PInfo.PanelType == _F.PTYPE_QVIEWPANEL then
+  if PInfo.PanelType == F.PTYPE_QVIEWPANEL then
     panel.UpdatePanel (0, true)
     panel.RedrawPanel (0)
   end
@@ -640,7 +626,7 @@ function TmpPanelBase:ProcessSaveListKey (Handle)
   end
 
   ListPath = far.InputBox (M.MTempPanel, M.MListFilePath,
-      "TmpPanel.SaveList", ListPath, nil, nil, _F.FIB_BUTTONS)
+      "TmpPanel.SaveList", ListPath, nil, nil, F.FIB_BUTTONS)
   if ListPath then
     self:SaveListFile (ListPath)
     panel.UpdatePanel (0, true)
@@ -651,8 +637,8 @@ end
 
 do
   local VK = win.GetVirtualKeys()
-  local C, A, S = _F.PKF_CONTROL, _F.PKF_ALT, _F.PKF_SHIFT
-  local PREPROCESS = _F.PKF_PREPROCESS
+  local C, A, S = F.PKF_CONTROL, F.PKF_ALT, F.PKF_SHIFT
+  local PREPROCESS = F.PKF_PREPROCESS
 
   function TmpPanelBase:ProcessKey (Handle, Key, ControlState)
     if band(Key, PREPROCESS) ~= 0 then
@@ -661,7 +647,7 @@ do
 
     if ControlState == 0 and Key == VK.F1 then
       far.ShowHelp (far.PluginStartupInfo().ModuleName, nil,
-        bor (_F.FHELP_USECONTENTS, _F.FHELP_NOSHOWERROR))
+        bor (F.FHELP_USECONTENTS, F.FHELP_NOSHOWERROR))
       return true
     end
 
@@ -834,7 +820,7 @@ end
 
 
 function TmpPanelBase:ProcessEvent (Handle, Event, Param)
-  if Event == _F.FE_CHANGEVIEWMODE then
+  if Event == F.FE_CHANGEVIEWMODE then
     local types = panel.GetColumnTypes (Handle)
     local UpdateOwners = IsOwnersDisplayed (types) and not self.LastOwnersRead
     local UpdateLinks = IsLinksDisplayed (types) and not self.LastLinksRead
@@ -849,7 +835,7 @@ end
 
 
 local OPIF_SAFE_FLAGS, OPIF_COMMON_FLAGS do
-  local f = _F
+  local f = F
   OPIF_SAFE_FLAGS = bor (f.OPIF_USEFILTER, f.OPIF_USESORTGROUPS,
                   f.OPIF_USEHIGHLIGHTING, f.OPIF_ADDDOTS, f.OPIF_SHOWNAMESONLY)
   OPIF_COMMON_FLAGS = bor (OPIF_SAFE_FLAGS, f.OPIF_REALNAMES,
@@ -885,7 +871,7 @@ function TmpPanelBase:GetOpenPluginInfo (Handle)
     StatusColumnWidths = self.Opt.StatusColumnWidths,
     CaseConversion = true,
   }
-  if self.Env.StartupOpenFrom == _F.OPEN_COMMANDLINE then
+  if self.Env.StartupOpenFrom == F.OPEN_COMMANDLINE then
     mode.FullScreen = self.Opt.FullScreenPanel
   else
     mode.FullScreen = self.Env.StartupOptFullScreenPanel
@@ -905,7 +891,7 @@ end
 
 
 function TmpPanelBase:SetDirectory (Handle, Dir, OpMode)
-  if 0 == band(OpMode, _F.OPM_FIND) then
+  if 0 == band(OpMode, F.OPM_FIND) then
     panel.ClosePlugin (Handle, (Dir ~= "\\" and Dir or nil))
     return true
   end

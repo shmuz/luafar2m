@@ -10,13 +10,17 @@ local Cfg = {
 
   ReloadOnRequire = true, -- Reload lua libraries each time they are require()d:
                           -- set true for libraries debugging, false for normal use;
-
-  UseStrict = true, -- Use require 'strict'
 }
 
 -- UPVALUES : keep them above all function definitions !!
+local SETTINGS_KEY  = "shmuz"
+local SETTINGS_NAME = "plugin_lftmp"
+
+local Sett  = require "far2.settings"
 local Utils = require "far2.utils"
+
 local F = far.Flags
+local field = Sett.field
 local History, Env
 
 local function Require (name)
@@ -52,21 +56,17 @@ end
 
 function export.ExitFAR()
   Env:ExitFAR()
-  History.Data.Env = Env
-  History:save()
+  History.Env = Env
+  Sett.msave(SETTINGS_KEY, SETTINGS_NAME, History)
 end
 
 local function InitUpvalues (_Plugin)
   History = _Plugin.History
-
-  if Cfg.UseStrict then require "strict" end
   Require = Cfg.ReloadOnRequire and Require or require
-  -----------------------------------------------------------------------------
   far.ReloadDefaultScript = Cfg.ReloadDefaultScript
-  -----------------------------------------------------------------------------
   local tmppanel = Require "far2.tmppanel"
   far.tmppanel = far.tmppanel or tmppanel
-  far.tmppanel.Env = tmppanel.NewEnv (far.tmppanel.Env or History:field("Env"))
+  far.tmppanel.Env = tmppanel.NewEnv (far.tmppanel.Env or field(History, "Env"))
   Env = far.tmppanel.Env
   for name, func in pairs (tmppanel.ListExportedFunctions()) do
     export[name] = func
@@ -75,7 +75,10 @@ end
 
 local function main()
   if not _Plugin then
-    _Plugin = Utils.InitPlugin("LuaFAR TmpPanel")
+    export.OnError = Utils.OnError
+    _Plugin = {}
+    _Plugin.ModuleDir = far.PluginStartupInfo().ModuleDir
+    _Plugin.History = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
   end
   InitUpvalues(_Plugin)
 end

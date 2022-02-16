@@ -3,6 +3,9 @@
 local M           = require "lfs_message"
 local far2_dialog = require "far2.dialog"
 local luarepl     = require "luarepl"
+local Sett        = require "far2.settings"
+local field = Sett.field
+
 local F = far.Flags
 local dirsep = package.config:sub(1,1)
 
@@ -28,7 +31,7 @@ local KEY_SPACE   = F.KEY_SPACE
 local saFromCurrFolder, saOnlyCurrFolder, saSelectedItems, saRootFolder, saPathFolders = 1,2,3,4,5
 
 local function ConfigDialog (aHistory)
-  local aData = aHistory:field("TmpPanel")
+  local aData = field(aHistory, "TmpPanel")
   local WIDTH, HEIGHT = 78, 13
   local DC = math.floor(WIDTH/2-1)
 
@@ -168,8 +171,8 @@ local searchGuid  = win.Uuid("3CD8A0BB-8583-4769-BBBC-5B6667D13EF9")
 local replaceGuid = win.Uuid("F7118D4A-FBC3-482E-A462-0167DF7CC346")
 
 local function PanelDialog (aHistory, aReplace, aHelpTopic)
-  local dataMain = aHistory:field("main")
-  local dataPanels = aHistory:field("panels")
+  local dataMain = field(aHistory, "main")
+  local dataPanels = field(aHistory, "panels")
   local D = far2_dialog.NewDialog()
   local Frame = luarepl.CreateSRFrame(D, dataMain, false)
   ------------------------------------------------------------------------------
@@ -268,7 +271,7 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
     return Frame:DlgProc(hDlg, msg, param1, param2)
   end
 
-  local dataTP = aHistory:field("TmpPanel")
+  local dataTP = field(aHistory, "TmpPanel")
   for k,v in pairs(TmpPanelDefaults) do
     if dataTP[k] == nil then dataTP[k] = v end
   end
@@ -287,7 +290,7 @@ local function GetTmpPanelSettings()
 end
 
 local function ChangeTmpPanelSettings (aHistory)
-  local data = aHistory:field("TmpPanel")
+  local data = field(aHistory, "TmpPanel")
   for k,v in pairs(data) do
     if TmpPanelRegVars[k] then
       local typ = type(v)
@@ -356,7 +359,7 @@ local function SearchFromPanel (aHistory)
   if sOperation == "cancel" then return end
 
   -- take care of the future "repeat" operations in the Editor
-  local dataMain = aHistory:field("main")
+  local dataMain = field(aHistory, "main")
   dataMain.sLastOp = "search"
   dataMain.bSearchBack = false
   ----------------------------------------------------------------------------
@@ -368,7 +371,7 @@ local function SearchFromPanel (aHistory)
   local BLOCKLEN, OVERLAP = 32*1024, -1024
   ----------------------------------------------------------------------------
   local codePages
-  local dataPanels = aHistory:field("panels")
+  local dataPanels = field(aHistory, "panels")
   local storedPages = dataPanels.SelectedCodePages
   if dataPanels.iCodePage then
     codePages = { dataPanels.iCodePage }
@@ -467,7 +470,7 @@ local function SearchFromPanel (aHistory)
   end
 
   if cnt > 0 then
-    local fname = _Plugin.WorkDir .. dirsep .. "$tmp$.tmp"
+    local fname = "/tmp/lfsearch.found.files"
     local fpOut = assert(io.open(fname, "wb"))
     for _, fullname in ipairs(tOut) do
       fpOut:write(fullname, "\n")

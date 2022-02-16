@@ -1,12 +1,10 @@
 -- utils.lua --
 
-local history = require "history"
-local Package = {}
 local F = far.Flags
 local PluginDir = far.PluginStartupInfo().ModuleName:match(".*[\\/]")
 local dirsep = package.config:sub(1,1)
 
-function Package.CheckLuafarVersion (reqVersion, msgTitle)
+local function CheckLuafarVersion (reqVersion, msgTitle)
   local v1, v2 = far.LuafarVersion(true)
   local r1, r2 = reqVersion:match("^(%d+)%.(%d+)")
   r1, r2 = tonumber(r1), tonumber(r2)
@@ -18,7 +16,7 @@ function Package.CheckLuafarVersion (reqVersion, msgTitle)
   return false
 end
 
-function Package.OnError (msg)
+local function OnError (msg)
   local tPaths = { PluginDir }
   for dir in package.path:gmatch("[^;]+") do
     tPaths[#tPaths+1] = dir:gsub("[^\\/]+$", "")
@@ -98,16 +96,7 @@ function Package.OnError (msg)
   end
 end
 
-function Package.InitPlugin (workDir)
-  export.OnError = Package.OnError
-
-  local plugin = {}
-  plugin.ModuleDir = PluginDir
-  plugin.WorkDir = assert(os.getenv("HOME")).."/.config/far2l/plugins/luafar/"..workDir
-  assert(win.CreateDir(plugin.WorkDir, true))
-  plugin.History = history.newfile(plugin.WorkDir.."/mplugin.data")
-  return plugin
-end
-
-return Package
-
+return {
+  CheckLuafarVersion = CheckLuafarVersion;
+  OnError = OnError;
+}

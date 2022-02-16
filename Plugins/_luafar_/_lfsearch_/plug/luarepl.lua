@@ -3,6 +3,8 @@
 local Package = {}
 
 local far2_dialog = require "far2.dialog"
+local Sett  = require "far2.settings"
+local field = Sett.field
 
 local M = require "lfs_message"
 local F = far.Flags
@@ -145,7 +147,7 @@ local function ConfigDialog()
     end
   end
   ----------------------------------------------------------------------------
-  local Data = _Plugin.History:field("config")
+  local Data = field(_Plugin.History, "config")
   far2_dialog.LoadData(Dlg, Data)
   if Data.rPickFrom     == "history" then Dlg.rPickHistory.Selected = 1
   elseif Data.rPickFrom == "nowhere" then Dlg.rPickNowhere.Selected = 1
@@ -433,7 +435,7 @@ function SRFrameBase:OnDataLoaded (aData, aScriptCall)
 
   if not aScriptCall then
     if bInEditor then
-      local from = _Plugin.History:field("config").rPickFrom
+      local from = field(_Plugin.History, "config").rPickFrom
       if from == "history" then
         Dlg.sSearchPat.Data = GetFarHistory("SearchText") or aData.sSearchPat or ""
       elseif from == "nowhere" then

@@ -21,15 +21,15 @@ local DefaultCfg = {
   -- After executing utility from main menu, return to the menu again
   ReturnToMainMenu    = false,
 
-  UseSearchMenu       = false,
   UseStrict           = false, -- Use require 'strict'
 }
 
 -- UPVALUES : keep them above all function definitions !!
-local settings = require "far2.settings"
-local Utils    = require "far2.utils"
-local M        = require "lf4ed_message"
+local Sett  = require "far2.settings"
+local Utils = require "far2.utils"
+local M     = require "lf4ed_message"
 local F = far.Flags
+local field = Sett.field
 local VK = win.GetVirtualKeys()
 local FirstRun = not _Plugin
 local band, bor, bnot = bit.band, bit.bor, bit.bnot
@@ -47,14 +47,6 @@ end
 
 local function ScriptErrMsg(msg)
   (type(export.OnError)=="function" and export.OnError or ErrMsg)(msg)
-end
-
-local function field(t, ...)
-  for _, key in ipairs {...} do
-    t[key] = t[key] or {}
-    t = t[key]
-  end
-  return t
 end
 
 local function ShallowCopy (src)
@@ -436,15 +428,9 @@ local function RunMenuItem(aArg, aItem, aRestoreConfig)
   return ok, result, result2
 end
 
-local function SetSearchMenu (properties)
-  local searchmenu = _Cfg.UseSearchMenu and require "far2.searchmenu"
-  properties.Flags.FMENU_AUTOHIGHLIGHT = not searchmenu
-  return searchmenu or far.Menu
-end
-
 local function Configure (aArg)
   local properties, items = {
-    Flags = {FMENU_WRAPMODE=1}, Title = M.MPluginNameCfg,
+    Flags = F.FMENU_WRAPMODE+F.FMENU_AUTOHIGHLIGHT, Title = M.MPluginNameCfg,
     HelpTopic = "Contents",
   }, {
     { text=M.MPluginSettings, action=fPluginConfig },
@@ -452,13 +438,12 @@ local function Configure (aArg)
   }
   for _,v in ipairs(_Plugin.UserItems.config) do items[#items+1]=v end
   while true do
-    local menu = SetSearchMenu(properties)
-    local item, pos = menu(properties, items)
+    local item, pos = far.Menu(properties, items)
     if not item then return end
     local ok, result = RunMenuItem(aArg, item, false)
     if not ok then return end
     if result then
-      settings.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
+      Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
     end
     if item.action == fReloadUserFile then return "reloaded" end
     properties.SelectIndex = pos
@@ -488,7 +473,7 @@ end
 
 local function MakeMainMenu(aFrom)
   local properties = {
-    Flags = {FMENU_WRAPMODE=1}, Title = M.MPluginName,
+    Flags = F.FMENU_WRAPMODE+F.FMENU_AUTOHIGHLIGHT, Title = M.MPluginName,
     HelpTopic = "Contents", Bottom = "ctrl+sh+f9 (settings)", }
   --------
   local items = {}
@@ -640,8 +625,7 @@ local function export_OpenPlugin (aFrom, aItem)
   local properties, items, keys = MakeMainMenu(sFrom)
   properties.SelectIndex = history.position
   while true do
-    local menu = SetSearchMenu(properties)
-    local item, pos = menu(properties, items, keys)
+    local item, pos = far.Menu(properties, items, keys)
     if not item then break end
 
     history.position = pos
@@ -650,7 +634,7 @@ local function export_OpenPlugin (aFrom, aItem)
     local ok, result, bRetToMainMenu = RunMenuItem(arg, item, item.action~=Configure)
     if not ok then break end
 
-    settings.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
+    Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
     if not (bRetToMainMenu or item.action==Configure) then break end
 
     if item.action==Configure and result=="reloaded" then
@@ -680,7 +664,7 @@ end
 
 local function export_ExitFAR()
   RunExitScriptHandlers()
-  settings.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
+  Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
 end
 
 local function KeyComb (Rec)
@@ -764,7 +748,7 @@ local function main()
     local repvalue = (";%sscripts%s?.lua;"):format(_Plugin.ModuleDir, dirsep)
     _Plugin.PackagePath = package.path:gsub(";", repvalue, 1)
     _Plugin.OriginalRequire = require
-    _Plugin.History = settings.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
+    _Plugin.History = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
   end
 
   InitUpvalues(_Plugin)

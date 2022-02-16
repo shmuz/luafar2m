@@ -538,6 +538,7 @@ id=32
 lv=1
 dt=Text
 nm=lf4ed.config
+mtime=3854196060
 <article>
 #_Get or set the plugin configuration.
 #_
@@ -549,7 +550,6 @@ nm=lf4ed.config
 #_             ReloadDefaultScript : boolean
 #_             RequireWithReload   : boolean
 #_             UseStrict           : boolean
-#_             UseSearchMenu       : boolean
 #_             ReturnToMainMenu    : boolean
 #_
 #_**Returns:**
@@ -625,13 +625,13 @@ id=21
 lv=0
 dt=Text
 nm=Lua Modules
+mtime=3854196091
 <article>
 #_<markdown>
 #_There are a few Lua modules that can be used in the utilities added by the user:
 #_
 #_* [`far2.dialog`](22.html)
-#_* [`far2.history`](23.html)
-#_* [`far2.searchmenu`](24.html)
+#_* [`far2.settings`](80.html)
 #_
 </article>
 </node>
@@ -842,237 +842,191 @@ mtime=3499357892
 </article>
 </node>
 <node>
-id=24
+id=80
 lv=1
 dt=Text
-nm=far2.searchmenu
+nm=far2.settings
+ctime=3854196003
+mtime=3854197259
 <article>
-#_<markdown>
-#_###Description
-#_
-#_This provides a filter for standard menu. Every typed symbol
-#_is added to the pattern which is used to check every menu item.
-#_Every item which satisfies the pattern is displayed, others become
-#_hidden. The pattern is displayed in the menu header.
-#_
-#_###Parameters
-#_    Item, Position = far2.searchmenu(Properties, Items [, BreakKeys])
-#_All arguments and return values are the same as for **`far.Menu`**
-#_(see LuaFAR manual), except some optional additional fields of
-#_`Properties` table:
-#_
-#_      AllowEmpty:    Allow the user to input patterns that make menu
-#_                     empty (boolean)
-#_
-#_      CheckItem:     Function for determining if an item should be
-#_                     displayed:
-#_                       from,to = CheckItem(pattern,text[,searchmethod])
-#_
-#_      Map:           Table that maps keys and key combinations
-#_                     to characters and actions. It allows to add
-#_                     keys or redefine the treatment of user's input.
-#_
-#_      Menu:          Function for displaying the menu
-#_                     (defaults to far.Menu)
-#_
-#_      Pattern:       Initial search pattern (string)
-#_
-#_      SearchMethod:  "lua"   = use Lua regexps (default)
-#_                     "dos"   = use DOS wildcards * and ?
-#_                     "plain" = plain text search
-#_
-#_Also, there is an optional field `SearchText` in a menu item. When
-#_present, it is used instead of the `text` field when checking the
-#_item, while the `text` field is used for displaying the item.
-#_
-#_###Predefined keys
-#_      Space     - insert a space character
-#_      DELETE    - delete the entire pattern
-#_      BACKSPACE - delete the last symbol
-#_      CtrlV     - insert a pattern from the clipboard
-#_
-#_###Available symbols
-#_      Small English letters: a-z
-#_      Numbers:  0-9
-#_      Symbols: .,><=+-_;:/?`~[]{}()\~|'"!@#$%^&*
-#_
-#_
+#_This library provides functions for storing and retrieving
+#_persistent data (persistent between FAR sessions).
 </article>
 </node>
 <node>
-id=23
-lv=1
-dt=Text
-nm=history
-mtime=3854093066
-<article>
-#_<markdown>
-#_Module `history` saves specified plugin data to files and loads the data from files. The module API consists of the only function [`newfile`][1] and the 3 methods: [`obj:field`][2], [`obj:setfield`][3] and [`obj:save`][4].
-#_
-#_The module is loaded as follows:<br>
-#_`require "history"`
-#_
-#_[1]: 28.html
-#_[2]: 29.html
-#_[3]: 58.html
-#_[4]: 30.html
-#_
-#_
-</article>
-</node>
-<node>
-id=28
+id=84
 lv=2
 dt=Text
-nm=newfile
-mtime=3854092980
+nm=deserialize
+ctime=3854196154
+mtime=3854196918
 <article>
-#_obj = history.newfile (filename)
+#_value, errmsg = sett.deserialize (str)
 #_
 #_**Parameters:**
-#_  filename : string
+#_  str:       string
 #_
 #_**Returns:**
-#_  obj     : history object (a table).
+#_  value:     number, string, boolean, table, or nil.
+#_  errmsg:    nil on success, string on failure.
 #_
 #_**Description:**
-#_  - The function executes *filename* as a Lua script, in an empty
-#_    environment table.
+#_  Function *deserialize* recreates a copy of a previously serialized value.
+#_  If the second return value is nil then the first return value is valid.
 #_
-#_  - The script is assumed to contain Lua data in the global
-#_    variable *Data* (a table).
-#_
-#_  - The environment table is returned, with its field *FileName*
-#_    set to the value of *filename* argument.
-#_
-#_  - If the file *filename* was absent or failed to compile, then
-#_    the field *Data* of the returned object is an empty table.
-#_
-#_  - The returned history object *obj* has three methods:
-#_    obj:field, obj:setfield and obj:save.
+#_**See also:**
+#_  `serialize`
 #_
 #_@@@
-#_<lua> Links = { ["obj:field"]="29.html", ["obj:save"]="30.html", 
-#_["obj:setfield"]="58.html"}
-#_</lua>
-#_
-#_local history = {}
-#_local meta = { __index = history }
-#_
-#_local function load (filename)
-#_  local f = loadfile (filename)
-#_  if f then
-#_    local env = {}
-#_    setfenv (f, env)()
-#_    return env
-#_  end
-#_end
-#_
-#_function newfile (filename)
-#_  local self = load (filename) or { Data = {} }
-#_  self.FileName = filename
-#_  return setmetatable(self, meta)
-#_end
-#_
+#_<lua> Links = {
+#_  serialize="85.html"
+#_} </lua>
 #_
 </article>
 </node>
 <node>
-id=29
+id=86
 lv=2
 dt=Text
-nm=obj:field
-mtime=3854093082
+nm=field
+ctime=3854197468
+mtime=3854199354
 <article>
-#_val = obj:field (name)
+#_ret = sett.field (tbl, ...)
 #_
 #_**Parameters:**
-#_  name   : sequence of dot-delimitered fields;
+#_  tbl :    table
+#_  ... :    one or more strings
 #_
 #_**Returns:**
-#_  val    : value of the given nested field in history object *obj*
-#_           (will be created if absent).
+#_  ret:     table
 #_
 #_**Description:**
-#_  - obj:field("key1.key2 ... keyN") returns the equivalent of
-#_    obj["key1"]["key2"]...["keyN"].
+#_  This function tries to get a field from the table *tbl*.
+#_  If the field does not exist the function creates a new table
+#_  and assigns it to the field of the nearest enclosing table.
+#_  Multiple input strings are nested field names.
 #_
-#_  - If at any stage of retrieving some intermediate nested field
-#_    "keyM", its value is nil, then both that and all subsequent
-#_    fields are created by assigning each of them a new table.
+#_**Example**
+#_  local tbl = {}
+#_  ret = sett.field(tbl, "foo", "bar")
 #_
-#_**Example:**
-#_
-#_  if From == "e" then     hist = _Hist:field ("menu.editor")
-#_  elseif From == "v" then hist = _Hist:field ("menu.viewer")
-#_  elseif From == "p" then hist = _Hist:field ("menu.pluginsmenu")
-#_  else return
-#_
-#_@@@
+#_  After the call *tbl* will look as { foo = { bar={} } }
+#_  The function will return tbl["foo"]["bar"]
 #_
 </article>
 </node>
 <node>
-id=58
+id=83
 lv=2
 dt=Text
-nm=obj:setfield
-mtime=3854093085
+nm=mdelete
+ctime=3854196145
+mtime=3854197373
 <article>
-#_val = obj:setfield (name, val)
+#_ret = sett.mdelete (key, name)
 #_
 #_**Parameters:**
-#_  name  : sequence of dot-delimitered fields;
-#_  val   : value to set the field with
+#_  key:       string
+#_  name:      string
 #_
 #_**Returns:**
-#_  val
+#_  ret:       boolean
 #_
 #_**Description:**
-#_  - obj:setfield("key1.key2  ... keyN", val) does the equivalent of
-#_    obj["key1"]["key2"]...["keyN"] = val.
-#_
-#_  - If at any stage of retrieving some intermediate nested field
-#_    "keyM", its value is nil, then both that and all subsequent
-#_    fields are created by assigning each of them a new table.
-#_
-#_@@@
+#_  Function *mdelete* deletes a value from the database.
 #_
 </article>
 </node>
 <node>
-id=30
+id=81
 lv=2
 dt=Text
-nm=obj:save
-mtime=3854092848
+nm=mload
+ctime=3854196131
+mtime=3854196688
 <article>
-#_obj:save ()
+#_value, errmsg = sett.mload (key, name)
 #_
 #_**Parameters:**
-#_  none
+#_  key:       string
+#_  name:      string
 #_
 #_**Returns:**
-#_  nothing
+#_  value:     number, string, boolean, table, or nil.
+#_  errmsg:    nil on success, string on failure.
 #_
 #_**Description:**
-#_  - The method saves (serializes) the "history object" into
-#_    the file whose name was given upon the object creation
-#_    (see newfile function). If the file exists, its contents is
-#_    overwritten.
+#_  Function *mload* reads a value from the database.
+#_  If the second return value is nil then the first return value is valid.
 #_
-#_  - Only "Data" field of the *obj* is saved.
-#_    - Within it, values of the following types are saved:
-#_      numbers, strings, booleans and tables (recursively).
-#_    - Not saved: functions, coroutines and userdatas.
-#_    - Not saved: metatable relations.
+</article>
+</node>
+<node>
+id=82
+lv=2
+dt=Text
+nm=msave
+ctime=3854196137
+mtime=3854196695
+<article>
+#_ret = sett.msave (key, name, value)
+#_
+#_**Parameters:**
+#_  key:       string
+#_  name:      string
+#_  value:     nil, boolean, number, string, table
+#_
+#_**Returns:**
+#_  ret:       boolean
+#_
+#_**Description:**
+#_  Function *msave* saves the specified value into the database.
+#_
+#_  When you save a table the following will be preserved:
+#_     keys of types:    number, string, boolean, table.
+#_     values of types:  number, string, boolean, table.
+#_
+#_  Nested tables and recursive references are correctly processed.
+#_
+#_  The link between a table and its metatable is preserved.
+#_
+</article>
+</node>
+<node>
+id=85
+lv=2
+dt=Text
+nm=serialize
+ctime=3854196167
+mtime=3854196934
+<article>
+#_ret = sett.serialize (value)
+#_
+#_**Parameters:**
+#_  value:     nil, boolean, number, string, table
+#_
+#_**Returns:**
+#_  ret:       string
+#_
+#_**Description:**
+#_  Function *serialize* converts the passed value into a string.
+#_
+#_  When you serialize a table the following will be preserved:
+#_     keys of types:    number, string, boolean, table.
+#_     values of types:  number, string, boolean, table.
+#_
+#_  Nested tables and recursive references are correctly processed.
+#_
+#_  The link between a table and its metatable is preserved.
+#_
+#_**See also:**
+#_  `deserialize`
 #_
 #_@@@
-#_<lua> Links = { ["newfile"]="28.html", }
-#_</lua>
-#_function history:save()
-#_  serial.SaveToFile (self.FileName, "Data", self.Data)
-#_end
+#_<lua> Links = {
+#_  deserialize="84.html"
+#_} </lua>
 #_
 </article>
 </node>

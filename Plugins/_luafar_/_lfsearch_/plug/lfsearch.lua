@@ -31,11 +31,16 @@ local Cfg = {
 }
 
 -- Upvalues --
+local Sett  = require "far2.settings"
 local Utils = require "far2.utils"
 local M     = require "lfs_message"
-local F = far.Flags
+local field = Sett.field
 
+local SETTINGS_KEY  = "shmuz"
+local SETTINGS_NAME = "plugin_lfsearch"
+local F = far.Flags
 local LibFunc, History, ModuleDir
+
 
 local function Require (name)
   if Cfg.ReloadOnRequire then package.loaded[name] = nil; end
@@ -45,7 +50,7 @@ end
 local function InitUpvalues (_Plugin)
   LibFunc   = Require("luarepl").SearchOrReplace
   History   = _Plugin.History
-  History:field(Cfg.histfield_Config)
+  field(History, Cfg.histfield_Config)
   ModuleDir = _Plugin.ModuleDir
 end
 
@@ -91,7 +96,7 @@ local function export_OpenPlugin (From, Item)
   end
 
   if From == F.OPEN_EDITOR then
-    local hMenu = History:field(Cfg.histfield_Menu)
+    local hMenu = field(History, Cfg.histfield_Menu)
     local items = MakeMenuItems(ResolvePath(Cfg.UserMenuFile))
     local ret, pos = far.Menu( {
       Flags = {FMENU_WRAPMODE=1, FMENU_AUTOHIGHLIGHT=1},
@@ -102,19 +107,19 @@ local function export_OpenPlugin (From, Item)
     if ret then
       hMenu.position = pos
       if ret.action then
-        local data = History:field(Cfg.histfield_Main)
+        local data = field(History, Cfg.histfield_Main)
         data.fUserChoiceFunc = nil
         LibFunc (ret.action, data, false)
       elseif ret.filename then
         assert(loadfile(ret.filename))(ret.param1, ret.param2)
       end
-      History:save()
+      Sett.msave(SETTINGS_KEY, SETTINGS_NAME, History)
     end
 
   elseif From == F.OPEN_PLUGINSMENU then
     local SearchFromPanel = Require("lfs_panels")
     SearchFromPanel(History)
-    History:save()
+    Sett.msave(SETTINGS_KEY, SETTINGS_NAME, History)
   end
 end
 
@@ -129,8 +134,8 @@ end
 function SearchOrReplace (aOp, aData)
   assert(type(aOp)=="string", "arg #1: string expected")
   assert(type(aData)=="table", "arg #2: table expected")
-  local newdata = {}; for k,v in pairs(aData) do newdata[k] = v end
-  History:setfield(Cfg.histfield_Main, newdata)
+  local newdata = field(History, Cfg.histfield_Main)
+  for k,v in pairs(aData) do newdata[k] = v end
   return LibFunc(aOp, newdata, true)
 end
 
@@ -141,9 +146,12 @@ end
 
 local function main()
   if not _Plugin then
-    _Plugin = Utils.InitPlugin("LuaFAR Search")
+    export.OnError = Utils.OnError
+    _Plugin = {}
+    _Plugin.ModuleDir = far.PluginStartupInfo().ModuleDir
+    _Plugin.History = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
     _Plugin.RegPath = Cfg.RegPath
-    package.cpath = _Plugin.ModuleDir .. "?.dl;" .. package.cpath
+    package.cpath = _Plugin.ModuleDir .. "?.dl;" .. package.cpath --TODO
   end
   SetExportFunctions()
   InitUpvalues(_Plugin)

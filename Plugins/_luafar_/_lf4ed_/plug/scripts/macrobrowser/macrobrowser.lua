@@ -3,7 +3,8 @@
 
 local Title = "Macro Browser"
 local ini = require "inifile"
-local mdialog = require "scripts.macrodialog"
+local thisdir = (...):match(".*/")
+local mdialog = dofile(thisdir.."macrodialog.lua")
 local mfile = os.getenv("HOME") .. "/.config/far2l/settings/key_macros.ini"
 local F = far.Flags
 
