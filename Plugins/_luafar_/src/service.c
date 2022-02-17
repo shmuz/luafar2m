@@ -670,50 +670,48 @@ int editor_SetString(lua_State *L)
   ess.StringNumber = luaL_optinteger(L, 1, 0) - 1;
   ess.StringText = check_utf8_string(L, 2, &ess.StringLength);
   ess.StringEOL = opt_utf8_string(L, 3, NULL);
-  if (Info->EditorControl(ECTL_SETSTRING, &ess))
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  lua_pushboolean(L, Info->EditorControl(ECTL_SETSTRING, &ess));
+  return 1;
 }
 
 int editor_InsertString(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   int indent = lua_toboolean(L, 1);
-  if (Info->EditorControl(ECTL_INSERTSTRING, &indent))
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  lua_pushboolean(L, Info->EditorControl(ECTL_INSERTSTRING, &indent));
+  return 1;
 }
 
 int editor_DeleteString(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  if (Info->EditorControl(ECTL_DELETESTRING, NULL))
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  lua_pushboolean(L, Info->EditorControl(ECTL_DELETESTRING, NULL));
+  return 1;
 }
 
 int editor_InsertText(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  const wchar_t* text = check_utf8_string(L,1,NULL);
-  lua_pushboolean(L, Info->EditorControl(ECTL_INSERTTEXT, (void*)text));
+  wchar_t* text = check_utf8_string(L,1,NULL);
+  int res = Info->EditorControl(ECTL_INSERTTEXT, text);
+  if (res && lua_toboolean(L,2))
+    Info->EditorControl(ECTL_REDRAW, NULL);
+  lua_pushboolean(L, res);
   return 1;
 }
 
 int editor_DeleteChar(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  if (Info->EditorControl(ECTL_DELETECHAR, NULL))
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  lua_pushboolean(L, Info->EditorControl(ECTL_DELETECHAR, NULL));
+  return 1;
 }
 
 int editor_DeleteBlock(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  if (Info->EditorControl(ECTL_DELETEBLOCK, NULL))
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  lua_pushboolean(L, Info->EditorControl(ECTL_DELETEBLOCK, NULL));
+  return 1;
 }
 
 int editor_UndoRedo(lua_State *L)
@@ -778,9 +776,8 @@ int SetKeyBar(lua_State *L, BOOL editor)
 
   int result = editor ? Info->EditorControl(ECTL_SETKEYBAR, param) :
                         Info->ViewerControl(VCTL_SETKEYBAR, param);
-  if (result)
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  lua_pushboolean(L, result);
+  return 1;
 }
 
 int editor_SetKeyBar(lua_State *L)
@@ -842,26 +839,23 @@ int editor_SetPosition(lua_State *L)
     esp.LeftPos   = luaL_optinteger(L, 5, 0) - 1;
     esp.Overtype  = luaL_optinteger(L, 6, -1);
   }
-  if (Info->EditorControl(ECTL_SETPOSITION, &esp) != 0)
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  lua_pushboolean(L, Info->EditorControl(ECTL_SETPOSITION, &esp));
+  return 1;
 }
 
 int editor_Redraw(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  if (Info->EditorControl(ECTL_REDRAW, NULL))
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  lua_pushboolean(L, Info->EditorControl(ECTL_REDRAW, NULL));
+  return 1;
 }
 
 int editor_ExpandTabs(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   int line_num = luaL_optinteger(L, 1, 0) - 1;
-  if (Info->EditorControl(ECTL_EXPANDTABS, &line_num))
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  lua_pushboolean(L, Info->EditorControl(ECTL_EXPANDTABS, &line_num));
+  return 1;
 }
 
 int PushBookmarks(lua_State *L, int count, int command)
@@ -947,17 +941,15 @@ int editor_SetTitle(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   const wchar_t* text = opt_utf8_string(L, 1, NULL);
-  if (Info->EditorControl(ECTL_SETTITLE, (wchar_t*)text))
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  lua_pushboolean(L, Info->EditorControl(ECTL_SETTITLE, (wchar_t*)text));
+  return 1;
 }
 
 int editor_Quit(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  if (Info->EditorControl(ECTL_QUIT, NULL))
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  lua_pushboolean(L, Info->EditorControl(ECTL_QUIT, NULL));
+  return 1;
 }
 
 int SetEditorSelect(lua_State *L, int pos_table, struct EditorSelect *es)
@@ -1107,9 +1099,8 @@ int editor_AddColor(lua_State *L)
   ec.EndPos       = luaL_checkinteger(L, 3) - 1;
   ec.Color        = luaL_checkinteger(L, 4);
   ec.ColorItem    = 0;
-  if (Info->EditorControl(ECTL_ADDCOLOR, &ec))
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  lua_pushboolean(L, Info->EditorControl(ECTL_ADDCOLOR, &ec));
+  return 1;
 }
 
 int editor_GetColor(lua_State *L)
@@ -1133,9 +1124,8 @@ int editor_SaveFile(lua_State *L)
   esf.FileName = opt_utf8_string(L, 1, L"");
   esf.FileEOL = opt_utf8_string(L, 2, NULL);
   esf.CodePage = luaL_optinteger(L, 3, CP_AUTODETECT);
-  if (Info->EditorControl(ECTL_SAVEFILE, &esf))
-    return lua_pushboolean(L, 1), 1;
-  return 0;
+  lua_pushboolean(L, Info->EditorControl(ECTL_SAVEFILE, &esf));
+  return 1;
 }
 
 int editor_ReadInput(lua_State *L)
@@ -2271,10 +2261,7 @@ int SetDlgItem (lua_State *L, HANDLE hDlg, int numitem, int pos_table, PSInfo *I
   luaL_checktype(L, pos_table, LUA_TTABLE);
   lua_pushvalue(L, pos_table);
   SetFarDialogItem(L, &DialogItem, numitem, 1);
-  if (Info->SendDlgMessage(hDlg, DM_SETDLGITEM, numitem, (LONG_PTR)&DialogItem))
-    lua_pushboolean(L,1);
-  else
-    lua_pushboolean(L,0);
+  lua_pushboolean(L, Info->SendDlgMessage(hDlg, DM_SETDLGITEM, numitem, (LONG_PTR)&DialogItem));
   return 1;
 }
 
@@ -4238,7 +4225,7 @@ int DoAdvControl (lua_State *L, int Command, int Delta)
     case ACTL_GETSHORTWINDOWINFO: {
       struct WindowInfo wi;
       memset(&wi, 0, sizeof(wi));
-      wi.Pos = luaL_checkinteger(L, pos2) - 1;
+      wi.Pos = luaL_optinteger(L, pos2, 0) - 1;
 
       if (Command == ACTL_GETWINDOWINFO) {
         int r = Info->AdvControl(Info->ModuleNumber, Command, &wi);
@@ -4684,6 +4671,15 @@ int win_Sleep (lua_State *L)
   unsigned usec = (unsigned) luaL_checknumber(L,1) * 1000; // msec -> mcsec
   usleep(usec);
   return 0;
+}
+
+int win_Clock (lua_State *L)
+{
+  struct timespec ts;
+  if (0 != clock_gettime(CLOCK_MONOTONIC, &ts))
+    luaL_error(L, "clock_gettime failed");
+  lua_pushnumber(L, ts.tv_sec + (double)ts.tv_nsec/1e9);
+  return 1;
 }
 
 int win_GetCurrentDir (lua_State *L)
@@ -5295,6 +5291,7 @@ const luaL_reg win_funcs[] = {
   {"ExtractKey",                 win_ExtractKey},
   {"GetVirtualKeys",             win_GetVirtualKeys},
   {"Sleep",                      win_Sleep},
+  {"Clock",                      win_Clock},
   {"GetCurrentDir",              win_GetCurrentDir},
   {"SetCurrentDir",              win_SetCurrentDir},
   {"IsProcess64bit",             win_IsProcess64bit},

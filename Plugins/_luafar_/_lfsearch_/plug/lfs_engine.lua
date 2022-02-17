@@ -263,7 +263,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
   local tItems = (aOp == "showall") and {}
   local bFastCount = (aOp == "count") and bForward
 
-  local sChoice
+  local sChoice, bEurBegin
   local nFound, nReps, nLine = 0, 0, 0
   local tInfo, tStartPos = editor.GetInfo(), editor.GetInfo()
   local nOp, nOpMax, last_update = 0, 5, 0
@@ -517,6 +517,10 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
             else
               ShowFound(14/2 + 2)
               sChoice = fChoice(sTitle, sLine:sub(fr, to), sRepFinal)
+              if sChoice == "all" then
+                editor.UndoRedo("EUR_BEGIN") -- for undoing the bulk replacement in a single step
+                bEurBegin = true
+              end
               -----------------------------------------------------------------
               if sChoice == "yes" or sChoice == "all" then
                 if Replace() then break end
@@ -548,6 +552,8 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
   update_info()
   if aOp == "showall" then
     ShowCollectedLines(tItems, aParams)
+  elseif aOp == "replace" and bEurBegin then
+    editor.UndoRedo("EUR_END")
   end
   return nFound, nReps, sChoice
 end

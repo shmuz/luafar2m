@@ -990,7 +990,7 @@ id=153
 lv=2
 dt=Text
 nm=far.AdvControl
-mtime=3853933101
+mtime=3854226615
 <article>
 #_Result = far.AdvControl (Command, Param [, Param2])
 #_
@@ -1059,7 +1059,7 @@ mtime=3853933101
 #_             2 numbers (e.g. 2,4), if Param==true;
 #_
 #_ACTL_GETWINDOWINFO:
-#_    Param1:  window number; 1-based integer
+#_    Param1:  window number; 1-based integer (optional; default=0)
 #_    Result:  table (see its fields below), or nil
 #_        Type:      integer
 #_        Pos:       integer (1-based)
@@ -1069,7 +1069,7 @@ mtime=3853933101
 #_        Name:      string
 #_
 #_ACTL_GETSHORTWINDOWINFO:
-#_    Param1:  window number; 1-based integer
+#_    Param1:  window number; 1-based integer (optional; default=0)
 #_    Result:  table (see its fields below), or nil
 #_        Type:      integer
 #_        Pos:       integer (1-based)
@@ -3038,14 +3038,16 @@ id=33
 lv=2
 dt=Text
 nm=editor.InsertText
+mtime=3854221352
 <article>
-#_result = editor.InsertText (text)
+#_result = editor.InsertText (text [, redraw])
 #_
 #_**Parameters:**
-#_  text: string
+#_  text:    string
+#_  redraw:  boolean (default=false)
 #_
 #_**Returns:**
-#_  result: boolean
+#_  result:  boolean
 #_
 #_**Far API used:**
 #_  EditorControl, ECTL_INSERTTEXT
@@ -3126,6 +3128,7 @@ id=138
 lv=2
 dt=Text
 nm=editor.ProcessKey
+mtime=3854223043
 <article>
 #_editor.ProcessKey (key)
 #_
@@ -3135,12 +3138,9 @@ nm=editor.ProcessKey
 #_**Returns:**
 #_  nothing
 #_
-#_**Note:**
-#_  There is a file named farkeys.lua that returns a table
-#_  containing values of all constants from *farkeys.hpp* indexed
-#_  by their string names. It's typical use is like that:
-#_      local FK = require "farkeys"
-#_      editor.ProcessKey (FK.KEY_CTRLEND)
+#_**Example:**
+#_  local F = far.Flags
+#_  editor.ProcessKey (F.KEY_CTRLEND)
 #_
 #_**Far API used:**
 #_  EditorControl, ECTL_PROCESSKEY
@@ -7490,6 +7490,33 @@ nm=Time related functions
 ctime=3851399790
 mtime=3851399790
 <article>
+</article>
+</node>
+<node>
+id=464
+lv=3
+dt=Text
+nm=win.Clock
+ctime=3854290368
+mtime=3854291050
+<article>
+#_result = win.Clock ()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  result : number
+#_
+#_**Description:**
+#_  The function returns value that is some quantity expressed
+#_  in *seconds* and it usually has a fractional part.
+#_
+#_**Linux API used:**
+#_  clock_gettime
+#_
+#_@@@
+#_
 </article>
 </node>
 <node>

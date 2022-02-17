@@ -59,7 +59,9 @@ local RequireWithReload, ResetPackageLoaded do
     -- Lua global tables --
     _G=1; coroutine=1; debug=1; io=1; math=1; os=1; package=1; string=1; table=1;
     -- LuaFAR global tables --
-     actl=1; bit=1; editor=1; far=1; panel=1; regex=1; utf8=1; viewer=1; win=1;
+    actl=1; bit=1; editor=1; far=1; panel=1; regex=1; utf8=1; viewer=1; win=1;
+    -- Other libraries
+    moonscript=1;
   }
 
   RequireWithReload = function(name)
@@ -109,7 +111,7 @@ end
 
 local function ConvertUserHotkey(str)
   local d = 0
-  for elem in str:upper():gmatch("[^+-]+") do
+  for elem in str:upper():gmatch("[^+%-]+") do
     if elem == "ALT" then d = bor(d, 0x01)
     elseif elem == "CTRL" then d = bor(d, 0x02)
     elseif elem == "SHIFT" then d = bor(d, 0x04)
