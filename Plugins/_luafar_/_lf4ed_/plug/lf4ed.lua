@@ -454,7 +454,7 @@ end
 
 local function export_Configure (ItemNumber)
   Configure({From="config"})
-  return true
+  return false
 end
 
 local function AddMenuItems (src, trg)
@@ -513,18 +513,39 @@ Available commands:
   far.Message(syn, M.MPluginName..": "..M.MCommandSyntaxTitle, ";Ok", "l")
 end
 
+local function ExecuteCommand (args, sFrom)
+  local env = setmetatable({}, {__index=_G})
+  for _,v in ipairs(args) do
+    if v.command then
+      local oldConfig = plug_config()
+      local wrapfunc = function()
+        return RunUserFunc({From=sFrom}, v.command, unpack(v))
+      end
+      local ok, res = xpcall(wrapfunc, traceback3)
+      plug_config(oldConfig)
+      if not ok then ScriptErrMsg(res) end
+      break
+    elseif v.opt == "r" then
+      local f = assert(loadfile(v.param))
+      setfenv(f, env)(unpack(v))
+      break
+    elseif v.opt == "e" then
+      local f = assert(loadstring(v.param))
+      setfenv(f, env)()
+    elseif v.opt == "l" then
+      require(v.param)
+    end
+  end
+end
+
 -------------------------------------------------------------------------------
 -- This function processes both command line calls and calls from macros.
--- Externally, it should always be called with a string 1st argument.
--- Internally, it does two passes: the 1-st pass is intended for syntax checking;
--- if the syntax is correct, the function calls itself with a table 1st argument.
 -------------------------------------------------------------------------------
 local function ProcessCommand (source, sFrom)
-  local pass2 = (type(source) == "table")
-  local args = pass2 and source or SplitCommandLine(source)
+  local args = SplitCommandLine(source)
   if #args==0 then return CommandSyntaxMessage() end
   local opt, async
-  local env = setmetatable({}, {__index=_G})
+  local args2 = {}
   for i,v in ipairs(args) do
     local param
     if opt then
@@ -533,66 +554,45 @@ local function ProcessCommand (source, sFrom)
       opt, param = v:match("^%-([aelr])(.*)")
       if not opt then return CommandSyntaxMessage() end
     else
-      local object = _Plugin.CommandTable[v]
-      if not object then return CommandSyntaxMessage() end
-      if pass2 then
-        local oldConfig = plug_config()
-        local wrapfunc = function()
-          return RunUserFunc({From=sFrom}, object, unpack(args, i+1))
-        end
-        local ok, res = xpcall(wrapfunc, traceback3)
-        plug_config(oldConfig)
-        if not ok then ScriptErrMsg(res) end
-      end
+      local command = _Plugin.CommandTable[v]
+      if not command then return CommandSyntaxMessage() end
+      table.insert(args2, { command=command; unpack(args, i+1); })
       break
     end
     if opt == "a" then
       opt, async = nil, true
     elseif param ~= "" then
       if opt=="r" then
-        if pass2 then
-          local f = assert(loadfile(param))
-          setfenv(f, env)(unpack(args, i+1))
-        end
+        table.insert(args2, { opt=opt; param=param; unpack(args, i+1); })
         break
-      elseif opt=="e" then
-        if pass2 then
-          local f = assert(loadstring(param))
-          setfenv(f, env)()
-        end
-      elseif opt=="l" then
-        if pass2 then require(param) end
+      else
+        table.insert(args2, { opt=opt; param=param; })
       end
       opt = nil
     end
   end
-  if not pass2 then
-    if async then
-      ---- autocomplete:good; Escape response:bad when timer period < 20;
-      far.Timer(30, function(h) h:Close() ProcessCommand(args, sFrom) end)
-    else
-      ---- autocomplete:bad; Escape responsiveness:good;
-      return ProcessCommand(args, sFrom)
-    end
+  if async then
+    ---- autocomplete:good; Escape response:bad when timer period < 20;
+    far.Timer(30, function(h) h:Close() ExecuteCommand(args2, sFrom) end)
+  else
+    ---- autocomplete:bad; Escape responsiveness:good;
+    return ExecuteCommand(args2, sFrom)
   end
 end
 
 local function export_OpenPlugin (aFrom, aItem)
 
   -- Called from macro
-  if band(aFrom, bnot(F.OPEN_FROM_MASK)) ~= 0 then
-    if band(aFrom, F.OPEN_FROMMACRO) ~= 0 then
-      aFrom = band(aFrom, bnot(F.OPEN_FROMMACRO))
-      if band(aFrom, F.OPEN_FROMMACRO_MASK) == F.OPEN_FROMMACROSTRING then
-        local map = {
-          [F.MACROAREA_SHELL]  = "panels",
-          [F.MACROAREA_EDITOR] = "editor",
-          [F.MACROAREA_VIEWER] = "viewer",
-          [F.MACROAREA_DIALOG] = "dialog",
-        }
-        local lowByte = band(aFrom, F.OPEN_FROM_MASK)
-        ProcessCommand(aItem, map[lowByte] or aFrom)
-      end
+  if band(aFrom, F.OPEN_FROMMACRO) ~= 0 then
+    if band(aFrom, F.OPEN_FROMMACROSTRING) ~= 0 then
+      local map = {
+        [F.MACROAREA_SHELL]  = "panels",
+        [F.MACROAREA_EDITOR] = "editor",
+        [F.MACROAREA_VIEWER] = "viewer",
+        [F.MACROAREA_DIALOG] = "dialog",
+      }
+      local area = band(aFrom, F.OPEN_FROM_MASK)
+      ProcessCommand(aItem, map[area] or aFrom)
     end
     return
   end
@@ -651,7 +651,7 @@ local function export_GetPluginInfo()
   local flags = bor(F.PF_EDITOR, F.PF_DISABLEPANELS)
   local useritems = _Plugin.UserItems
   if useritems then
-    if #useritems.panels > 0 then flags = F.PF_EDITOR end
+    if #useritems.panels > 0 then flags = band(flags, bnot(F.PF_DISABLEPANELS)) end
     if #useritems.viewer > 0 then flags = bor(flags, F.PF_VIEWER) end
     if #useritems.dialog > 0 then flags = bor(flags, F.PF_DIALOG) end
   end
