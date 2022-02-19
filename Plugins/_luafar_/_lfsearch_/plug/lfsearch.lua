@@ -1,5 +1,5 @@
 -- replace.lua
-
+-- luacheck: globals lfsearch
 --[[----------------------------------------------------------------------------
 *  LuaFAR 2.6 is required because of 'gsub' method of compiled Far regex.
    This method is used in the "fast count" case, namely
@@ -11,6 +11,7 @@
 *  LuaFAR 2.8 is required because of DM_LISTSETDATA, DM_LISTGETDATA.
 ------------------------------------------------------------------------------]]
 local ReqLuafarVersion = "2.8"
+lfsearch = {}
 
 -- CONFIGURATION : keep it at the file top !!
 local Cfg = {
@@ -39,7 +40,7 @@ local field = Sett.field
 local SETTINGS_KEY  = "shmuz"
 local SETTINGS_NAME = "plugin_lfsearch"
 local F = far.Flags
-local LibFunc, History, ModuleDir
+local EditorAction, History, ModuleDir
 
 
 local function Require (name)
@@ -48,7 +49,7 @@ local function Require (name)
 end
 
 local function InitUpvalues (_Plugin)
-  LibFunc   = Require("luarepl").SearchOrReplace
+  EditorAction   = Require("lfs_editmain").EditorAction
   History   = _Plugin.History
   field(History, Cfg.histfield_Config)
   ModuleDir = _Plugin.ModuleDir
@@ -72,10 +73,11 @@ end
 
 local function MakeMenuItems (aUserMenuFile)
   local items = {
-    {text=M.MMenuFind,    action="search" },
-    {text=M.MMenuReplace, action="replace"},
-    {text=M.MMenuRepeat,  action="repeat" },
-    {text=M.MMenuConfig,  action="config" },
+    {text=M.MMenuFind,      action="search" },
+    {text=M.MMenuReplace,   action="replace"},
+    {text=M.MMenuRepeat,    action="repeat" },
+    {text=M.MMenuRepeatRev, action="repeat_rev"},
+    {text=M.MMenuConfig,    action="config" },
   }
   local Info = win.GetFileInfo(aUserMenuFile)
   if Info and not Info.FileAttributes:find("d") then
@@ -109,7 +111,7 @@ local function export_OpenPlugin (From, Item)
       if ret.action then
         local data = field(History, Cfg.histfield_Main)
         data.fUserChoiceFunc = nil
-        LibFunc (ret.action, data, false)
+        EditorAction (ret.action, data, false)
       elseif ret.filename then
         assert(loadfile(ret.filename))(ret.param1, ret.param2)
       end
@@ -131,12 +133,12 @@ local function export_GetPluginInfo()
   }
 end
 
-function SearchOrReplace (aOp, aData)
+function lfsearch.EditorAction (aOp, aData)
   assert(type(aOp)=="string", "arg #1: string expected")
   assert(type(aData)=="table", "arg #2: table expected")
-  local newdata = field(History, Cfg.histfield_Main)
+  local newdata = {}
   for k,v in pairs(aData) do newdata[k] = v end
-  return LibFunc(aOp, newdata, true)
+  return EditorAction(aOp, newdata, true)
 end
 
 local function SetExportFunctions()

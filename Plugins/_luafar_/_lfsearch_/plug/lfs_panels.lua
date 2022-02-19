@@ -2,7 +2,7 @@
 
 local M           = require "lfs_message"
 local far2_dialog = require "far2.dialog"
-local luarepl     = require "luarepl"
+local Common      = require "lfs_common"
 local Sett        = require "far2.settings"
 local field = Sett.field
 
@@ -100,7 +100,7 @@ local function GetCodePages (aData)
 
   -- Fill predefined code pages
   local used = {}
-  for i,v in ipairs(items) do
+  for _,v in ipairs(items) do
     if v.CodePage then
       used[v.CodePage] = true
       local info = win.GetCPInfo(v.CodePage)
@@ -120,7 +120,7 @@ local function GetCodePages (aData)
   local pages = assert(win.EnumSystemCodePages())
   for i,v in ipairs(pages) do pages[i]=tonumber(v) end
   table.sort(pages)
-  for k,v in ipairs(pages) do
+  for _,v in ipairs(pages) do
     if not used[v] then
       local info = win.GetCPInfo(v)
       if info and info.MaxCharSize == 1 then
@@ -174,7 +174,7 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
   local dataMain = field(aHistory, "main")
   local dataPanels = field(aHistory, "panels")
   local D = far2_dialog.NewDialog()
-  local Frame = luarepl.CreateSRFrame(D, dataMain, false)
+  local Frame = Common.CreateSRFrame(D, dataMain, false)
   ------------------------------------------------------------------------------
   D.dblbox      = {"DI_DOUBLEBOX",3, 1,72, 0, 0, 0, 0, 0, M.MTitlePanels}
   D.lab         = {"DI_TEXT",     5, 2, 0, 0, 0, 0, 0, 0, M.MFileMask}
@@ -248,7 +248,7 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
         local pos = hDlg:ListGetCurPos(D.cmbCodePage.id)
         dataPanels.iCodePage = D.cmbCodePage.ListItems[pos.SelectPos].CodePage
         ------------------------------------------------------------------------
-        local pos = hDlg:ListGetCurPos(D.cmbSearchArea.id)
+        pos = hDlg:ListGetCurPos(D.cmbSearchArea.id)
         dataPanels.iSearchArea = pos.SelectPos
         ------------------------------------------------------------------------
         D.sFileMask:SaveText(hDlg, dataPanels)

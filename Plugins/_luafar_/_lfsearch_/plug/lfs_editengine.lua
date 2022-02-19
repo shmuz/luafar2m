@@ -1,4 +1,4 @@
--- lfs_engine.lua
+-- lfs_editengine.lua
 
 local M = require "lfs_message"
 local F = far.Flags
@@ -35,7 +35,7 @@ local function GetReplaceFunction (aReplacePat)
     return function(collect, nReps)
       local rep, stack = "", {}
       local case, instant_case
-      for k,v in ipairs(aReplacePat) do
+      for _,v in ipairs(aReplacePat) do
         local instant_case_set = nil
         ---------------------------------------------------------------------
         if v[1] == "case" then
@@ -213,8 +213,8 @@ local function ShowCollectedLines (items, params)
                        :gsub("^%s*",    -- delete leading spaces
       function(c)                       -- adjust offsets for highlighting
         local len_delete = min(c:len(), item.fr-1)
-        local n = maxno + 2 - len_delete
-        item.offset, item.fr, item.to = n, item.fr+n, item.to+n
+        local m = maxno + 2 - len_delete
+        item.offset, item.fr, item.to = m, item.fr+m, item.to+m
         return c:sub(len_delete + 1)
       end)
     item.text = fmt:format(item.lineno+1, s)
@@ -558,4 +558,6 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
   return nFound, nReps, sChoice
 end
 
-return DoAction
+return {
+  DoAction = DoAction;
+}

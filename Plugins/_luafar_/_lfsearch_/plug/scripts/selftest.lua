@@ -49,7 +49,7 @@ end
 local function RunOneTest (op, data, refFound, refReps)
   data.sRegexLib = sRegexLib or "far"
   editor.SetPosition(data.CurLine or 1, data.CurPos or 1)
-  local nFound, nReps = SearchOrReplace(op, data)
+  local nFound, nReps = lfsearch.EditorAction(op, data)
   if nFound ~= refFound or nReps ~= refReps then
     ProtectedError(
       "nFound="        .. nFound..
@@ -404,6 +404,6 @@ do
   local libs = ...
   if type(libs) ~= "table" then libs = { "far" } end
   for _,lib in ipairs(libs) do sRegexLib = lib; test1(); end
-  SearchOrReplace("test:search", {})  -- reset history
+  lfsearch.EditorAction("test:search", {})  -- reset history
   far.Message(M.MAllTestsOk, M.MMenuTitle)
 end

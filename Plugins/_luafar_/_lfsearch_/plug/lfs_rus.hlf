@@ -237,9 +237,9 @@ $ #LuaFAR Поиск (версия 2.4)#
        применяется в LuaFAR for Editor)
 
   Функции:
-    *  #SearchOrReplace# (основная функция плагина; см. описание ниже).
+    *  #lfsearch.EditorAction# (основная функция плагина; см. описание ниже)
 
-^#nFound, nReps = SearchOrReplace (Operation, Data)#
+^#nFound, nReps = lfsearch.EditorAction (Operation, Data)#
 
  #Operation# - одна из предопределённых операций.
  Следующие операции соответствуют пунктам меню плагина:

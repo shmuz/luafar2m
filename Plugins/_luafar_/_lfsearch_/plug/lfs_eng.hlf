@@ -226,10 +226,9 @@ It can be any Lua type.
     *  dialog  (namespace #far2.dialog#, same as in LuaFAR for Editor)
 
   Functions:
-    *  #SearchOrReplace# (the main plugin function; see description
-       below).
+    *  #lfsearch.EditorAction# (the main plugin function; see description below)
 
-^#nFound, nReps = SearchOrReplace (Operation, Data)#
+^#nFound, nReps = lfsearch.EditorAction (Operation, Data)#
 
  #Operation# - one of predefined strings.
  The following operations correspond to the plugin menu items:
