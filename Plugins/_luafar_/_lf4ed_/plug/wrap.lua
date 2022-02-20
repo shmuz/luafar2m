@@ -2,9 +2,8 @@
  Goal: wrap long lines without breaking words.
 --]]
 
-local far2_dialog = require "far2.dialog"
-
-local M = require "lf4ed_message"
+local sd = require "far2.simpledialog"
+local M  = require "lf4ed_message"
 local F = far.Flags
 local insert, concat = table.insert, table.concat
 
@@ -207,51 +206,52 @@ local function PrefixBlock (aPrefix)
 end
 
 
-local dialogGuid = win.Uuid("6D5C7EC2-8C2F-413C-81E6-0CC8FFC0799A")
-
 local function ExecuteWrapDialog (aData)
   local HIST_PREFIX = "LuaFAR\\Reformat\\Prefix"
-  local D = far2_dialog.NewDialog()
-  D._           = {"DI_DOUBLEBOX",3,1,72,10,0, 0, 0, 0, M.MReformatBlock}
-  D.cbxReformat = {"DI_CHECKBOX", 5,2,0,0,  0, 1, 0, 0, M.MReformatBlock2}
-  D.labStart    = {"DI_TEXT",     9,3,0,0,  0, 0, 0, 0, M.MStartColumn}
-  D.edtColumn1  = {"DI_FIXEDIT", 22,3,25,4, 0, 0, 0, 0, "1"}
-  D.labEnd      = {"DI_TEXT",    29,3,0,0,  0, 0, 0, 0, M.MEndColumn}
-  D.edtColumn2  = {"DI_FIXEDIT", 41,3,44,4, 0, 0, 0, 0, "70"}
-  D.cbxJustify  = {"DI_CHECKBOX", 9,4,0,0,  0, 0, 0, 0, M.MJustifyBorder}
-  D.sep         = {"DI_TEXT",     5,5,0,0,  0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
-  D.cbxPrefix   = {"DI_CHECKBOX", 5,6,0,0,  0, 0, 0, 0, M.MPrefixLines}
-  D.edtPrefix   = {"DI_EDIT",    17,7,70,6, 0, HIST_PREFIX, "DIF_HISTORY", 0, "S:4"}
-  D.labCommand  = {"DI_TEXT",     9,7,0,0,  0, 0, 0, 0, M.MCommand}
-  D.sep         = {"DI_TEXT",     5,8,0,0,  0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
-  D.btnOk       = {"DI_BUTTON",   0,9,0,0,  0, 0, "DIF_CENTERGROUP", 1, M.MOk}
-  D.btnCancel   = {"DI_BUTTON",   0,9,0,0,  0, 0, "DIF_CENTERGROUP", 0, M.MCancel}
+  local Items = {
+    guid = "6D5C7EC2-8C2F-413C-81E6-0CC8FFC0799A";
+    width = 76;
+    help = "Wrap";
+    {tp="dbox";    text=M.MReformatBlock;                                 },
+    {tp="chbox";   name="cbxReformat"; text=M.MReformatBlock2; val=1;     },
+    {tp="text";    name="labStart";          x1=9;  text=M.MStartColumn;  },
+    {tp="fixedit"; name="edtColumn1"; y1=""; x1=22; x2=25; val=1;         },
+    {tp="text";    name="labEnd";     y1=""; x1=29; text=M.MEndColumn;    },
+    {tp="fixedit"; name="edtColumn2"; y1=""; x1=41; x2=44; val=70;        },
+    {tp="chbox";   name="cbxJustify";        x1=9; text=M.MJustifyBorder; },
+    {tp="sep";                                                            },
+    {tp="chbox";   name="cbxPrefix";  text=M.MPrefixLines;                },
+    {tp="text";    name="labCommand"; x1=9; text=M.MCommand;              },
+    {tp="edit";    name="edtPrefix";  x1=17; y1=""; hist=HIST_PREFIX; val="S:4"; },
+    {tp="sep";                                                            },
+    {tp="butt";    text=M.MOk;     centergroup=1; default=1;              },
+    {tp="butt";    text=M.MCancel; centergroup=1; cancel=1;               },
+  }
+  local Pos = sd.Indexes(Items)
   ----------------------------------------------------------------------------
   -- Handlers of dialog events --
   local function Check (hDlg, c1, ...)
-    local enbl = c1:GetCheck(hDlg)
-    for _, elem in ipairs {...} do elem:Enable(hDlg, enbl) end
+    local enbl = hDlg:GetCheck(c1)
+    for _, elem in ipairs {...} do hDlg:Enable(elem, enbl) end
   end
 
-  local function DlgProc (hDlg, msg, param1, param2)
+  function Items.proc (hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
-      Check (hDlg, D.cbxReformat, D.labStart, D.edtColumn1, D.labEnd, D.edtColumn2, D.cbxJustify)
-      Check (hDlg, D.cbxPrefix, D.edtPrefix, D.labCommand)
+      Check (hDlg, Pos.cbxReformat, Pos.labStart, Pos.edtColumn1, Pos.labEnd, Pos.edtColumn2, Pos.cbxJustify)
+      Check (hDlg, Pos.cbxPrefix, Pos.edtPrefix, Pos.labCommand)
     elseif msg == F.DN_BTNCLICK then
-      if param1 == D.cbxReformat.id then
-        Check (hDlg, D.cbxReformat, D.labStart, D.edtColumn1, D.labEnd, D.edtColumn2, D.cbxJustify)
-      elseif param1 == D.cbxPrefix.id then
-        Check (hDlg, D.cbxPrefix, D.edtPrefix, D.labCommand)
+      if param1 == Pos.cbxReformat then
+        Check (hDlg, param1, Pos.labStart, Pos.edtColumn1, Pos.labEnd, Pos.edtColumn2, Pos.cbxJustify)
+      elseif param1 == Pos.cbxPrefix then
+        Check (hDlg, param1, Pos.edtPrefix, Pos.labCommand)
       end
-    elseif msg == F.DN_GETDIALOGINFO then
-      return dialogGuid
     end
   end
   ----------------------------------------------------------------------------
-  far2_dialog.LoadData(D, aData)
-  local ret = far.Dialog (-1,-1,76,12,"Wrap",D,0,DlgProc)
-  if ret == D.btnOk.id then
-    far2_dialog.SaveData(D, aData)
+  sd.LoadData(aData, Items)
+  local out = sd.Run(Items)
+  if out then
+    sd.SaveData(out, aData)
     return true
   end
 end

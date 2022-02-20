@@ -1,23 +1,25 @@
 -- file created: 2008-12-18
 
-local dialog = require "far2.dialog"
+local sd = require "far2.simpledialog"
 local M = require "lf4ed_message"
 
 local function ExecuteDialog (aData)
-  local D = dialog.NewDialog()
-  D._                   = {"DI_DOUBLEBOX",3,1,42, 8, 0, 0, 0, 0, M.MPluginSettings}
-  D.ReloadDefaultScript = {"DI_CHECKBOX", 6, 2,0,0,  0, 0, 0, 0, M.MReloadDefaultScript}
-  D.RequireWithReload   = {"DI_CHECKBOX", 6, 3,0,0,  0, 0, 0, 0, M.MRequireWithReload}
-  D.UseStrict           = {"DI_CHECKBOX", 6, 4,0,0,  0, 0, 0, 0, M.MUseStrict}
-  D.ReturnToMainMenu    = {"DI_CHECKBOX", 6, 5,0,0,  0, 0, 0, 0, M.MReturnToMainMenu}
-  D.sep       = {"DI_TEXT",     0, 6, 0,0, 0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
-  D.btnOk     = {"DI_BUTTON",   0, 7, 0,0, 0, 0, "DIF_CENTERGROUP", 1, M.MOk}
-  D.btnCancel = {"DI_BUTTON",   0, 7, 0,0, 0, 0, "DIF_CENTERGROUP", 0, M.MCancel}
+  local Items = {
+    width=46;
+    {tp="dbox";  text=M.MPluginSettings;},
+    {tp="chbox"; text=M.MReloadDefaultScript; name="ReloadDefaultScript"; },
+    {tp="chbox"; text=M.MRequireWithReload;   name="RequireWithReload";   },
+    {tp="chbox"; text=M.MUseStrict;           name="UseStrict";           },
+    {tp="chbox"; text=M.MReturnToMainMenu;    name="ReturnToMainMenu";    },
+    {tp="sep";                                                            },
+    {tp="butt";  text=M.MOk;     default=1; centergroup=1;                },
+    {tp="butt";  text=M.MCancel; cancel=1;  centergroup=1;                },
+  }
   ------------------------------------------------------------------------------
-  dialog.LoadData(D, aData)
-  local ret = far.Dialog (-1,-1,46,10,"PluginConfig",D)
-  if ret == D.btnOk.id then
-    dialog.SaveData(D, aData)
+  sd.LoadData(aData, Items)
+  local out = sd.Run(Items)
+  if out then
+    sd.SaveData(out, aData)
     return true
   end
 end

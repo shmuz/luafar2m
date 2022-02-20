@@ -227,7 +227,7 @@ local function Run (inData)
 
     local focus = v.focus and 1 or 0
     local dflt = (v.default or v.defaultbutton) and 1 or 0
-    local text = v.text or (type(v.val)=="string" and v.val) or ""
+    local text = tostring(v.text or v.val or "")
     local hist = v.hist or ""
     local mask = v.mask or ""
 
@@ -363,19 +363,21 @@ local function Run (inData)
   local function get_dialog_state(hDlg)
     local out = {}
     for i,v in ipairs(inData) do
-      local tp = type(v.name)
-      if tp=="string" or tp=="number" then
-        local item = hDlg:GetDlgItem(i)
-        tp = item[IND_TYPE]
-        if tp==F.DI_CHECKBOX then
-          out[v.name] = (item[IND_VALUE]==2) and 2 or (item[IND_VALUE] ~= 0) -- false,true,2
-        elseif tp==F.DI_RADIOBUTTON then
-          out[v.name] = (item[IND_VALUE] ~= 0) -- boolean
-        elseif tp==F.DI_EDIT or tp==F.DI_FIXEDIT or tp==F.DI_PSWEDIT then
-          out[v.name] = item[IND_DATA] -- string
-        elseif tp==F.DI_COMBOBOX or tp==F.DI_LISTBOX then
-          local pos = hDlg:ListGetCurPos(i)
-          out[v.name] = pos.SelectPos
+      if not (v.noauto or v.nosave) then
+        local tp = type(v.name)
+        if tp=="string" or tp=="number" then
+          local item = hDlg:GetDlgItem(i)
+          tp = item[IND_TYPE]
+          if tp==F.DI_CHECKBOX then
+            out[v.name] = (item[IND_VALUE]==2) and 2 or (item[IND_VALUE] ~= 0) -- false,true,2
+          elseif tp==F.DI_RADIOBUTTON then
+            out[v.name] = (item[IND_VALUE] ~= 0) -- boolean
+          elseif tp==F.DI_EDIT or tp==F.DI_FIXEDIT or tp==F.DI_PSWEDIT then
+            out[v.name] = item[IND_DATA] -- string
+          elseif tp==F.DI_COMBOBOX or tp==F.DI_LISTBOX then
+            local pos = hDlg:ListGetCurPos(i)
+            out[v.name] = pos.SelectPos
+          end
         end
       end
     end
@@ -457,8 +459,26 @@ local function Indexes(inData)
   return Pos, Elem
 end
 
+local function LoadData(Data, Items)
+  assert(type(Data)=="table", "arg #1 is not a table")
+  assert(type(Items)=="table", "arg #2 is not a table")
+  for _,v in ipairs(Items) do
+    if v.name and not (v.noauto or v.noload) and Data[v.name]~=nil then
+      v.val = Data[v.name]
+    end
+  end
+end
+
+local function SaveData(Out, Data)
+  assert(type(Out)=="table", "arg #1 is not a table")
+  assert(type(Data)=="table", "arg #2 is not a table")
+  for k,v in pairs(Out) do Data[k]=v end
+end
+
 return {
   OpenInEditor = OpenInEditor;
   Run = Run;
   Indexes = Indexes;
+  LoadData = LoadData;
+  SaveData = SaveData;
 }

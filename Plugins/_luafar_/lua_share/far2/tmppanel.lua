@@ -6,7 +6,7 @@ local Package = {}
 
 -- UPVALUES : keep them above all function definitions !!
 --### local _Su     = require "sysutils"
-local _Dialog = require "far2.dialog"
+local sd = require "far2.simpledialog"
 
 local Opt = {
   AddToDisksMenu            = true,
@@ -432,76 +432,60 @@ end
 
 
 function Env:Configure()
-  local DIALOG_WIDTH = 78
-  local DIALOG_HEIGHT = 22
-  local DC = math.floor(DIALOG_WIDTH/2-1)
+  local width = 78
+  local DC = math.floor(width/2-1)
 
-  local D = _Dialog.NewDialog()
+  local Items = {
+    width = width;
+    help = "Config";
+    {tp="dbox"; text=M.MConfigTitle; },
+    {tp="chbox"; name="AddToDisksMenu"; text=M.MConfigAddToDisksMenu; },
+    {tp="chbox"; name="AddToPluginsMenu"; y1=""; x1=DC; text=M.MConfigAddToPluginsMenu; },
+    {tp="sep"; ystep=2; },
+    ------------------------------------------------------------------------------------------------
+    {tp="chbox"; name="CommonPanel";    text=M.MConfigCommonPanel; },
+    {tp="chbox"; name="SafeModePanel";  text=M.MSafeModePanel; },
+--  {tp="chbox"; name="AnyInPanel"; text=M.MAnyInPanel; },
+    {tp="chbox"; name="CopyContents"; tristate=1; text=M.MCopyContents; };
+    {tp="chbox"; name="ReplaceMode";              x1=DC; ystep=-2; text=M.MReplaceInFilelist; },
+    {tp="chbox"; name="MenuForFilelist";          x1=DC; text=M.MMenuForFilelist; },
+    {tp="chbox"; name="NewPanelForSearchResults"; x1=DC; text=M.MNewPanelForSearchResults; },
+    {tp="chbox"; name="SavePanels";               x1=DC; text=M.MSavePanelsOnFarExit; },
+    {tp="sep"; },
+    ------------------------------------------------------------------------------------------------
+    {tp="text"; text=M.MColumnTypes;          },
+    {tp="edit"; name="ColumnTypes";  x2=DC-2; },
+    {tp="text"; text=M.MColumnWidths;         },
+    {tp="edit"; name="ColumnWidths"; x2=DC-2; },
+    {tp="text"; x1=DC; ystep=-3; text=M.MStatusColumnTypes; },
+    {tp="edit"; x1=DC; name="StatusColumnTypes";   },
+    {tp="text"; x1=DC; text=M.MStatusColumnWidths; },
+    {tp="edit"; x1=DC; name="StatusColumnWidths";  },
+    {tp="chbox"; name="FullScreenPanel"; text=M.MFullScreenPanel; },
+    {tp="sep"; },
+    ------------------------------------------------------------------------------------------------
+    {tp="text"; text=M.MMask;         },
+    {tp="edit"; name="Mask"; x2=DC-2; },
+    {tp="text"; x1=DC; ystep=-1; text=M.MPrefix; },
+    {tp="edit"; x1=DC; name="Prefix"; },
+    {tp="sep"; },
+    ------------------------------------------------------------------------------------------------
+    {tp="butt"; text=M.MOk;     centergroup=1; default=1; },
+    {tp="butt"; text=M.MCancel; centergroup=1; cancel=1;  },
+  }
+  local _,Elem = sd.Indexes(Items)
 
-  D._                = {"DI_DOUBLEBOX", 3,1,DIALOG_WIDTH-4,DIALOG_HEIGHT-2, 0,0,0,0, M.MConfigTitle}
-  D.AddToDisksMenu   = {"DI_CHECKBOX",  5,2,0,0, 0,0,0,0, M.MConfigAddToDisksMenu}
-  D.AddToPluginsMenu = {"DI_CHECKBOX", DC,2,0,0, 0,0,0,0, M.MConfigAddToPluginsMenu}
-  D.separator        = {"DI_TEXT",      5,4,0,0, 0,0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0,""}
+  sd.LoadData(self.Opt, Items)
 
-  D.CommonPanel     = {"DI_CHECKBOX",  5,5,0,0, 0,0,0,0, M.MConfigCommonPanel}
-  D.SafeModePanel   = {"DI_CHECKBOX",  5,6,0,0, 0,0,0,0, M.MSafeModePanel}
---D.AnyInPanel      = {"DI_CHECKBOX",  5,7,0,0, 0,0,0,0, M.MAnyInPanel}
-  D.CopyContents    = {"DI_CHECKBOX",  5,7,0,0, 0,0,"DIF_3STATE",0, M.MCopyContents}
-  D.ReplaceMode     = {"DI_CHECKBOX", DC,5,0,0, 0,0,0,0, M.MReplaceInFilelist}
-  D.MenuForFilelist = {"DI_CHECKBOX", DC,6,0,0, 0,0,0,0, M.MMenuForFilelist}
-  D.NewPanelForSearchResults = {"DI_CHECKBOX", DC,7,0,0, 0,0,0,0, M.MNewPanelForSearchResults}
-  D.SavePanels      = {"DI_CHECKBOX", DC,8,0,0, 0,0,0,0, M.MSavePanelsOnFarExit}
-  D.separator       = {"DI_TEXT",      5,9,0,0, 0,0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0,""}
+  local out = sd.Run(Items)
+  if out then
+    sd.SaveData(out, self.Opt)
 
-  D._                  = {"DI_TEXT",  5,10,0,0,   0,0,0,0, M.MColumnTypes}
-  D.ColumnTypes        = {"DI_EDIT",  5,11,36,11, 0,0,0,0, ""}
-  D._                  = {"DI_TEXT",  5,12,0,0,   0,0,0,0, M.MColumnWidths}
-  D.ColumnWidths       = {"DI_EDIT",  5,13,36,13, 0,0,0,0, ""}
-  D._                  = {"DI_TEXT", DC,10,0,0,   0,0,0,0, M.MStatusColumnTypes}
-  D.StatusColumnTypes  = {"DI_EDIT", DC,11,72,11, 0,0,0,0, ""}
-  D._                  = {"DI_TEXT", DC,12,0,0,   0,0,0,0, M.MStatusColumnWidths}
-  D.StatusColumnWidths = {"DI_EDIT", DC,13,72,13, 0,0,0,0, ""}
-  D.FullScreenPanel    = {"DI_CHECKBOX",  5,14,0,0,   0,0,0,0, M.MFullScreenPanel}
-  D.separator          = {"DI_TEXT",  5,15,0,0, 0,0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0,""}
-
-  D._         = {"DI_TEXT",   5,16,0,0,   0,0,0,0, M.MMask}
-  D.Mask      = {"DI_EDIT",   5,17,36,17, 0,0,0,0, ""}
-  D._         = {"DI_TEXT",  DC,16,0,0,   0,0,0,0, M.MPrefix}
-  D.Prefix    = {"DI_EDIT",  DC,17,72,17, 0,0,0,0, ""}
-  D.separator = {"DI_TEXT",   5,18,0,0, 0,0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0,""}
-
-  D.btnOk     = {"DI_BUTTON", 0,19,0, 0,  0, 0,  "DIF_CENTERGROUP", 1, M.MOk}
-  D.btnCancel = {"DI_BUTTON", 0,19,0, 0,  0, 0,  "DIF_CENTERGROUP", 0, M.MCancel}
-
-  for k,v in pairs (self.Opt) do
-    if D[k] then
-      if D[k].Type == "DI_CHECKBOX" then
-        D[k].Selected = v==true and 1 or tonumber(v) or 0
-      elseif D[k].Type == "DI_EDIT" then
-        D[k].Data = v
-      end
+    if self.StartupOptCommonPanel ~= self.Opt.CommonPanel then
+      far.Message (M.MConfigNewOption, M.MTempPanel, M.MOk)
     end
+    return true
   end
-
-  local ret = far.Dialog (-1, -1, DIALOG_WIDTH, DIALOG_HEIGHT, "Config", D)
-  if ret ~= D.btnOk.id then return false end
-
-  for k,v in pairs (self.Opt) do
-    if D[k] then
-      if D[k].Type == "DI_CHECKBOX" then
-        self.Opt[k] = D[k].Selected~=0 and D[k].Selected
-      elseif D[k].Type == "DI_EDIT" then
-        self.Opt[k] = Trim (D[k].Data)
-      end
-    end
-  end
-
-  if self.StartupOptFullScreenPanel ~= self.Opt.FullScreenPanel or
-    self.StartupOptCommonPanel ~= self.Opt.CommonPanel
-  then
-    far.Message (M.MConfigNewOption, M.MTempPanel, M.MOk)
-  end
-  return true
 end
 --------------------------------------------------------------------------------
 

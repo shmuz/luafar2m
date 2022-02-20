@@ -3,7 +3,7 @@
  Start: 2006-02-?? by Shmuel Zeigerman
 --]]
 
-local far2_dialog = require "far2.dialog"
+local sd = require "far2.simpledialog"
 local M = require "lf4ed_message"
 local F = far.Flags
 
@@ -65,41 +65,36 @@ end
 
 local function ParamsDialog (aData)
   local HIST_PARAM = "LuaFAR\\LuaScript\\Parameter"
-  local D = far2_dialog.NewDialog()
-  D._             = {"DI_DOUBLEBOX",3, 1, 52,14,0, 0, 0, 0, M.MScriptParams}
-  D.label         = {"DI_TEXT",     5, 3,  0,0, 0, 0, 0, 0, "&1."}
-  D.sParam1       = {"DI_EDIT",     8, 3, 49,0, 0, HIST_PARAM, "DIF_HISTORY",0,""}
-  D.label         = {"DI_TEXT",     5, 5,  0,0, 0, 0, 0, 0, "&2."}
-  D.sParam2       = {"DI_EDIT",     8, 5, 49,0, 0, HIST_PARAM, "DIF_HISTORY",0,""}
-  D.label         = {"DI_TEXT",     5, 7,  0,0, 0, 0, 0, 0, "&3."}
-  D.sParam3       = {"DI_EDIT",     8, 7, 49,0, 0, HIST_PARAM, "DIF_HISTORY",0,""}
-  D.label         = {"DI_TEXT",     5, 9,  0,0, 0, 0, 0, 0, "&4."}
-  D.sParam4       = {"DI_EDIT",     8, 9, 49,0, 0, HIST_PARAM, "DIF_HISTORY",0,""}
-  D.bParamsEnable = {"DI_CHECKBOX", 5,11,  0,0, 0, 0, 0, 0, M.MScriptParamsEnable}
-  D.sep           = {"DI_TEXT",     0,12,  0,0, 0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1},0,""}
-  D.btnRun        = {"DI_BUTTON",   0,13,  0,0, 0, 0, "DIF_CENTERGROUP", 1, M.MRunScript}
-  D.btnStore      = {"DI_BUTTON",   0,13,  0,0, 0, 0, "DIF_CENTERGROUP", 0, M.MStoreParams}
-  D.btnCancel     = {"DI_BUTTON",   0,13,  0,0, 0, 0, "DIF_CENTERGROUP", 0, M.MCancel}
+  local Items = {
+    width = 56;
+    help = "ScriptParams";
+    {tp="dbox";  text=M.MScriptParams;                                 },
+    {tp="text";  text="&1.";           ystep=2; width=2;                    },
+    {tp="edit";  name="sParam1";       ystep=0; x1=8; hist=HIST_PARAM;      },
+    {tp="text";  text="&2.";           ystep=2; width=2;                    },
+    {tp="edit";  name="sParam2";       ystep=0; x1=8; hist=HIST_PARAM;      },
+    {tp="text";  text="&3.";           ystep=2; width=2;                    },
+    {tp="edit";  name="sParam3";       ystep=0; x1=8; hist=HIST_PARAM;      },
+    {tp="text";  text="&4.";           ystep=2; width=2;                    },
+    {tp="edit";  name="sParam4";       ystep=0; x1=8; hist=HIST_PARAM;      },
+    {tp="chbox"; name="bParamsEnable"; ystep=2; text=M.MScriptParamsEnable; },
+    {tp="sep";                                                              },
+    {tp="butt";  text=M.MRunScript; default=1; centergroup=1; Run=1;        },
+    {tp="butt";  text=M.MStoreParams;          centergroup=1; Store=1;      },
+    {tp="butt";  text=M.MCancel;    cancel=1;  centergroup=1;               },
+  }
   ------------------------------------------------------------------------------
-  local function DlgProc (hDlg, msg, param1, param2)
-    if msg == F.DN_CLOSE then
-      if param1 == D.btnStore.id or param1 == D.btnRun.id then
-        local s1 = D.sParam1:GetText(hDlg)
-        local s2 = D.sParam2:GetText(hDlg)
-        local s3 = D.sParam3:GetText(hDlg)
-        local s4 = D.sParam4:GetText(hDlg)
-        local ok, msg2 = pcall(CompileParams, s1, s2, s3, s4)
-        if not ok then ErrMsg(msg2); return 0; end
-      end
-    end
+  Items.closeaction = function(hDlg, par1, out)
+    local ok, msg = pcall(CompileParams, out.sParam1, out.sParam2, out.sParam3, out.sParam4)
+    if not ok then ErrMsg(msg); return 0; end
   end
-  far2_dialog.LoadData(D, aData)
-  local ret = far.Dialog (-1,-1,56,16,"ScriptParams",D,0,DlgProc)
-  ret = (ret==D.btnStore.id) and "store" or (ret==D.btnRun.id) and "run"
-  if ret then
-    far2_dialog.SaveData(D, aData)
+  ------------------------------------------------------------------------------
+  sd.LoadData(aData, Items)
+  local out,pos = sd.Run(Items)
+  if out then
+    sd.SaveData(out, aData)
+    return Items[pos].Run and "run" or Items[pos].Store and "store"
   end
-  return ret
 end
 
 -- WARNING:
@@ -127,22 +122,26 @@ end
 
 local function ResultDialog (aHelpTopic, aData, result)
   local Title = (aHelpTopic=="LuaExpression") and M.MExpr or M.MBlockSum
-  local D = far2_dialog.NewDialog()
+  local XX1 = 5 + M.MResult:gsub("&",""):len() + 1
+  local Items = {
+    width = 46;
+    help = aHelpTopic;
+    {tp="dbox";  text=Title;                                },
+    {tp="text";  text=M.MResult;                            },
+    {tp="edit";  name="edtResult"; ystep=0; x1=XX1; val=result; noload=1; },
+    {tp="chbox"; name="cbxInsert"; text=M.MInsertText;      },
+    {tp="chbox"; name="cbxCopy";   text=M.MCopyToClipboard; },
+    {tp="sep";                                              },
+    {tp="butt";  text=M.MOk;     default=1; centergroup=1;  },
+    {tp="butt";  text=M.MCancel; cancel=1;  centergroup=1;  },
+  }
   ------------------------------------------------------------------------------
-  D._         = {"DI_DOUBLEBOX",3, 1,42,7,  0, 0, 0, 0, Title}
-  D.lblResult = {"DI_TEXT",     5, 2, 0,0,  0, 0, 0, 0, M.MResult}
-  D.edtResult = {"DI_EDIT",     0, 2,40,0,  0, 0, 0, 0, result, _noautoload=1}
-  D.cbxInsert = {"DI_CHECKBOX", 5, 3, 0,0,  0, 0, 0, 0, M.MInsertText}
-  D.cbxCopy   = {"DI_CHECKBOX", 5, 4, 0,0,  0, 0, 0, 0, M.MCopyToClipboard}
-  D.sep       = {"DI_TEXT",     0, 5, 0,0,  0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
-  D.btnOk     = {"DI_BUTTON",   0, 6, 0,0,  0, 0, "DIF_CENTERGROUP", 1, M.MOk}
-  D.btnCancel = {"DI_BUTTON",   0, 6, 0,0,  0, 0, "DIF_CENTERGROUP", 0, M.MCancel}
-  D.edtResult.X1 = D.lblResult.X1 + D.lblResult.Data:len()
-  ------------------------------------------------------------------------------
-  far2_dialog.LoadData(D, aData)
-  local ret = far.Dialog (-1,-1,46,9,aHelpTopic,D)
-  far2_dialog.SaveData(D, aData)
-  return (ret == D.btnOk.id)
+  sd.LoadData(aData, Items)
+  local out = sd.Run(Items)
+  if out then
+    sd.SaveData(out, aData)
+    return true
+  end
 end
 
 local function BlockSum (history)

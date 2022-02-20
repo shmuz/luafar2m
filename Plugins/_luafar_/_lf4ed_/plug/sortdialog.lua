@@ -3,99 +3,93 @@
  Start: 2008-10-17 by Shmuel Zeigerman
 --]]
 
-local Package = {}
-local far = far
+local sd = require "far2.simpledialog"
+local M  = require "lf4ed_message"
+local F  = far.Flags
 
-local far2_dialog = require "far2.dialog"
-local F = far.Flags
-local M = require "lf4ed_message"
-
-local dialogGuid = win.Uuid("719CA394-AB79-4973-956B-54A1626E6BEC")
-
-function Package.SortDialog (aData, columntype)
+local function SortDialog (aData, columntype)
   local COLPAT_DEFAULT = "%S+"
   local regpath = "LuaFAR\\SortLines\\"
   local HIST_EXPR     = regpath .. "Expression"
   local HIST_COLPAT   = regpath .. "ColumnPattern"
   local HIST_FILENAME = regpath .. "FileName"
+  local X1,X2,X3,X4 = 13,15,32,58
   ------------------------------------------------------------------------------
-  local D = far2_dialog.NewDialog()
-  D._         = {"DI_DOUBLEBOX",3,1,72,14, 0, 0, 0, 0, M.MSortLines}
-  D.labExpr1  = {"DI_TEXT",     5, 2,0,0,  0, 0, 0, 0, M.MExpr1}
-  D.edtExpr1  = {"DI_EDIT",    13, 2,69,6, 0, HIST_EXPR, "DIF_HISTORY", 0, ""}
-  D.cbxUse1   = {"DI_CHECKBOX",15, 3,0,0,  0, 1, 0, 0, M.MEnable1}
-  D.cbxCase1  = {"DI_CHECKBOX",40, 3,0,0,  0, 0, 0, 0, M.MCase1}
-  D.cbxRev1   = {"DI_CHECKBOX",58, 3,0,0,  0, 0, 0, 0, M.MReverse1}
-  D.labExpr2  = {"DI_TEXT",     5, 4,0,0,  0, 0, 0, 0, M.MExpr2}
-  D.edtExpr2  = {"DI_EDIT",    13, 4,69,6, 0, HIST_EXPR, "DIF_HISTORY", 0, ""}
-  D.cbxUse2   = {"DI_CHECKBOX",15, 5,0,0,  0, 0, 0, 0, M.MEnable2}
-  D.cbxCase2  = {"DI_CHECKBOX",40, 5,0,0,  0, 0, 0, 0, M.MCase2}
-  D.cbxRev2   = {"DI_CHECKBOX",58, 5,0,0,  0, 0, 0, 0, M.MReverse2}
-  D.labExpr3  = {"DI_TEXT",     5, 6,0,0,  0, 0, 0, 0, M.MExpr3}
-  D.edtExpr3  = {"DI_EDIT",    13, 6,69,6, 0, HIST_EXPR, "DIF_HISTORY", 0, ""}
-  D.cbxUse3   = {"DI_CHECKBOX",15, 7,0,0,  0, 0, 0, 0, M.MEnable3}
-  D.cbxCase3  = {"DI_CHECKBOX",40, 7,0,0,  0, 0, 0, 0, M.MCase3}
-  D.cbxRev3   = {"DI_CHECKBOX",58, 7,0,0,  0, 0, 0, 0, M.MReverse3}
-  D.sep       = {"DI_TEXT",     5, 8, 0,0, 0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
-  D.cbxOnlySel= {"DI_CHECKBOX", 5, 9,0,0,  0, 0, 0, 0, M.MOnlySel}
-  D.lab       = {"DI_TEXT",    28, 9,0,0,  0, 0, 0, 0, M.MColPat}
-  D.edtColPat = {"DI_EDIT",    44, 9,56,6, 0, HIST_COLPAT, "DIF_HISTORY", 0, COLPAT_DEFAULT}
-  D.btnColPat = {"DI_BUTTON",  59, 9, 0,0, 0, 0, "DIF_BTNNOCLOSE", 0, M.MDefault}
-  D.sep       = {"DI_TEXT",     5,10, 0,0, 0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
-  D.labFileName={"DI_TEXT",     5,11,0,0,  0, 0, 0, 0, M.MFileName}
-  D.edtFileName={"DI_EDIT",    21,11,55,6, 0, HIST_FILENAME, "DIF_HISTORY", 0, ""}
-  D.cbxFileName={"DI_CHECKBOX",58,11, 0,0, 0, 0, 0, 0, M.MEnable4}
-  D.sep       = {"DI_TEXT",     5,12, 0,0, 0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
-  D.btnOk     = {"DI_BUTTON",   0,13, 0,0, 0, 0, "DIF_CENTERGROUP", 1, M.MOk}
-  D.btnCancel = {"DI_BUTTON",   0,13, 0,0, 0, 0, "DIF_CENTERGROUP", 0, M.MCancel}
+  local Items = {
+    guid="719CA394-AB79-4973-956B-54A1626E6BEC";
+    width=76;
+    help="SortLines";
+    {tp="dbox";  text=M.MSortLines},
+    {tp="text";  name="labExpr1";               text=M.MExpr1; },
+    {tp="edit";  name="edtExpr1"; x1=X1; y1=""; hist=HIST_EXPR},
+    {tp="chbox"; name="cbxUse1";  x1=X2;        text=M.MEnable1},
+    {tp="chbox"; name="cbxCase1"; x1=X3; y1=""; text=M.MCase1},
+    {tp="chbox"; name="cbxRev1";  x1=X4; y1=""; text=M.MReverse1},
+
+    {tp="text";  name="labExpr2";               text=M.MExpr2; },
+    {tp="edit";  name="edtExpr2"; x1=X1; y1=""; hist=HIST_EXPR},
+    {tp="chbox"; name="cbxUse2";  x1=X2;        text=M.MEnable2},
+    {tp="chbox"; name="cbxCase2"; x1=X3; y1=""; text=M.MCase2},
+    {tp="chbox"; name="cbxRev2";  x1=X4; y1=""; text=M.MReverse2},
+
+    {tp="text";  name="labExpr3";               text=M.MExpr3; },
+    {tp="edit";  name="edtExpr3"; x1=X1; y1=""; hist=HIST_EXPR},
+    {tp="chbox"; name="cbxUse3";  x1=X2;        text=M.MEnable3},
+    {tp="chbox"; name="cbxCase3"; x1=X3; y1=""; text=M.MCase3},
+    {tp="chbox"; name="cbxRev3";  x1=X4; y1=""; text=M.MReverse3},
+    {tp="sep"; },
+    {tp="chbox"; name="cbxOnlySel"; text=M.MOnlySel; nosave=not columntype; },
+    {tp="text";                    x1=28, y1=""; text=M.MColPat},
+    {tp="edit";  name="edtColPat"; x1=44, y1=""; x2=56; hist=HIST_COLPAT; text=COLPAT_DEFAULT},
+    {tp="butt";  name="btnColPat"; x1=59, y1=""; btnnoclose=1; text=M.MDefault},
+    {tp="sep"; },
+    {tp="text";  name="labFileName"; text=M.MFileName; },
+    {tp="edit";  name="edtFileName"; x1=21; y1=""; x2=55; hist=HIST_FILENAME},
+    {tp="chbox"; name="cbxFileName"; x1=58; y1=""; text=M.MEnable4},
+    {tp="sep"; },
+    {tp="butt";  centergroup=1; text=M.MOk; default=1; },
+    {tp="butt";  centergroup=1; text=M.MCancel; cancel=1; },
+  }
+  local Pos, Elem = sd.Indexes(Items)
   ------------------------------------------------------------------------------
   local function LoadData()
-    far2_dialog.LoadData(D, aData)
+    sd.LoadData(aData, Items)
     if not columntype then
-      D.cbxOnlySel.Selected = 0
-      D.cbxOnlySel.Flags = F.DIF_DISABLE
+      Elem.cbxOnlySel.val = false
+      Elem.cbxOnlySel.disable = true
     end
-    if not aData.cbxUse1 then D.cbxUse1.Focus=1 end -- work around a FAR bug
+    if not aData.cbxUse1 then Elem.cbxUse1.focus=true end -- work around a FAR bug
   end
   ------------------------------------------------------------------------------
-  local function SaveData(hDlg)
-    for i, v in ipairs(D) do hDlg:GetDlgItem(i, v) end
-    D.cbxOnlySel._noautosave = not columntype
-    far2_dialog.SaveData(D, aData)
-  end
-  ----------------------------------------------------------------------------
   -- Handlers of dialog events --
   local function Check (hDlg, c1, ...)
-    local enbl = c1:GetCheck(hDlg)
-    for _, elem in ipairs {...} do elem:Enable(hDlg, enbl) end
+    local enbl = hDlg:GetCheck(c1)
+    for _, elem in ipairs {...} do hDlg:Enable(elem, enbl) end
   end
 
-  local function DlgProc (hDlg, msg, param1, param2)
+  function Items.proc (hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
-      Check (hDlg, D.cbxUse1, D.edtExpr1, D.cbxRev1, D.labExpr1, D.cbxCase1)
-      Check (hDlg, D.cbxUse2, D.edtExpr2, D.cbxRev2, D.labExpr2, D.cbxCase2)
-      Check (hDlg, D.cbxUse3, D.edtExpr3, D.cbxRev3, D.labExpr3, D.cbxCase3)
-      Check (hDlg, D.cbxFileName, D.labFileName, D.edtFileName)
+      Check(hDlg, Pos.cbxUse1, Pos.edtExpr1, Pos.cbxRev1, Pos.labExpr1, Pos.cbxCase1)
+      Check(hDlg, Pos.cbxUse2, Pos.edtExpr2, Pos.cbxRev2, Pos.labExpr2, Pos.cbxCase2)
+      Check(hDlg, Pos.cbxUse3, Pos.edtExpr3, Pos.cbxRev3, Pos.labExpr3, Pos.cbxCase3)
+      Check(hDlg, Pos.cbxFileName, Pos.labFileName, Pos.edtFileName)
     elseif msg == F.DN_BTNCLICK then
-      if param1 == D.cbxUse1.id then Check (hDlg, D.cbxUse1, D.edtExpr1, D.cbxRev1, D.labExpr1, D.cbxCase1)
-      elseif param1 == D.cbxUse2.id then Check (hDlg, D.cbxUse2, D.edtExpr2, D.cbxRev2, D.labExpr2, D.cbxCase2)
-      elseif param1 == D.cbxUse3.id then Check (hDlg, D.cbxUse3, D.edtExpr3, D.cbxRev3, D.labExpr3, D.cbxCase3)
-      elseif param1 == D.cbxFileName.id then Check (hDlg, D.cbxFileName, D.labFileName, D.edtFileName)
-      elseif param1 == D.btnColPat.id then
-        D.edtColPat.Data = COLPAT_DEFAULT
-        hDlg:SetText (D.edtColPat.id, COLPAT_DEFAULT)
-      end
-    elseif msg == F.DN_GETDIALOGINFO then
-      return dialogGuid
-    elseif msg == F.DN_CLOSE then
-      SaveData(hDlg)
+      if     param1 == Pos.cbxUse1     then Check(hDlg, Pos.cbxUse1, Pos.edtExpr1, Pos.cbxRev1, Pos.labExpr1, Pos.cbxCase1)
+      elseif param1 == Pos.cbxUse2     then Check(hDlg, Pos.cbxUse2, Pos.edtExpr2, Pos.cbxRev2, Pos.labExpr2, Pos.cbxCase2)
+      elseif param1 == Pos.cbxUse3     then Check(hDlg, Pos.cbxUse3, Pos.edtExpr3, Pos.cbxRev3, Pos.labExpr3, Pos.cbxCase3)
+      elseif param1 == Pos.cbxFileName then Check(hDlg, Pos.cbxFileName, Pos.labFileName, Pos.edtFileName)
+      elseif param1 == Pos.btnColPat   then hDlg:SetText(Pos.edtColPat, COLPAT_DEFAULT) end
     end
   end
   ----------------------------------------------------------------------------
   LoadData()
-  local ret = far.Dialog (-1,-1,76,16,"SortLines",D,0,DlgProc)
-  return (ret == D.btnOk.id)
+  local out = sd.Run(Items)
+  if out then
+    sd.SaveData(out, aData)
+    return true
+  end
 end
 
-return Package
-
+return {
+  SortDialog = SortDialog;
+}

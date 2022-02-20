@@ -171,7 +171,7 @@ criteria at a time.
     sorting operations, no knowledge of Lua is required (see examples
     below). When results are strings, they are compared either case-
     sensitively or case-insensitively, according to the state of
-    #Case sensit.# checkbox.
+    #Case sensitive# checkbox.
 
     User types in expressions in one or more of the #Expr.# fields
     of the dialog. Each of these 3 fields can be enabled or disabled;
@@ -234,7 +234,7 @@ criteria at a time.
  #Example 2:#   a          [x] Reverse
     Sort lines alphabetically, case insensitive, in reverse order.
 
- #Example 3:#   a          [x] Case sensit.
+ #Example 3:#   a          [x] Case sensitive
     Sort lines alphabetically, case sensitive.
 
  #Example 4:#   C(2)
@@ -248,7 +248,7 @@ criteria at a time.
 
  #Example 7:#   C(2)      [ ] Reverse
               NC(1)     [x] Reverse
-              C(4)      [x] Reverse   [x] Case sensit.
+              C(4)      [x] Reverse   [x] Case sensitive
     Sort lines according to:
        (a) alphabetical order in the 2-nd column - highest priority;
        (b) reverse numerical order in the 1-st column - lower
