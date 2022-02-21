@@ -1,7 +1,8 @@
 ## What is it
 
 This repository contains LuaFAR2L library for writing plugins
-for [Far2L](https://github.com/elfmz/far2l) in Lua 5.1 programming language.
+for [Far2L](https://github.com/elfmz/far2l)
+in [Lua](https://www.lua.org/) 5.1 programming language.
 It also contains a few luafar plugins and various utilities
 for Far2L written in Lua.
 
