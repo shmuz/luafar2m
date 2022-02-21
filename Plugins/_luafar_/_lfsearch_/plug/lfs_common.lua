@@ -1,6 +1,6 @@
 -- lfs_common.lua
 
-local far2_dialog = require "far2.dialog"
+local sd = require "far2.simpledialog"
 local Sett  = require "far2.settings"
 local field = Sett.field
 
@@ -21,29 +21,32 @@ end
 
 
 local function ConfigDialog()
-  local Dlg = far2_dialog.NewDialog()
-  Dlg.frame           = {"DI_DOUBLEBOX",   3, 1,72, 9,  0, 0,  0,  0, M.MConfigTitle}
-  Dlg.lab             = {"DI_TEXT",        5, 2, 0, 0,  0, 0,  0,  0, M.MPickFrom}
-  Dlg.rPickEditor     = {"DI_RADIOBUTTON", 7, 3, 0, 0,  0, 0, "DIF_GROUP", 0, M.MPickEditor, _noauto=1}
-  Dlg.rPickHistory    = {"DI_RADIOBUTTON", 7, 4, 0, 0,  0, 0,  0,          0, M.MPickHistory, _noauto=1}
-  Dlg.rPickNowhere    = {"DI_RADIOBUTTON", 7, 5, 0, 0,  0, 0,  0,          0, M.MPickNowhere, _noauto=1}
-  Dlg.sep             = {"DI_TEXT",        5, 7, 0, 0,  0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
-  Dlg.btnOk           = {"DI_BUTTON",      0, 8, 0, 0,  0, 0,  "DIF_CENTERGROUP", 1, M.MOk}
-  Dlg.btnCancel       = {"DI_BUTTON",      0, 8, 0, 0,  0, 0,  "DIF_CENTERGROUP", 0, M.MCancel}
+  local Items = {
+    width = 76;
+    help = "Contents";
+    {tp="dbox"; text=M.MConfigTitle; },
+    {tp="text"; text=M.MPickFrom; },
+    {tp="rbutt"; x1=7; name="rPickEditor";  group=1; text=M.MPickEditor;  noauto=1; },
+    {tp="rbutt"; x1=7; name="rPickHistory";          text=M.MPickHistory; noauto=1; },
+    {tp="rbutt"; x1=7; name="rPickNowhere";          text=M.MPickNowhere; noauto=1; },
+    {tp="sep"; ystep=2; },
+    {tp="butt"; centergroup=1; text=M.MOk;    default=1; },
+    {tp="butt"; centergroup=1; text=M.MCancel; cancel=1; },
+  }
   ----------------------------------------------------------------------------
   local Data = field(_Plugin.History, "config")
-  far2_dialog.LoadData(Dlg, Data)
-  if Data.rPickFrom     == "history" then Dlg.rPickHistory.Selected = 1
-  elseif Data.rPickFrom == "nowhere" then Dlg.rPickNowhere.Selected = 1
-  else                                    Dlg.rPickEditor.Selected  = 1
+  local _,Elem = sd.Indexes(Items)
+  sd.LoadData(Data, Items)
+  if Data.rPickFrom     == "history" then Elem.rPickHistory.val = 1
+  elseif Data.rPickFrom == "nowhere" then Elem.rPickNowhere.val = 1
+  else                                    Elem.rPickEditor.val = 1
   end
-  local ret = far.Dialog (-1, -1, 76, 11, "Contents", Dlg)
-  if ret == Dlg.btnOk.id then
-    far2_dialog.SaveData(Dlg, Data)
-    Data.rPickFrom =
-      Dlg.rPickHistory.Selected ~= 0 and "history" or
-      Dlg.rPickNowhere.Selected ~= 0 and "nowhere" or
-      Dlg.rPickEditor.Selected  ~= 0 and "editor"
+  local out = sd.Run(Items)
+  if out then
+    sd.SaveData(out, Data)
+    Data.rPickFrom = out.rPickHistory and "history" or
+      out.rPickNowhere and "nowhere" or
+      out.rPickEditor  and "editor"
   end
 end
 
@@ -316,194 +319,198 @@ local SRFrameBase = {}
 SRFrameBase.Libs = {"far", "lua", "oniguruma", "pcre"}
 local SRFrameMeta = {__index = SRFrameBase}
 
-local function CreateSRFrame (Dlg, aData, bInEditor)
-  local self = {Dlg=Dlg, Data=aData, bInEditor=bInEditor}
+local function CreateSRFrame (Items, aData, bInEditor)
+  local self = {Items=Items, Data=aData, bInEditor=bInEditor}
   return setmetatable(self, SRFrameMeta)
 end
 
+function SRFrameBase:GetLibName (hDlg)
+  local pos = hDlg:ListGetCurPos(self.Pos.cmbRegexLib)
+  return self.Libs[pos.SelectPos]
+end
+
 function SRFrameBase:CheckRegexInit (hDlg)
-  local Dlg, Data = self.Dlg, self.Data
-  local bRegex = Dlg.bRegExpr:GetCheck(hDlg)
-  local lib = self.Libs[ Dlg.cmbRegexLib:GetListCurPos(hDlg) ]
+  local Data = self.Data
+  local Pos = self.Pos or sd.Indexes(self.Items)
+  self.Pos = Pos
+  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
+  local lib = self:GetLibName(hDlg)
   local bLua = (lib == "lua")
   self.PrevLib = lib
-  Dlg.bWholeWords :SetCheck(hDlg, not (bRegex or bLua) and Data.bWholeWords)
-  Dlg.bWholeWords :Enable  (hDlg, not (bRegex or bLua))
-  Dlg.bExtended   :SetCheck(hDlg, bRegex and Data.bExtended)
-  Dlg.bExtended   :Enable  (hDlg, bRegex)
-  Dlg.bCaseSens   :SetCheck(hDlg, bLua or Data.bCaseSens)
-  Dlg.bCaseSens   :Enable  (hDlg, not bLua)
+  hDlg:SetCheck (Pos.bWholeWords, not (bRegex or bLua) and Data.bWholeWords)
+  hDlg:Enable   (Pos.bWholeWords, not (bRegex or bLua))
+  hDlg:SetCheck (Pos.bExtended, bRegex and Data.bExtended)
+  hDlg:Enable   (Pos.bExtended, bRegex)
+  hDlg:SetCheck (Pos.bCaseSens, bLua or Data.bCaseSens)
+  hDlg:Enable   (Pos.bCaseSens, not bLua)
 end
 
 function SRFrameBase:CheckRegexEnab (hDlg)
-  local Dlg = self.Dlg
-  local bRegex = Dlg.bRegExpr:GetCheck(hDlg)
-  if self.Libs[ Dlg.cmbRegexLib:GetListCurPos(hDlg) ] ~= "lua" then
-    if bRegex then Dlg.bWholeWords:SetCheck(hDlg, false) end
-    Dlg.bWholeWords:Enable(hDlg, not bRegex)
+  local Pos = self.Pos or sd.Indexes(self.Items)
+  self.Pos = Pos
+  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
+  if self:GetLibName(hDlg) ~= "lua" then
+    if bRegex then hDlg:SetCheck(Pos.bWholeWords, 0) end
+    hDlg:Enable(Pos.bWholeWords, not bRegex)
   end
-  if not bRegex then Dlg.bExtended:SetCheck(hDlg, false) end
-  Dlg.bExtended:Enable(hDlg, bRegex)
+  if not bRegex then hDlg:SetCheck(Pos.bExtended, 0) end
+  hDlg:Enable(Pos.bExtended, bRegex)
 end
 
 function SRFrameBase:CheckRegexLib (hDlg)
-  local Dlg = self.Dlg
-  local bRegex = Dlg.bRegExpr:GetCheck(hDlg)
-  local pos = Dlg.cmbRegexLib:GetListCurPos(hDlg)
+  local Pos = self.Pos or sd.Indexes(self.Items)
+  self.Pos = Pos
+  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
+  local lib = self:GetLibName(hDlg)
   local bPrevLua = (self.PrevLib == "lua")
-  local bLua = (self.Libs[pos] == "lua")
+  local bLua = (lib == "lua")
   if bLua ~= bPrevLua then
     if not bRegex then
-      if bLua then Dlg.bWholeWords:SetCheck(hDlg, false) end
-      Dlg.bWholeWords:Enable(hDlg, not bLua)
+      if bLua then hDlg:SetCheck(Pos.bWholeWords, 0) end
+      hDlg:Enable(Pos.bWholeWords, not bLua)
     end
-    if bLua then Dlg.bCaseSens:SetCheck(hDlg, true) end
-    Dlg.bCaseSens:Enable(hDlg, not bLua)
+    if bLua then hDlg:SetCheck(Pos.bCaseSens, 1) end
+    hDlg:Enable(Pos.bCaseSens, not bLua)
   end
-  self.PrevLib = self.Libs[pos]
+  self.PrevLib = lib
 end
 
 function SRFrameBase:CheckAdvancedEnab (hDlg)
-  local Dlg = self.Dlg
-  local bEnab = Dlg.bAdvanced:GetCheck(hDlg)
-  Dlg.labFilterFunc :Enable(hDlg, bEnab)
-  Dlg.sFilterFunc   :Enable(hDlg, bEnab)
-  Dlg.labInitFunc   :Enable(hDlg, bEnab)
-  Dlg.sInitFunc     :Enable(hDlg, bEnab)
-  Dlg.labFinalFunc  :Enable(hDlg, bEnab)
-  Dlg.sFinalFunc    :Enable(hDlg, bEnab)
+  local Pos = self.Pos or sd.Indexes(self.Items)
+  self.Pos = Pos
+  local bEnab = hDlg:GetCheck(Pos.bAdvanced)
+  hDlg:Enable(Pos.labFilterFunc, bEnab)
+  hDlg:Enable(Pos.sFilterFunc  , bEnab)
+  hDlg:Enable(Pos.labInitFunc  , bEnab)
+  hDlg:Enable(Pos.sInitFunc    , bEnab)
+  hDlg:Enable(Pos.labFinalFunc , bEnab)
+  hDlg:Enable(Pos.sFinalFunc   , bEnab)
 end
 
-function SRFrameBase:InsertInDialog (aReplace, Y)
-  local Dlg = self.Dlg
+function SRFrameBase:InsertInDialog (aReplace)
+  local insert = table.insert
+  local Items = self.Items
   local s1, s2 = M.MDlgSearchPat, M.MDlgReplacePat
   local x = aReplace and math.max(M.MDlgSearchPat:len(), M.MDlgReplacePat:len())
     or M.MDlgSearchPat:len()
-  Dlg.lab         = {"DI_TEXT",         5,Y,  0, 0, 0, 0, 0, 0, s1}
-  Dlg.sSearchPat  = {"DI_EDIT",       5+x,Y, 70, 4, 0, "SearchText", F.DIF_HISTORY, 0, ""}
+  insert(Items, { tp="text"; text=s1; })
+  insert(Items, { tp="edit"; name="sSearchPat"; y1=""; x1=5+x, hist="SearchText"; })
   ------------------------------------------------------------------------------
   if aReplace then
-    Y = Y + 2
-    Dlg.lab         = {"DI_TEXT",       5,Y,  0, 0, 0, 0, 0, 0, s2}
-    Dlg.sReplacePat = {"DI_EDIT",     5+x,Y, 70, Y, 0, "ReplaceText", F.DIF_HISTORY, 0, ""}
-    Y = Y + 1
-    Dlg.bRepIsFunc  = {"DI_CHECKBOX", 6+x,Y,  0, 0, 0, 0, 0, 0, M.MDlgRepIsFunc}
-    Dlg.bDelEmptyLine={"DI_CHECKBOX",  45,Y,  0, 0, 0, 0, 0, 0, M.MDlgDelEmptyLine}
+    insert(Items, { tp="text";  text=s2; ystep=2; })
+    insert(Items, { tp="edit";  name="sReplacePat"; y1=""; x1=5+x, hist="ReplaceText"; })
+    insert(Items, { tp="chbox"; name="bRepIsFunc";  x1=6+x, text=M.MDlgRepIsFunc; })
+    insert(Items, { tp="chbox"; name="bDelEmptyLine"; x1=45, y1=""; text=M.MDlgDelEmptyLine; })
   end
   ------------------------------------------------------------------------------
-  Y = Y + 1
-  Dlg.sep = {"DI_TEXT", 5,Y,0,0, 0,0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
+  insert(Items, { tp="sep"; })
   ------------------------------------------------------------------------------
-  Y = Y + 1
-  Dlg.bCaseSens   = {"DI_CHECKBOX",     5,Y,  0, 0, 0, 0, 0, 0, M.MDlgCaseSens}
-  Dlg.bRegExpr    = {"DI_CHECKBOX",    26,Y,  0, 0, 0, 0, 0, 0, M.MDlgRegExpr}
-
-  Dlg.lab        = {"DI_TEXT",         50,Y,  0, 0, 0, 0, 0, 0, M.MDlgRegexLib}
-  Dlg.cmbRegexLib= {"DI_COMBOBOX",     51,Y+1,63,0, 0, {
-                       {Text="Far regex"},
-                       {Text="Lua regex"},
-                       {Text="Oniguruma"},
-                       {Text="PCRE"}
-                     }, {DIF_DROPDOWNLIST=1}, 0, "", _noauto=true}
+  insert(Items, { tp="chbox"; name="bCaseSens";              text=M.MDlgCaseSens; })
+  insert(Items, { tp="chbox"; name="bRegExpr"; y1=""; x1=26; text=M.MDlgRegExpr;  })
+  insert(Items, { tp="text";                   y1=""; x1=50; text=M.MDlgRegexLib; })
+  insert(Items, { tp="combobox"; name="cmbRegexLib";  x1=51; x2=63; dropdownlist=1; noauto=1;
+           list = { {Text="Far regex"}, {Text="Lua regex"}, {Text="Oniguruma"}, {Text="PCRE"} };  })
   ------------------------------------------------------------------------------
-  Y = Y + 1
-  Dlg.bWholeWords = {"DI_CHECKBOX",    5, Y,  0, 0, 0, 0, 0, 0, M.MDlgWholeWords}
-  Dlg.bExtended   = {"DI_CHECKBOX",    26,Y,  0, 0, 0, 0, 0, 0, M.MDlgExtended}
-  return Y + 1
+  insert(Items, { tp="chbox"; name="bWholeWords";      y1=""; text=M.MDlgWholeWords; })
+  insert(Items, { tp="chbox"; name="bExtended"; x1=26; y1=""; text=M.MDlgExtended; })
 end
 
 
 function SRFrameBase:OnDataLoaded (aData, aScriptCall)
-  local Dlg, bInEditor = self.Dlg, self.bInEditor
+  local Pos = self.Pos or sd.Indexes(self.Items)
+  self.Pos = Pos
+  local Items = self.Items
+  local bInEditor = self.bInEditor
 
   if not aScriptCall then
     if bInEditor then
       local from = field(_Plugin.History, "config").rPickFrom
       if from == "history" then
-        Dlg.sSearchPat.Data = GetFarHistory("SearchText") or aData.sSearchPat or ""
+        Items[Pos.sSearchPat].text = GetFarHistory("SearchText") or aData.sSearchPat or ""
       elseif from == "nowhere" then
-        Dlg.sSearchPat.Data = ""
-        if Dlg.sReplacePat then Dlg.sReplacePat.Data = ""; end
+        Items[Pos.sSearchPat].text = ""
+        if Pos.sReplacePat then Items[Pos.sReplacePat].text = ""; end
       else -- (default) if from == "editor" then
-        Dlg.sSearchPat.Data = GetWordAboveCursor() or ""
+        Items[Pos.sSearchPat].text = GetWordAboveCursor() or ""
       end
     else
-      Dlg.sSearchPat.Data = (aData.sSearchPat == "") and "" or
+      Items[Pos.sSearchPat].text = (aData.sSearchPat == "") and "" or
         GetFarHistory("SearchText") or aData.sSearchPat or ""
     end
   end
 
-  local items = Dlg.cmbRegexLib.ListItems
-  items.SelectIndex = 1
+  local item = Items[Pos.cmbRegexLib]
+  item.val = 1
   for i,v in ipairs(self.Libs) do
-    if aData.sRegexLib == v then items.SelectIndex = i; break; end
+    if aData.sRegexLib == v then item.val = i; break; end
   end
 end
 
 
 function SRFrameBase:DlgProc (hDlg, msg, param1, param2)
-  local Dlg, Data, bInEditor = self.Dlg, self.Data, self.bInEditor
-  local bReplace = Dlg.sReplacePat
+  local Pos = self.Pos or sd.Indexes(self.Items)
+  self.Pos = Pos
+  local Data, bInEditor = self.Data, self.bInEditor
+  local bReplace = Pos.sReplacePat
   local name
   ----------------------------------------------------------------------------
   if msg == F.DN_INITDIALOG then
     if bInEditor then
       if editor.GetInfo().BlockType == F.BTYPE_NONE then
-        Dlg.rScopeGlobal:SetCheck(hDlg, true)
-        Dlg.rScopeBlock:Enable(hDlg, false)
+        hDlg:SetCheck (Pos.rScopeGlobal, 1)
+        hDlg:Enable   (Pos.rScopeBlock, 0)
       else
         name = (Data.sScope=="block") and "rScopeBlock" or "rScopeGlobal"
-        Dlg[name]:SetCheck(hDlg, true)
+        hDlg:SetCheck(Pos[name], 1)
       end
       name = (Data.sOrigin=="scope") and "rOriginScope" or "rOriginCursor"
-      Dlg[name]:SetCheck(hDlg, true)
+      hDlg:SetCheck(Pos[name], 1)
       self:CheckAdvancedEnab(hDlg)
     end
     self:CheckRegexInit(hDlg)
   ----------------------------------------------------------------------------
   elseif msg == F.DN_BTNCLICK then
-    if param1==Dlg.bRegExpr.id then self:CheckRegexEnab(hDlg)
-    else
-      if bInEditor and param1==Dlg.bAdvanced.id then
-        self:CheckAdvancedEnab(hDlg)
-      end
+    if param1==Pos.bRegExpr then
+      self:CheckRegexEnab(hDlg)
+    elseif bInEditor and param1==Pos.bAdvanced then
+      self:CheckAdvancedEnab(hDlg)
     end
   ----------------------------------------------------------------------------
   elseif msg == F.DN_EDITCHANGE then
-    if param1 == Dlg.cmbRegexLib.id then self:CheckRegexLib(hDlg) end
+    if param1 == Pos.cmbRegexLib then self:CheckRegexLib(hDlg) end
   ----------------------------------------------------------------------------
   elseif msg == F.DN_CLOSE then
-    if (param1 == Dlg.btnOk.id) or bInEditor and
-      (Dlg.btnCount and param1 == Dlg.btnCount.id or
-      Dlg.btnShowAll and param1 == Dlg.btnShowAll.id)
+    if (param1 == Pos.btnOk) or bInEditor and
+      (Pos.btnCount and param1 == Pos.btnCount or
+      Pos.btnShowAll and param1 == Pos.btnShowAll)
     then
-      Dlg.sSearchPat:SaveText(hDlg, Data)
-      Dlg.bCaseSens:SaveCheck(hDlg, Data)
-      Dlg.bRegExpr:SaveCheck(hDlg, Data)
-
-      Dlg.bWholeWords:SaveCheck(hDlg, Data)
-      Dlg.bExtended:SaveCheck(hDlg, Data)
+      Data.sSearchPat  = hDlg:GetText(Pos.sSearchPat)
+      Data.bCaseSens   = hDlg:GetCheck(Pos.bCaseSens)
+      Data.bRegExpr    = hDlg:GetCheck(Pos.bRegExpr)
+      Data.bWholeWords = hDlg:GetCheck(Pos.bWholeWords)
+      Data.bExtended   = hDlg:GetCheck(Pos.bExtended)
       ------------------------------------------------------------------------
       if bInEditor then
         if Data.sSearchPat == "" then
           ErrorMsg(M.MSearchFieldEmpty); return 0
         end
-        Dlg.bSearchBack:SaveCheck(hDlg, Data)
-        Data.sScope = Dlg.rScopeGlobal:GetCheck(hDlg) and "global" or "block"
-        Data.sOrigin = Dlg.rOriginCursor:GetCheck(hDlg) and "cursor" or "scope"
-        Dlg.bAdvanced   :SaveCheck(hDlg, Data)
-        Dlg.sFilterFunc :SaveText(hDlg, Data)
-        Dlg.sInitFunc   :SaveText(hDlg, Data)
-        Dlg.sFinalFunc  :SaveText(hDlg, Data)
+        Data.bSearchBack = hDlg:GetCheck(Pos.bSearchBack)
+
+        Data.sScope  = hDlg:GetCheck(Pos.rScopeGlobal)  and "global" or "block"
+        Data.sOrigin = hDlg:GetCheck(Pos.rOriginCursor) and "cursor" or "scope"
+        Data.bAdvanced   = hDlg:GetCheck(Pos.bAdvanced)
+        Data.sFilterFunc = hDlg:GetText(Pos.sFilterFunc)
+        Data.sInitFunc   = hDlg:GetText(Pos.sInitFunc)
+        Data.sFinalFunc  = hDlg:GetText(Pos.sFinalFunc)
       end
       ------------------------------------------------------------------------
       if bReplace then
-        Dlg.sReplacePat   :SaveText(hDlg, Data)
-        Dlg.bRepIsFunc    :SaveCheck(hDlg, Data)
-        Dlg.bDelEmptyLine :SaveCheck(hDlg, Data)
+        Data.sReplacePat   = hDlg:GetText (Pos.sReplacePat)
+        Data.bRepIsFunc    = hDlg:GetCheck(Pos.bRepIsFunc)
+        Data.bDelEmptyLine = hDlg:GetCheck(Pos.bDelEmptyLine)
       end
       ------------------------------------------------------------------------
-      local lib = self.Libs[ Dlg.cmbRegexLib:GetListCurPos(hDlg) ]
+      local lib = self:GetLibName(hDlg)
       local ok, err = pcall(GetRegexLib, lib)
       if not ok then (export.OnError or ErrorMsg)(err) return 0 end
       Data.sRegexLib = lib

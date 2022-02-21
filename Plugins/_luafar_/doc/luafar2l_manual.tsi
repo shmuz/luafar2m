@@ -1716,7 +1716,7 @@ id=71
 lv=2
 dt=Text
 nm=far.SendDlgMessage
-mtime=3853943200
+mtime=3854622166
 <article>
 #_Result = far.SendDlgMessage (hDlg, Msg, Param1, Param2)
 #_    or
@@ -1735,9 +1735,6 @@ mtime=3853943200
 #_
 #_DM_CLOSE,
 #_DM_EDITUNCHANGEDFLAG,
-#_DM_ENABLE,
-#_DM_ENABLEREDRAW,
-#_DM_GETCHECK,
 #_DM_GETCURSORSIZE,
 #_DM_GETDROPDOWNOPENED,
 #_DM_GETFOCUS,
@@ -1758,6 +1755,24 @@ mtime=3853943200
 #_DM_USER:
 #_    Param2:  integer
 #_    Result:  integer
+#_
+#_DM_ENABLE:
+#_    Param2:  boolean or integer
+#_    Result:  boolean
+#_
+#_DM_ENABLEREDRAW:
+#_    Param2:  boolean or integer
+#_    Result:  integer
+#_
+#_DM_SETCHECK:
+#_    Param2:  boolean or integer
+#_    Result:  integer
+#_
+#_DM_GETCHECK:
+#_    Param2:  ignored
+#_    Result:  false (means BSTATE_UNCHECKED)
+#_              true (means BSTATE_CHECKED)
+#_                 2 (means BSTATE_3STATE)
 #_
 #_DM_ADDHISTORY,
 #_DM_LISTADDSTR,

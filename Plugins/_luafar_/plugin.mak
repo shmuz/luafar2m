@@ -8,7 +8,7 @@ FAR_EXPORTS ?=
 LANG_LUA    ?=
 PLUGNAME    ?=
 
-C_SOURCE ?= $(PATH_LUAFAR)/src/luaplug.c
+C_SOURCE ?= ../../src/luaplug.c
 
 ifdef FAR_EXPORTS
   EXPORTS = $(addprefix -DEXPORT_,$(FAR_EXPORTS))

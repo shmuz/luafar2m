@@ -11,15 +11,14 @@ INC_FAR = $(FARSOURCE)/far2l/far2sdk
 INC_WIN = $(FARSOURCE)/WinPort
 INC_LUA = /usr/include/lua5.1
 
-PATH_LUAFAR = $(FARINSTALL)/Plugins/_luafar_
-LUA_SHARE   = $(PATH_LUAFAR)/lua_share
+LUA_SHARE   = ../../lua_share
 LUAFARDLL   = luafar2l.so
 
 DIRBIT = 64
 CC     = gcc
 LUAEXE = lua
 CFLAGS = -O2 -Wall -Wno-unused-function \
-         -I$(INC_FAR) -I$(INC_WIN) -I$(INC_LUA) -I$(PATH_LUAFAR)/src \
+         -I$(INC_FAR) -I$(INC_WIN) -I$(INC_LUA) \
          -m$(DIRBIT) -fPIC $(MYCFLAGS)
 
 LDFLAGS = -shared -m$(DIRBIT) -s -fPIC $(MYLDFLAGS)

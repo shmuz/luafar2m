@@ -1,9 +1,9 @@
 -- lfs_panels.lua
 
-local M           = require "lfs_message"
-local far2_dialog = require "far2.dialog"
-local Common      = require "lfs_common"
-local Sett        = require "far2.settings"
+local M      = require "lfs_message"
+local Common = require "lfs_common"
+local sd     = require "far2.simpledialog"
+local Sett   = require "far2.settings"
 local field = Sett.field
 
 local F = far.Flags
@@ -32,40 +32,50 @@ local saFromCurrFolder, saOnlyCurrFolder, saSelectedItems, saRootFolder, saPathF
 
 local function ConfigDialog (aHistory)
   local aData = field(aHistory, "TmpPanel")
-  local WIDTH, HEIGHT = 78, 13
+  local WIDTH = 78
   local DC = math.floor(WIDTH/2-1)
 
-  local D = far2_dialog.NewDialog()
-  D._           = {"DI_DOUBLEBOX", 3,1,WIDTH-4,HEIGHT-2, 0,0,0,0, M.MConfigTitleTmpPanel}
-  D._           = {"DI_TEXT",    5, 2, 0,0,  0,0,0,0, M.MColumnTypes}
-  D.ColT        = {"DI_EDIT",    5, 3,36,3,  0,0,0,0, ""}
-  D._           = {"DI_TEXT",    5, 4, 0,0,  0,0,0,0, M.MColumnWidths}
-  D.ColW        = {"DI_EDIT",    5, 5,36,5,  0,0,0,0, ""}
-  D._           = {"DI_TEXT",   DC, 2, 0,0,  0,0,0,0, M.MStatusColumnTypes}
-  D.StatT       = {"DI_EDIT",   DC, 3,72,3,  0,0,0,0, ""}
-  D._           = {"DI_TEXT",   DC, 4, 0,0,  0,0,0,0, M.MStatusColumnWidths}
-  D.StatW       = {"DI_EDIT",   DC, 5,72,5,  0,0,0,0, ""}
-  D._           = {"DI_TEXT",    5, 6, 0,0,  0,0,0,0, M.MTmpPanelMacro}
-  D.Macro       = {"DI_EDIT",    5, 7,36,5,  0,0,0,0, ""}
-  D.Full        = {"DI_CHECKBOX",5, 8, 0,0,  0,0,0,0, M.MFullScreenPanel}
-  D._           = {"DI_TEXT",    5, 9, 0,0,  0,0,{DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0,""}
-  D.btnOk       = {"DI_BUTTON",  0,10, 0,0,  0,0,"DIF_CENTERGROUP", 1, M.MOk}
-  D.btnCancel   = {"DI_BUTTON",  0,10, 0,0,  0,0,"DIF_CENTERGROUP", 0, M.MCancel}
-  D.btnDefaults = {"DI_BUTTON",  0,10, 0,0,  0,0,"DIF_CENTERGROUP", 0, M.MBtnDefaults}
+  local Items = {
+    width = WIDTH;
+    help = "SearchResultsPanel";
+    { tp="dbox"; text=M.MConfigTitleTmpPanel; },
+    { tp="text"; text=M.MColumnTypes;  },
+    { tp="edit"; name="ColT"; x2=DC-2; },
+    { tp="text"; text=M.MColumnWidths; },
+    { tp="edit"; name="ColW"; x2=DC-2; },
 
-  local function DlgProc (hDlg, msg, param1, param2)
-    if msg == F.DN_CLOSE then
-      if param1 == D.btnDefaults.id then
-        far2_dialog.LoadDataDyn (hDlg, D, TmpPanelDefaults)
-        return 0
+    { tp="text"; text=M.MStatusColumnTypes;  x1=DC; ystep=-3; },
+    { tp="edit"; name="StatT";               x1=DC; },
+    { tp="text"; text=M.MStatusColumnWidths; x1=DC; },
+    { tp="edit"; name="StatW";               x1=DC; },
+    { tp="text"; text=M.MTmpPanelMacro;             },
+    { tp="edit"; name="Macro"; x2=DC-2;             },
+
+    { tp="chbox"; name="Full"; text=M.MFullScreenPanel; },
+    { tp="sep"; },
+    { tp="butt"; centergroup=1; text=M.MOk; default=1;    },
+    { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; },
+    { tp="butt"; centergroup=1; text=M.MBtnDefaults; btnnoclose=1; name="reset"; },
+  }
+  local Pos = sd.Indexes(Items)
+
+  Items[Pos.reset].action = function(hDlg,Par1,Par2)
+    for i,v in ipairs(Items) do
+      if v.name then
+        local val = TmpPanelDefaults[v.name]
+        if val ~= nil then
+          if     v.tp == "edit"  then hDlg:SetText(i, val)
+          elseif v.tp == "chbox" then hDlg:SetCheck(i, val)
+          end
+        end
       end
     end
   end
 
-  far2_dialog.LoadData (D, aData)
-  local ret = far.Dialog(-1, -1, WIDTH, HEIGHT, "SearchResultsPanel", D, 0, DlgProc)
-  if ret == D.btnOk.id then
-    far2_dialog.SaveData (D, aData)
+  sd.LoadData (aData, Items)
+  local out = sd.Run(Items)
+  if out then
+    sd.SaveData (out, aData)
     return true
   end
 end
@@ -167,59 +177,56 @@ local function GetSearchAreas(dataPanels)
   return T
 end
 
-local searchGuid  = win.Uuid("3CD8A0BB-8583-4769-BBBC-5B6667D13EF9")
-local replaceGuid = win.Uuid("F7118D4A-FBC3-482E-A462-0167DF7CC346")
+local searchGuid  = "3CD8A0BB-8583-4769-BBBC-5B6667D13EF9"
+local replaceGuid = "F7118D4A-FBC3-482E-A462-0167DF7CC346"
 
 local function PanelDialog (aHistory, aReplace, aHelpTopic)
+  local insert = table.insert
   local dataMain = field(aHistory, "main")
   local dataPanels = field(aHistory, "panels")
-  local D = far2_dialog.NewDialog()
-  local Frame = Common.CreateSRFrame(D, dataMain, false)
+  local Items = {
+    width = 76;
+    help = aHelpTopic;
+    guid = aReplace and replaceGuid or searchGuid;
+  }
+  local Frame = Common.CreateSRFrame(Items, dataMain, false)
   ------------------------------------------------------------------------------
-  D.dblbox      = {"DI_DOUBLEBOX",3, 1,72, 0, 0, 0, 0, 0, M.MTitlePanels}
-  D.lab         = {"DI_TEXT",     5, 2, 0, 0, 0, 0, 0, 0, M.MFileMask}
-  D.sFileMask   = {"DI_EDIT",
-                  M.MFileMask:len()+5, 2,70, 6, 0, "Masks", {DIF_HISTORY=1,DIF_USELASTHISTORY=1}, 0, ""}
+  insert(Items, { tp="dbox"; text=M.MTitlePanels; })
+  insert(Items, { tp="text"; text=M.MFileMask; })
+  insert(Items, { tp="edit"; name="sFileMask"; hist="Masks"; uselasthistory=1; y1=""; x1=5+M.MFileMask:len(); })
+  insert(Items, { tp="text"; text=" "; }) -- blank line
   ------------------------------------------------------------------------------
-  local Y = Frame:InsertInDialog(aReplace, 4)
+  Frame:InsertInDialog(aReplace)
   ------------------------------------------------------------------------------
-  D.sep         = {"DI_TEXT",     5, Y, 0, 0, 0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
-  Y = Y + 1
-  D.lab         = {"DI_TEXT",     5, Y, 0,0, 0, 0, 0, 0, M.MCodePages}
-  Y = Y + 1
-  D.cmbCodePage = {"DI_COMBOBOX", 5, Y,70,0, 0, GetCodePages(dataPanels),
-                                         {DIF_DROPDOWNLIST=1}, 0, "", _noauto=1}
-  Y = Y + 1
-  D.lab         = {"DI_TEXT",     5, Y, 0,0, 0, 0, 0, 0, M.MSearchArea}
-  Y = Y + 1
-  D.cmbSearchArea={"DI_COMBOBOX", 5, Y,36,0, 0, GetSearchAreas(dataPanels),
-                                         {DIF_DROPDOWNLIST=1}, 0, "", _noauto=1}
-  D.bSearchFolders ={"DI_CHECKBOX",40,Y-1,0,0,  0,0,0,0, M.MSearchFolders}
-  D.bSearchSymLinks={"DI_CHECKBOX",40, Y, 0,0,  0,0,0,0, M.MSearchSymLinks}
-  Y = Y + 1
-  D.sep         = {"DI_TEXT",     5, Y, 0,0, 0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1},  0, ""}
-  Y = Y + 1
-  D.btnOk       = {"DI_BUTTON",   0, Y, 0,0, 0, 0, "DIF_CENTERGROUP", 1, M.MOk}
-  D.btnCancel   = {"DI_BUTTON",   0, Y, 0,0, 0, 0, "DIF_CENTERGROUP", 0, M.MCancel}
---D.btnConfig   = {"DI_BUTTON",   0, Y, 0,0, 0, 0, "DIF_CENTERGROUP", 0, M.MDlgBtnConfig} -- TODO
-  D.dblbox.Y2   = Y+1
+  insert(Items, { tp="sep"; })
+  insert(Items, { tp="text"; text=M.MCodePages; })
+  insert(Items, { tp="combobox"; name="cmbCodePage"; list=GetCodePages(dataPanels); dropdownlist=1; noauto=1; })
+  insert(Items, { tp="text"; text=M.MSearchArea; })
+  insert(Items, { tp="combobox"; name="cmbSearchArea"; list=GetSearchAreas(dataPanels); x2=36; dropdownlist=1; noauto=1; })
+  insert(Items, { tp="chbox"; name="bSearchFolders"; text=M.MSearchFolders; ystep=-1; x1=40; })
+  insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MSearchSymLinks; x1=40; })
+  insert(Items, { tp="sep"; })
+  insert(Items, { tp="butt"; centergroup=1; text=M.MOk; default=1; name="btnOk"; })
+  insert(Items, { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; })
+--insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnConfig; name="btnConfig"; }) --TODO
   ------------------------------------------------------------------------------
-  local function DlgProc (hDlg, msg, param1, param2)
+  local Pos,Elem = sd.Indexes(Items)
+  function Items.proc (hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
-      hDlg:SetComboboxEvent(D.cmbCodePage.id, F.CBET_KEY)
+      hDlg:SetComboboxEvent(Pos.cmbCodePage, F.CBET_KEY)
       local t = {}
-      for i,v in ipairs(D.cmbCodePage.ListItems) do
+      for i,v in ipairs(Elem.cmbCodePage.list) do
         if v.CodePage then
           t.Index, t.Data = i, v.CodePage
-          hDlg:ListSetData(D.cmbCodePage.id, t)
+          hDlg:ListSetData(Pos.cmbCodePage, t)
         end
       end
-      D.sFileMask:SetText(hDlg, dataPanels.sFileMask or "")
-      D.bSearchFolders:SetCheck(hDlg, dataPanels.bSearchFolders)
-      D.bSearchSymLinks:SetCheck(hDlg, dataPanels.bSearchSymLinks)
+      hDlg:SetText  (Pos.sFileMask, dataPanels.sFileMask or "")
+      hDlg:SetCheck (Pos.bSearchFolders, dataPanels.bSearchFolders)
+      hDlg:SetCheck (Pos.bSearchSymLinks, dataPanels.bSearchSymLinks)
 
     elseif msg == F.DN_KEY then
-      if param1 == D.cmbCodePage.id then
+      if param1 == Pos.cmbCodePage then
         if param2==KEY_INS or param2==KEY_NUMPAD0 or param2==KEY_SPACE then
           local pos = hDlg:ListGetCurPos(param1)
           if pos.SelectPos ~= 1 then -- if not "All code pages"
@@ -230,39 +237,37 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
           end
         end
       end
-    elseif msg == F.DN_GETDIALOGINFO then
-      return aReplace and replaceGuid or searchGuid
     elseif msg == F.DN_CLOSE then
-      if D.btnConfig and param1 == D.btnConfig.id then
+      if Pos.btnConfig and param1 == Pos.btnConfig then
         hDlg:ShowDialog(0)
         ConfigDialog(aHistory)
         hDlg:ShowDialog(1)
-        hDlg:SetFocus(D.btnOk.id)
+        hDlg:SetFocus(Pos.btnOk)
         return 0
-      elseif param1 == D.btnOk.id then
-        if not D.sFileMask:GetText(hDlg):find("%S") then
+      elseif param1 == Pos.btnOk then
+        if not hDlg:GetText(Pos.sFileMask):find("%S") then
           far.Message(M.MInvalidFileMask, M.MError, ";Ok", "w")
           return 0
         end
         ------------------------------------------------------------------------
-        local pos = hDlg:ListGetCurPos(D.cmbCodePage.id)
-        dataPanels.iCodePage = D.cmbCodePage.ListItems[pos.SelectPos].CodePage
+        local pos = hDlg:ListGetCurPos(Pos.cmbCodePage)
+        dataPanels.iCodePage = Elem.cmbCodePage.list[pos.SelectPos].CodePage
         ------------------------------------------------------------------------
-        pos = hDlg:ListGetCurPos(D.cmbSearchArea.id)
+        pos = hDlg:ListGetCurPos(Pos.cmbSearchArea)
         dataPanels.iSearchArea = pos.SelectPos
         ------------------------------------------------------------------------
-        D.sFileMask:SaveText(hDlg, dataPanels)
-        D.bSearchFolders:SaveCheck(hDlg, dataPanels)
-        D.bSearchSymLinks:SaveCheck(hDlg, dataPanels)
+        dataPanels.sFileMask = hDlg:GetText(Pos.sFileMask)
+        dataPanels.bSearchFolders = hDlg:GetCheck(Pos.bSearchFolders)
+        dataPanels.bSearchSymLinks = hDlg:GetCheck(Pos.bSearchSymLinks)
       end
       --------------------------------------------------------------------------
       -- store selected code pages no matter what user pressed: OK or Esc.
       dataPanels.SelectedCodePages = {}
-      local info = hDlg:ListInfo(D.cmbCodePage.id)
+      local info = hDlg:ListInfo(Pos.cmbCodePage)
       for i=1,info.ItemsNumber do
-        local item = hDlg:ListGetItem(D.cmbCodePage.id, i)
+        local item = hDlg:ListGetItem(Pos.cmbCodePage, i)
         if 0 ~= bit.band(item.Flags, F.LIF_CHECKED) then
-          local t = hDlg:ListGetData(D.cmbCodePage.id, i)
+          local t = hDlg:ListGetData(Pos.cmbCodePage, i)
           if t then dataPanels.SelectedCodePages[t] = true end
         end
       end
@@ -275,12 +280,11 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
   for k,v in pairs(TmpPanelDefaults) do
     if dataTP[k] == nil then dataTP[k] = v end
   end
-  far2_dialog.LoadData(D, dataMain)
+  sd.LoadData(dataMain, Items)
   Frame:OnDataLoaded(dataMain, false)
-  local ret = far.Dialog(-1, -1, 76, Y+3, aHelpTopic, D, 0, DlgProc)
-  if ret < 0 or ret == D.btnCancel.id then return "cancel" end
-  return (ret == D.btnOk.id) and (aReplace and "replace" or "search"),
-         Frame.close_params
+  local out = sd.Run(Items)
+  if not out then return "cancel" end
+  return aReplace and "replace" or "search", Frame.close_params
 end
 
 local function GetTmpPanelSettings()

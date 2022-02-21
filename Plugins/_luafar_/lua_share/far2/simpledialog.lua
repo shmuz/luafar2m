@@ -288,23 +288,19 @@ local function Run (inData)
     elseif tp == F.DI_PSWEDIT then
       outData[i] = {tp,  x1,y1,x2,0,  focus,"",flags,0,  text}
 
-    elseif tp == F.DI_CHECKBOX then
-      local val = (v.val==2 and 2) or (v.val and v.val~=0 and 1) or 0
-      outData[i] = {tp,  x1,y1,0,y1,  focus,val,flags,0,  text}
-
-    elseif tp == F.DI_RADIOBUTTON then
-      local val = v.val and v.val~=0 and 1 or 0
-      outData[i] = {tp,  x1,y1,0,y1,  focus,val,flags,0,  text}
+    elseif tp == F.DI_CHECKBOX or tp == F.DI_RADIOBUTTON then
+      outData[i] = {tp,  x1,y1,0,y1,  focus,v.val,flags,0,  text}
 
     elseif tp == F.DI_BUTTON then
       outData[i] = {tp,  x1,y1,0,y1,  focus,0,flags,dflt,  text}
 
     elseif tp == F.DI_COMBOBOX then
       assert(type(v.list)=="table", "\"list\" field must be a table")
-      local val = 0 ~= band(flags,F.DIF_DROPDOWNLIST) and
-                  v.val and v.val>=1 and v.val<=#v.list and v.val
-      v.list.SelectIndex = val or v.list.SelectIndex or 1
-      outData[i] = {tp,  x1,y1,x2,y1,  focus,v.list,flags,0,  text}
+      local dropdown = 0 ~= band(flags,F.DIF_DROPDOWNLIST)
+      local index = dropdown and v.val and v.val>=1 and v.val<=#v.list and v.val
+      v.list.SelectIndex = index or v.list.SelectIndex or 1
+      text = dropdown and "" or text
+      outData[i] = {tp,  x1,y1,x2,y1,  focus,v.list,flags,0, text}
 
     elseif tp == F.DI_LISTBOX then
       assert(type(v.list)=="table", "\"list\" field must be a table")
@@ -368,10 +364,8 @@ local function Run (inData)
         if tp=="string" or tp=="number" then
           local item = hDlg:GetDlgItem(i)
           tp = item[IND_TYPE]
-          if tp==F.DI_CHECKBOX then
-            out[v.name] = (item[IND_VALUE]==2) and 2 or (item[IND_VALUE] ~= 0) -- false,true,2
-          elseif tp==F.DI_RADIOBUTTON then
-            out[v.name] = (item[IND_VALUE] ~= 0) -- boolean
+          if tp==F.DI_CHECKBOX or tp==F.DI_RADIOBUTTON then
+            out[v.name] = item[IND_VALUE]
           elseif tp==F.DI_EDIT or tp==F.DI_FIXEDIT or tp==F.DI_PSWEDIT then
             out[v.name] = item[IND_DATA] -- string
           elseif tp==F.DI_COMBOBOX or tp==F.DI_LISTBOX then

@@ -223,7 +223,7 @@ It can be any Lua type.
     *  The standard Lua libraries
     *  LuaFAR (namespaces #far#, #bit# and #unicode#)
     *  history (namespace #history#, same as in LuaFAR for Editor)
-    *  dialog  (namespace #far2.dialog#, same as in LuaFAR for Editor)
+    *  dialog  (namespace #far2.simpledialog#, same as in LuaFAR for Editor)
 
   Functions:
     *  #lfsearch.EditorAction# (the main plugin function; see description below)

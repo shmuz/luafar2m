@@ -1,6 +1,6 @@
 -- lfs_editmain.lua
 
-local far2_dialog = require "far2.dialog"
+local sd          = require "far2.simpledialog"
 local Common      = require "lfs_common"
 local EditEngine  = require "lfs_editengine"
 local M           = require "lfs_message"
@@ -16,75 +16,67 @@ local searchGuid  = win.Uuid("0B81C198-3E20-4339-A762-FFCBBC0C549C")
 local replaceGuid = win.Uuid("FE62AEB9-E0A1-4ED3-8614-D146356F86FF")
 
 local function SR_Dialog (aData, aReplace, aScriptCall)
+  local insert = table.insert
   local sTitle = aReplace and M.MTitleReplace or M.MTitleSearch
   local regpath = _Plugin.RegPath
   local HIST_INITFUNC   = regpath .. "InitFunc"
   local HIST_FINALFUNC  = regpath .. "FinalFunc"
   local HIST_FILTERFUNC = regpath .. "FilterFunc"
   ------------------------------------------------------------------------------
-  local Dlg = far2_dialog.NewDialog()
-  local Frame = Common.CreateSRFrame(Dlg, aData, true)
-  Dlg.frame       = {"DI_DOUBLEBOX",    3,1, 72,17, 0, 0, 0, 0, sTitle}
+  local Items = {
+    width = 76;
+    guid = aReplace and replaceGuid or searchGuid;
+    help = "OperInEditor";
+    { tp="dbox"; text=sTitle; },
+  }
+  local Frame = Common.CreateSRFrame(Items, aData, true)
   ------------------------------------------------------------------------------
-  local Y = Frame:InsertInDialog(aReplace, 2)
-  Dlg.sep = {"DI_TEXT", 5,Y,0,0, 0,0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
+  Frame:InsertInDialog(aReplace)
+  insert(Items, { tp="sep"; })
   ------------------------------------------------------------------------------
-  Y = Y + 1
-  Dlg.lab         = {"DI_TEXT",        5,Y,   0, 0, 0, 0, 0, 0, M.MDlgScope}
-  Dlg.rScopeGlobal= {"DI_RADIOBUTTON", 6,Y+1, 0, 0, 0, 0, "DIF_GROUP", 0,
-                                              M.MDlgScopeGlobal, _noauto=true}
-  Dlg.rScopeBlock = {"DI_RADIOBUTTON", 6,Y+2, 0, 0, 0, 0, 0, 0,
-                                              M.MDlgScopeBlock, _noauto=true}
-  Dlg.lab         = {"DI_TEXT",       26,Y,0, 0, 0, 0, 0, 0,    M.MDlgOrigin}
-  Dlg.rOriginCursor={"DI_RADIOBUTTON",27,Y+1, 0, 0, 0, 0, "DIF_GROUP",0,
-                                              M.MDlgOrigCursor, _noauto=true}
-  Dlg.rOriginScope= {"DI_RADIOBUTTON",27,Y+2, 0, 0, 0, 0, 0, 0,
-                                              M.MDlgOrigScope, _noauto=true}
-  Dlg.bSearchBack = {"DI_CHECKBOX",   50,Y,   0, 0, 0, 0, 0, 0, M.MDlgReverseSearch}
+  insert(Items, { tp="text";  text=M.MDlgScope; })
+  insert(Items, { tp="rbutt"; name="rScopeGlobal";  text=M.MDlgScopeGlobal; x1=6; group=1; noauto=1; })
+  insert(Items, { tp="rbutt"; name="rScopeBlock";   text=M.MDlgScopeBlock;  x1=6; noauto=1; })
+  insert(Items, { tp="text";                        text=M.MDlgOrigin; ystep=-2; x1=26; })
+  insert(Items, { tp="rbutt"; name="rOriginCursor"; text=M.MDlgOrigCursor; x1=27; group=1; noauto=1; })
+  insert(Items, { tp="rbutt"; name="rOriginScope";  text=M.MDlgOrigScope;  x1=27; noauto=1; })
+  insert(Items, { tp="chbox"; name="bSearchBack";   text=M.MDlgReverseSearch; ystep=-2; x1=50; })
   ------------------------------------------------------------------------------
-  Y = Y + 3
-  Dlg.sep = {"DI_TEXT", 5,Y,0,0, 0,0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
+  insert(Items, { tp="sep"; ystep=3; })
   ------------------------------------------------------------------------------
-  Y = Y + 1
-  Dlg.bAdvanced   = {"DI_CHECKBOX",    5,Y,  0, 0, 0, 0, 0, 0, M.MDlgAdvanced}
-  Dlg.labFilterFunc={"DI_TEXT",       39,Y,   0, 0, 0, 0, 0, 0, M.MDlgFilterFunc}
-  Y = Y + 1
-  Dlg.sFilterFunc = {"DI_EDIT",       39,Y,  70, 4, 0, HIST_FILTERFUNC, "DIF_HISTORY", 0, ""}
+  insert(Items, { tp="chbox"; name="bAdvanced";            text=M.MDlgAdvanced; })
+  insert(Items, { tp="text";  name="labFilterFunc"; x1=39; text=M.MDlgFilterFunc; y1=""; })
+  insert(Items, { tp="edit";  name="sFilterFunc";   x1=39; hist=HIST_FILTERFUNC; })
   ------------------------------------------------------------------------------
-  Y = Y + 1
-  Dlg.labInitFunc = {"DI_TEXT",        5,Y,   0, 0, 0, 0, 0, 0, M.MDlgInitFunc}
-  Dlg.sInitFunc   = {"DI_EDIT",        5,Y+1,36, 0, 0, HIST_INITFUNC, "DIF_HISTORY", 0, ""}
-  Dlg.labFinalFunc= {"DI_TEXT",       39,Y,   0, 0, 0, 0, 0, 0, M.MDlgFinalFunc}
-  Dlg.sFinalFunc  = {"DI_EDIT",       39,Y+1,70, 6, 0, HIST_FINALFUNC, "DIF_HISTORY", 0, ""}
+  insert(Items, { tp="text";  name="labInitFunc";  text=M.MDlgInitFunc; })
+  insert(Items, { tp="edit";  name="sInitFunc";    x2=36; hist=HIST_INITFUNC; })
+  insert(Items, { tp="text";  name="labFinalFunc"; x1=39; text=M.MDlgFinalFunc; ystep=-1; })
+  insert(Items, { tp="edit";  name="sFinalFunc";   x1=39; hist=HIST_FINALFUNC; })
   ------------------------------------------------------------------------------
-  Y = Y + 2
-  Dlg.sep = {"DI_TEXT", 5,Y,0,0, 0,0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
+  insert(Items, { tp="sep"; })
   ------------------------------------------------------------------------------
-  Y = Y + 1
-  Dlg.btnOk       = {"DI_BUTTON",      0,Y,   0, 0, 0, 0, "DIF_CENTERGROUP", 1, M.MOk}
-  Dlg.btnCancel   = {"DI_BUTTON",      0,Y,   0, 0, 0, 0, "DIF_CENTERGROUP", 0, M.MCancel}
+  insert(Items, { tp="butt"; name="btnOk"; centergroup=1; text=M.MOk; default=1; })
+  insert(Items, { tp="butt"; name="btnCancel"; centergroup=1; text=M.MCancel; cancel=1; })
   if not aReplace then
-    Dlg.btnCount  = {"DI_BUTTON",      0,Y,   0, 0, 0, 0, "DIF_CENTERGROUP", 0, M.MDlgBtnCount}
-    Dlg.btnShowAll= {"DI_BUTTON",      0,Y,   0, 0, 0, 0, "DIF_CENTERGROUP", 0, M.MDlgBtnShowAll}
+    insert(Items, { tp="butt"; name="btnCount"; centergroup=1; text=M.MDlgBtnCount; })
+    insert(Items, { tp="butt"; name="btnShowAll"; centergroup=1; text=M.MDlgBtnShowAll; })
   end
-  Dlg.btnConfig   = {"DI_BUTTON",      0,Y,   0, 0, 0, 0, "DIF_CENTERGROUP", 0, M.MDlgBtnConfig}
-  Dlg.frame.Y2 = Y+1
+  insert(Items, { tp="butt"; name="btnConfig"; centergroup=1; text=M.MDlgBtnConfig; })
   ----------------------------------------------------------------------------
-  local function DlgProc (hDlg, msg, param1, param2)
-    if msg == F.DN_GETDIALOGINFO then
-      return aReplace and replaceGuid or searchGuid
-    end
+  function Items.proc (hDlg, msg, param1, param2)
     return Frame:DlgProc(hDlg, msg, param1, param2)
   end
   ----------------------------------------------------------------------------
-  far2_dialog.LoadData(Dlg, aData)
+  sd.LoadData(aData, Items)
+  Frame.Pos, Frame.Elem = sd.Indexes(Items)
+  local pp = Frame.Pos
   Frame:OnDataLoaded(aData, aScriptCall)
-  local ret = far.Dialog (-1,-1,76,Y+3,"OperInEditor",Dlg,0,DlgProc)
-  if ret < 0 or ret == Dlg.btnCancel.id then return "cancel" end
-  return ret==Dlg.btnOk.id and (aReplace and "replace" or "search") or
-         ret==Dlg.btnConfig.id and "config" or
-         ret==Dlg.btnCount.id and "count" or
-         ret==Dlg.btnShowAll.id and "showall",
+  local out, pos = sd.Run(Items)
+  if not out then return "cancel" end
+  return pos==pp.btnOk      and (aReplace and "replace" or "search") or
+         pos==pp.btnConfig  and "config" or
+         pos==pp.btnCount   and "count"  or
+         pos==pp.btnShowAll and "showall",
          Frame.close_params
 end
 

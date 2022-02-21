@@ -233,8 +233,8 @@ $ #LuaFAR Поиск (версия 2.4)#
     *  LuaFAR (пространства имён #far#, #bit# и #unicode#)
     *  history (пространство имён #history#; тот же модуль, что
        применяется в LuaFAR for Editor)
-    *  dialog (пространство имён #far2.dialog#; тот же модуль, что
-       применяется в LuaFAR for Editor)
+    *  dialog (пространство имён #far2.simpledialog#; тот же модуль,
+       что применяется в LuaFAR for Editor)
 
   Функции:
     *  #lfsearch.EditorAction# (основная функция плагина; см. описание ниже)

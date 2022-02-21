@@ -2185,7 +2185,13 @@ void SetFarDialogItem(lua_State *L, struct FarDialogItem* Item, int itemindex,
     lua_pop(L,1);
   }
   else if (Item->Type == DI_CHECKBOX || Item->Type == DI_RADIOBUTTON) {
-    Item->Selected = GetIntFromArray(L, 7);
+    lua_pushinteger(L, 7);
+    lua_gettable(L, -2);
+    if (lua_isnumber(L,-1))
+      Item->Selected = lua_tointeger(L,-1);
+    else
+      Item->Selected = lua_toboolean(L,-1) ? BSTATE_CHECKED : BSTATE_UNCHECKED;
+    lua_pop(L, 1);
   }
   else if (Item->Type == DI_EDIT || Item->Type == DI_FIXEDIT) {
     if ((Item->Flags & DIF_HISTORY) ||
@@ -2215,6 +2221,19 @@ void SetFarDialogItem(lua_State *L, struct FarDialogItem* Item, int itemindex,
     lua_pop(L, 1);
 }
 
+void PushCheckbox (lua_State *L, int value)
+{
+  switch (value) {
+    case BSTATE_3STATE:
+      lua_pushinteger(L,2); break;
+    case BSTATE_UNCHECKED:
+      lua_pushboolean(L,0); break;
+    default:
+    case BSTATE_CHECKED:
+      lua_pushboolean(L,1); break;
+  }
+}
+
 void PushDlgItem (lua_State *L, const struct FarDialogItem* pItem, BOOL table_exist)
 {
   if (! table_exist) {
@@ -2240,6 +2259,11 @@ void PushDlgItem (lua_State *L, const struct FarDialogItem* pItem, BOOL table_ex
   else if (pItem->Type == DI_USERCONTROL)
   {
     lua_pushlightuserdata(L, pItem->VBuf);
+    lua_rawseti(L, -2, 7);
+  }
+  else if (pItem->Type == DI_CHECKBOX || pItem->Type == DI_RADIOBUTTON)
+  {
+    PushCheckbox(L, pItem->Selected);
     lua_rawseti(L, -2, 7);
   }
   else
@@ -2386,6 +2410,18 @@ int PushDMParams (lua_State *L, int Msg, int Param1)
   return 1;
 }
 
+LONG_PTR GetEnableFromLua (lua_State *L, int pos)
+{
+  LONG_PTR ret;
+  if (lua_isnoneornil(L,pos)) //get state
+    ret = -1;
+  else if (lua_isnumber(L,pos))
+    ret = lua_tointeger(L, pos);
+  else
+    ret = lua_toboolean(L, pos);
+  return ret;
+}
+
 int DoSendDlgMessage (lua_State *L, int Msg, int delta)
 {
   typedef struct { void *Id; int Ref; } listdata_t;
@@ -2435,9 +2471,6 @@ int DoSendDlgMessage (lua_State *L, int Msg, int delta)
       res_incr = 1; // fall through
     case DM_CLOSE:
     case DM_EDITUNCHANGEDFLAG:
-    case DM_ENABLE:
-    case DM_ENABLEREDRAW:
-    case DM_GETCHECK:
     case DM_GETCOMBOBOXEVENT:
     case DM_GETCURSORSIZE:
     case DM_GETDROPDOWNOPENED:
@@ -2456,6 +2489,26 @@ int DoSendDlgMessage (lua_State *L, int Msg, int delta)
     case DM_SHOWITEM:
     case DM_USER:
       Param2 = luaL_optlong(L, pos4, 0);
+      break;
+
+    case DM_ENABLEREDRAW:
+      Param2 = GetEnableFromLua(L, pos4);
+      break;
+
+    case DM_ENABLE:
+      Param2 = GetEnableFromLua(L, pos4);
+      lua_pushboolean(L, Info->SendDlgMessage(hDlg, Msg, Param1, Param2));
+      return 1;
+
+    case DM_GETCHECK:
+      PushCheckbox(L, Info->SendDlgMessage(hDlg, Msg, Param1, 0));
+      return 1;
+
+    case DM_SETCHECK:
+      if (lua_isnumber(L,pos4))
+        Param2 = lua_tointeger(L,pos4);
+      else
+        Param2 = lua_toboolean(L,pos4) ? BSTATE_CHECKED : BSTATE_UNCHECKED;
       break;
 
     case DM_GETCOLOR:
@@ -2479,7 +2532,6 @@ int DoSendDlgMessage (lua_State *L, int Msg, int delta)
       break;
 
     case DM_LISTSETMOUSEREACTION:
-    case DM_SETCHECK:
       get_env_flag (L, pos4, &tmpint);
       Param2 = tmpint;
       break;
