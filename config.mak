@@ -2,7 +2,6 @@
 # ---------------------------
 
 FARSOURCE  = $(HOME)/far2l
-FARINSTALL = $(HOME)/far2l/_build/install
 
 # Settings below do not usually require editing
 # ----------------------------------------------

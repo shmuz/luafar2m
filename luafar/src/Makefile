@@ -1,11 +1,11 @@
 # Makefile
 
-include ../config.mak
+include ../../config.mak
 
 OUT= Out$(DIRBIT)
 MYCFLAGS  = -DBUILD_DLL -DFAR_DONT_USE_INTERNALS -fvisibility=hidden
 MYLDFLAGS = -llua5.1
-TARGET = ../$(LUAFARDLL)
+TARGET = ../../$(LUAFARDLL)
 
 OBJ = \
   $(OUT)/farflags.o    \
