@@ -6,6 +6,9 @@ local sd     = require "far2.simpledialog"
 local Sett   = require "far2.settings"
 local field = Sett.field
 
+local Excl_Dirs = {}
+local Excl_Key = "sExcludeDirs"
+
 local F = far.Flags
 local dirsep = package.config:sub(1,1)
 
@@ -79,6 +82,38 @@ local function ConfigDialog (aHistory)
     return true
   end
 end
+
+local function SetExcludeNames(data)
+  if data[Excl_Key] then
+    Excl_Dirs = {}
+    for patt in data[Excl_Key]:gmatch("[^:]+") do
+      table.insert(Excl_Dirs, patt)
+    end
+  end
+end
+
+local function ConfigDialog2 (aHistory)
+  local Items = {
+    width = 76;
+    --help = "SearchResultsPanel";
+    { tp="dbox"; text=M.MConfiguration; },
+    { tp="text"; text=M.MExcludeNamesLabel; },
+    { tp="edit"; name=Excl_Key; hist="LFS_Excl_Dirs"},
+    { tp="sep"; },
+    { tp="butt"; text=M.MOk; default=1; centergroup=1; },
+    { tp="butt"; text=M.MCancel; cancel=1; centergroup=1; },
+  }
+  local Data = field(aHistory, "panels")
+  sd.LoadData(Data, Items)
+  local out = sd.Run(Items)
+  if out then
+    out[Excl_Key] = out[Excl_Key]:match("^%s*(.-)%s*$")
+    sd.SaveData(out, Data)
+    SetExcludeNames(out)
+    return true
+  end
+end
+
 
 local function GetCodePages (aData)
   local Selected = aData.SelectedCodePages or {}
@@ -208,11 +243,18 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
   insert(Items, { tp="sep"; })
   insert(Items, { tp="butt"; centergroup=1; text=M.MOk; default=1; name="btnOk"; })
   insert(Items, { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; })
---insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnConfig; name="btnConfig"; }) --TODO
+  insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnConfig; name="btnConfig"; }) --TODO
   ------------------------------------------------------------------------------
   local Pos,Elem = sd.Indexes(Items)
+  SetExcludeNames(field(aHistory, "panels"))
+
+  local function SetBtnConfigText(hDlg)
+    hDlg:SetText(Pos.btnConfig, M.MDlgBtnConfig..(Excl_Dirs[1] and "*" or ""))
+  end
+
   function Items.proc (hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
+      SetBtnConfigText(hDlg)
       hDlg:SetComboboxEvent(Pos.cmbCodePage, F.CBET_KEY)
       local t = {}
       for i,v in ipairs(Elem.cmbCodePage.list) do
@@ -240,7 +282,10 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
     elseif msg == F.DN_CLOSE then
       if Pos.btnConfig and param1 == Pos.btnConfig then
         hDlg:ShowDialog(0)
-        ConfigDialog(aHistory)
+        --ConfigDialog(aHistory) --TODO
+        if ConfigDialog2(aHistory) then
+          SetBtnConfigText(hDlg)
+        end
         hDlg:ShowDialog(1)
         hDlg:SetFocus(Pos.btnOk)
         return 0
@@ -389,9 +434,13 @@ local function SearchFromPanel (aHistory)
   local panelInfo = panel.GetPanelInfo(1)
   local area = dataPanels.iSearchArea or 1
   if area < 1 or area > 7 then area = 1 end
+  local bRecurse, bSymLinks
   local itemList, flags = MakeItemList(panelInfo, area)
   if dataPanels.bSearchSymLinks then
-    flags=bit.bor(flags, F.FRS_SCANSYMLINK)
+    bSymLinks = true
+  end
+  if bit.band(flags, F.FRS_RECUR) ~= 0 then
+    bRecurse = true
   end
   -----------------------------------------------------------------------------
   local userbreak
@@ -405,69 +454,101 @@ local function SearchFromPanel (aHistory)
     if r==1 then userbreak = true end
     return r==1 or r==2
   end
-  local tOut, cnt = {}, 0
+  local tOut, cnt, nShow = {}, 0, 0
   far.Message((" "):rep(WID).."\n"..M.MFilesFound.."0", TITLE, "")
   --===========================================================================
-  local function ProcessFile(fdata, fullname)
-    ---------------------------------------------------------------------------
-    if win.ExtractKey()=="ESCAPE" and ConfirmEsc() then return true end
+
+  local function ShowProgress(fullname)
     local len = fullname:len()
     local s = len<=WID and fullname..(" "):rep(WID-len) or
               fullname:sub(1,W1).. "..." .. fullname:sub(-W2)
     far.Message(s.."\n"..M.MFilesFound..cnt, TITLE, "")
+  end
+  --===========================================================================
+
+  local function ProcessFile(fdata, fullname, mask_incl, mask_excl)
     ---------------------------------------------------------------------------
-    local found = true
+    if win.ExtractKey()=="ESCAPE" and ConfirmEsc() then return true end
+    ---------------------------------------------------------------------------
+    nShow = nShow + 1
+    if nShow % 32 == 0 then ShowProgress(fullname) end
+    ---------------------------------------------------------------------------
+    local mask_ok = far.ProcessName(mask_incl, fdata.FileName, F.PN_CMPNAMELIST+F.PN_SKIPPATH) and
+      not (mask_excl and far.ProcessName(mask_excl, fdata.FileName, F.PN_CMPNAMELIST+F.PN_SKIPPATH))
+    ---------------------------------------------------------------------------
     if fdata.FileAttributes:find("d") then
-      if (not dataPanels.bSearchFolders) or (dataMain.sSearchPat ~= "") then
-        return false
+      if mask_ok and dataPanels.bSearchFolders and dataMain.sSearchPat == "" then
+        cnt = cnt+1
+        tOut[cnt] = fullname
       end
-    else found = (dataMain.sSearchPat == "")
+      ---------------------------------------------------------------------------
+      for _,patt in ipairs(Excl_Dirs) do
+        if fullname:find(patt) then return end
+      end
+      ---------------------------------------------------------------------------
+      if bRecurse then
+        if bSymLinks or not fdata.FileAttributes:find("e") then
+          return far.RecursiveSearch(fullname, "*", ProcessFile, 0, mask_incl, mask_excl)
+        end
+      end
+      return
     end
     ---------------------------------------------------------------------------
+    if not mask_ok then return end
+    ---------------------------------------------------------------------------
+    local found = dataMain.sSearchPat == ""
     if not found then
       local fp = io.open(fullname, "rb")
-      if not fp then return false end
-      local str = ""
-      repeat
-        if win.ExtractKey() == "ESCAPE" and ConfirmEsc2() then
-          fp:close(); return userbreak
-        end
-        if #str == BLOCKLEN then fp:seek("cur", OVERLAP) end
-        str = fp:read(BLOCKLEN)
-        if not str then break end
-        for _, cp in ipairs(codePages) do
-          local s
-          if cp == 1200 or cp == 65001 then s = str
-          elseif cp == 1201 then s = string.gsub(str, "(.)(.)", "%2%1")
-          else s = win.MultiByteToWideChar(str, cp)--, cp==65000 and "" or "e")
+      if fp then
+        ShowProgress(fullname)
+        local str = ""
+        repeat
+          if win.ExtractKey() == "ESCAPE" and ConfirmEsc2() then
+            fp:close(); return userbreak
           end
-          if s and cp ~= 65001 then s = win.Utf16ToUtf8(s) end
-          if s then
-            local ok, start = pcall(Regex.find, Regex, s)
-            if ok and start then found = true break end
+          if #str == BLOCKLEN then fp:seek("cur", OVERLAP) end
+          str = fp:read(BLOCKLEN)
+          if not str then break end
+          for _, cp in ipairs(codePages) do
+            local s
+            if cp == 1200 or cp == 65001 then s = str
+            elseif cp == 1201 then s = string.gsub(str, "(.)(.)", "%2%1")
+            else s = win.MultiByteToWideChar(str, cp)--, cp==65000 and "" or "e")
+            end
+            if s and cp ~= 65001 then s = win.Utf16ToUtf8(s) end
+            if s then
+              local ok, start = pcall(Regex.find, Regex, s)
+              if ok and start then found = true break end
+            end
           end
-        end
-      until found
-      fp:close()
+        until found
+        fp:close()
+      end
     end
     ---------------------------------------------------------------------------
     if found then cnt = cnt+1; tOut[cnt] = fullname; end
-    return false
     ---------------------------------------------------------------------------
   end
   --===========================================================================
 
+  SetExcludeNames(dataPanels)
   for _, item in ipairs(itemList) do
     local fdata = win.GetFileInfo(item)
     -- note: fdata can be nil for root directories
     local isFile = fdata and not fdata.FileAttributes:find("d")
     ---------------------------------------------------------------------------
-    if isFile or ((area == saFromCurrFolder or area == saOnlyCurrFolder)
-                  and panelInfo.Plugin) then
-      ProcessFile(fdata, item)
+    if isFile or ((area==saFromCurrFolder or area==saOnlyCurrFolder) and panelInfo.Plugin) then
+      ProcessFile(fdata, item, "*")
     end
     if not isFile and not (area == saOnlyCurrFolder and panelInfo.Plugin) then
-      far.RecursiveSearch(item, dataPanels.sFileMask, ProcessFile, flags)
+      local mask_incl, mask_excl = dataPanels.sFileMask:match("(.-)|(.*)")
+      if mask_incl then
+        if mask_incl=="" then mask_incl = "*" end
+        if mask_excl=="" then mask_excl = nil end
+      else
+        mask_incl = dataPanels.sFileMask
+      end
+      far.RecursiveSearch(item, "*", ProcessFile, 0, mask_incl, mask_excl)
     end
     ---------------------------------------------------------------------------
     if userbreak then break end
@@ -483,16 +564,16 @@ local function SearchFromPanel (aHistory)
     -- run temporary panel from the command line
     local tp_settings = GetTmpPanelSettings()
     local prefix = tp_settings.Prefix or "tmp"
---~     local usercfg = ChangeTmpPanelSettings(aHistory)
+--~ local usercfg = ChangeTmpPanelSettings(aHistory)
     local cmd = ("%s: -menu %s"):format(prefix, fname)
     panel.SetCmdLine (cmd)
     actl.PostKeySequence {F.KEY_ENTER}
-     far.Timer(1000,
-       function(h)
-         h:Close()
-         win.DeleteFile(fname)
----         RestoreTmpPanelSettings(tp_settings)
-       end)
+    far.Timer(1000,
+      function(h)
+        h:Close()
+        win.DeleteFile(fname)
+---     RestoreTmpPanelSettings(tp_settings)
+      end)
   else
     actl.RedrawAll()
     if userbreak or 1==far.Message(M.MNoFilesFound,M.MMenuTitle,M.MButtonsNewSearch) then

@@ -3929,17 +3929,24 @@ int far_ProcessName (lua_State *L)
   const wchar_t* param1 = check_utf8_string(L, 1, NULL);
   const wchar_t* param2 = check_utf8_string(L, 2, NULL);
   int flags = CheckFlags(L, 3);
+  int result;
 
-  const int BUFSIZE = 1024;
-  wchar_t* buf = (wchar_t*)lua_newuserdata(L, BUFSIZE * sizeof(wchar_t));
-  wcsncpy(buf, param2, BUFSIZE-1);
-  buf[BUFSIZE-1] = 0;
+  if (flags & PN_GENERATENAME) {
+    const int BUFSIZE = 1024;
+    wchar_t* buf = (wchar_t*)lua_newuserdata(L, BUFSIZE * sizeof(wchar_t));
+    wcsncpy(buf, param2, BUFSIZE-1);
+    buf[BUFSIZE-1] = 0;
 
-  int result = GetFSF(L)->ProcessName(param1, buf, BUFSIZE, flags);
-  if (flags == PN_GENERATENAME && result != 0)
-    push_utf8_string(L, buf, -1);
-  else
+    result = GetFSF(L)->ProcessName(param1, buf, BUFSIZE, flags);
+    if (result)
+      push_utf8_string(L, buf, -1);
+    else
+      lua_pushboolean(L, result);
+  }
+  else {
+    result = GetFSF(L)->ProcessName(param1, (wchar_t*)param2, 0, flags);
     lua_pushboolean(L, result);
+  }
   return 1;
 }
 
@@ -4168,11 +4175,6 @@ int DoAdvControl (lua_State *L, int Command, int Delta)
   PSInfo *Info = GetPluginStartupInfo(L);
   intptr_t int1;
   wchar_t buf[300];
-  struct ActlEjectMedia em;
-  struct KeySequence ks;
-  struct FarSetColors fsc;
-  struct PROGRESSVALUE pv;
-  SMALL_RECT sr;
   COORD coord;
 
   if (Delta == 0)
@@ -4225,19 +4227,22 @@ int DoAdvControl (lua_State *L, int Command, int Delta)
       int1 = Info->AdvControl(Info->ModuleNumber, Command, (void*)int1);
       return lua_pushboolean(L, int1), 1;
 
-    case ACTL_SETPROGRESSVALUE:
+    case ACTL_SETPROGRESSVALUE: {
+      struct PROGRESSVALUE pv;
       luaL_checktype(L, pos2, LUA_TTABLE);
       lua_settop(L, pos2);
       pv.Completed = GetOptNumFromTable(L, "Completed", 0.0);
       pv.Total = GetOptNumFromTable(L, "Total", 100.0);
       lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, Command, &pv));
       return 1;
+    }
 
     case ACTL_GETSYSWORDDIV:
       Info->AdvControl(Info->ModuleNumber, Command, buf);
       return push_utf8_string(L,buf,-1), 1;
 
-    case ACTL_EJECTMEDIA:
+    case ACTL_EJECTMEDIA: {
+      struct ActlEjectMedia em;
       luaL_checktype(L, pos2, LUA_TTABLE);
       lua_getfield(L, pos2, "Letter");
       em.Letter = lua_isstring(L,-1) ? lua_tostring(L,-1)[0] : '\0';
@@ -4245,6 +4250,7 @@ int DoAdvControl (lua_State *L, int Command, int Delta)
       em.Flags = CheckFlags(L,-1);
       lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, Command, &em));
       return 1;
+    }
 
     case ACTL_GETARRAYCOLOR: {
       int i;
@@ -4304,6 +4310,7 @@ int DoAdvControl (lua_State *L, int Command, int Delta)
     }
 
     case ACTL_POSTKEYSEQUENCE: {
+      struct KeySequence ks;
       int i;
       DWORD* sequence;
       luaL_checktype(L, pos2, LUA_TTABLE);
@@ -4323,7 +4330,9 @@ int DoAdvControl (lua_State *L, int Command, int Delta)
       return 1;
     }
 
-    case ACTL_SETARRAYCOLOR:
+    case ACTL_SETARRAYCOLOR: {
+      int i;
+      struct FarSetColors fsc;
       luaL_checktype(L, pos2, LUA_TTABLE);
       lua_settop(L, pos2);
       fsc.StartIndex = GetOptIntFromTable(L, "StartIndex", 0);
@@ -4331,7 +4340,6 @@ int DoAdvControl (lua_State *L, int Command, int Delta)
       GetFlagCombination(L, -1, (int*)&fsc.Flags);
       fsc.ColorCount = lua_objlen(L, pos2);
       fsc.Colors = (BYTE*)lua_newuserdata(L, fsc.ColorCount);
-      int i;
       for (i=0; i < fsc.ColorCount; i++) {
         lua_pushinteger(L,i+1);
         lua_gettable(L,pos2);
@@ -4340,8 +4348,10 @@ int DoAdvControl (lua_State *L, int Command, int Delta)
       }
       lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, Command, &fsc));
       return 1;
+    }
 
-    case ACTL_GETFARRECT:
+    case ACTL_GETFARRECT: {
+      SMALL_RECT sr;
       if (Info->AdvControl(Info->ModuleNumber, Command, &sr)) {
         lua_createtable(L, 0, 4);
         PutIntToTable(L, "Left",   sr.Left);
@@ -4352,6 +4362,7 @@ int DoAdvControl (lua_State *L, int Command, int Delta)
       else
         lua_pushnil(L);
       return 1;
+    }
 
     case ACTL_GETCURSORPOS:
       if (Info->AdvControl(Info->ModuleNumber, Command, &coord)) {

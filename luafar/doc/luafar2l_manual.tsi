@@ -6538,6 +6538,7 @@ id=90
 lv=2
 dt=Text
 nm=FindData
+mtime=3854818424
 <article>
 #_<markdown>
 #_**`FindData`** is a table with the following predefined fields:
@@ -6559,13 +6560,16 @@ nm=FindData
 #_is set, otherwise it is not.
 #_
 #_          a - archive
-#_          r - read only
-#_          h - hidden
-#_          s - system file
-#_          d - directory
 #_          c - compressed
+#_          d - directory
+#_          e - reparse point
+#_          h - hidden
+#_          n - encrypted
 #_          o - offline
+#_          r - read only
+#_          s - system file
 #_          t - temporary
+#_          v - virtual
 #_
 #_1. **`LastWriteTime`**, **`LastAccessTime`** and **`CreationTime`**
 #_are values measured in number of milliseconds elapsed since

@@ -298,7 +298,7 @@ local function Run (inData)
       assert(type(v.list)=="table", "\"list\" field must be a table")
       local dropdown = 0 ~= band(flags,F.DIF_DROPDOWNLIST)
       local index = dropdown and v.val and v.val>=1 and v.val<=#v.list and v.val
-      v.list.SelectIndex = index or v.list.SelectIndex or 1
+      v.list.SelectIndex = index or v.list.SelectIndex
       text = dropdown and "" or text
       outData[i] = {tp,  x1,y1,x2,y1,  focus,v.list,flags,0, text}
 

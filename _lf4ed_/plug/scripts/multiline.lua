@@ -26,7 +26,7 @@ local SETTINGS_KEY = "shmuz"
 local SETTINGS_NAME = "multiline_search"
 
 local fgsub = require "fgsub"
-local far2_dialog = require "far2.dialog"
+local sd = require "far2.simpledialog"
 local rex = require "rex_pcre"
 
 local _RequiredLuafarVersion = "1.0.0" -- earlier versions had a bug (DM_GETTEXT crash)
@@ -189,22 +189,25 @@ local function FormatInt (num)
 end
 
 local function ConfigDialog (aData)
-  local Dlg = far2_dialog.NewDialog()
-  Dlg.frame       = {"DI_DOUBLEBOX",   3, 1,72, 9,  0, 0,  0,  0, M.MConfigTitle}
+  local Items = {
+    width = 76;
+    help = "Contents";
+    { tp="dbox"; text=M.MConfigTitle; },
 
-  Dlg.lab          = {"DI_TEXT",        5, 2, 0, 0,  0, 0,  0,  0, M.MPickFrom}
-  Dlg.rbtPickEditor= {"DI_RADIOBUTTON", 7, 3, 0, 0,  0, 1, "DIF_GROUP", 0, M.MPickEditor}
-  Dlg.rbtPickHistory={"DI_RADIOBUTTON",23, 3, 0, 0,  0, 0,  0,          0, M.MPickHistory}
-  Dlg.rbtPickNowhere={"DI_RADIOBUTTON",39, 3, 0, 0,  0, 0,  0,          0, M.MPickNowhere}
+    { tp="text"; text=M.MPickFrom; },
+    { tp="rbutt"; name="rbtPickEditor";  x1=7; group=1; text=M.MPickEditor; val=1; },
+    { tp="rbutt"; name="rbtPickHistory"; x1=23; y1=""; text=M.MPickHistory; },
+    { tp="rbutt"; name="rbtPickNowhere"; x1=39; y1=""; text=M.MPickNowhere; },
 
-  Dlg.sep         = {"DI_TEXT",        5, 7, 0, 0,  0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
-  Dlg.btnOk       = {"DI_BUTTON",      0, 8, 0, 0,  0, 0,  "DIF_CENTERGROUP", 1, M.MDlgBtnOk}
-  Dlg.btnCancel   = {"DI_BUTTON",      0, 8, 0, 0,  0, 0,  "DIF_CENTERGROUP", 0, M.MDlgBtnCancel}
+    { tp="sep"; ystep=4; },
+    { tp="butt"; centergroup=1; default=1; text=M.MDlgBtnOk; },
+    { tp="butt"; centergroup=1; cancel=1;  text=M.MDlgBtnCancel; },
+  }
 
-  far2_dialog.LoadData(Dlg, aData)
-  local ret = far.Dialog (-1,-1,76,11,"Contents",Dlg)
-  if ret == Dlg.btnOk.id then
-    far2_dialog.SaveData(Dlg, aData)
+  sd.LoadData(aData, Items)
+  local out = sd.Run(Items)
+  if out then
+    sd.SaveData(out, aData)
     return true
   end
 end
@@ -223,39 +226,38 @@ local function GetWordAboveCursor ()
 end
 
 local function SR_Dialog (aTitle, aData, aReplace, aFirstCall)
+  local insert = table.insert
   local HIST_INITFUNC   = _regpath .. "InitFunc"
   local HIST_FINALFUNC  = _regpath .. "FinalFunc"
   local HIST_FILTERFUNC = _regpath .. "FilterFunc"
   ------------------------------------------------------------------------------
-  local Dlg = far2_dialog.NewDialog()
-  Dlg.frame       = {"DI_DOUBLEBOX",    3,1,72,17,  0, 0,  0,  0, aTitle}
-  Dlg.lab         = {"DI_TEXT",         5,2, 0, 0,  0, 0,  0,  0, M.MDlgSearchPat}
-  Dlg.sSearchPat  = {"DI_EDIT",        14,2,70, 4,  1, "SearchText",
-                                 {DIF_HISTORY=1}, 0, "", _noautoload=aFirstCall}
+  local Items = {
+    width = 76;
+    help = "Contents";
+    { tp="dbox"; text=aTitle; },
+    { tp="text"; text=M.MDlgSearchPat; },
+    { tp="edit"; name="sSearchPat"; y1=""; x1=14; hist="SearchText"; noload=aFirstCall; },
+  }
   ------------------------------------------------------------------------------
   if aReplace then
-    Dlg.lab         = {"DI_TEXT",       5, 4,0, 0,  0, 0,  0,  0, M.MDlgReplacePat}
-    Dlg.sReplacePat = {"DI_EDIT",      14, 4,70,6,  0, "ReplaceText",
-            {DIF_HISTORY=1,DIF_USELASTHISTORY=1}, 0, "", _noautoload=aFirstCall}
-    Dlg.bReplInBlock= {"DI_CHECKBOX",  15, 5, 0, 0, 0, 0,  0,  0, M.MReplInBlock}
-    Dlg.bRepIsFunc  = {"DI_CHECKBOX",  37, 5, 0,0,  0, 0,  0,  0, M.MDlgRepIsFunc}
+    insert(Items, { tp="text"; ystep=2; text=M.MDlgReplacePat; })
+    insert(Items, { tp="edit"; name="sReplacePat"; y1=""; x1=14; hist="ReplaceText";
+                                          uselasthistory=1;   noload=aFirstCall; })
+    insert(Items, { tp="chbox"; name="bReplInBlock"; x1=15; text=M.MReplInBlock; })
+    insert(Items, { tp="chbox"; name="bRepIsFunc";   x1=37; y1=""; text=M.MDlgRepIsFunc; })
   end
   ------------------------------------------------------------------------------
-  local Y = aReplace and 6 or 3
-  Dlg.sep         = {"DI_TEXT",         5, Y,0, 0,  0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
+  insert(Items, { tp="sep"; })
   ------------------------------------------------------------------------------
-  Y = Y + 1
-  Dlg.bCaseSens   = {"DI_CHECKBOX",     5,Y, 0, 0,  0, 0,  0,  0, M.MDlgCaseSens}
-  Dlg.bRegExpr    = {"DI_CHECKBOX",    37,Y, 0, 0,  0, 0,  0,  0, M.MDlgRegExpr}
+  insert(Items, { tp="chbox"; name="bCaseSens"; text=M.MDlgCaseSens; })
+  insert(Items, { tp="chbox"; name="bRegExpr";   x1=37; y1=""; text=M.MDlgRegExpr; })
   ------------------------------------------------------------------------------
-  Y = Y + 1
-  Dlg.bWholeWords = {"DI_CHECKBOX",    5,Y, 0, 0,  0, 0,  0,  0, M.MDlgWholeWords}
-  Dlg.bExtended   = {"DI_CHECKBOX",    37,Y, 0, 0,  0, 0,  0,  0, M.MDlgExtended}
+  insert(Items, { tp="chbox"; name="bWholeWords"; text=M.MDlgWholeWords; })
+  insert(Items, { tp="chbox"; name="bExtended"; x1=37; y1=""; text=M.MDlgExtended; })
   ------------------------------------------------------------------------------
-  Y = Y + 1
-  Dlg.bWrapAround = {"DI_CHECKBOX",     5,Y, 0, 0,  0, 0,  0,  0, M.MWrapAround}
+  insert(Items, { tp="chbox"; name="bWrapAround"; text=M.MWrapAround; })
 --~   Dlg.bUseProfiler= {"DI_CHECKBOX",    37,Y, 0, 0,  0, 0,  0,  0, "Use &Profiler"}
-  Dlg.sep         = {"DI_TEXT",         5,Y+1,0,0,  0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
+  insert(Items, { tp="sep"; })
   ------------------------------------------------------------------------------
 --~   Y = Y + 2
 --~   Dlg.bFilterFunc = {"DI_CHECKBOX",    5,Y, 0, 0,  0, 0,  0,  0, M.MDlgUseFilterFunc}
@@ -269,69 +271,68 @@ local function SR_Dialog (aTitle, aData, aReplace, aFirstCall)
 --~   Dlg.lab         = {"DI_TEXT",        5,Y,0, 0,  0, 0,  0,  0, M.MDlgFinalFunc}
 --~   Dlg.sFinalFunc  = {"DI_EDIT",       14,Y,70,6,  0, HIST_FINALFUNC, "DIF_HISTORY", 0, ""}
 --~   ------------------------------------------------------------------------------
-  Y = Y + 1
-  Dlg.sep         = {"DI_TEXT",        5,Y,0, 0,  0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
+---   Y = Y + 1
+---   Dlg.sep         = {"DI_TEXT",        5,Y,0, 0,  0, 0, {DIF_BOXCOLOR=1,DIF_SEPARATOR=1}, 0, ""}
   ------------------------------------------------------------------------------
-  Y = Y + 1
-  Dlg.btnOk       = {"DI_BUTTON",      0,Y,0, 0,  0, 0,  "DIF_CENTERGROUP", 1, M.MDlgBtnOk}
-  Dlg.btnCancel   = {"DI_BUTTON",      0,Y,0, 0,  0, 0,  "DIF_CENTERGROUP", 0, M.MDlgBtnCancel}
-  Dlg.btnConfig   = {"DI_BUTTON",      0,Y,0, 0,  0, 0,  "DIF_CENTERGROUP", 0, M.MConfigButton}
+  insert(Items, { tp="butt"; centergroup=1; default=1; name="btnOk"; text=M.MDlgBtnOk; })
+  insert(Items, { tp="butt"; centergroup=1; cancel=1;            text=M.MDlgBtnCancel; })
+  insert(Items, { tp="butt"; centergroup=1; name="btnConfig";    text=M.MConfigButton; })
   if not aReplace then
-    Dlg.btnCount  = {"DI_BUTTON",      0,Y,0, 0,  0, 0,  "DIF_CENTERGROUP", 0, M.MCount}
-    Dlg.btnShowAll= {"DI_BUTTON",      0,Y,0, 0,  0, 0,  "DIF_CENTERGROUP", 0, M.MShowAll}
+    insert(Items, { tp="butt"; centergroup=1; name="btnCount";   text=M.MCount;   })
+    insert(Items, { tp="butt"; centergroup=1; name="btnShowAll"; text=M.MShowAll; })
   end
   ------------------------------------------------------------------------------
-
+  local Pos,Elem = sd.Indexes(Items)
   -- Load Data
-  far2_dialog.LoadData(Dlg, aData)
+  sd.LoadData(aData, Items)
   if aFirstCall then
     if aData.rbtPickEditor ~= false then --> default value
-      Dlg.sSearchPat.Data = GetWordAboveCursor() or ""
+      Elem.sSearchPat.text = GetWordAboveCursor() or ""
     elseif aData.rbtPickHistory then
-      Dlg.sSearchPat.Flags.DIF_USELASTHISTORY = true
+      Elem.sSearchPat.uselasthistory = true
     end
   end
   ----------------------------------------------------------------------------
   -- Handlers of dialog events --
   ----------------------------------------------------------------------------
   local function CheckLineFilter (hDlg)
-    local enbl = Dlg.bFilterFunc:GetCheck(hDlg)
-    Dlg.sFilterFunc:Enable(hDlg, enbl)
+    local enbl = hDlg:GetCheck(Pos.bFilterFunc)
+    hDlg:Enable(Pos.sFilterFunc, enbl)
   end
 
   local function CheckRegExpr (hDlg)
-    local enbl = Dlg.bRegExpr:GetCheck(hDlg)
-    Dlg.bExtended:Enable(hDlg, enbl)
-    Dlg.bWholeWords:Enable(hDlg, not enbl)
+    local enbl = hDlg:GetCheck(Pos.bRegExpr)
+    hDlg:Enable(Pos.bExtended, enbl)
+    hDlg:Enable(Pos.bWholeWords, not enbl)
   end
 
   local function CheckReplInBlock (hDlg)
-    local enbl = not Dlg.bReplInBlock:GetCheck(hDlg)
-    Dlg.bWrapAround:Enable(hDlg, enbl)
+    local enbl = not hDlg:GetCheck(Pos.bReplInBlock)
+    hDlg:Enable(Pos.bWrapAround, enbl)
   end
 
-  local function DlgProc (hDlg, msg, param1, param2)
+  function Items.proc (hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
       if aReplace then
         if editor.GetInfo().BlockType == F.BTYPE_NONE then
-          Dlg.bReplInBlock:SetCheck(hDlg, false)
-          Dlg.bReplInBlock:Enable(hDlg, false)
+          hDlg:SetCheck(Pos.bReplInBlock, false)
+          hDlg:Enable(Pos.bReplInBlock, false)
         end
         CheckReplInBlock(hDlg)
       end
 --~       CheckLineFilter(hDlg)
       CheckRegExpr(hDlg)
     elseif msg == F.DN_BTNCLICK then
---~       if param1==Dlg.bFilterFunc.id then CheckLineFilter(hDlg)
+--~       if param1==Pos.bFilterFunc.id then CheckLineFilter(hDlg)
       if nil then
-      elseif param1==Dlg.bRegExpr.id then CheckRegExpr(hDlg)
-      elseif aReplace and param1==Dlg.bReplInBlock.id then CheckReplInBlock(hDlg)
+      elseif param1==Pos.bRegExpr then CheckRegExpr(hDlg)
+      elseif aReplace and param1==Pos.bReplInBlock then CheckReplInBlock(hDlg)
       end
     elseif msg == F.DN_CLOSE then
-      if param1 == Dlg.btnOk.id or not aReplace and
-        (param1 == Dlg.btnCount.id or param1 == Dlg.btnShowAll.id)
+      if param1 == Pos.btnOk or not aReplace and
+        (param1 == Pos.btnCount or param1 == Pos.btnShowAll)
       then
-        if Dlg.sSearchPat:GetText(hDlg) == "" then
+        if hDlg:GetText(Pos.sSearchPat) == "" then
           ErrorMsg(M.MSearchFieldEmpty)
           return 0
         end
@@ -340,14 +341,13 @@ local function SR_Dialog (aTitle, aData, aReplace, aFirstCall)
   end
   ----------------------------------------------------------------------------
   -- Run the dialog and check its return value
-  Dlg.frame.Y2 = Y+1
-  local ret = far.Dialog (-1,-1,76,Y+3,"Contents",Dlg,0,DlgProc)
-  if ret < 0 or ret == Dlg.btnCancel.id then return "cancel" end
-  far2_dialog.SaveData(Dlg, aData)
-  return ret==Dlg.btnOk.id and "ok" or
-         ret==Dlg.btnConfig.id and "config" or
-         ret==Dlg.btnCount.id and "count" or
-         ret==Dlg.btnShowAll.id and "showall"
+  local out, pos = sd.Run(Items)
+  if not out then return "cancel" end
+  sd.SaveData(out, aData)
+  return pos==Pos.btnOk      and "ok"      or
+         pos==Pos.btnConfig  and "config"  or
+         pos==Pos.btnCount   and "count"   or
+         pos==Pos.btnShowAll and "showall"
 end
 
 
