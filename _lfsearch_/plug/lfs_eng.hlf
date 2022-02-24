@@ -339,8 +339,8 @@ The search is performed using the predefined set of code pages:
  #Search in symbolic links#
  Specify whether to search in symbolic links or not.
 
- #Configuration#
- Envoke ~configuration dialog~@SearchResultsPanel@ for search results panel.
+ #D-filter#
+ Envoke ~Directories filter~@DirFilter@ dialog.
 
  ~Contents~@Contents@
 
@@ -1192,4 +1192,12 @@ pcre(3).
  Last updated: 12 May 2010
  Copyright c 1997-2010 University of Cambridge.
 
+ ~Contents~@Contents@
+
+@DirFilter
+$ #Directories filter#
+ The search will not be conducted in the listed here directories
+and their subdirectories. In case no directory should be excluded
+then leave the input field empty.
+ 
  ~Contents~@Contents@

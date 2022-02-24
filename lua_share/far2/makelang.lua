@@ -54,6 +54,7 @@ local function MakeLang (aModuleFileName, aDescriptions, ...)
   assert(#tFiles > 0, "no files specified")
 
   local bom_utf8 = "\239\187\191"
+  local exist = {}
   local t_out = {}
   for k=1, 1 + #aDescriptions do t_out[k] = {} end
 
@@ -76,6 +77,10 @@ local function MakeLang (aModuleFileName, aDescriptions, ...)
           elseif n == 1 then
             local ident = line:match("^([%a_][%w_]*)%s*$")
             if ident then
+              if exist[ident] then
+                error("duplicate identifier: "..line)
+              end
+              exist[ident] = true
               table.insert(t_out[n], ident)
             else
               error("bad message name: `" .. line .. "'")

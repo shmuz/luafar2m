@@ -576,27 +576,23 @@ HANDLE LF_OpenPlugin (lua_State* L, int OpenFrom, INT_PTR Item)
   lua_pushinteger(L, OpenFrom);
 
   if (OpenFrom & OPEN_FROMMACRO) {
-    int op_macro = OpenFrom & OPEN_FROMMACRO_MASK & ~OPEN_FROMMACRO;
-    if (op_macro == 0)
-      lua_pushinteger(L, Item);
-    else if (op_macro == OPEN_FROMMACROSTRING)
+    if (OpenFrom & OPEN_FROMMACROSTRING)
       push_utf8_string(L, (const wchar_t*)Item, -1);
     else
       lua_pushinteger(L, Item);
   }
-  else {
-    if (OpenFrom==OPEN_SHORTCUT || OpenFrom==OPEN_COMMANDLINE)
-      push_utf8_string(L, (const wchar_t*)Item, -1);
-    else if (OpenFrom==OPEN_DIALOG) {
-      struct OpenDlgPluginData *data = (struct OpenDlgPluginData*)Item;
-      lua_createtable(L, 0, 2);
-      PutIntToTable(L, "ItemNumber", data->ItemNumber);
-      NewDialogData(L, NULL, data->hDlg, FALSE);
-      lua_setfield(L, -2, "hDlg");
-    }
-    else
-      lua_pushinteger(L, Item);
+  else if (OpenFrom==OPEN_SHORTCUT || OpenFrom==OPEN_COMMANDLINE) {
+    push_utf8_string(L, (const wchar_t*)Item, -1);
   }
+  else if (OpenFrom==OPEN_DIALOG) {
+    struct OpenDlgPluginData *data = (struct OpenDlgPluginData*)Item;
+    lua_createtable(L, 0, 2);
+    PutIntToTable(L, "ItemNumber", data->ItemNumber);
+    NewDialogData(L, NULL, data->hDlg, FALSE);
+    lua_setfield(L, -2, "hDlg");
+  }
+  else
+    lua_pushinteger(L, Item);
 
   if (pcall_msg(L, 2, 1) == 0) {
     if (lua_type(L,-1) == LUA_TNUMBER && lua_tointeger(L,-1) == 0) {

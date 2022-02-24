@@ -6,7 +6,6 @@ local sd     = require "far2.simpledialog"
 local Sett   = require "far2.settings"
 local field = Sett.field
 
-local Excl_Dirs = {}
 local Excl_Key = "sExcludeDirs"
 
 local F = far.Flags
@@ -83,33 +82,25 @@ local function ConfigDialog (aHistory)
   end
 end
 
-local function SetExcludeNames(data)
-  if data[Excl_Key] then
-    Excl_Dirs = {}
-    for patt in data[Excl_Key]:gmatch("[^:]+") do
-      table.insert(Excl_Dirs, patt)
-    end
-  end
-end
-
-local function ConfigDialog2 (aHistory)
+local function DirFilterDialog (aData)
   local Items = {
+    guid = "92E8DEC3-ACE2-4E1F-B6A5-AF447EDE21B8";
+    help = "DirFilter";
     width = 76;
     --help = "SearchResultsPanel";
-    { tp="dbox"; text=M.MConfiguration; },
-    { tp="text"; text=M.MExcludeNamesLabel; },
+    { tp="dbox"; text=M.MDirFilterTitle; },
+    { tp="text"; text=M.MExcludeDirsLabel; },
     { tp="edit"; name=Excl_Key; hist="LFS_Excl_Dirs"},
     { tp="sep"; },
     { tp="butt"; text=M.MOk; default=1; centergroup=1; },
     { tp="butt"; text=M.MCancel; cancel=1; centergroup=1; },
   }
-  local Data = field(aHistory, "panels")
-  sd.LoadData(Data, Items)
+  sd.LoadData(aData, Items)
   local out = sd.Run(Items)
   if out then
-    out[Excl_Key] = out[Excl_Key]:match("^%s*(.-)%s*$")
-    sd.SaveData(out, Data)
-    SetExcludeNames(out)
+    local s = out[Excl_Key]:match("^%s*(.-)%s*$")
+    out[Excl_Key] = (s ~= "") and s -- false is OK, nil is not as it does not erase the existing value
+    sd.SaveData(out, aData)
     return true
   end
 end
@@ -243,18 +234,17 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
   insert(Items, { tp="sep"; })
   insert(Items, { tp="butt"; centergroup=1; text=M.MOk; default=1; name="btnOk"; })
   insert(Items, { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; })
-  insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnConfig; name="btnConfig"; }) --TODO
+  insert(Items, { tp="butt"; centergroup=1; text=M.MBtnDirFilter; name="btnConfig"; }) --TODO
   ------------------------------------------------------------------------------
   local Pos,Elem = sd.Indexes(Items)
-  SetExcludeNames(field(aHistory, "panels"))
 
-  local function SetBtnConfigText(hDlg)
-    hDlg:SetText(Pos.btnConfig, M.MDlgBtnConfig..(Excl_Dirs[1] and "*" or ""))
+  local function SetBtnFilterText(hDlg)
+    hDlg:SetText(Pos.btnConfig, M.MBtnDirFilter..(dataPanels[Excl_Key] and "*" or ""))
   end
 
   function Items.proc (hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
-      SetBtnConfigText(hDlg)
+      SetBtnFilterText(hDlg)
       hDlg:SetComboboxEvent(Pos.cmbCodePage, F.CBET_KEY)
       local t = {}
       for i,v in ipairs(Elem.cmbCodePage.list) do
@@ -283,8 +273,8 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
       if Pos.btnConfig and param1 == Pos.btnConfig then
         hDlg:ShowDialog(0)
         --ConfigDialog(aHistory) --TODO
-        if ConfigDialog2(aHistory) then
-          SetBtnConfigText(hDlg)
+        if DirFilterDialog(dataPanels) then
+          SetBtnFilterText(hDlg)
         end
         hDlg:ShowDialog(1)
         hDlg:SetFocus(Pos.btnOk)
@@ -466,7 +456,7 @@ local function SearchFromPanel (aHistory)
   end
   --===========================================================================
 
-  local function ProcessFile(fdata, fullname, mask_incl, mask_excl)
+  local function ProcessFile(fdata, fullname, mask_incl, mask_excl, mask_dirs)
     ---------------------------------------------------------------------------
     if win.ExtractKey()=="ESCAPE" and ConfirmEsc() then return true end
     ---------------------------------------------------------------------------
@@ -482,13 +472,13 @@ local function SearchFromPanel (aHistory)
         tOut[cnt] = fullname
       end
       ---------------------------------------------------------------------------
-      for _,patt in ipairs(Excl_Dirs) do
-        if fullname:find(patt) then return end
+      if mask_dirs and far.ProcessName(mask_dirs, fullname, F.PN_CMPNAMELIST+F.PN_SKIPPATH) then
+        return
       end
       ---------------------------------------------------------------------------
       if bRecurse then
         if bSymLinks or not fdata.FileAttributes:find("e") then
-          return far.RecursiveSearch(fullname, "*", ProcessFile, 0, mask_incl, mask_excl)
+          return far.RecursiveSearch(fullname, "*", ProcessFile, 0, mask_incl, mask_excl, mask_dirs)
         end
       end
       return
@@ -531,7 +521,6 @@ local function SearchFromPanel (aHistory)
   end
   --===========================================================================
 
-  SetExcludeNames(dataPanels)
   for _, item in ipairs(itemList) do
     local fdata = win.GetFileInfo(item)
     -- note: fdata can be nil for root directories
@@ -548,7 +537,7 @@ local function SearchFromPanel (aHistory)
       else
         mask_incl = dataPanels.sFileMask
       end
-      far.RecursiveSearch(item, "*", ProcessFile, 0, mask_incl, mask_excl)
+      far.RecursiveSearch(item, "*", ProcessFile, 0, mask_incl, mask_excl, dataPanels[Excl_Key])
     end
     ---------------------------------------------------------------------------
     if userbreak then break end

@@ -178,13 +178,13 @@ local function Main()
     hDlg:SetCheck(rb, 1)
     hDlg:SetFocus(rb)
 
-    hDlg:SetCheck(Pos.cbEmpty, ST.keepempty  and 1 or 0)
-    hDlg:SetCheck(Pos.cbStat,  ST.statistics and 1 or 0)
-    hDlg:SetCheck(Pos.cbExpr,  ST.useexpr    and 1 or 0)
-    hDlg:SetCheck(Pos.cbBool,  ST.toboolean  and 1 or 0)
-    hDlg:Enable  (Pos.cbBool,  ST.useexpr    and 1 or 0)
-    hDlg:Enable  (Pos.lbExpr,  ST.useexpr    and 1 or 0)
-    hDlg:Enable  (Pos.edExpr,  ST.useexpr    and 1 or 0)
+    hDlg:SetCheck(Pos.cbEmpty, ST.keepempty)
+    hDlg:SetCheck(Pos.cbStat,  ST.statistics)
+    hDlg:SetCheck(Pos.cbExpr,  ST.useexpr)
+    hDlg:SetCheck(Pos.cbBool,  ST.toboolean)
+    hDlg:Enable  (Pos.cbBool,  ST.useexpr)
+    hDlg:Enable  (Pos.lbExpr,  ST.useexpr)
+    hDlg:Enable  (Pos.edExpr,  ST.useexpr)
   end
 
   Elem.cbExpr.action = function(hDlg, p1, p2)
@@ -196,7 +196,7 @@ local function Main()
   dItems.help = function() far.ShowHelp(thisDir, nil, F.FHELP_CUSTOMPATH) end
 
   dItems.closeaction = function(hDlg, p1, tOut)
-    if hDlg:GetCheck(Pos.cbExpr) ~= 0 then
+    if hDlg:GetCheck(Pos.cbExpr) then
       local expr = "return " .. hDlg:GetText(Pos.edExpr)
       local f, msg = loadstring(expr)
       if not f then

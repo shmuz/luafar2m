@@ -13,10 +13,37 @@ local function ErrorMsg (text, title)
 end
 
 
--- TODO: it always returns nil
+local hst_map = { ["\\"]="\\"; n="\n"; r="\r"; t="\t"; }
+
 local function GetFarHistory (name)
-  local lines = win.GetRegKey("HKCU", "SavedDialogHistory\\"..name, "lines")
-  return lines and lines:match"^%Z*"
+  local value
+  local fname = os.getenv("HOME").."/.config/far2l/history/dialogs.hst"
+  local fp = io.open(fname)
+  if fp then
+    local head = ("[SavedDialogHistory/%s]"):format(name)
+    local in_section
+    for line in fp:lines() do
+      if in_section then
+        if line:find("[", 1, true) == 1 then -- new section begins
+          break
+        end
+        local v = line:match("^Lines=(.*)")
+        if v then
+          if v:sub(1,1) == '"' then
+            v = v:sub(2,-2):gsub("\\(.)", hst_map)
+            value = v:match("(.-)\n") or v
+          else
+            value = v
+          end
+          break
+        end
+      elseif line:find(head, 1, true) == 1 then
+        in_section = true
+      end
+    end
+    fp:close()
+  end
+  return value
 end
 
 
@@ -26,27 +53,19 @@ local function ConfigDialog()
     help = "Contents";
     {tp="dbox"; text=M.MConfigTitle; },
     {tp="text"; text=M.MPickFrom; },
-    {tp="rbutt"; x1=7; name="rPickEditor";  group=1; text=M.MPickEditor;  noauto=1; },
-    {tp="rbutt"; x1=7; name="rPickHistory";          text=M.MPickHistory; noauto=1; },
-    {tp="rbutt"; x1=7; name="rPickNowhere";          text=M.MPickNowhere; noauto=1; },
+    {tp="rbutt"; x1=7; name="rPickEditor";  text=M.MPickEditor; group=1; val=1; },
+    {tp="rbutt"; x1=7; name="rPickHistory"; text=M.MPickHistory; },
+    {tp="rbutt"; x1=7; name="rPickNowhere"; text=M.MPickNowhere; },
     {tp="sep"; ystep=2; },
     {tp="butt"; centergroup=1; text=M.MOk;    default=1; },
     {tp="butt"; centergroup=1; text=M.MCancel; cancel=1; },
   }
   ----------------------------------------------------------------------------
   local Data = field(_Plugin.History, "config")
-  local _,Elem = sd.Indexes(Items)
   sd.LoadData(Data, Items)
-  if Data.rPickFrom     == "history" then Elem.rPickHistory.val = 1
-  elseif Data.rPickFrom == "nowhere" then Elem.rPickNowhere.val = 1
-  else                                    Elem.rPickEditor.val = 1
-  end
   local out = sd.Run(Items)
   if out then
     sd.SaveData(out, Data)
-    Data.rPickFrom = out.rPickHistory and "history" or
-      out.rPickNowhere and "nowhere" or
-      out.rPickEditor  and "editor"
   end
 end
 
@@ -424,13 +443,13 @@ function SRFrameBase:OnDataLoaded (aData, aScriptCall)
 
   if not aScriptCall then
     if bInEditor then
-      local from = field(_Plugin.History, "config").rPickFrom
-      if from == "history" then
+      local data = field(_Plugin.History, "config")
+      if data.rPickHistory then
         Items[Pos.sSearchPat].text = GetFarHistory("SearchText") or aData.sSearchPat or ""
-      elseif from == "nowhere" then
+      elseif data.rPickNowhere then
         Items[Pos.sSearchPat].text = ""
         if Pos.sReplacePat then Items[Pos.sReplacePat].text = ""; end
-      else -- (default) if from == "editor" then
+      else -- (default) if data.rPickEditor then
         Items[Pos.sSearchPat].text = GetWordAboveCursor() or ""
       end
     else
