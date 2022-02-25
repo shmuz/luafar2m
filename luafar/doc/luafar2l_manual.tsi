@@ -1716,7 +1716,7 @@ id=71
 lv=2
 dt=Text
 nm=far.SendDlgMessage
-mtime=3854622166
+mtime=3854955105
 <article>
 #_Result = far.SendDlgMessage (hDlg, Msg, Param1, Param2)
 #_    or
@@ -1789,7 +1789,6 @@ mtime=3854622166
 #_    Param2:  flag
 #_    Result:  integer
 #_
-#_DM_GETCURSORPOS,
 #_DM_GETDIALOGINFO,
 #_DM_GETDLGRECT,
 #_DM_GETEDITPOSITION,
@@ -1799,7 +1798,11 @@ mtime=3854622166
 #_DM_LISTGETTITLES,
 #_DM_LISTINFO:
 #_    Param2:  none
-#_    Result:  table, or nil
+#_    Result:  table
+#_
+#_DM_GETCURSORPOS:
+#_    Param2:  none
+#_    Result:  table (fields X,Y; 1-based), or nil
 #_
 #_DM_GETTEXT,
 #_DM_GETCONSTTEXTPTR:
@@ -1899,18 +1902,23 @@ mtime=3854622166
 #_    Param2:  table
 #_    Result:  boolean
 #_
-#_DM_RESIZEDIALOG,
 #_DM_MOVEDIALOG:
 #_    Param1:  integer (0=relative, otherwise absolute coordinates)
-#_    Param2:  table
-#_    Result:  table
+#_    Param2:  table (fields X,Y; 0-based if Param1==0 otherwise 1-based)
+#_    Result:  table (fields X,Y; 1-based)
 #_    *Example:*
-#_      res = far.SendDlgMessage(hDlg, "DM_MOVEDIALOG", 0,
-#_        { X=5, Y=-2 })
+#_      res = far.SendDlgMessage(hDlg, "DM_MOVEDIALOG", 0, { X=5, Y=-2 })
+#_
+#_DM_RESIZEDIALOG:
+#_    Param1:  0
+#_    Param2:  table (fields X,Y; 0-based)
+#_    Result:  table (fields X,Y; 0-based)
+#_    *Example:*
+#_      res = far.SendDlgMessage(hDlg, "DM_RESIZEDIALOG", 0, { X=70, Y=20 })
 #_
 #_DM_SETCURSORPOS:
-#_    Param2:  table
-#_    Result:  integer
+#_    Param2:  table (fields X,Y; 1-based)
+#_    Result:  boolean
 #_
 #_DM_SETITEMPOSITION:
 #_    Param2:  table
@@ -4675,7 +4683,7 @@ mtime=3480263718
 id=324
 lv=2
 dt=Text
-nm=f:FreeFileFilter
+nm=FreeFileFilter
 ctime=3480243269
 mtime=3481258596
 <article>
@@ -4703,7 +4711,7 @@ mtime=3481258596
 id=325
 lv=2
 dt=Text
-nm=f:OpenFiltersMenu
+nm=OpenFiltersMenu
 ctime=3480243300
 mtime=3480252058
 <article>
@@ -4727,7 +4735,7 @@ mtime=3480252058
 id=326
 lv=2
 dt=Text
-nm=f:StartingToFilter
+nm=StartingToFilter
 ctime=3480243319
 mtime=3480252113
 <article>
@@ -4751,7 +4759,7 @@ mtime=3480252113
 id=327
 lv=2
 dt=Text
-nm=f:IsFileInFilter
+nm=IsFileInFilter
 ctime=3480243336
 mtime=3853777078
 <article>
