@@ -597,7 +597,7 @@ function TmpPanelBase:ProcessSaveListKey (Handle)
   if #self:Items() == 0 then return end
 
   -- default path: opposite panel directory\panel<index>.<mask extension>
-  local CurDir = panel.GetPanelDir(0)
+  local CurDir = panel.GetPanelDirectory(0)
   local ListPath = AddEndSlash (CurDir) .. "panel"
   if self.Index then
     ListPath = ListPath .. (self.Index - 1)

@@ -1758,7 +1758,7 @@ int get_string_info(lua_State *L, int command)
   return lua_pushnil(L), 1;
 }
 
-int panel_GetPanelDir(lua_State *L) {
+int panel_GetPanelDirectory(lua_State *L) {
   return get_string_info(L, FCTL_GETPANELDIR);
 }
 
@@ -5307,41 +5307,41 @@ const luaL_Reg editor_funcs[] =
 
 const luaL_Reg panel_funcs[] =
 {
-  {"GetPanelInfo",            panel_GetPanelInfo},
-  {"GetUserScreen",           panel_GetUserScreen},
-  {"RedrawPanel",             panel_RedrawPanel},
-  {"SetNumericSort",          panel_SetNumericSort},
-  {"SetCaseSensitiveSort",    panel_SetCaseSensitiveSort},
-  {"SetPanelDirectory",       panel_SetPanelDirectory},
   {"BeginSelection",          panel_BeginSelection},
-  {"ClearSelection",          panel_ClearSelection},
-  {"EndSelection",            panel_EndSelection},
-  {"SetSelection",            panel_SetSelection},
-  {"SetSortMode",             panel_SetSortMode},
-  {"SetSortOrder",            panel_SetSortOrder},
-  {"SetDirectoriesFirst",     panel_SetDirectoriesFirst},
-  {"SetUserScreen",           panel_SetUserScreen},
-  {"SetViewMode",             panel_SetViewMode},
-  {"UpdatePanel",             panel_UpdatePanel},
-  {"GetPanelItem",            panel_GetPanelItem},
-  {"GetSelectedPanelItem",    panel_GetSelectedPanelItem},
-  {"GetCurrentPanelItem",     panel_GetCurrentPanelItem},
-  {"GetPanelDir",             panel_GetPanelDir},
-  {"GetPanelFormat",          panel_GetPanelFormat},
-  {"GetPanelHostFile",        panel_GetPanelHostFile},
-  {"GetColumnTypes",          panel_GetColumnTypes},
-  {"GetColumnWidths",         panel_GetColumnWidths},
-  {"IsActivePanel",           panel_IsActivePanel},
   {"CheckPanelsExist",        panel_CheckPanelsExist},
+  {"ClearSelection",          panel_ClearSelection},
   {"ClosePlugin",             panel_ClosePlugin},
+  {"EndSelection",            panel_EndSelection},
   {"GetCmdLine",              panel_GetCmdLine},
   {"GetCmdLinePos",           panel_GetCmdLinePos},
   {"GetCmdLineSelection",     panel_GetCmdLineSelection},
+  {"GetColumnTypes",          panel_GetColumnTypes},
+  {"GetColumnWidths",         panel_GetColumnWidths},
+  {"GetCurrentPanelItem",     panel_GetCurrentPanelItem},
+  {"GetPanelDirectory",       panel_GetPanelDirectory},
+  {"GetPanelFormat",          panel_GetPanelFormat},
+  {"GetPanelHostFile",        panel_GetPanelHostFile},
+  {"GetPanelInfo",            panel_GetPanelInfo},
+  {"GetPanelItem",            panel_GetPanelItem},
+  {"GetPanelPluginHandle",    panel_GetPanelPluginHandle},
+  {"GetSelectedPanelItem",    panel_GetSelectedPanelItem},
+  {"GetUserScreen",           panel_GetUserScreen},
   {"InsertCmdLine",           panel_InsertCmdLine},
+  {"IsActivePanel",           panel_IsActivePanel},
+  {"RedrawPanel",             panel_RedrawPanel},
+  {"SetCaseSensitiveSort",    panel_SetCaseSensitiveSort},
   {"SetCmdLine",              panel_SetCmdLine},
   {"SetCmdLinePos",           panel_SetCmdLinePos},
   {"SetCmdLineSelection",     panel_SetCmdLineSelection},
-  {"GetPanelPluginHandle",    panel_GetPanelPluginHandle},
+  {"SetDirectoriesFirst",     panel_SetDirectoriesFirst},
+  {"SetNumericSort",          panel_SetNumericSort},
+  {"SetPanelDirectory",       panel_SetPanelDirectory},
+  {"SetSelection",            panel_SetSelection},
+  {"SetSortMode",             panel_SetSortMode},
+  {"SetSortOrder",            panel_SetSortOrder},
+  {"SetUserScreen",           panel_SetUserScreen},
+  {"SetViewMode",             panel_SetViewMode},
+  {"UpdatePanel",             panel_UpdatePanel},
   {NULL, NULL},
 };
 

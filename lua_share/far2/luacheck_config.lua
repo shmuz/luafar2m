@@ -359,7 +359,7 @@ local luafar = {
       fields = {
         "CheckPanelsExist", "ClearSelection", "ClosePlugin", "GetCmdLine",
         "GetCmdLinePos", "GetCmdLineSelection", "GetColumnTypes", "GetColumnWidths",
-        "GetCurrentPanelItem", "GetPanelDir", "GetPanelFormat", "GetPanelHostFile",
+        "GetCurrentPanelItem", "GetPanelDirectory", "GetPanelFormat", "GetPanelHostFile",
         "GetPanelInfo", "GetPanelItem", "GetSelectedPanelItem", "GetUserScreen",
         "InsertCmdLine", "IsActivePanel", "RedrawPanel", "SetCaseSensitiveSort",
         "SetCmdLine", "SetCmdLinePos", "SetCmdLineSelection", "SetNumericSort",

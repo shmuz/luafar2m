@@ -500,7 +500,7 @@ function List:UpdateSizePos (hDlg)
   self:SetUpperItem()
 
   if self.autocenter then
-    hDlg:MoveDialog(1, { X=-1, Y=-1 })
+    hDlg:MoveDialog(1, { X=0, Y=0 })
   end
   if self.resizeW or self.resizeH then
     hDlg:SetItemPosition(self.startId, { Left=2, Top=1, Right=dim.X-3, Bottom=dim.Y-2 })

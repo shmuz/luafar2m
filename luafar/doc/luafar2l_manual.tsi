@@ -3808,10 +3808,10 @@ mtime=3853512132
 id=260
 lv=2
 dt=Text
-nm=panel.GetPanelDir
-mtime=3853512156
+nm=panel.GetPanelDirectory
+mtime=3855072295
 <article>
-#_PanelDir = panel.GetPanelDir (handle)
+#_PanelDir = panel.GetPanelDirectory (handle)
 #_
 #_**Parameters:**
 #_  handle:    panel handle

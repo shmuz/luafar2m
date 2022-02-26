@@ -182,7 +182,7 @@ local function GetSearchAreas(dataPanels)
   local Info = panel.GetPanelInfo(1)
   local RootFolderItem = {}
   if Info.PanelType == F.PTYPE_FILEPANEL and not Info.Plugin then
-    RootFolderItem.Text = M.MSaRootFolder .. panel.GetPanelDir(1):match("/[^/]*")
+    RootFolderItem.Text = M.MSaRootFolder .. panel.GetPanelDirectory(1):match("/[^/]*")
   else
     RootFolderItem.Text = M.MSaRootFolder
     RootFolderItem.Flags = F.LIF_GRAYED
@@ -354,7 +354,7 @@ end
 
 local function MakeItemList (panelInfo, area)
   local realNames = (bit.band(panelInfo.Flags, F.PFLAGS_REALNAMES) ~= 0)
-  local panelDir = panel.GetPanelDir(1) or ""
+  local panelDir = panel.GetPanelDirectory(1) or ""
   local itemList, flags = {}, F.FRS_RECUR
 
   if area == saFromCurrFolder or area == saOnlyCurrFolder then
