@@ -990,7 +990,7 @@ id=153
 lv=2
 dt=Text
 nm=far.AdvControl
-mtime=3854226615
+mtime=3855033932
 <article>
 #_Result = far.AdvControl (Command, Param [, Param2])
 #_
@@ -1003,62 +1003,62 @@ mtime=3854226615
 #_
 #_**Details:**
 #_
-#_ACTL_GETFARHWND,
-#_ACTL_GETCONFIRMATIONS,
-#_ACTL_GETDESCSETTINGS,
-#_ACTL_GETDIALOGSETTINGS,
-#_ACTL_GETINTERFACESETTINGS,
-#_ACTL_GETPANELSETTINGS,
-#_ACTL_GETPLUGINMAXREADDATA,
-#_ACTL_GETSYSTEMSETTINGS,
-#_ACTL_GETWINDOWCOUNT:
+#_@ACTL_GETFARHWND,
+#_@ACTL_GETCONFIRMATIONS,
+#_@ACTL_GETDESCSETTINGS,
+#_@ACTL_GETDIALOGSETTINGS,
+#_@ACTL_GETINTERFACESETTINGS,
+#_@ACTL_GETPANELSETTINGS,
+#_@ACTL_GETPLUGINMAXREADDATA,
+#_@ACTL_GETSYSTEMSETTINGS,
+#_@ACTL_GETWINDOWCOUNT:
 #_    Param:   none
 #_    Result:  integer
 #_
-#_ACTL_COMMIT,
-#_ACTL_PROGRESSNOTIFY,
-#_ACTL_QUIT,
-#_ACTL_REDRAWALL:
+#_@ACTL_COMMIT,
+#_@ACTL_PROGRESSNOTIFY,
+#_@ACTL_QUIT,
+#_@ACTL_REDRAWALL:
 #_    Param:   none
 #_    Result:  boolean
 #_
-#_ACTL_GETCOLOR:
+#_@ACTL_GETCOLOR:
 #_    Param:   flag
 #_    Result:  integer
 #_
-#_ACTL_SETCURRENTWINDOW:
+#_@ACTL_SETCURRENTWINDOW:
 #_    Param:   integer (1-based)
 #_    Param2:  boolean (if true then ACTL_COMMIT is called after ACTL_SETCURRENTWINDOW)
 #_    Result:  boolean
 #_
-#_ACTL_WAITKEY:
+#_@ACTL_WAITKEY:
 #_    Param:   flag (optional; default=0)
 #_    Result:  integer
 #_
-#_ACTL_GETSYSWORDDIV:
+#_@ACTL_GETSYSWORDDIV:
 #_    Param:   none
 #_    Result:  string
 #_    
-#_ACTL_EJECTMEDIA:
+#_@ACTL_EJECTMEDIA:
 #_    Param:   table (see its fields below)
 #_        Letter:  string (only the first character matters)
 #_        Flags:   flags combination
 #_    Result:  boolean
 #_
-#_ACTL_KEYMACRO: not supported, replaced by 6 separate MacroControl functions
+#_@ACTL_KEYMACRO: not supported, replaced by 6 separate MacroControl functions
 #_
-#_ACTL_SYNCHRO: not supported as it is used internally in far.Timer
+#_@ACTL_SYNCHRO: not supported as it is used internally in far.Timer
 #_
-#_ACTL_GETARRAYCOLOR:
+#_@ACTL_GETARRAYCOLOR:
 #_    Param:   none
 #_    Result:  table (array of integers)
 #_
-#_ACTL_GETFARVERSION:
+#_@ACTL_GETFARVERSION:
 #_    Param:   boolean (optional)
 #_    Result:  string (e.g. "2.4"), if Param==false;
 #_             2 numbers (e.g. 2,4), if Param==true;
 #_
-#_ACTL_GETWINDOWINFO:
+#_@ACTL_GETWINDOWINFO:
 #_    Param1:  window number; 1-based integer (optional; default=0)
 #_    Result:  table (see its fields below), or nil
 #_        Type:      integer
@@ -1068,7 +1068,7 @@ mtime=3854226615
 #_        TypeName:  string
 #_        Name:      string
 #_
-#_ACTL_GETSHORTWINDOWINFO:
+#_@ACTL_GETSHORTWINDOWINFO:
 #_    Param1:  window number; 1-based integer (optional; default=0)
 #_    Result:  table (see its fields below), or nil
 #_        Type:      integer
@@ -1076,39 +1076,39 @@ mtime=3854226615
 #_        Modified:  boolean
 #_        Current:   boolean
 #_
-#_ACTL_POSTKEYSEQUENCE:
+#_@ACTL_POSTKEYSEQUENCE:
 #_    Param:   table (see its fields below;
 #_             its array part contains integers)
 #_        Flags:   flags combination
 #_    Result:  boolean
 #_
-#_ACTL_SETARRAYCOLOR:
+#_@ACTL_SETARRAYCOLOR:
 #_    Param:   table (see its fields below;
 #_             its array part contains integers)
 #_        Flags:       flags combination
 #_        StartIndex:  integer
 #_    Result:  boolean
 #_
-#_ACTL_SETPROGRESSSTATE:
+#_@ACTL_SETPROGRESSSTATE:
 #_    Param:   flag
 #_    Result:  boolean
 #_
-#_ACTL_SETPROGRESSVALUE:
+#_@ACTL_SETPROGRESSVALUE:
 #_    Param:   table (see its fields below)
 #_        Completed, Total:  numbers
 #_    Result:  boolean
 #_
-#_ACTL_GETFARRECT:
+#_@ACTL_GETFARRECT:
 #_    Param:   none
 #_    Result:  table (see its fields below), or nil
 #_        Left, Top, Right, Bottom: integers
 #_
-#_ACTL_GETCURSORPOS:
+#_@ACTL_GETCURSORPOS:
 #_    Param:   none
 #_    Result:  table (see its fields below), or nil
 #_        X, Y: integers
 #_
-#_ACTL_SETCURSORPOS:
+#_@ACTL_SETCURSORPOS:
 #_    Param:   table (see its fields below)
 #_        X, Y: integers
 #_    Result:  boolean
@@ -1716,7 +1716,7 @@ id=71
 lv=2
 dt=Text
 nm=far.SendDlgMessage
-mtime=3854955105
+mtime=3855030954
 <article>
 #_Result = far.SendDlgMessage (hDlg, Msg, Param1, Param2)
 #_    or
@@ -1733,96 +1733,96 @@ mtime=3854955105
 #_
 #_**Details:**
 #_
-#_DM_CLOSE,
-#_DM_EDITUNCHANGEDFLAG,
-#_DM_GETCURSORSIZE,
-#_DM_GETDROPDOWNOPENED,
-#_DM_GETFOCUS,
-#_DM_GETITEMDATA,
-#_DM_GETTEXTLENGTH,
-#_DM_LISTGETDATASIZE,
-#_DM_LISTSORT,
-#_DM_REDRAW,
-#_DM_SET3STATE,
-#_DM_SETCURSORSIZE,
-#_DM_SETDROPDOWNOPENED,
-#_DM_SETFOCUS,
-#_DM_SETITEMDATA,
-#_DM_SETMAXTEXTLENGTH,
-#_DM_SETMOUSEEVENTNOTIFY,
-#_DM_SHOWDIALOG,
-#_DM_SHOWITEM,
-#_DM_USER:
+#_@DM_CLOSE,
+#_@DM_EDITUNCHANGEDFLAG,
+#_@DM_GETCURSORSIZE,
+#_@DM_GETDROPDOWNOPENED,
+#_@DM_GETFOCUS,
+#_@DM_GETITEMDATA,
+#_@DM_GETTEXTLENGTH,
+#_@DM_LISTGETDATASIZE,
+#_@DM_LISTSORT,
+#_@DM_REDRAW,
+#_@DM_SET3STATE,
+#_@DM_SETCURSORSIZE,
+#_@DM_SETDROPDOWNOPENED,
+#_@DM_SETFOCUS,
+#_@DM_SETITEMDATA,
+#_@DM_SETMAXTEXTLENGTH,
+#_@DM_SETMOUSEEVENTNOTIFY,
+#_@DM_SHOWDIALOG,
+#_@DM_SHOWITEM,
+#_@DM_USER:
 #_    Param2:  integer
 #_    Result:  integer
 #_
-#_DM_ENABLE:
+#_@DM_ENABLE:
 #_    Param2:  boolean or integer
 #_    Result:  boolean
 #_
-#_DM_ENABLEREDRAW:
+#_@DM_ENABLEREDRAW:
 #_    Param2:  boolean or integer
 #_    Result:  integer
 #_
-#_DM_SETCHECK:
+#_@DM_SETCHECK:
 #_    Param2:  boolean or integer
 #_    Result:  integer
 #_
-#_DM_GETCHECK:
+#_@DM_GETCHECK:
 #_    Param2:  ignored
 #_    Result:  false (means BSTATE_UNCHECKED)
 #_              true (means BSTATE_CHECKED)
 #_                 2 (means BSTATE_3STATE)
 #_
-#_DM_ADDHISTORY,
-#_DM_LISTADDSTR,
-#_DM_SETTEXT,
-#_DM_SETTEXTPTR:
+#_@DM_ADDHISTORY,
+#_@DM_LISTADDSTR,
+#_@DM_SETTEXT,
+#_@DM_SETTEXTPTR:
 #_    Param2:  string
 #_    Result:  integer
 #_
-#_DM_SETHISTORY:
+#_@DM_SETHISTORY:
 #_    Param2:  string (optional; nil causes passing NULL to FAR)
 #_    Result:  integer
 #_
-#_DM_LISTSETMOUSEREACTION:
+#_@DM_LISTSETMOUSEREACTION:
 #_    Param2:  flag
 #_    Result:  integer
 #_
-#_DM_GETDIALOGINFO,
-#_DM_GETDLGRECT,
-#_DM_GETEDITPOSITION,
-#_DM_GETITEMPOSITION,
-#_DM_GETSELECTION,
-#_DM_LISTGETCURPOS,
-#_DM_LISTGETTITLES,
-#_DM_LISTINFO:
+#_@DM_GETDIALOGINFO,
+#_@DM_GETDLGRECT,
+#_@DM_GETEDITPOSITION,
+#_@DM_GETITEMPOSITION,
+#_@DM_GETSELECTION,
+#_@DM_LISTGETCURPOS,
+#_@DM_LISTGETTITLES,
+#_@DM_LISTINFO:
 #_    Param2:  none
 #_    Result:  table
 #_
-#_DM_GETCURSORPOS:
+#_@DM_GETCURSORPOS:
 #_    Param2:  none
 #_    Result:  table (fields X,Y; 1-based), or nil
 #_
-#_DM_GETTEXT,
-#_DM_GETCONSTTEXTPTR:
+#_@DM_GETTEXT,
+#_@DM_GETCONSTTEXTPTR:
 #_    Param2:  none
 #_    Result:  string
 #_
-#_DM_GETCOLOR:
+#_@DM_GETCOLOR:
 #_    Param2:  none
 #_    Result:  integer
 #_
-#_DM_SETCOLOR:
+#_@DM_SETCOLOR:
 #_    Param2:  integer
 #_    Result:  integer
 #_
-#_DM_KEY:
+#_@DM_KEY:
 #_    Param2:  table (array of integers)
 #_    Result:  integer
 #_
-#_DM_LISTADD,
-#_DM_LISTSET:
+#_@DM_LISTADD,
+#_@DM_LISTSET:
 #_    Param2:  table (array of tables)
 #_    Result:  integer
 #_    *Example:*
@@ -1830,39 +1830,39 @@ mtime=3854955105
 #_        { { Text="added line 1" },
 #_          { Text="added line 2", Flags="LIF_CHECKED" } })
 #_
-#_DM_LISTDELETE:
+#_@DM_LISTDELETE:
 #_    Param2:  table, or nil
 #_    Result:  integer
 #_    *Example:*
 #_      res = far.SendDlgMessage(hDlg, "DM_LISTDELETE", id,
 #_        { StartIndex=1, Count=2 })
 #_
-#_DM_LISTFINDSTRING:
+#_@DM_LISTFINDSTRING:
 #_    Param2:  table
 #_    Result:  integer, or nil
 #_    *Example:*
 #_      res = far.SendDlgMessage(hDlg, "DM_FINDSTRING", id,
 #_        { StartIndex=1, Pattern="File??.txt" })
 #_
-#_DM_LISTGETITEM:
+#_@DM_LISTGETITEM:
 #_    Param2:  integer (ItemIndex)
 #_    Result:  table, or nil
 #_
-#_DM_LISTINSERT,
+#_@DM_LISTINSERT,
 #_    Param2:  table
 #_    Result:  integer, or nil
 #_    *Example:*
 #_      res = far.SendDlgMessage(hDlg, "DM_LISTINSERT", id,
 #_        { Index=2, Text="Hello World", Flags="LIF_CHECKED" })
 #_
-#_DM_LISTUPDATE:
+#_@DM_LISTUPDATE:
 #_    Param2:  table
 #_    Result:  boolean
 #_    *Example:*
 #_      res = far.SendDlgMessage(hDlg, "DM_LISTUPDATE", id,
 #_        { Index=2, Text="Hello World", Flags="LIF_CHECKED" })
 #_
-#_DM_LISTSETCURPOS:
+#_@DM_LISTSETCURPOS:
 #_    Param2:  table
 #_    Result:  integer
 #_    *Example:*
@@ -1871,80 +1871,80 @@ mtime=3854955105
 #_    *Note:*
 #_      Elements numbering is 1-based.
 #_
-#_DM_LISTSETTITLES:
+#_@DM_LISTSETTITLES:
 #_    Param2:  table
 #_    Result:  integer
 #_    *Example:*
 #_      res = far.SendDlgMessage(hDlg, "DM_LISTSETTITLES", id,
 #_        { Title="hello", Bottom="goodbye" })
 #_
-#_DM_LISTGETDATA:
+#_@DM_LISTGETDATA:
 #_    Param2:  integer (1-based list index)
 #_    Result:  either of
 #_               - nil - if Far returned 0
 #_               - light userdata (raw data pointer) - if alien data detected
 #_               - value passed by the last DM_LISTSETDATA call
 #_
-#_DM_LISTSETDATA:
+#_@DM_LISTSETDATA:
 #_    Param2:  table
 #_               ["Index"] - integer (1-based list index)
 #_               ["Data"]  - any Lua value except nil
 #_    Result:  integer (returned from Far)
 #_
-#_DM_GETDLGITEM:
+#_@DM_GETDLGITEM:
 #_    Param2:  table, or nil
 #_    Result:  table
 #_    *Note:*
 #_      If Param2 is a table then it will be reused as an output table,
 #_      i.e. its content will be modified.
 #_
-#_DM_SETDLGITEM:
+#_@DM_SETDLGITEM:
 #_    Param2:  table
 #_    Result:  boolean
 #_
-#_DM_MOVEDIALOG:
+#_@DM_MOVEDIALOG:
 #_    Param1:  integer (0=relative, otherwise absolute coordinates)
 #_    Param2:  table (fields X,Y; 0-based if Param1==0 otherwise 1-based)
 #_    Result:  table (fields X,Y; 1-based)
 #_    *Example:*
 #_      res = far.SendDlgMessage(hDlg, "DM_MOVEDIALOG", 0, { X=5, Y=-2 })
 #_
-#_DM_RESIZEDIALOG:
+#_@DM_RESIZEDIALOG:
 #_    Param1:  0
 #_    Param2:  table (fields X,Y; 0-based)
 #_    Result:  table (fields X,Y; 0-based)
 #_    *Example:*
 #_      res = far.SendDlgMessage(hDlg, "DM_RESIZEDIALOG", 0, { X=70, Y=20 })
 #_
-#_DM_SETCURSORPOS:
+#_@DM_SETCURSORPOS:
 #_    Param2:  table (fields X,Y; 1-based)
 #_    Result:  boolean
 #_
-#_DM_SETITEMPOSITION:
+#_@DM_SETITEMPOSITION:
 #_    Param2:  table
 #_    Result:  integer
 #_    *Example:*
 #_      res = far.SendDlgMessage(hDlg, "DM_SETITEMPOSITION", id,
 #_        { Left=3, Top=3, Right=20, Bottom=5 })
 #_
-#_DM_SETSELECTION:
+#_@DM_SETSELECTION:
 #_    Param2:  table
 #_    Result:  integer
 #_    *Note:* this function has much in common with editor.Select
 #_
-#_DM_SETCOMBOBOXEVENT:
+#_@DM_SETCOMBOBOXEVENT:
 #_    Param2:  flags combination
 #_    Result:  integer
 #_
-#_DM_SETEDITPOSITION:
+#_@DM_SETEDITPOSITION:
 #_    Param2:  table
 #_    Result:  integer
 #_    *Example:*
 #_      res = far.SendDlgMessage(hDlg, "DM_SETEDITPOSITION", id,
 #_        { CurPos=3, Overtype=0 })
 #_
-#_DM_GETDLGDATA,
-#_DM_SETDLGDATA:
+#_@DM_GETDLGDATA,
+#_@DM_SETDLGDATA:
 #_    Not supported (used internally by LuaFAR)
 #_
 #_

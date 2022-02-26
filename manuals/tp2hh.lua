@@ -10,9 +10,11 @@ local function fprintf(fp_out, fmt, ...)
   fp_out:write(fmt:format(...))
 end
 
+-- Convert chars & < > " to HTML representation
 local function HTML_convert(s)
   local tb = {["&"]="&amp;", ["<"]="&lt;", [">"]="&gt;", ['"']="&quot;"}
-  return (rex.gsub(s, '&|<|>|"', tb))
+  s = s:gsub('[&<>"]', tb)
+  return s
 end
 
 local function HTML_puts(s, fp_out)
@@ -127,23 +129,27 @@ end
 -- very beginning of each such article, to let this program know that these
 -- articles should go to the output "as they are" (with no added header, no
 -- added footer and no conversion).
-local function process_article (article)
-  local line, start = article:match "^([^\n]*)\n()"
+local function process_article (text)
+  local line, start = text:match "^([^\n]*)\n()"
   if line == "<!--HTML-->" then
-    return article, true
+    return { kind="html"; text=text; }
   elseif line == "<markdown>" then
-    article = article:sub(start)
+    text = text:sub(start)
     local discount = require "old-discount"
-    local part1, part2 = article:match("(.-)@@@(.*)")
-    part1 = discount(part1 or article)
-    return postprocess_article(part1, part2, false), false
+    local part1, part2 = text:match("(.-)@@@(.*)")
+    part1 = discount(part1 or text)
+    return { kind="markdown"; text=postprocess_article(part1, part2, false); }
   else
-    local part1, part2 = article:match("(.-)@@@(.*)")
-    part1 = HTML_convert(part1 or article)
+    local part1, part2 = text:match("(.-)@@@(.*)")
+    part1 = HTML_convert(part1 or text)
+    -- For convenience: the words marked with @ at the beginning should be indexed, e.g. @DM_KEY
+    -- It should be done *after* HTML_convert()
+    part1 = rex.gsub(part1, [[(?<!\S)@(\w+)]], [[<a name="%1">%1</a>]])
+
     part1 = part1:gsub("%*%*(.-)%*%*", "<strong>%1</strong>") -- make bold
     part1 = part1:gsub(  "%*(.-)%*",   "<em>%1</em>")         -- make italic
     part1 = part1:gsub(  "%`(.-)%`",   "<code>%1</code>")     -- make code
-    return postprocess_article(part1, part2, true), false
+    return { kind="simple"; text=postprocess_article(part1, part2, true); }
   end
 end
 
@@ -190,12 +196,12 @@ local function generateFPT (NodeIterator, ProjectName, fp_template, out_dir)
   for node, _ in NodeIterator do
     local filename = ("%d.html"):format(node.id)
     local fCurrent = assert( io.open(path_join(out_dir,filename), "wt") )
-    local article, ready = process_article(node.article)
-    if ready then
-      fCurrent:write(article)
+    local article = process_article(node.article)
+    if article.kind == "html" then
+      fCurrent:write(article.text)
     else
       writeTopicHeader(fCurrent, node.name, fp_template)
-      fCurrent:write(article)
+      fCurrent:write(article.text)
       writeTopicFooter(fCurrent, fp_template)
     end
     fCurrent:close()
@@ -235,8 +241,16 @@ local function generateFPT (NodeIterator, ProjectName, fp_template, out_dir)
     fToc:write(filename)
     fToc:write("\">\n")
     fputs_indent("</OBJECT>\n", fToc, newLevel+1)
+
+    -- index nodes with non-empty articles
     if node.article:find("%S") then
       fChmIndex:write(CHM_INDEX.Item:format(node.name, filename))
+    end
+    -- index keywords in "simple" articles
+    if article.kind == "simple" then
+      for nm in article.text:gmatch([[<a name="(.-)">]]) do
+        fChmIndex:write(CHM_INDEX.Item:format(nm, filename.."#"..nm))
+      end
     end
 
     nodeLevel = newLevel

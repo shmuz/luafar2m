@@ -2,16 +2,11 @@
 -- started: 2022-01-20
 
 local Title = "Macro Browser"
-local ini = require "inifile"
 local thisdir = (...):match(".*/")
-local mdialog = dofile(thisdir.."macrodialog.lua")
-local mfile = os.getenv("HOME") .. "/.config/far2l/settings/key_macros.ini"
+local macrofile = os.getenv("HOME") .. "/.config/far2l/settings/key_macros.ini"
 local F = far.Flags
 
-local cfg, msg1 = ini.New(mfile, "nocomment")
-if not cfg then far.Message(msg1, Title, nil, "w"); return; end
-
-local function MakeMenuItem(sec)
+local function MakeMenuItem(cfg, sec)
   local name, area, tilde, key = sec.name:match("^(%w+)/(%w+)/(~?)(%w+)")
   if name and name:lower()=="keymacros" then
     local descr = cfg:GetString(sec.name, "Description") or "<no description>"
@@ -22,16 +17,16 @@ local function MakeMenuItem(sec)
   end
 end
 
-local function CreateItems()
+local function CreateItems(cfg)
   local Items = {}
   for sec in cfg:sections() do
-    local item = MakeMenuItem(sec)
+    local item = MakeMenuItem(cfg, sec)
     if item then table.insert(Items,item) end
   end
   return Items
 end
 
-local Items = CreateItems()
+local Items
 local Props = { Title=Title; Bottom="F1, F4, ShiftF4, F8, Space";
                 Flags=F.FMENU_SHOWAMPERSAND+F.FMENU_WRAPMODE; }
 local Bkeys = {
@@ -89,6 +84,16 @@ local function SetSelected(section)
 end
 
 local function RunMenu()
+  local ini = require "inifile"
+  local mdialog = dofile(thisdir.."macrodialog.lua")
+
+  local cfg, msg = ini.New(macrofile, "nocomment")
+  if cfg then
+    Items = CreateItems(cfg)
+  else
+    far.Message(msg, Title, nil, "w"); return
+  end
+
   local modified = false
   while true do
     SortItems()
@@ -97,7 +102,7 @@ local function RunMenu()
       if modified then
         local r = far.Message("Do you want to save the changes?", Title, "&Yes;&No;Cancel", "w")
         if r == 1 then
-          cfg:write(mfile)
+          cfg:write(macrofile)
           far.Timer(10, function(hnd) hnd:Close(); far.MacroLoadAll(); end) -- another bug in FAR ?
         end
         if r==1 or r==2 then
@@ -127,7 +132,7 @@ local function RunMenu()
       local msg = ("Delete '%s' macro?"):format(shortname)
       if 1 == far.Message(msg, "Confirm", "&Yes;&No", "w") then
         cfg:del_section(fullname)
-        Items = CreateItems()
+        Items = CreateItems(cfg)
         SetSelected(nil)
         modified = true
       end
@@ -168,7 +173,7 @@ local function RunMenu()
               sec:set(k,v)
             end
           end
-          Items = CreateItems()
+          Items = CreateItems(cfg)
           SetSelected(sec)
           modified = true
         end
@@ -200,7 +205,7 @@ local function RunMenu()
               sec:set(k,v)
             end
           end
-          Items = CreateItems()
+          Items = CreateItems(cfg)
           SetSelected(sec)
           modified = true
         end
@@ -224,7 +229,7 @@ local function RunMenu()
       end
 
       if sec then
-        Items = CreateItems()
+        Items = CreateItems(cfg)
         SetSelected(sec)
         modified = true
       end

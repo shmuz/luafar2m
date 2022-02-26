@@ -29,6 +29,7 @@ AddUserFile("scripts/macrobrowser/macrobrowser.lua")
 AddUserFile("scripts/dupfighter/dupfighter.lua")
 
 AddToMenu ("depv", "Lua Calc", nil, require("far2.calc"))
+AddCommand("luacalc", require("far2.calc"))
 ------------------------------------------------------------------------------
 
 if os.getenv("USER") == "shmuel" then

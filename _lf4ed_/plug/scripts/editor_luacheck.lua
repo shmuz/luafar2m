@@ -9,7 +9,7 @@ local Info = { --luacheck: no unused
 }
 -------- /Settings
 
-local OptFileName = "_luacheckrc"
+local OptFileName = ".luacheckrc"
 local MenuMaxHeight = 5
 
 local F = far.Flags

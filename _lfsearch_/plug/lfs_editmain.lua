@@ -5,7 +5,6 @@ local Common      = require "lfs_common"
 local EditEngine  = require "lfs_editengine"
 local M           = require "lfs_message"
 
-local F = far.Flags
 local ErrorMsg = Common.ErrorMsg
 
 local function FormatInt (num)
@@ -102,41 +101,51 @@ local ValidOperations = {
      value 'config.rPickFrom'.
 ------------------------------------------------------------------------------]]
 local function EditorAction (aOp, aData, aScriptCall)
-  assert(ValidOperations[aOp], "invalid operation")
-  ---------------------------------------------------------------------------
-  if aOp == "config" then Common.ConfigDialog() return end
-  ---------------------------------------------------------------------------
+  if nil == ValidOperations[aOp] then
+    error("invalid operation: "..tostring(aOp))
+  end
+
   local bReplace, bWithDialog, sOperation, tParams
   aData.sSearchPat = aData.sSearchPat or ""
   aData.sReplacePat = aData.sReplacePat or ""
+
   local bTest = aOp:find("^test:")
   if bTest then
     bWithDialog = true
     bReplace = (aOp == "test:replace")
     sOperation = aOp:sub(6) -- skip "test:"
     tParams = assert(Common.ProcessDialogData (aData, bReplace))
-  elseif aOp == "search" or aOp == "replace" then
-    bWithDialog = true
-    bReplace = (aOp == "replace")
-    while true do
-      sOperation, tParams = SR_Dialog(aData, bReplace, aScriptCall)
-      if sOperation ~= "config" then break end
+  else
+    if aOp == "config" then
       Common.ConfigDialog()
-    end
-    if sOperation == "cancel" then return end
-    -- sOperation : either of "search", "count", "showall", "replace"
-  else -- if aOp == "repeat"
-    bReplace = (aData.sLastOp == "replace")
-    local searchtext = Common.GetFarHistory("SearchText")
-    if searchtext ~= aData.sSearchPat then
-      bReplace = false
-      --aData.bSearchBack = false
+      return
+    elseif aOp == "search" or aOp == "replace" then
+      bWithDialog = true
+      bReplace = (aOp == "replace")
+      while true do
+        sOperation, tParams = SR_Dialog(aData, bReplace, aScriptCall)
+        if sOperation ~= "config" then break end
+        Common.ConfigDialog()
+      end
+      if sOperation == "cancel" then
+        return
+      end
+      -- sOperation : either of "search", "count", "showall", "replace"
+    elseif aOp == "repeat" or aOp == "repeat_rev" then
       aData.bSearchBack = (aOp == "repeat_rev")
-      if searchtext then aData.sSearchPat = searchtext end
+      bReplace = (aData.sLastOp == "replace")
+      local searchtext = Common.GetFarHistory("SearchText")
+      if searchtext ~= aData.sSearchPat then
+        bReplace = false
+        if searchtext then aData.sSearchPat = searchtext end
+      end
+      sOperation = bReplace and "replace" or "search"
+      tParams = assert(Common.ProcessDialogData (aData, bReplace))
+    else
+      return
     end
-    sOperation = bReplace and "replace" or "search"
-    tParams = assert(Common.ProcessDialogData (aData, bReplace))
   end
+
   aData.sLastOp = bReplace and "replace" or "search"
   tParams.sScope = bWithDialog and aData.sScope or "global"
   ---------------------------------------------------------------------------

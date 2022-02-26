@@ -191,7 +191,7 @@ end
 local function ConfigDialog (aData)
   local Items = {
     width = 76;
-    help = "Contents";
+    -- help = "Contents";
     { tp="dbox"; text=M.MConfigTitle; },
 
     { tp="text"; text=M.MPickFrom; },
@@ -233,7 +233,7 @@ local function SR_Dialog (aTitle, aData, aReplace, aFirstCall)
   ------------------------------------------------------------------------------
   local Items = {
     width = 76;
-    help = "Contents";
+    -- help = "Contents";
     { tp="dbox"; text=aTitle; },
     { tp="text"; text=M.MDlgSearchPat; },
     { tp="edit"; name="sSearchPat"; y1=""; x1=14; hist="SearchText"; noload=aFirstCall; },
