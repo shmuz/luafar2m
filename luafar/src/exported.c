@@ -995,18 +995,25 @@ int LF_ProcessSynchroEvent (lua_State* L, int Event, void *Param)
 {
   if (Event == SE_COMMONSYNCHRO) {
     TTimerData *td = (TTimerData*)Param;
-    if (!td->needDelete) {
-      lua_rawgeti(L, LUA_REGISTRYINDEX, td->funcRef); //+1: Func
-      if (lua_type(L, -1) == LUA_TFUNCTION) {
-        lua_rawgeti(L, LUA_REGISTRYINDEX, td->objRef); //+2: Obj
-        pcall_msg(L, 1, 0);  //+0
-      }
-      else lua_pop(L, 1);
-    }
-    else {
-      luaL_unref(L, LUA_REGISTRYINDEX, td->objRef);
-      luaL_unref(L, LUA_REGISTRYINDEX, td->funcRef);
-      luaL_unref(L, LUA_REGISTRYINDEX, td->threadRef);
+    switch (td->closeStage) {
+      case 0:
+        lua_rawgeti(L, LUA_REGISTRYINDEX, td->funcRef);  //+1: Func
+        if (lua_type(L, -1) == LUA_TFUNCTION) {
+          lua_rawgeti(L, LUA_REGISTRYINDEX, td->objRef); //+2: Obj
+          pcall_msg(L, 1, 0);  //+0
+        }
+        else lua_pop(L, 1);
+        break;
+
+      case 1:
+        break;
+
+      case 2:
+        luaL_unref(L, LUA_REGISTRYINDEX, td->objRef);
+        luaL_unref(L, LUA_REGISTRYINDEX, td->funcRef);
+        luaL_unref(L, LUA_REGISTRYINDEX, td->threadRef);
+        td->closeStage++;
+        break;
     }
   }
   return 0;

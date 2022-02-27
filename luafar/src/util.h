@@ -17,8 +17,7 @@ typedef struct {
   int       objRef;
   int       funcRef;
   int       threadRef;
-  int       needClose;
-  int       needDelete;
+  int       closeStage;
   int       enabled;
   int       interval_changed; //TODO
 }

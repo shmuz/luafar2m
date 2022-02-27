@@ -196,13 +196,21 @@ const char FarTimerType[] = "FarTimer";
 void timer_handler(size_t timer_id, void *user_data)
 {
   TTimerData *td = (TTimerData*) user_data;
-  if (td->needClose) {
-    stop_timer(td->timer_id);
-    td->needDelete = 1;
-    td->Info->AdvControl(td->Info->ModuleNumber, ACTL_SYNCHRO, td);
+  switch(td->closeStage) {
+    case 0:
+      if (td->enabled)
+        td->Info->AdvControl(td->Info->ModuleNumber, ACTL_SYNCHRO, td);
+      break;
+
+    case 1:
+      stop_timer(td->timer_id);
+      td->closeStage++;
+      td->Info->AdvControl(td->Info->ModuleNumber, ACTL_SYNCHRO, td);
+      break;
+
+    case 2:
+      break;
   }
-  else if (td->enabled)
-    td->Info->AdvControl(td->Info->ModuleNumber, ACTL_SYNCHRO, td);
 }
 
 int far_Timer (lua_State *L)
@@ -224,8 +232,7 @@ int far_Timer (lua_State *L)
   td->threadRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
   td->Info = GetPluginStartupInfo(L);
-  td->needClose = 0;
-  td->needDelete = 0;
+  td->closeStage = 0;
   td->enabled = 0;
   td->interval_changed = 0; //TODO
 
@@ -252,21 +259,22 @@ TTimerData* CheckTimer(lua_State* L, int pos)
 TTimerData* CheckValidTimer(lua_State* L, int pos)
 {
   TTimerData* td = CheckTimer(L, pos);
-  luaL_argcheck(L, td->needClose == 0, pos, "attempt to access closed timer");
+  luaL_argcheck(L, td->closeStage == 0, pos, "attempt to access closed timer");
   return td;
 }
 
 int timer_Close (lua_State *L)
 {
   TTimerData* td = CheckTimer(L, 1);
-  td->needClose = 1;
+  if (td->closeStage == 0)
+    td->closeStage++;
   return 0;
 }
 
 int timer_tostring (lua_State *L)
 {
   TTimerData* td = CheckTimer(L, 1);
-  if (td->needClose == 0)
+  if (td->closeStage == 0)
     lua_pushfstring(L, "%s (%p)", FarTimerType, td);
   else
     lua_pushfstring(L, "%s (closed)", FarTimerType);
@@ -281,7 +289,7 @@ int timer_index (lua_State *L)
   else if (!strcmp(method, "Enabled"))     lua_pushboolean(L, td->enabled);
   else if (!strcmp(method, "Interval"))    lua_pushinteger(L, td->interval);
   else if (!strcmp(method, "OnTimer"))     lua_rawgeti(L, LUA_REGISTRYINDEX, td->funcRef);
-  else if (!strcmp(method, "Closed"))      lua_pushboolean(L, td->needClose);
+  else if (!strcmp(method, "Closed"))      lua_pushboolean(L, td->closeStage);
   else                                     luaL_error(L, "attempt to call non-existent method");
   return 1;
 }
