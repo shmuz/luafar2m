@@ -3945,10 +3945,10 @@ int far_LStrnicmp (lua_State *L)
 
 int far_ProcessName (lua_State *L)
 {
-  const wchar_t* param1 = check_utf8_string(L, 1, NULL);
-  const wchar_t* param2 = check_utf8_string(L, 2, NULL);
+  wchar_t* param1 = check_utf8_string(L, 1, NULL);
+  wchar_t* param2 = check_utf8_string(L, 2, NULL);
   int flags = CheckFlags(L, 3);
-  int result;
+  struct FarStandardFunctions* FSF = GetFSF(L);
 
   if (flags & PN_GENERATENAME) {
     const int BUFSIZE = 1024;
@@ -3956,16 +3956,28 @@ int far_ProcessName (lua_State *L)
     wcsncpy(buf, param2, BUFSIZE-1);
     buf[BUFSIZE-1] = 0;
 
-    result = GetFSF(L)->ProcessName(param1, buf, BUFSIZE, flags);
+    int result = FSF->ProcessName(param1, buf, BUFSIZE, flags);
     if (result)
       push_utf8_string(L, buf, -1);
     else
       lua_pushboolean(L, result);
   }
-  else {
-    result = GetFSF(L)->ProcessName(param1, (wchar_t*)param2, 0, flags);
-    lua_pushboolean(L, result);
+  else if (flags & PN_CMPNAMELIST) {
+    //extend FAR API to support exclusion masks
+    wchar_t* pipe = wcschr(param1, L'|');
+    if (pipe) {
+      int r1, r2;
+      *pipe = 0;
+      r1 = (pipe == param1) || FSF->ProcessName(param1, param2, 0, flags);
+      r2 = FSF->ProcessName(pipe+1, param2, 0, flags);
+      lua_pushboolean(L, r1 && !r2);
+    }
+    else
+      lua_pushboolean(L, FSF->ProcessName(param1, param2, 0, flags));
   }
+  else
+    lua_pushboolean(L, FSF->ProcessName(param1, param2, 0, flags));
+
   return 1;
 }
 

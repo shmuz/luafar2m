@@ -1716,7 +1716,7 @@ id=71
 lv=2
 dt=Text
 nm=far.SendDlgMessage
-mtime=3855030954
+mtime=3855157810
 <article>
 #_Result = far.SendDlgMessage (hDlg, Msg, Param1, Param2)
 #_    or
@@ -1789,7 +1789,10 @@ mtime=3855030954
 #_    Param2:  flag
 #_    Result:  integer
 #_
-#_@DM_GETDIALOGINFO,
+#_@DM_GETDIALOGINFO:
+#_    Param2:  none
+#_    Result:  table (field Id: string)
+#_
 #_@DM_GETDLGRECT,
 #_@DM_GETEDITPOSITION,
 #_@DM_GETITEMPOSITION,
@@ -5615,7 +5618,7 @@ id=190
 lv=2
 dt=Text
 nm=far.ProcessName
-mtime=3480263907
+mtime=3855250653
 <article>
 #_result = far.ProcessName (Param1, Param2, Flags)
 #_
@@ -5627,6 +5630,10 @@ mtime=3480263907
 #_**Returns:**
 #_  result: boolean, or string.
 #_          String can be returned if Flags==PN_GENERATENAME
+#_
+#_**Note:**
+#_  If *Flags* contain *PN_CMPNAMELIST* then exclusion masks
+#_  are supported (it is an extension to Far API).
 #_
 #_**Far API used:**
 #_  FSF.ProcessName

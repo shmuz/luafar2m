@@ -1009,10 +1009,9 @@ int LF_ProcessSynchroEvent (lua_State* L, int Event, void *Param)
         break;
 
       case 2:
-        luaL_unref(L, LUA_REGISTRYINDEX, td->objRef);
         luaL_unref(L, LUA_REGISTRYINDEX, td->funcRef);
         luaL_unref(L, LUA_REGISTRYINDEX, td->threadRef);
-        td->closeStage++;
+        luaL_unref(L, LUA_REGISTRYINDEX, td->objRef);
         break;
     }
   }
