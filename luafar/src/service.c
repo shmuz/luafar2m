@@ -1124,6 +1124,11 @@ int editor_SaveFile(lua_State *L)
   esf.FileName = opt_utf8_string(L, 1, L"");
   esf.FileEOL = opt_utf8_string(L, 2, NULL);
   esf.CodePage = luaL_optinteger(L, 3, CP_AUTODETECT);
+  if (esf.CodePage == CP_AUTODETECT) { //workaround: CP_AUTODETECT causes creating an empty file
+    struct EditorInfo ei;
+    if (Info->EditorControl(ECTL_GETINFO, &ei))
+      esf.CodePage = ei.CodePage;
+  }
   lua_pushboolean(L, Info->EditorControl(ECTL_SAVEFILE, &esf));
   return 1;
 }
