@@ -606,12 +606,12 @@ end
 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-local function Run(params)
+local function Run(repeated)
   local libSettings = require("far2.settings")
   local ST = libSettings.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
-  MultilineSearch (params[1] and "repeat" or "search", ST, nil)
+  MultilineSearch (repeated and "repeat" or "search", ST, nil)
   libSettings.msave(SETTINGS_KEY, SETTINGS_NAME, ST)
 end
 
 AddToMenu ("e", "Multiline Search",       "Ctrl+7", Run)
-AddToMenu ("e", "Multiline Search Again", "Ctrl+8", Run, true)
+AddToMenu ("e", "Multiline Search Again", "Ctrl+8", function() Run(true) end)

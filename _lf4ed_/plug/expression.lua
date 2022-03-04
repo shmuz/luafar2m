@@ -277,7 +277,7 @@ local funcs = {
 }
 
 do
-  local arg = ...
-  return assert (funcs[arg[1]]) (unpack(arg, 2))
+  local op, data = ...
+  return assert (funcs[op])(data)
 end
 

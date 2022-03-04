@@ -49,11 +49,6 @@ local function ScriptErrMsg(msg)
   (type(export.OnError)=="function" and export.OnError or ErrMsg)(msg)
 end
 
-local function ShallowCopy (src)
-  local trg = {}; for k,v in pairs(src) do trg[k]=v end
-  return trg
-end
-
 local RequireWithReload, ResetPackageLoaded do
   local bypass_reload = {
     -- Lua global tables --
@@ -121,35 +116,29 @@ local function ConvertUserHotkey(str)
   return d
 end
 
-local function RunFile (filespec, aArg)
+local function RunFile (filespec, ...)
   for file in filespec:gmatch("[^|]+") do
     if file:find("^%<") then
       local ok, func = pcall(require, file) -- embedded file
-      if ok then return func(aArg) end
+      if ok then return func(...) end
     else
       local func = loadfile(_ModuleDir .. file) -- disk file
-      if func then return func(aArg) end
+      if func then return func(...) end
     end
   end
   error ('could not load file from filespec: "' .. filespec .. '"')
 end
 
-local function RunUserFunc (aArgTable, aItem, ...)
+local function RunUserFunc (aItem, ...)
   assert(aItem.action, "no action")
-  -- copy "fixed" arguments
-  local argCopy = ShallowCopy(aArgTable)
-  for i,v in ipairs(aItem.arg) do argCopy[i] = v end
-  -- append "variable" arguments
-  for i=1,select("#", ...) do argCopy[#argCopy+1] = select(i, ...) end
-  -- run the chunk
-  aItem.action(argCopy)
+  aItem.action(...)
 end
 
-local function fSort (aArg)
+local function fSort()
   local sortlines = require "sortlines"
-  aArg[1] = field(_History, "SortDialog")
+  local data = field(_History, "SortDialog")
   repeat
-    local normal, msg = pcall(sortlines.SortWithDialog, aArg)
+    local normal, msg = pcall(sortlines.SortWithDialog, data)
     if not normal then
       -- "Cancel" breaks infinite loop when exception is thrown by far.Dialog()
       if 1 ~= ErrMsg(msg, ";RetryCancel") then break end
@@ -157,34 +146,33 @@ local function fSort (aArg)
   until normal
 end
 
-local function fWrap (aArg)
-  aArg[1] = field(_History, "WrapDialog")
-  return RunFile("<wrap|wrap.lua", aArg)
+local function fWrap()
+  local data = field(_History, "WrapDialog")
+  return RunFile("<wrap|wrap.lua", data)
 end
 
-local function fBlockSum (aArg)
-  aArg[1], aArg[2] = "BlockSum", field(_History, "BlockSum")
-  return RunFile("<expression|expression.lua", aArg)
+local function fBlockSum()
+  local data = field(_History, "BlockSum")
+  return RunFile("<expression|expression.lua", "BlockSum", data)
 end
 
-local function fExpr (aArg)
-  aArg[1], aArg[2] = "LuaExpr", field(_History, "LuaExpression")
-  return RunFile("<expression|expression.lua", aArg)
+local function fExpr()
+  local data = field(_History, "LuaExpression")
+  return RunFile("<expression|expression.lua", "LuaExpr", data)
 end
 
-local function fScript (aArg)
-  aArg[1], aArg[2] = "LuaScript", field(_History, "LuaScript")
-  return RunFile("<expression|expression.lua", aArg)
+local function fScript()
+  local data = field(_History, "LuaScript")
+  return RunFile("<expression|expression.lua", "LuaScript", data)
 end
 
-local function fScriptParams (aArg)
-  aArg[1], aArg[2] = "ScriptParams", field(_History, "LuaScript")
-  return RunFile("<expression|expression.lua", aArg)
+local function fScriptParams()
+  local data = field(_History, "LuaScript")
+  return RunFile("<expression|expression.lua", "ScriptParams", data)
 end
 
-local function fPluginConfig (aArg)
-  aArg[1] = _Cfg
-  if RunFile("<config|config.lua", aArg) then
+local function fPluginConfig()
+  if RunFile("<config|config.lua", _Cfg) then
     OnConfigChange(_Cfg)
     return true
   end
@@ -245,17 +233,23 @@ local function SplitCommandLine (str)
   return out
 end
 
-local function MakeAddCommand (Items, Env)
-  return function (aCommand, aAction, ...)
+local function MakeAddCommand (Items, Env, FileName)
+  return function (aCommand, aAction, aDescription)
     if type(aCommand)=="string" and type(aAction)=="function" then
       setfenv(aAction, Env)
-      _Plugin.CommandTable[aCommand] = { arg = {...}; action = aAction; }
+      local t = _Plugin.CommandTable[aCommand]
+      if t == nil then
+        t = {}
+        _Plugin.CommandTable[aCommand] = t
+      end
+      local descr = type(aDescription)=="string" and aDescription or nil
+      table.insert(t, { action=aAction; description=descr; filename=FileName; })
     end
   end
 end
 
 local function MakeAddToMenu (Items, Env)
-  local function AddToMenu (aWhere, aItemText, aHotKey, aHandler, ...)
+  local function AddToMenu (aWhere, aItemText, aHotKey, aHandler)
     if type(aWhere) ~= "string" then return end
     aWhere = aWhere:lower()
     if not aWhere:find("[evpdc]") then return end
@@ -268,7 +262,7 @@ local function MakeAddToMenu (Items, Env)
         bInternal = true
       elseif tp=="function" then
         setfenv(aHandler, Env)
-        tUserItem = { arg={...}; useritem=true; action=aHandler; }
+        tUserItem = { useritem=true; action=aHandler; }
       end
     end
     if not (SepText or tUserItem or bInternal) then
@@ -276,12 +270,11 @@ local function MakeAddToMenu (Items, Env)
     end
     ---------------------------------------------------------------------------
     if (tUserItem or bInternal) and aWhere:find("[ec]") and type(aHotKey)=="string" then
-      local HotKeyTable = _Plugin.HotKeyTable
       aHotKey = ConvertUserHotkey (aHotKey)
       if tUserItem then
-        HotKeyTable[aHotKey] = tUserItem
+        _Plugin.HotKeyTable[aHotKey] = tUserItem
       else
-        HotKeyTable[aHotKey] = aHandler
+        _Plugin.HotKeyTable[aHotKey] = aHandler
       end
     end
     ---------------------------------------------------------------------------
@@ -338,7 +331,7 @@ local function MakeAddUserFile (aEnv, aItems)
     ---------------------------------------------------------------------------
     uStack[uDepth] = setmetatable({}, uMeta)
     aEnv.AddToMenu = MakeAddToMenu(aItems, uStack[uDepth])
-    aEnv.AddCommand = MakeAddCommand(aItems, uStack[uDepth])
+    aEnv.AddCommand = MakeAddCommand(aItems, uStack[uDepth], filename)
     local ok, msg2 = pcall(chunk, filename)
     if not ok then error(msg2, 3) end
     uDepth = uDepth - 1
@@ -408,15 +401,14 @@ local function traceback3(msg)
   return debug.traceback(msg, 3)
 end
 
-local function RunMenuItem(aArg, aItem, aRestoreConfig)
-  aArg = ShallowCopy(aArg) -- prevent parasite connection between utilities
+local function RunMenuItem(aItem, aRestoreConfig)
   local restoreConfig = aRestoreConfig and plug_config()
 
   local function wrapfunc()
     if aItem.useritem then
-      return RunUserFunc(aArg, aItem)
+      return RunUserFunc(aItem)
     end
-    return aItem.action(aArg)
+    return aItem.action()
   end
 
   local ok, result = xpcall(wrapfunc, traceback3)
@@ -442,7 +434,7 @@ local function Configure (aArg)
   while true do
     local item, pos = far.Menu(properties, items)
     if not item then return end
-    local ok, result = RunMenuItem(aArg, item, false)
+    local ok, result = RunMenuItem(item, false)
     if not ok then return end
     if result then
       Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
@@ -519,7 +511,7 @@ local function ExecuteCommand (args, sFrom)
     if v.command then
       local oldConfig = plug_config()
       local wrapfunc = function()
-        return RunUserFunc({From=sFrom}, v.command, unpack(v))
+        return RunUserFunc(v.command, unpack(v))
       end
       local ok, res = xpcall(wrapfunc, traceback3)
       plug_config(oldConfig)
@@ -538,6 +530,42 @@ local function ExecuteCommand (args, sFrom)
   end
 end
 
+local function SelectCommand(name, cmd_arr)
+  if not cmd_arr[2] then return cmd_arr[1] end
+  --------------------------------------------------------------------
+  local props = {
+    Title = "Execute a command: "..name;
+    Bottom = "Digit: execute | F4: open in editor";
+    Flags = bit.bor(F.FMENU_WRAPMODE, F.FMENU_CHANGECONSOLETITLE);
+  }
+  local bkeys = { {BreakKey="F4"} }
+  local items = {}
+  for i,v in ipairs(cmd_arr) do
+    local text = v.description or "<no description>"
+    local ch = i<10 and tostring(i) or i<36 and string.char(i+55)
+    if ch then
+      text = "&"..ch..". "..text
+    end
+    table.insert(items, {text=text, command=v})
+  end
+  --------------------------------------------------------------------
+  while true do
+    local item, pos = far.Menu(props, items, bkeys)
+    if not item then
+      break
+    elseif item.command then
+      return item.command
+    elseif item.BreakKey == "F4" then
+      props.SelectIndex = pos
+      local cmd = items[pos].command
+      if cmd.filename then
+        local startline = cmd.action and debug.getinfo(cmd.action,"S").linedefined
+        editor.Editor(cmd.filename,nil,nil,nil,nil,nil,nil,startline,nil,65001)
+      end
+    end
+  end
+end
+
 -------------------------------------------------------------------------------
 -- This function processes both command line calls and calls from macros.
 -------------------------------------------------------------------------------
@@ -552,23 +580,29 @@ local function ProcessCommand (source, sFrom)
       param = v
     elseif v:sub(1,1) == "-" then
       opt, param = v:match("^%-([aelr])(.*)")
-      if not opt then return CommandSyntaxMessage() end
+      if (not opt) or (opt=="a" and param ~= "") then
+        return CommandSyntaxMessage()
+      end
     else
-      local command = _Plugin.CommandTable[v]
-      if not command then return CommandSyntaxMessage() end
-      table.insert(args2, { command=command; unpack(args, i+1); })
+      local cmd_arr = _Plugin.CommandTable[v]
+      if not cmd_arr then return CommandSyntaxMessage() end
+      local cmd = SelectCommand(v, cmd_arr)
+      if not cmd then return end
+      table.insert(args2, { command=cmd; unpack(args, i+1); })
       break
     end
     if opt == "a" then
       opt, async = nil, true
-    elseif param ~= "" then
-      if opt=="r" then
-        table.insert(args2, { opt=opt; param=param; unpack(args, i+1); })
-        break
-      else
-        table.insert(args2, { opt=opt; param=param; })
+    else
+      if param ~= "" then
+        if opt=="r" then
+          table.insert(args2, { opt=opt; param=param; unpack(args, i+1); })
+          break
+        else
+          table.insert(args2, { opt=opt; param=param; })
+        end
+        opt = nil
       end
-      opt = nil
     end
   end
   if async then
@@ -631,9 +665,8 @@ local function export_OpenPlugin (aFrom, aItem)
     if not item then break end
 
     history.position = pos
-    local arg = { From = sFrom }
-    if sFrom == "dialog" then arg.hDlg = aItem.hDlg end
-    local ok, result, bRetToMainMenu = RunMenuItem(arg, item, item.action~=Configure)
+    if sFrom == "dialog" then item.hDlg = aItem.hDlg end
+    local ok, result, bRetToMainMenu = RunMenuItem(item, item.action~=Configure)
     if not ok then break end
 
     Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
@@ -691,7 +724,7 @@ local function export_ProcessEditorInput (Rec)
     if item then
       if Rec.KeyDown then
         if type(item)=="number" then item = EditorMenuItems[item] end
-        if item then RunMenuItem({From="editor"}, item, item.action~=Configure) end
+        if item then RunMenuItem(item, item.action~=Configure) end
       end
       return true
     end

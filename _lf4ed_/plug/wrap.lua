@@ -278,5 +278,5 @@ local function WrapWithDialog (aData)
   end
 end
 
-local history = (...)[1]
+local history = ...
 WrapWithDialog (history)

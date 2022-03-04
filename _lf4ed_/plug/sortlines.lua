@@ -213,8 +213,7 @@ function Package.SortWithRawData (aData)
 end
 
 -- generic
-function Package.SortWithDialog (aArg)
-  local data = aArg[1]
+function Package.SortWithDialog (data)
   if SortDialog(data, IsColumnType()) then
     Package.SortWithRawData (data)
   end

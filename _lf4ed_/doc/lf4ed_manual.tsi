@@ -95,10 +95,10 @@ id=13
 lv=2
 dt=Text
 nm=AddToMenu
-mtime=3853967294
+mtime=3855599582
 <article>
 #_<markdown>
-#_**`AddToMenu (where, text, hotkey, handler [, ...])`**
+#_**`AddToMenu (where, text, hotkey, handler)`**
 #_
 #_Function `AddToMenu` is available to the *_usermenu.lua* script.<br>
 #_It allows to add a specified utility to the plugin's menu and
@@ -130,17 +130,12 @@ mtime=3853967294
 #_  -- either a Lua function, or<br>
 #_  -- the number of a built-in utility (1 to 6).
 #_
-#_1. Extra parameters (optional)<br>
-#_Values that will be passed to user script (they are passed to the
-#_script in a table). There can be any number of values of any Lua
-#_type.
-#_
 #_### Examples
 #_
 #_      AddToMenu ("e", "Count words", nil, count_words)
-#_      AddToMenu ("e", "Search", "Ctrl+F", search, "search")
+#_      AddToMenu ("e", "Search", "Ctrl+F", search)
 #_      AddToMenu ("p", "Rename Files", nil, rename)
-#_      AddToMenu ("evp", "Calendar", "Alt+F12", calendar, "show")
+#_      AddToMenu ("evp", "Calendar", "Alt+F12", calendar)
 #_
 #_To assign a hot key to a built-in utility, supply `text` as `nil`
 #_and specify the number of the built-in utility via `handler`:
@@ -153,10 +148,10 @@ id=57
 lv=2
 dt=Text
 nm=AddCommand
-mtime=3853967420
+mtime=3855599457
 <article>
 #_<markdown>
-#_**`AddCommand (command, handler [, ...])`**
+#_**`AddCommand (command, handler [, description])`**
 #_
 #_Function `AddCommand` is available to the *_usermenu.lua* script.<br>
 #_It establishes a correspondence between the given `command` and
@@ -171,18 +166,19 @@ mtime=3853967420
 #_1. `handler`<br>
 #_A Lua function.
 #_
-#_1. Extra parameters (optional)<br>
-#_Values that will be passed to the handler (they are passed in a table).
-#_There can be any number of values of any Lua type.
+#_1. `description`<br>
+#_Description of the command (a string)
 #_
 #_### Note
 #_
-#_If the command line contains arguments that follow the command then those
-#_arguments will be passed on to the handler.
+#_`AddCommand` may be called several times with the same `command` parameter
+#_but different `handler` and `description` parameters. When such a comnmand
+#_is later invoked the user is presented with a menu for choosing the desired
+#_action.
 #_
 #_### Examples
-#_      AddCommand("calc", calc)
-#_      AddCommand("hello", function() far.Message("Hello") end)
+#_      AddCommand("calc", calc, "Calculator")
+#_      AddCommand("hello", function() far.Message("Hello") end, "Hello")
 #_
 </article>
 </node>

@@ -24,5 +24,5 @@ local function ExecuteDialog (aData)
   end
 end
 
-local Cfg = (...)[1]
-return ExecuteDialog(Cfg)
+local data = (...)
+return ExecuteDialog(data)

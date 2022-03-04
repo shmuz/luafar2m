@@ -4,7 +4,7 @@ local function ReloadUserFile()
   win.Sleep(600)
   actl.RedrawAll()
 end
-AddCommand("reload", ReloadUserFile)
+AddCommand("reload", ReloadUserFile, "Reload user file")
 
 local function SmartHome()
   local info, str = editor.GetInfo(), editor.GetString()
@@ -28,7 +28,13 @@ AddUserFile("scripts/editor_luacheck.lua")
 AddUserFile("scripts/macrobrowser/macrobrowser.lua")
 AddUserFile("scripts/dupfighter/dupfighter.lua")
 
-AddToMenu ("depv", "Lua Calc", nil, require("far2.calc"))
+AddToMenu ("depv", "Lua Calc", nil,
+  function(...)
+    --far.Show(...)
+    require("far2.calc")()
+  end
+    )
+
 AddCommand("luacalc", require("far2.calc"))
 ------------------------------------------------------------------------------
 
