@@ -6,6 +6,9 @@ local M = require "lf4ed_message"
 local function ExecuteDialog (aData)
   local Items = {
     width=46;
+    help="PluginConfig";
+    guid="0F5573D7-FD25-408D-8A8A-E917C0CA14DE";
+
     {tp="dbox";  text=M.MPluginSettings;},
     {tp="chbox"; text=M.MReloadDefaultScript; name="ReloadDefaultScript"; },
     {tp="chbox"; text=M.MRequireWithReload;   name="RequireWithReload";   },

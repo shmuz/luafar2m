@@ -27,12 +27,3 @@ local function InsertTimestamp()
   far.MacroPost(s)
 end
 AddCommand("timestamp", InsertTimestamp)
-
--- original: "Макросы для редактора Журко"
--- key='ShiftBS'; area='Common';
--- description='XLat: QWERTY-ЙЦУКЕН выделения или слова и смена языка ввода ОС';
-local function XLat()
-  if not Object.Selected then Keys('SelWord') end
-  Keys('XLat')
-  mf.xlat('', 1)
-end

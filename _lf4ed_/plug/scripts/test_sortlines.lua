@@ -1,9 +1,8 @@
 local F = far.Flags
-local dirsep = package.config:sub(1,1)
 
 local function OpenHelperEditor(filename)
   local ret = editor.Editor (filename, nil, nil,nil,nil,nil,
-              {EF_NONMODAL=1, EF_IMMEDIATERETURN=1, EF_CREATENEW=1}, 0, 0)
+              {EF_NONMODAL=1, EF_IMMEDIATERETURN=1})
   assert (ret == F.EEC_MODIFIED, "could not open file")
 end
 
@@ -23,7 +22,7 @@ end
 
 local function ClearBuffer()
   local editInfo = editor.GetInfo()
-  editor.Select("BTYPE_STREAM", 1, 1, nil, editInfo.TotalLines-1)
+  editor.Select("BTYPE_STREAM", 1, 1, nil, editInfo.TotalLines)
   editor.DeleteBlock()
 end
 
@@ -33,7 +32,7 @@ local function PrepareFile (filename)
   local editInfo = editor.GetInfo()
   if bit.band (editInfo.CurState, F.ECSTATE_SAVED) == 0 then
     local result = far.Message("\nSave current file?\n",
-      "A new file will be created", "[Yes];[No];[Cancel]")
+      "A new file will be created", "Yes;No;Cancel")
     if result < 0 or result == 3 then return false end
     if result == 1 and not editor.SaveFile(editInfo.FileName) then
       far.Message"Could not save file. Canceling the operation."
@@ -93,7 +92,7 @@ local function TestCase (data, selection, refer, expr, colpat, onlysel)
   control.cbxOnlySel = onlysel
   -----------------------------------------------------------------------------
   ClearBuffer()
-  for i=1,#data do editor.InsertString() end
+  for _=1,#data do editor.InsertString() end
   for i,line in ipairs(data) do
     editor.SetPosition(i, 1)
     editor.SetString(i, line, "")
@@ -148,7 +147,7 @@ local data3, result3 = {
 
 local function DoTest()
 package.loaded["sortlines"]=nil
-  local filename = far.PluginStartupInfo().ModuleName:match(".+"..dirsep).."temp1.tmp"
+  local filename = "/tmp/test_sortlines.tmp"
   if not PrepareFile(filename) then return end
   -----------------------------------------------------------------------------
   -- "a"

@@ -313,13 +313,6 @@ be needed when debugging a library).
     With this option turned on, the plugin does not allow access to
 "undeclared" global variables.
 
- #[x] Use searchable menu#
-
-    The main plugin menu becomes "searchable". When the menu is on the screen,
-type a character sequence, and the menu will react by displaying only items
-containing that sequence. Lua regular expressions are partially supported in
-the typed sequences.
-
  #[x] Return to Main menu#
 
     When a utility that was activated via the main menu finishes its execution,

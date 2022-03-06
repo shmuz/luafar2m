@@ -534,42 +534,22 @@ id=32
 lv=1
 dt=Text
 nm=lf4ed.config
-mtime=3854196060
+mtime=3855739827
 <article>
-#_Get or set the plugin configuration.
+#_Get the plugin configuration.
 #_
-#_cfg = lf4ed.config ([newcfg])
-#_
-#_**Parameters:**
-#_  *newcfg*:  table
-#_           Fields of *newcfg* (every field is optional):
-#_             ReloadDefaultScript : boolean
-#_             RequireWithReload   : boolean
-#_             UseStrict           : boolean
-#_             ReturnToMainMenu    : boolean
+#_cfg = lf4ed.config()
 #_
 #_**Returns:**
-#_  *cfg*:     table (the configuration as it was before the call)
+#_  *cfg*: table
+#_         Fields of *cfg*:
+#_           ReloadDefaultScript : boolean
+#_           RequireWithReload   : boolean
+#_           UseStrict           : boolean
+#_           ReturnToMainMenu    : boolean
 #_
 #_**Description:**
-#_  If *newcfg* is given, it is a table with configuration
-#_  parameters to be set. Parameters not contained in this
-#_  table will remain unchanged. This means that
-#_  (newcfg.param == false) will set 'param' to false, but
-#_  (newcfg.param == nil) will leave 'param' as it was before
-#_  the call.
-#_  Returned is a copy of the "old" configuration table (as it
-#_  was before the call).
-#_
-#_  If *newcfg* is not given, an up-to-date copy of the
-#_  configuration table is returned. This table contains the
-#_  same fields as the *newcfg* table described above.
-#_
-#_**Note:**
-#_  Configuration changes done by a user script via this
-#_  function are reverted by the plugin after the user script
-#_  exits.
-#_
+#_  The function returns a copy of the plugin's configuration table.
 #_
 </article>
 </node>

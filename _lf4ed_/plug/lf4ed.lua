@@ -12,16 +12,16 @@ local SETTINGS_NAME = "plugin_lf4ed"
 local DefaultCfg = {
   -- Default script will be recompiled and run every time OpenPlugin/OpenFilePlugin
   -- are called: set true for debugging, false for normal use;
-  ReloadDefaultScript = false,
+  ReloadDefaultScript = false;
 
   -- Reload Lua libraries each time they are require()d:
   -- set true for libraries debugging, false for normal use;
-  RequireWithReload   = false,
+  RequireWithReload = false;
 
   -- After executing utility from main menu, return to the menu again
-  ReturnToMainMenu    = false,
+  ReturnToMainMenu = false;
 
-  UseStrict           = false, -- Use require 'strict'
+  UseStrict = false; -- Use require 'strict'
 }
 
 -- UPVALUES : keep them above all function definitions !!
@@ -88,19 +88,11 @@ local function OnConfigChange (cfg)
 end
 
 -------------------------------------------------------------------------------
--- @param newcfg: if given, it is a table with configuration parameters to set.
 -- @return: a copy of the configuration table (as it was before the call).
 -------------------------------------------------------------------------------
-local function plug_config (newcfg)
-  assert(not newcfg or (type(newcfg) == "table"))
+local function plug_config()
   local t = {}
   for k in pairs(DefaultCfg) do t[k] = _Cfg[k] end
-  if newcfg then
-    for k,v in pairs(newcfg) do
-      if DefaultCfg[k] ~= nil then _Cfg[k] = v end
-    end
-    OnConfigChange(_Cfg)
-  end
   return t
 end
 
@@ -127,11 +119,6 @@ local function RunFile (filespec, ...)
     end
   end
   error ('could not load file from filespec: "' .. filespec .. '"')
-end
-
-local function RunUserFunc (aItem, ...)
-  assert(aItem.action, "no action")
-  aItem.action(...)
 end
 
 local function fSort()
@@ -401,28 +388,20 @@ local function traceback3(msg)
   return debug.traceback(msg, 3)
 end
 
-local function RunMenuItem(aItem, aRestoreConfig)
-  local restoreConfig = aRestoreConfig and plug_config()
-
+local function RunMenuItem(aItem)
   local function wrapfunc()
-    if aItem.useritem then
-      return RunUserFunc(aItem)
-    end
     return aItem.action()
   end
 
   local ok, result = xpcall(wrapfunc, traceback3)
   local result2 = _Cfg.ReturnToMainMenu
-  if restoreConfig then
-    plug_config(restoreConfig)
-  end
   if not ok then
     ScriptErrMsg(result)
   end
   return ok, result, result2
 end
 
-local function Configure (aArg)
+local function Configure()
   local properties, items = {
     Flags = F.FMENU_WRAPMODE+F.FMENU_AUTOHIGHLIGHT, Title = M.MPluginNameCfg,
     HelpTopic = "Contents",
@@ -434,7 +413,7 @@ local function Configure (aArg)
   while true do
     local item, pos = far.Menu(properties, items)
     if not item then return end
-    local ok, result = RunMenuItem(item, false)
+    local ok, result = RunMenuItem(item)
     if not ok then return end
     if result then
       Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
@@ -445,8 +424,7 @@ local function Configure (aArg)
 end
 
 local function export_Configure (ItemNumber)
-  Configure({From="config"})
-  return false
+  Configure()
 end
 
 local function AddMenuItems (src, trg)
@@ -511,7 +489,7 @@ local function ExecuteCommand (args, sFrom)
     if v.command then
       local oldConfig = plug_config()
       local wrapfunc = function()
-        return RunUserFunc(v.command, unpack(v))
+        return v.command.action(unpack(v))
       end
       local ok, res = xpcall(wrapfunc, traceback3)
       plug_config(oldConfig)
@@ -666,7 +644,7 @@ local function export_OpenPlugin (aFrom, aItem)
 
     history.position = pos
     if sFrom == "dialog" then item.hDlg = aItem.hDlg end
-    local ok, result, bRetToMainMenu = RunMenuItem(item, item.action~=Configure)
+    local ok, result, bRetToMainMenu = RunMenuItem(item)
     if not ok then break end
 
     Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
@@ -724,7 +702,7 @@ local function export_ProcessEditorInput (Rec)
     if item then
       if Rec.KeyDown then
         if type(item)=="number" then item = EditorMenuItems[item] end
-        if item then RunMenuItem(item, item.action~=Configure) end
+        if item then RunMenuItem(item) end
       end
       return true
     end

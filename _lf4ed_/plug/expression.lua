@@ -68,7 +68,8 @@ local function ParamsDialog (aData)
   local Items = {
     width = 56;
     help = "ScriptParams";
-    {tp="dbox";  text=M.MScriptParams;                                 },
+    guid = "D0CDAE16-C402-4E54-9D23-7150A8D87787";
+    {tp="dbox";  text=M.MScriptParams;                                      },
     {tp="text";  text="&1.";           ystep=2; width=2;                    },
     {tp="edit";  name="sParam1";       ystep=0; x1=8; hist=HIST_PARAM;      },
     {tp="text";  text="&2.";           ystep=2; width=2;                    },
