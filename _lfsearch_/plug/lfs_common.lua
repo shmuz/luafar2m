@@ -7,9 +7,65 @@ local field = Sett.field
 local M = require "lfs_message"
 local F = far.Flags
 
-
 local function ErrorMsg (text, title)
   far.Message (text, title or M.MError, nil, "w")
+end
+
+local function FormatInt (num)
+  return tostring(num):reverse():gsub("...", "%1,"):gsub(",$", ""):reverse()
+end
+
+local function MakeGsub (mode)
+  local sub, len
+  if     mode == "widechar"  then sub, len = win.subW, win.lenW
+  elseif mode == "byte"      then sub, len = string.sub, string.len
+  elseif mode == "multibyte" then sub, len = ("").sub, ("").len
+  else return nil
+  end
+
+  return function (aSubj, aRegex, aRepFunc, ...)
+    local ufind_method = mode=="widechar" and aRegex.ufindW or aRegex.ufind
+    local nFound, nReps = 0, 0
+    local tOut = {}
+    local x, last_to = 1, -1
+    local len_limit = 1 + len(aSubj)
+
+    while x <= len_limit do
+      local collect = ufind_method(aRegex, aSubj, x)
+      if not collect then break end
+      local from, to = collect[1], collect[2]
+
+      if to == last_to then
+        -- skip empty match adjacent to previous match
+        tOut[#tOut+1] = sub(aSubj, x, x)
+        x = x + 1
+      else
+        last_to = to
+        tOut[#tOut+1] = sub(aSubj, x, from-1)
+        collect[2] = sub(aSubj, from, to)
+        nFound = nFound + 1
+
+        local sRepFinal, ret2 = aRepFunc(collect, ...)
+        if type(sRepFinal) == "string" then
+          tOut[#tOut+1] = sRepFinal
+          nReps = nReps + 1
+        else
+          tOut[#tOut+1] = sub(aSubj, from, to)
+        end
+
+        if from <= to then
+          x = to + 1
+        else
+          tOut[#tOut+1] = sub(aSubj, from, from)
+          x = from + 1
+        end
+
+        if ret2 then break end
+      end
+    end
+    tOut[#tOut+1] = sub(aSubj, x)
+    return table.concat(tOut), nFound, nReps
+  end
 end
 
 
@@ -541,10 +597,76 @@ function SRFrameBase:DlgProc (hDlg, msg, param1, param2)
 end
 
 
+local function GetReplaceFunction (aReplacePat)
+  if type(aReplacePat) == "function" then
+    return function(collect) return aReplacePat(unpack(collect, 2)) end
+
+  elseif type(aReplacePat) == "string" then
+    return function() return aReplacePat end
+
+  elseif type(aReplacePat) == "table" then
+    return function(collect, nReps)
+      local rep, stack = "", {}
+      local case, instant_case
+      for _,v in ipairs(aReplacePat) do
+        local instant_case_set = nil
+        ---------------------------------------------------------------------
+        if v[1] == "case" then
+          if v[2] == "L" or v[2] == "U" then
+            stack[#stack+1], case = v[2], v[2]
+          elseif v[2] == "E" then
+            if stack[1] then table.remove(stack) end
+            case = stack[#stack]
+          else
+            instant_case, instant_case_set = v[2], true
+          end
+        ---------------------------------------------------------------------
+        elseif v[1] == "counter" then
+          rep = rep .. ("%%0%dd"):format(v[3]):format(nReps+v[2])
+        ---------------------------------------------------------------------
+        elseif v[1] == "hex" then
+          rep = rep .. v[2]
+        ---------------------------------------------------------------------
+        elseif v[1] == "literal" or v[1] == "group" then
+          local c
+          if v[1] == "literal" then
+            c = v[2]
+          else -- group
+            c = collect[2 + v[2]]
+            assert (c ~= nil, "invalid capture index")
+          end
+          if c ~= false then -- a capture *can* equal false
+            if instant_case then
+              local d = c:sub(1,1)
+              rep = rep .. (instant_case=="l" and d:lower() or d:upper())
+              c = c:sub(2)
+            end
+            c = (case=="L" and c:lower()) or (case=="U" and c:upper()) or c
+            rep = rep .. c
+          end
+        ---------------------------------------------------------------------
+        end
+        if not instant_case_set then
+          instant_case = nil
+        end
+      end
+      return rep
+    end
+  else
+    error("invalid type of replace pattern")
+  end
+end
+
+
 return {
-  ConfigDialog      = ConfigDialog;
-  CreateSRFrame     = CreateSRFrame;
-  ErrorMsg          = ErrorMsg;
-  GetFarHistory     = GetFarHistory;
-  ProcessDialogData = ProcessDialogData;
+  ConfigDialog       = ConfigDialog;
+  CreateSRFrame      = CreateSRFrame;
+  ErrorMsg           = ErrorMsg;
+  FormatInt          = FormatInt;
+  GetFarHistory      = GetFarHistory;
+  GetReplaceFunction = GetReplaceFunction;
+  Gsub               = MakeGsub("byte");
+  GsubW              = MakeGsub("widechar");
+  GsubMB             = MakeGsub("multibyte");
+  ProcessDialogData  = ProcessDialogData;
 }

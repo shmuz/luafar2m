@@ -1,11 +1,12 @@
 -- lfs_editengine.lua
 
-local M = require "lfs_message"
+local M      = require "lfs_message"
+local Common = require "lfs_common"
 local F = far.Flags
 local EditorGetString = editor.GetString
 local EditorSetString = editor.SetString
 local _lastclock
-local floor, ceil, min, max = math.floor, math.ceil, math.min, math.max
+local floor, ceil, min = math.floor, math.ceil, math.min
 
 local function GetUserChoice (aTitle, s_found, s_rep)
   s_found = s_found:gsub("%z", " ")
@@ -21,67 +22,6 @@ local function GetUserChoice (aTitle, s_found, s_rep)
     _lastclock = os.clock()
   end
   return c==1 and "yes" or c==2 and "all" or c==3 and "no" or "cancel"
-end
-
-
-local function GetReplaceFunction (aReplacePat)
-  if type(aReplacePat) == "function" then
-    return function(collect) return aReplacePat(unpack(collect, 2)) end
-
-  elseif type(aReplacePat) == "string" then
-    return function() return aReplacePat end
-
-  elseif type(aReplacePat) == "table" then
-    return function(collect, nReps)
-      local rep, stack = "", {}
-      local case, instant_case
-      for _,v in ipairs(aReplacePat) do
-        local instant_case_set = nil
-        ---------------------------------------------------------------------
-        if v[1] == "case" then
-          if v[2] == "L" or v[2] == "U" then
-            stack[#stack+1], case = v[2], v[2]
-          elseif v[2] == "E" then
-            if stack[1] then table.remove(stack) end
-            case = stack[#stack]
-          else
-            instant_case, instant_case_set = v[2], true
-          end
-        ---------------------------------------------------------------------
-        elseif v[1] == "counter" then
-          rep = rep .. ("%%0%dd"):format(v[3]):format(nReps+v[2])
-        ---------------------------------------------------------------------
-        elseif v[1] == "hex" then
-          rep = rep .. v[2]
-        ---------------------------------------------------------------------
-        elseif v[1] == "literal" or v[1] == "group" then
-          local c
-          if v[1] == "literal" then
-            c = v[2]
-          else -- group
-            c = collect[2 + v[2]]
-            assert (c ~= nil, "invalid capture index")
-          end
-          if c ~= false then -- a capture *can* equal false
-            if instant_case then
-              local d = c:sub(1,1)
-              rep = rep .. (instant_case=="l" and d:lower() or d:upper())
-              c = c:sub(2)
-            end
-            c = (case=="L" and c:lower()) or (case=="U" and c:upper()) or c
-            rep = rep .. c
-          end
-        ---------------------------------------------------------------------
-        end
-        if not instant_case_set then
-          instant_case = nil
-        end
-      end
-      return rep
-    end
-  else
-    error("invalid type of replace pattern")
-  end
 end
 
 
@@ -109,18 +49,12 @@ local function find_back (s, regex, init)
   local MIN, MAX = 2, init
   local start = ceil((MIN+MAX)/2)
 
---~   local function showinfo()
---~     far.Show("init="..init, "stage="..stage, "MIN="..MIN, "MAX="..MAX,
---~              "start="..start, "BEST="..BEST)
---~   end
-
   while true do
     local res = regex:ufind(s, start)
     if res and res[2]>=init then res=nil end
     local ok = false
     ---------------------------------------------------------------------------
     if stage == 1 then -- maximize out[2]
-      --showinfo()
       if res then
         if res[2] > out[2] then
           BEST, out, ok = start, res, true
@@ -128,7 +62,6 @@ local function find_back (s, regex, init)
           ok = true
         end
       end
-      --far.Message("ok="..tostring(ok))
       if MIN >= MAX then
         stage = 2
         MIN, MAX = 2, BEST-1
@@ -142,7 +75,6 @@ local function find_back (s, regex, init)
       end
     ---------------------------------------------------------------------------
     else -- minimize out[1]
-      --showinfo()
       if res and res[2] >= out[2] then
         if res[1] < out[1] then
           out, ok = res, true
@@ -150,7 +82,6 @@ local function find_back (s, regex, init)
           ok = true
         end
       end
-      --far.Message("ok="..tostring(ok))
       if MIN >= MAX then
         break
       elseif ok then
@@ -259,7 +190,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
   local bAllowEmpty = aWithDialog
   local fFilter, Regex = aParams.FilterFunc, aParams.Regex
   local fChoice = aChoiceFunc or GetUserChoice
-  local fReplace = (aOp == "replace") and GetReplaceFunction(aParams.ReplacePat)
+  local fReplace = (aOp == "replace") and Common.GetReplaceFunction(aParams.ReplacePat)
   local tItems = (aOp == "showall") and {}
   local bFastCount = (aOp == "count") and bForward
 

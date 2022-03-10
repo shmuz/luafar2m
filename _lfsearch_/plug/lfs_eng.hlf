@@ -1201,3 +1201,52 @@ and their subdirectories. In case no directory should be excluded
 then leave the input field empty.
  
  ~Contents~@Contents@
+
+@MReplace
+$ #Multi-Line Replace in Editor#
+ The utility searches and replaces inside several lines of text in the editor.
+Those lines should be selected before the operation begins. The kind of
+selection (stream or vertical) does not matter, if even one position in a line
+is selected, the whole line participates in the operation.
+
+ If there is no selection, the operation is performed on the whole editor
+contents.
+
+ In the search stage, lines of text are concatenated with \n between them,
+no matter what the real line break sequences are. In the replace stage,
+the default line break sequences are inserted.
+
+ All replacements take place at once with no prompt for the user. In the
+similar way they all can be cancelled at once by pressing Ctrl-Z.
+
+^#Dialog settings# 
+ #Search for#
+ The search pattern.
+
+ #Replace with#
+ See ~Syntax of Replace pattern~@SyntaxReplace@.
+
+ #[x] Regular Expression#
+ If checked, then the string to search is treated as a
+~regular expression~@:RegExp@, otherwise as a literal string.
+
+ #[x] Case sensitive#
+ Toggles case sensitivity.
+
+ #[x] Whole words#
+ Search for whole words.
+
+ #[x] Ignore spaces#
+ All literal whitespace in the search pattern is deleted before the search
+begins. Escape the whitespace with #\# if it is an integral part of the
+pattern.
+
+ #[x] File as a line#
+ If checked then #.# (dot) in regular expressions matches any character,
+including \r and \n.
+ 
+ #[x] Multiline mode#
+ If checked then #^# and #$# in regular expressions match correspondingly
+beginnings and ends of every line.
+
+ ~Contents~@Contents@

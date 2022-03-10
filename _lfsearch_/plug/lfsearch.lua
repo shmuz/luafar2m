@@ -32,9 +32,11 @@ local Cfg = {
 }
 
 -- Upvalues --
-local Sett  = require "far2.settings"
-local Utils = require "far2.utils"
-local M     = require "lfs_message"
+local Sett     = require "far2.settings"
+local Utils    = require "far2.utils"
+local M        = require "lfs_message"
+  package.loaded["lfs_mreplace"]=nil
+local MReplace = require "lfs_mreplace"
 local field = Sett.field
 
 local SETTINGS_KEY  = "shmuz"
@@ -73,11 +75,12 @@ end
 
 local function MakeMenuItems (aUserMenuFile)
   local items = {
-    {text=M.MMenuFind,      action="search" },
-    {text=M.MMenuReplace,   action="replace"},
-    {text=M.MMenuRepeat,    action="repeat" },
-    {text=M.MMenuRepeatRev, action="repeat_rev"},
-    {text=M.MMenuConfig,    action="config" },
+    {text=M.MMenuFind,             action="search" },
+    {text=M.MMenuReplace,          action="replace"},
+    {text=M.MMenuRepeat,           action="repeat" },
+    {text=M.MMenuRepeatRev,        action="repeat_rev"},
+    {text=M.MMenuMultilineReplace, action="mreplace"},
+    {text=M.MMenuConfig,           action="config" },
   }
   local Info = win.GetFileInfo(aUserMenuFile)
   if Info and not Info.FileAttributes:find("d") then
@@ -111,7 +114,11 @@ local function export_OpenPlugin (From, Item)
       if ret.action then
         local data = field(History, Cfg.histfield_Main)
         data.fUserChoiceFunc = nil
-        EditorAction (ret.action, data, false)
+        if ret.action == "mreplace" then
+          MReplace.ReplaceWithDialog(data, true)
+        else
+          EditorAction (ret.action, data, false)
+        end
       elseif ret.filename then
         assert(loadfile(ret.filename))(ret.param1, ret.param2)
       end

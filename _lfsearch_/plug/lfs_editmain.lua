@@ -6,9 +6,21 @@ local EditEngine  = require "lfs_editengine"
 local M           = require "lfs_message"
 
 local ErrorMsg = Common.ErrorMsg
+local FormatInt = Common.FormatInt
+local F = far.Flags
 
-local function FormatInt (num)
-  return tostring(num):reverse():gsub("...", "%1,"):gsub(",$", ""):reverse()
+local function UnlockEditor (Title, EI)
+  EI = EI or editor.GetInfo()
+  if bit.band(EI.CurState,F.ECSTATE_LOCKED) ~= 0 then
+    if far.Message(M.MEditorLockedPrompt, Title, M.MBtnYesNo)==1 then
+      if editor.SetParam("ESPT_LOCKMODE",false) then
+        editor.Redraw()
+        return true
+      end
+    end
+    return false
+  end
+  return true
 end
 
 local searchGuid  = win.Uuid("0B81C198-3E20-4339-A762-FFCBBC0C549C")
@@ -175,4 +187,5 @@ end
 --[[-------------------------------------------------------------------------]]
 return {
   EditorAction = EditorAction;
+  UnlockEditor = UnlockEditor;
 }
