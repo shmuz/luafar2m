@@ -4,6 +4,7 @@ local sd = require "far2.simpledialog"
 local Sett  = require "far2.settings"
 local field = Sett.field
 
+local RepLib = require "lfs_replib"
 local M = require "lfs_message"
 local F = far.Flags
 
@@ -132,9 +133,10 @@ local function CreateUfindMethod (tb_methods)
     local ulen = ("").len -- length in utf8 chars
     tb_methods.ufind = function(r, s, init)
       init = init and s:offset(init)
-      local t = { find(r, s, init) }
-      if t[1] ~= nil then
-        t[1], t[2] = ulen(ssub(s, 1, t[1]-1)) + 1, ulen(ssub(s, 1, t[2]))
+      local fr,to,t = r:tfind(s, init)
+      if fr ~= nil then
+        table.insert(t, 1, fr)
+        table.insert(t, 2, to)
         return t
       end
     end
@@ -214,7 +216,7 @@ local function GetRegexLib (engine_name)
   -----------------------------------------------------------------------------
   elseif engine_name == "oniguruma" then
     base = require "rex_onig"
-    deriv.new = function (pat, cf) return base.new (pat, cf, "UTF8", "PERL") end
+    deriv.new = function (pat, cf) return base.new (pat, cf, "UTF8", "PERL_NG") end
     local tb_methods = getmetatable(base.new(".")).__index
     CreateUfindMethod(tb_methods)
     tb_methods.gsub = function(regex, subj, rep) return base.gsub(subj, regex, rep) end
@@ -238,45 +240,6 @@ local function GetWordAboveCursor ()
   end
 end
 
-local function TransformReplacePat (aStr)
-  local T = {}
-  local map = { a="\a", e="\27", f="\f", n="\n", r="\r", t="\t" }
-  regex.gsub(aStr, [[
-      \\([LlUuE]) |
-      (\\R \{ ([-]?\d+) , (\d+) \}) |
-      (\\R \{ ([-]?\d+) \}) |
-      (\\R) |
-      \\x([0-9a-fA-F]{0,4}) |
-      \\(.?) |
-      \$(.?) |
-      (.)
-    ]],
-    function(c0, R1,R11,R12, R2,R21, R3, c1,c2,c3,c4)
-      if c0 then
-        T[#T+1] = { "case", c0 }
-      elseif R1 or R2 or R3 then
-        -- trying to work around the Far regex capture bug
-        T[#T+1] = { "counter", R1 and tonumber(R11) or R2 and tonumber(R21) or 1,
-                               R1 and tonumber(R12) or 0 }
-      elseif c1 then
-        c1 = tonumber(c1,16) or 0
-        T[#T+1] = { "hex", ("").char(c1) }
-      elseif c2 then
-        T[#T+1] = { "literal", c2:match("[%p%-+^$&]") or map[c2]
-          or error("invalid escape: \\"..c2) }
-      elseif c3 then
-        T[#T+1] = { "group", tonumber(c3,16)
-          or error(M.MErrorGroupNumber..": $"..c3) }
-      elseif c4 then
-        if T[#T] and T[#T][1]=="literal" then T[#T][2] = T[#T][2] .. c4
-        else T[#T+1] = { "literal", c4 }
-        end
-      end
-    end, nil, "sx")
-  return T
-end
-
-
 -- DON'T use loadstring here, that would be a security hole
 -- (and just incorrect solution).
 local map_unescape = {
@@ -297,6 +260,7 @@ end
 
 local function ProcessDialogData (aData, bReplace)
   local params = {}
+  params.bFileAsLine = aData.bFileAsLine
   params.bSearchBack = aData.bSearchBack
   params.bDelEmptyLine = aData.bDelEmptyLine
   params.sOrigin = aData.sOrigin
@@ -332,7 +296,9 @@ local function ProcessDialogData (aData, bReplace)
       if not ok then ErrorMsg(ret) return end
     else
       cflags = aData.bCaseSens and "" or "i"
-      if aData.bExtended then cflags = cflags.."x" end
+      if aData.bExtended   then cflags = cflags.."x" end
+      if aData.bMultiLine  then cflags = cflags.."m" end
+      if aData.bFileAsLine then cflags = cflags.."s" end
     end
   else
     local sNeedEscape = "[~!@#$%%^&*()%-+[%]{}\\|:;'\",<.>/?]"
@@ -353,15 +319,14 @@ local function ProcessDialogData (aData, bReplace)
   ---------------------------------------------------------------------------
   if bReplace then
     if aData.bRepIsFunc then
-      local func, msg = loadstring("local c0,c1,c2,c3,c4,c5,c6,c7,c8,c9=...\n" ..
-        aData.sReplacePat, M.MReplaceFunction)
+      local func, msg = loadstring("local T,M,R,LN = ...\n" .. aData.sReplacePat, M.MReplaceFunction)
       if func then params.ReplacePat = setfenv(func, params.Envir)
       else ErrorMsg(msg, M.MReplaceFunction..": "..M.MSyntaxError); return
       end
     else
       params.ReplacePat = aData.sReplacePat
       if aData.bRegExpr then
-        local ok, ret = pcall(TransformReplacePat, params.ReplacePat)
+        local ok, ret = pcall(RepLib.TransformReplacePat, params.ReplacePat)
         if ok then params.ReplacePat = ret
         else ErrorMsg(ret, M.MReplacePattern..": "..M.MSyntaxError); return
         end
@@ -599,59 +564,24 @@ end
 
 local function GetReplaceFunction (aReplacePat)
   if type(aReplacePat) == "function" then
-    return function(collect) return aReplacePat(unpack(collect, 2)) end
+    return function(collect,nMatch,nReps,nLine)
+      --local T = { [0]=collect[2], unpack(collect, 3) }
+
+      collect[0] = collect[2]
+      table.remove(collect, 2)
+      table.remove(collect, 1)
+
+      local R1,R2 = aReplacePat(collect, nMatch, nReps+1, nLine)
+      if type(R1)=="number" then R1=tostring(R1) end
+      return R1, R2
+    end
 
   elseif type(aReplacePat) == "string" then
     return function() return aReplacePat end
 
   elseif type(aReplacePat) == "table" then
-    return function(collect, nReps)
-      local rep, stack = "", {}
-      local case, instant_case
-      for _,v in ipairs(aReplacePat) do
-        local instant_case_set = nil
-        ---------------------------------------------------------------------
-        if v[1] == "case" then
-          if v[2] == "L" or v[2] == "U" then
-            stack[#stack+1], case = v[2], v[2]
-          elseif v[2] == "E" then
-            if stack[1] then table.remove(stack) end
-            case = stack[#stack]
-          else
-            instant_case, instant_case_set = v[2], true
-          end
-        ---------------------------------------------------------------------
-        elseif v[1] == "counter" then
-          rep = rep .. ("%%0%dd"):format(v[3]):format(nReps+v[2])
-        ---------------------------------------------------------------------
-        elseif v[1] == "hex" then
-          rep = rep .. v[2]
-        ---------------------------------------------------------------------
-        elseif v[1] == "literal" or v[1] == "group" then
-          local c
-          if v[1] == "literal" then
-            c = v[2]
-          else -- group
-            c = collect[2 + v[2]]
-            assert (c ~= nil, "invalid capture index")
-          end
-          if c ~= false then -- a capture *can* equal false
-            if instant_case then
-              local d = c:sub(1,1)
-              rep = rep .. (instant_case=="l" and d:lower() or d:upper())
-              c = c:sub(2)
-            end
-            c = (case=="L" and c:lower()) or (case=="U" and c:upper()) or c
-            rep = rep .. c
-          end
-        ---------------------------------------------------------------------
-        end
-        if not instant_case_set then
-          instant_case = nil
-        end
-      end
-      return rep
-    end
+    return RepLib.GetReplaceFunction(aReplacePat)
+
   else
     error("invalid type of replace pattern")
   end

@@ -381,7 +381,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
         -----------------------------------------------------------------------
         elseif aOp == "replace" then
           collect[2] = sLine:sub(fr, to)
-          local sRepFinal = fReplace(collect, nReps)
+          local sRepFinal = fReplace(collect, nFound, nReps, y)
           if sRepFinal then
             --=================================================================
             local function Replace()

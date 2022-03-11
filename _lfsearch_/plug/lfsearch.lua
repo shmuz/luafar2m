@@ -82,6 +82,9 @@ local function MakeMenuItems (aUserMenuFile)
     {text=M.MMenuMultilineReplace, action="mreplace"},
     {text=M.MMenuConfig,           action="config" },
   }
+  for i,v in ipairs(items) do
+    v.text = "&"..i..". "..v.text
+  end
   local Info = win.GetFileInfo(aUserMenuFile)
   if Info and not Info.FileAttributes:find("d") then
     local f = assert(loadfile(aUserMenuFile))
@@ -140,13 +143,15 @@ local function export_GetPluginInfo()
   }
 end
 
-function lfsearch.EditorAction (aOp, aData)
+lfsearch.EditorAction = function(aOp, aData)
   assert(type(aOp)=="string", "arg #1: string expected")
   assert(type(aData)=="table", "arg #2: table expected")
   local newdata = {}
   for k,v in pairs(aData) do newdata[k] = v end
   return EditorAction(aOp, newdata, true)
 end
+
+lfsearch.MReplaceEditorAction = MReplace.EditorAction
 
 local function SetExportFunctions()
   export.GetPluginInfo = export_GetPluginInfo

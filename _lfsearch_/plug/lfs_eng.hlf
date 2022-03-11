@@ -70,7 +70,7 @@ pattern. (If Lua regex is used, the escaping character is #%#).
  #Replace with#
  The replace pattern.
  If Regular Expression option is checked then:
-    *  #$1#-#$9# and #$A#-#$F# are used for specifying submatches (groups).
+    *  #$1#-#$9# and #$A#-#$Z# are used for specifying submatches (groups).
        #$0# stands for the whole match.
     *  Literal dollar signs (#$#) and backslashes (#\#) must be escaped
        with #\#
@@ -114,9 +114,14 @@ treated as the body of a Lua function (see below).
  *  The function is called whenever a match occurs. Its return value
     is used as the replacement (nil/false mean no replacement).
  *  The function can use the following preset variables:
-       #c0# -- the whole match.
-       #c1#, #c2#, ..., #c9# -- the captured submatches.
-       #rex# -- the regex library loaded.
+       #T#   - a table containing captured submatches
+          #T[0]#          - whole match
+          #T[1], ...#     - numbered submatches
+          #T[name1], ...# - named submatches
+       #M#   - number of the current match (1-based)
+       #R#   - number of the current replacement (1-based)
+       #LN#  - line number in editor or file (1-based)
+       #rex# - regex library loaded
  *  The function can set and modify global variables and use them
     during its current and future invocations (within the current
     search).

@@ -13,8 +13,7 @@ local AppName = function() return M.MDlgMultilineReplace end
 local F=far.Flags
 local KEEP_DIALOG_OPEN = 0
 
---local RegexLibs = {"far", "oniguruma", "pcre", "pcre2"}
-local RegexLibs = {"far", "lua", "oniguruma", "pcre"}
+local RegexLibs = {"far", "oniguruma", "pcre"} -- "lua" is not supported here
 
 local function ReplaceDialog (Data)
   local HIST_INITFUNC   = _Plugin.RegPath .. "InitFunc"
@@ -40,7 +39,7 @@ local function ReplaceDialog (Data)
     { tp="chbox"; text=M.MDlgRegExpr; name="bRegExpr"; },
     { tp="text";  text=M.MDlgRegexLib; x1=X2; y1=""; },
     { tp="combobox"; x1=X3; x2=X4; y1="";   name="cmbRegexLib"; dropdownlist=1; noload=1;
-        list={{Text="Far regex"},{Text="Lua regex"},{Text="Oniguruma"},{Text="PCRE"}}; },
+        list={{Text="Far regex"},{Text="Oniguruma"},{Text="PCRE"}}; },
     { tp="chbox"; text=M.MDlgCaseSens;      name="bCaseSens";                  },
     { tp="chbox"; text=M.MDlgFileAsLine;    name="bFileAsLine"; x1=X2; y1="";  },
     { tp="chbox"; text=M.MDlgWholeWords;    name="bWholeWords";                },
@@ -95,8 +94,10 @@ local function ReplaceDialog (Data)
       CheckRegexChange(hDlg)
       CheckAdvancedEnab(hDlg)
     elseif msg == F.DN_BTNCLICK then
-      if param1==Pos.bRegExpr then CheckRegexChange(hDlg)
-      elseif param1==Pos.bAdvanced then CheckAdvancedEnab(hDlg)
+      if param1==Pos.bRegExpr then
+        CheckRegexChange(hDlg)
+      elseif param1==Pos.bAdvanced then
+        CheckAdvancedEnab(hDlg)
       end
     end
   end
@@ -137,12 +138,13 @@ local function EditorAction (op, data)
 
   local fReplace = function() end
   if op == "replace" then
-    local nReps = 0
+    local nMatch,nReps = 0,0
     local ff = Common.GetReplaceFunction(tParams.ReplacePat)
     fReplace = function (collect)
-      local r1 = ff(collect,nReps)
+      nMatch = nMatch + 1
+      local r1,r2 = ff(collect,nMatch,nReps)
       if r1 then nReps = nReps+1 end
-      return r1
+      return r1,r2
     end
   end
 
