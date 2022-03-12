@@ -251,15 +251,9 @@ local function Message (aText, aTitle, aButtons, aFlags, aHelpTopic, aId)
   local function DlgProc (hDlg, msg, param1, param2)
     if msg == F.DN_CTLCOLORDLGITEM then
       if param1 > 1 and param1 <= #tb_labels+1 then
-        local color = D[param1].color
-        if color then
-          for _,v in ipairs(param2) do
-            v.ForegroundColor, v.BackgroundColor = band(color,0xF), rshift(color,4)
-          end
-          return param2
-        end
+        return D[param1].color
       end
-    elseif Msg == F.DN_GETDIALOGINFO then
+    elseif msg == F.DN_GETDIALOGINFO then
       return aId
     end
   end
@@ -316,11 +310,8 @@ local function TableBox (items, title, buttons, flags, helptopic, id)
 end
 
 local function GetInvertedColor (element)
-  local color = far.AdvControl("ACTL_GETCOLOR", far.Colors[element])
-  local fc, bc = color.ForegroundColor, color.BackgroundColor
-  fc = band(bnot(fc), 0xF)
-  bc = band(bnot(bc), 0xF)
-  return bor(fc, lshift(bc, 4))
+  local color = actl.GetColor(F[element])
+  return band(bnot(color), 0xFF)
 end
 
 return {

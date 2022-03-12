@@ -2,9 +2,8 @@
 -- started: 2009-12-04 by Shmuel Zeigerman
 -- luacheck: read_globals lfsearch
 
-local M = require "lfs_message"
 local F = far.Flags
-local abc_utf8 = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+local russian_alphabet_utf8 = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя"
 
 local function fReturnAll() return "all" end
 local function fReturnYes() return "yes" end
@@ -301,6 +300,13 @@ local function TestEditorAction(aLibs)
     --------
     dt.sReplacePat = "return false"
     RunEditorAction(lib, "test:replace", dt, 1, 0)
+    -------- test 1-st return == true
+    dt = { bRepIsFunc=true, bRegExpr=true, fUserChoiceFunc=fReturnAll,
+           sReplacePat=[[return R==2 or "string"]], }
+    dt.sSearchPat = (lib=="lua") and "%D+" or "\\D+"
+    SetEditorText("line1\rline2\rline3\r")
+    RunEditorAction(lib, "test:replace", dt, 3, 3)
+    AssertEditorText("string1\rstring3\r")
 
     -- test replace patterns containing \n or \r
     dt = { sSearchPat=".", sReplacePat="a\rb", bRegExpr=true }
@@ -359,18 +365,18 @@ local function TestEditorAction(aLibs)
     local dt = { bRegExpr=true, fUserChoiceFunc=fReturnAll }
     dt.sSearchPat = (lib == "lua") and "%w+" or "\\w+"
     --------
-    SetEditorText(abc_utf8)
+    SetEditorText(russian_alphabet_utf8)
     dt.sReplacePat = ""
     RunEditorAction(lib, "test:replace", dt, 1, 1)
     AssertEditorText("")
     --------
-    SetEditorText(abc_utf8)
+    SetEditorText(russian_alphabet_utf8)
     dt.sReplacePat = "\\L$0"
     RunEditorAction(lib, "test:replace", dt, 1, 1)
     local s = GetEditorText()
     ProtectedAssert(s:sub(1,33)==s:sub(34))
     --------
-    SetEditorText(abc_utf8)
+    SetEditorText(russian_alphabet_utf8)
     dt.sReplacePat = "\\U$0"
     RunEditorAction(lib, "test:replace", dt, 1, 1)
     s = GetEditorText()
@@ -530,7 +536,7 @@ local function TestMReplaceEditorAction(aLibs)
     RunEditorAction(lib, "replace", dt, 1, 1)
     local result = "a\7\27\12\10\13\9"
     for i=0,127 do result = result .. string.char(i) end
-    result = result:gsub("\13", "\10") .. "c"
+    result = result:gsub("\n", "\r") .. "c"
     AssertEditorText(result)
 
     -- test replace in selection
@@ -558,9 +564,9 @@ local function TestMReplaceEditorAction(aLibs)
     dt = { sSearchPat=".+", bRepIsFunc=true, bRegExpr=true,
            sReplacePat=[[return M~=2 and ("%d.%d. %s"):format(M, R, T[0])]]
          }
-    SetEditorText("line1\nline2\nline3\n")
+    SetEditorText("line1\rline2\rline3\r")
     RunEditorAction(lib, "replace", dt, 3, 2)
-    AssertEditorText("1.1. line1\nline2\n3.2. line3\n")
+    AssertEditorText("1.1. line1\rline2\r3.2. line3\r")
     --------
     dt = { sSearchPat="(.)(.)(.)(.)(.)(.)(.)(.)(.)", bRepIsFunc=true,
            bRegExpr=true,
@@ -585,9 +591,9 @@ local function TestMReplaceEditorAction(aLibs)
     dt = { sSearchPat="[^\\d\\s]+", bRepIsFunc=true, bRegExpr=true,
            sReplacePat=[[return "string", R==2]]
          }
-    SetEditorText("line1\nline2\nline3\n")
+    SetEditorText("line1\rline2\rline3\r")
     RunEditorAction(lib, "replace", dt, 2, 2)
-    AssertEditorText("string1\nstring2\nline3\n")
+    AssertEditorText("string1\rstring2\rline3\r")
     ------------------------------------------------------------------------------
   end
 
@@ -617,48 +623,48 @@ local function TestMReplaceEditorAction(aLibs)
   local function test_bug_20090208 (lib)
     local dt = { bRegExpr=true, sReplacePat="\n$0" }
     dt.sSearchPat = "\\w+"
-    SetEditorText(("my table\n"):rep(5))
+    SetEditorText(("my table\r"):rep(5))
     editor.Select("BTYPE_STREAM",2,1,-1,2)
     RunEditorAction(lib, "replace", dt, 4, 4)
-    AssertEditorText("my table\n\nmy \ntable\n\nmy \ntable\nmy table\nmy table\n")
+    AssertEditorText("my table\r\rmy \rtable\r\rmy \rtable\rmy table\rmy table\r")
   end
 
   local function test_bug_20100802 (lib)
     local dt = { bRegExpr=true, sReplacePat="", bMultiLine=true }
-    SetEditorText("line1\nline2\n")
+    SetEditorText("line1\rline2\r")
     dt.sSearchPat = "^."
     RunEditorAction(lib, "replace", dt, 2, 2)
-    AssertEditorText("ine1\nine2\n")
+    AssertEditorText("ine1\rine2\r")
 
-    SetEditorText("line1\nline2\n")
+    SetEditorText("line1\rline2\r")
     dt.sSearchPat = ".$"
     RunEditorAction(lib, "replace", dt, 2, 2)
-    AssertEditorText("line\nline\n")
+    AssertEditorText("line\rline\r")
   end
 
   local function test_EmptyMatch (lib)
     local dt = { bRegExpr=true, sSearchPat=".*?", sReplacePat="-" }
     dt.sSearchPat = ".*?"
-    SetEditorText(("line1\nline2\n"))
+    SetEditorText(("line1\rline2\r"))
     RunEditorAction(lib, "replace", dt, 13, 13)
-    AssertEditorText("-l-i-n-e-1-\n-l-i-n-e-2-\n-")
+    AssertEditorText("-l-i-n-e-1-\r-l-i-n-e-2-\r-")
 
     dt.sSearchPat, dt.sReplacePat = ".*", "1. $0"
-    SetEditorText(("line1\nline2\n"))
+    SetEditorText(("line1\rline2\r"))
     RunEditorAction(lib, "replace", dt, 3, 3)
-    AssertEditorText("1. line1\n1. line2\n1. ")
+    AssertEditorText("1. line1\r1. line2\r1. ")
   end
 
   if type(aLibs) ~= "table" then aLibs = { "far" } end
   OpenHelperEditor()
   for _,lib in ipairs(aLibs) do
     if lib ~= "lua" then
-      --test_Switches     (lib)
+      test_Switches     (lib)
       test_Replace      (lib)
-      --test_Encodings    (lib)
-      --test_bug_20090208 (lib)
-      --test_bug_20100802 (lib)
-      --test_EmptyMatch   (lib)
+      test_Encodings    (lib)
+      test_bug_20090208 (lib)
+      test_bug_20100802 (lib)
+      test_EmptyMatch   (lib)
     end
   end
   CloseHelperEditor()
@@ -666,7 +672,7 @@ local function TestMReplaceEditorAction(aLibs)
 
 end
 
---TestEditorAction(...)
+TestEditorAction(...)
 TestMReplaceEditorAction(...)
 
-far.Message(M.MAllTestsOk, M.MMenuTitle)
+far.Message("All tests OK", "LuaFAR Search")

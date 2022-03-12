@@ -722,6 +722,11 @@ function List:Key (hDlg, key, nowrap)
     end
 
   end
+
+  if self.onlistchange then
+    local CurItem = self.drawitems[self.sel]
+    if CurItem ~= Item then self:onlistchange(hDlg, key, CurItem) end
+  end
 end
 
 function _M.Menu (props, list)

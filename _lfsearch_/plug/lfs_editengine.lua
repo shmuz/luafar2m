@@ -1,26 +1,33 @@
 -- lfs_editengine.lua
 
-local M      = require "lfs_message"
-local Common = require "lfs_common"
+local M             = require "lfs_message"
+local Common        = require "lfs_common"
+local CustomMessage = require "far2.message"
 local F = far.Flags
 local EditorGetString = editor.GetString
 local EditorSetString = editor.SetString
 local _lastclock
 local floor, ceil, min = math.floor, math.ceil, math.min
 
-local function GetUserChoice (aTitle, s_found, s_rep)
+-- All arguments must be in UTF-8.
+local function GetReplaceChoice (aTitle, s_found, s_rep)
   s_found = s_found:gsub("%z", " ")
-  s_rep = s_rep:gsub("%z", " ")
-  local c = far.Message(
-    M.MUserChoiceReplace ..
-    "\n\"" .. s_found .. "\"\n" ..
-    M.MUserChoiceWith ..
-    "\n\"" .. s_rep .. "\"\n\001",
-    aTitle,
-    M.MUserChoiceButtons)
-  if c==1 or c==2 then
-    _lastclock = os.clock()
-  end
+  if type(s_rep) == "string" then s_rep = s_rep:gsub("%z", " ") end
+  local color = CustomMessage.GetInvertedColor("COL_DIALOGTEXT")
+  local msg = s_rep~=true and
+    {
+      M.MUserChoiceReplace,"\n",
+      { text=s_found, color=color },"\n",
+      M.MUserChoiceWith,"\n",
+      { text=s_rep, color=color },
+    } or
+    {
+      M.MUserChoiceDeleteLine,"\n",
+      { text=s_found, color=color },
+    }
+  local buttons = s_rep~=true and M.MUserChoiceButtons or M.MUserChoiceDeleteButtons
+  local guid = win.Uuid("7f7ca8d3-f241-4018-97aa-ad4013188df8")
+  local c = CustomMessage.Message(msg, aTitle, buttons, "c", nil, guid)
   return c==1 and "yes" or c==2 and "all" or c==3 and "no" or "cancel"
 end
 
@@ -128,6 +135,14 @@ local function ScrollToPosition (row, pos, from, to, scroll)
 end
 
 
+local function ShowInEditor(item)
+  local fr, to = item.fr-item.offset, item.to-item.offset
+  ScrollToPosition(item.lineno, to, fr, to)
+  editor.Select("BTYPE_STREAM", nil, fr, to-fr+1, 1)
+  actl.RedrawAll() -- editor.Redraw doesn't work from the dialog
+end
+
+
 local function ShowCollectedLines (items, params)
   if #items == 0 then return end
 
@@ -162,6 +177,10 @@ local function ShowCollectedLines (items, params)
       searchstart = maxno + 3,      -- needed for correct work of ellipsis
     }, items)
 
+  function list:onlistchange (hDlg, key, item)
+    ShowInEditor(item)
+  end
+
   local item = custommenu.Menu({
       Title=M.MSearchResults.." ["..params.sSearchPat.."]",-- honored by CustomMenu
       Bottom=bottom,                -- honored by CustomMenu
@@ -169,10 +188,7 @@ local function ShowCollectedLines (items, params)
       HelpTopic="Contents",
     }, list)
   if item then
-    local fr, to = item.fr-item.offset, item.to-item.offset
-    ScrollToPosition(item.lineno, to, fr, to)
-    editor.Select("BTYPE_STREAM", nil, fr, to-fr+1, 1)
-    editor.Redraw()
+    ShowInEditor(item)
   end
 end
 
@@ -189,7 +205,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
   local bForward = not aParams.bSearchBack
   local bAllowEmpty = aWithDialog
   local fFilter, Regex = aParams.FilterFunc, aParams.Regex
-  local fChoice = aChoiceFunc or GetUserChoice
+  local fChoice = aChoiceFunc or GetReplaceChoice
   local fReplace = (aOp == "replace") and Common.GetReplaceFunction(aParams.ReplacePat)
   local tItems = (aOp == "showall") and {}
   local bFastCount = (aOp == "count") and bForward
@@ -388,50 +404,61 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
               local bTraceSelection = tBlockInfo
                 and (tBlockInfo.BlockType == F.BTYPE_STREAM)
                 and (tBlockInfo.EndLine == y) and (tBlockInfo.EndPos ~= -1)
-              local sHead = sLine:sub(1, fr-1)
-              local sLastRep, sStartLine
-              local nAddedLines = 0
-              for txt, nl in sRepFinal:gmatch("([^\r\n]*)(\r?\n?)") do
-                sLastRep = txt
-                sHead = sHead .. txt
-                if nl == "" then break end
-                if nAddedLines == 0 then
-                  sStartLine = sHead
-                  sHead = part1 .. sHead
-                  part1 = ""
-                end
-                EditorSetCurString(sHead)
-                editor.SetPosition(nil, sHead:len()+1)
-                editor.InsertString()
-                sHead = ""
-                nAddedLines = nAddedLines + 1
-              end
+              local sLastRep
+              local nAdded, nDeleted = 0, 0
 
-              set_sLine(sHead .. sLine:sub(to+1))
-              local line = part1 .. sLine .. part3
-              bLineDeleted = aParams.bDelEmptyLine and line == ""
-              local nDeleted = bLineDeleted and 1 or 0
-              if bLineDeleted then editor.DeleteString()
-              else EditorSetCurString(line)
-              end
-
-              if bForward then
-                y = y + nAddedLines
-                x = sHead:len() + 1
+              if sRepFinal == true then
+                bLineDeleted = true
+                nDeleted = 1
+                editor.DeleteString()
               else
-                if sStartLine then set_sLine(sStartLine) end
-                x = fr
-                editor.SetPosition(y, x)
+                local sStartLine
+                local sHead = sLine:sub(1, fr-1)
+                for txt, nl in sRepFinal:gmatch("([^\r\n]*)(\r?\n?)") do
+                  sLastRep = txt
+                  sHead = sHead .. txt
+                  if nl == "" then break end
+                  if nAdded == 0 then
+                    sStartLine = sHead
+                    sHead = part1 .. sHead
+                    part1 = ""
+                  end
+                  EditorSetCurString(sHead)
+                  editor.SetPosition(nil, sHead:len()+1)
+                  editor.InsertString()
+                  sHead = ""
+                  nAdded = nAdded + 1
+                end
+
+                set_sLine(sHead .. sLine:sub(to+1))
+                local line = part1 .. sLine .. part3
+                bLineDeleted = aParams.bDelEmptyLine and line == ""
+                nDeleted = bLineDeleted and 1 or 0
+                if bLineDeleted then editor.DeleteString()
+                else EditorSetCurString(line)
+                end
+
+                if bForward then
+                  y = y + nAdded
+                  x = sHead:len() + 1
+                else
+                  if sStartLine then set_sLine(sStartLine) end
+                  x = fr
+                  editor.SetPosition(y, x)
+                end
               end
 
               if tBlockInfo then
-                tBlockInfo.EndLine = tBlockInfo.EndLine + nAddedLines - nDeleted
+                tBlockInfo.EndLine = tBlockInfo.EndLine + nAdded - nDeleted
                 if bTraceSelection then
-                  tBlockInfo.EndPos = bLineDeleted and -1
-                    or tBlockInfo.EndPos + sLastRep:len() - (to-fr+1)
+                  if bLineDeleted then
+                    tBlockInfo.EndPos = -1
+                  elseif sLastRep then
+                    tBlockInfo.EndPos = tBlockInfo.EndPos + sLastRep:len() - (to-fr+1)
+                  end
                 end
               else
-                tInfo.TotalLines = tInfo.TotalLines + nAddedLines - nDeleted
+                tInfo.TotalLines = tInfo.TotalLines + nAdded - nDeleted
               end
 
               if sChoice == "yes" then editor.Redraw() end
