@@ -4504,7 +4504,7 @@ void pushFileTime (lua_State *L, const FILETIME *ft)
   lua_pushnumber(L, (double)llFileTime);
 }
 
-int win_GetSystemTime (lua_State *L)
+int win_GetSystemTimeAsFileTime (lua_State *L)
 {
   FILETIME ft;
   WINPORT(GetSystemTimeAsFileTime)(&ft);
@@ -4543,6 +4543,23 @@ int win_SystemTimeToFileTime (lua_State *L)
   if (! WINPORT(SystemTimeToFileTime)(&st, &ft))
     return lua_pushnil(L), 1;
   pushFileTime(L, &ft);
+  return 1;
+}
+
+int win_FileTimeToLocalFileTime(lua_State *L)
+{
+  FILETIME ft, local_ft;
+  long long llFileTime = (long long) luaL_checknumber(L, 1);
+  llFileTime *= 10000; // convert from milliseconds to 1e-7
+
+  ft.dwLowDateTime = llFileTime & 0xFFFFFFFF;
+  ft.dwHighDateTime = llFileTime >> 32;
+
+  if(WINPORT(FileTimeToLocalFileTime)(&ft, &local_ft))
+    pushFileTime(L, &local_ft);
+  else
+    return SysErrorReturn(L);
+
   return 1;
 }
 
@@ -4899,18 +4916,13 @@ int far_UnloadPlugin(lua_State *L)     { return plugin_load(L, PCTL_UNLOADPLUGIN
 int far_XLat (lua_State *L)
 {
   int size;
-  wchar_t *Line = check_utf8_string(L, 1, &size);
-  int StartPos = luaL_checkinteger(L, 2) - 1;
-  int EndPos = luaL_checkinteger(L, 3);
-  DWORD Flags = CheckFlags(L, 4);
-
-  if (StartPos < 0) StartPos = 0;
-  if (EndPos > size) EndPos = size;
-  if (StartPos > EndPos)
-    return lua_pushnil(L), 1;
-
-  PSInfo *Info = GetPluginStartupInfo(L);
-  wchar_t* str = Info->FSF->XLat(Line, StartPos, EndPos, Flags);
+  wchar_t *Line = check_utf8_string(L, 1, &size), *str;
+  intptr_t StartPos = luaL_optinteger(L, 2, 1) - 1;
+  intptr_t EndPos = luaL_optinteger(L, 3, size);
+  int Flags = OptFlags(L, 4, 0);
+  StartPos < 0 ? StartPos = 0 : StartPos > (intptr_t)size ? StartPos = size : 0;
+  EndPos < StartPos ? EndPos = StartPos : EndPos > (intptr_t)size ? EndPos = size : 0;
+  str = GetPluginStartupInfo(L)->FSF->XLat(Line, StartPos, EndPos, Flags);
   str ? (void)push_utf8_string(L, str, -1) : lua_pushnil(L);
   return 1;
 }
@@ -5382,9 +5394,10 @@ const luaL_reg win_funcs[] = {
   {"SetEnv",                     win_SetEnv},
 //$  {"GetTimeZoneInformation",  win_GetTimeZoneInformation},
   {"GetFileInfo",                win_GetFileInfo},
+  {"FileTimeToLocalFileTime",    win_FileTimeToLocalFileTime},
   {"FileTimeToSystemTime",       win_FileTimeToSystemTime},
   {"SystemTimeToFileTime",       win_SystemTimeToFileTime},
-  {"GetSystemTime",              win_GetSystemTime},
+  {"GetSystemTimeAsFileTime",    win_GetSystemTimeAsFileTime},
   {"CompareString",              win_CompareString},
   {"wcscmp",                     win_wcscmp},
   {"ExtractKey",                 win_ExtractKey},

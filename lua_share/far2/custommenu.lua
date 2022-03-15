@@ -8,52 +8,6 @@ local _M = {} -- module
 local F = far.Flags
 local min, max, floor, ceil = math.min, math.max, math.floor, math.ceil
 
--- Some color indexes; taken from "farcolor.lua";
-local COL_MENUTEXT, COL_MENUSELECTEDTEXT, COL_MENUHIGHLIGHT,
-  COL_MENUSELECTEDHIGHLIGHT, COL_MENUBOX, COL_MENUTITLE = 0,1,2,3,4,5
-
--- Some keys
-local KEY_BS       = F.KEY_BS
-local KEY_ENTER    = F.KEY_ENTER
-----
-local KEY_PGUP     = F.KEY_PGUP
-local KEY_PGDN     = F.KEY_PGDN
-local KEY_END      = F.KEY_END
-local KEY_HOME     = F.KEY_HOME
-local KEY_INS      = F.KEY_INS
-local KEY_DEL      = F.KEY_DEL
-----
-local KEY_LEFT     = F.KEY_LEFT
-local KEY_UP       = F.KEY_UP
-local KEY_RIGHT    = F.KEY_RIGHT
-local KEY_DOWN     = F.KEY_DOWN
-----
-local KEY_MULTIPLY = F.KEY_MULTIPLY
-local KEY_ADD      = F.KEY_ADD
-local KEY_SUBTRACT = F.KEY_SUBTRACT
-local KEY_DIVIDE   = F.KEY_DIVIDE
-----
-local KEY_F6       = F.KEY_F6
-local KEY_F7       = F.KEY_F7
-local KEY_CTRLC    = F.KEY_CTRLC
-local KEY_CTRLINS  = F.KEY_CTRLINS
-----
-local KEY_NUMPAD0  = F.KEY_NUMPAD0
-local KEY_NUMPAD1  = F.KEY_NUMPAD1
-local KEY_NUMPAD2  = F.KEY_NUMPAD2
-local KEY_NUMPAD3  = F.KEY_NUMPAD3
-local KEY_NUMPAD4  = F.KEY_NUMPAD4
--- local KEY_NUMPAD5  = F.KEY_NUMPAD5
-local KEY_NUMPAD6  = F.KEY_NUMPAD6
-local KEY_NUMPAD7  = F.KEY_NUMPAD7
-local KEY_NUMPAD8  = F.KEY_NUMPAD8
-local KEY_NUMPAD9  = F.KEY_NUMPAD9
-local KEY_NUMDEL   = F.KEY_NUMDEL
-local KEY_NUMENTER = F.KEY_NUMENTER
-----
-local KEY_CTRLF9   = F.KEY_CTRLF9
-----
-
 local function FlagsToInt (input)
   local tp, ret = type(input), 0
   if tp == "table" then
@@ -77,6 +31,14 @@ end
 
 local List = {}
 local ListMeta = { __index=List }
+
+local function SetParam(trg, src, key, default)
+  if default == nil then
+    trg[key] = src[key]
+  else
+    trg[key] = src[key] or default
+  end
+end
 
 -- new custom list
 function _M.NewList (props, items, bkeys, startId)
@@ -112,23 +74,37 @@ function _M.NewList (props, items, bkeys, startId)
     self.hmax = max(1, P.hmax or 19)
   end
 
-  self.autocenter= P.autocenter
-  self.col_highlight         = P.col_highlight or actl.GetColor(COL_MENUHIGHLIGHT)
-  self.col_selectedhighlight = P.col_selectedhighlight or actl.GetColor(COL_MENUSELECTEDHIGHLIGHT)
-  self.col_selectedtext      = P.col_selectedtext or actl.GetColor(COL_MENUSELECTEDTEXT)
-  self.col_text              = P.col_text or actl.GetColor(COL_MENUTEXT)
+  SetParam(self, P, "autocenter")
+  self.col_highlight         = P.col_highlight or actl.GetColor(F.COL_MENUHIGHLIGHT)
+  self.col_selectedhighlight = P.col_selectedhighlight or actl.GetColor(F.COL_MENUSELECTEDHIGHLIGHT)
+  self.col_selectedtext      = P.col_selectedtext or actl.GetColor(F.COL_MENUSELECTEDTEXT)
+  self.col_text              = P.col_text or actl.GetColor(F.COL_MENUTEXT)
   self.ellipsis  = (P.ellipsis or 1) % 4
-  self.filterlines = P.filterlines
-  self.margin    = P.margin or "  "
-  self.pattern   = P.pattern or ""
-  self.resizeH   = P.resizeH
-  self.resizeScreen = P.resizeScreen
-  self.resizeW   = P.resizeW
-  self.rmargin   = 1 -- right margin length
-  self.searchmethod = P.searchmethod or "regex"
-  self.searchstart = P.searchstart or 1
-  self.selalign  = P.selalign or "center" -- top/center/bottom/
-  self.selignore = P.selignore
+  SetParam(self, P, "filterlines")
+  SetParam(self, P, "margin", "  ")
+  SetParam(self, P, "pattern", "")
+  SetParam(self, P, "resizeH")
+  SetParam(self, P, "resizeScreen")
+  SetParam(self, P, "resizeW")
+  self.rmargin = 1 -- right margin length
+  SetParam(self, P, "searchmethod", "regex")
+  SetParam(self, P, "searchstart", 1)
+  SetParam(self, P, "selalign", "center") -- top/center/bottom/
+  SetParam(self, P, "selignore")
+  SetParam(self, P, "xlat")
+
+  SetParam(self, P, "keys_searchmethod",       F.KEY_F5)
+  SetParam(self, P, "keys_ellipsis",           F.KEY_F6)
+  SetParam(self, P, "keys_showitem",           F.KEY_F7)
+  SetParam(self, P, "keys_xlatonoff",          F.KEY_F8)
+  SetParam(self, P, "keys_clearpattern",      {F.KEY_DEL,       F.KEY_NUMDEL})
+  SetParam(self, P, "keys_insertpattern",     {F.KEY_CTRLV,     F.KEY_SHIFTINS, F.KEY_SHIFTNUMPAD0})
+  SetParam(self, P, "keys_checkitem",         {F.KEY_INS,       F.KEY_NUMPAD0})
+  SetParam(self, P, "keys_copyitem",          {F.KEY_CTRLC,     F.KEY_CTRLINS,  F.KEY_CTRLNUMPAD0})
+  SetParam(self, P, "keys_deleteitem",        {F.KEY_SHIFTDEL,  F.KEY_SHIFTNUMDEL})
+  SetParam(self, P, "keys_copyfiltereditems", {F.KEY_CTRLSHIFTINS, F.KEY_CTRLSHIFTNUMPAD0})
+  SetParam(self, P, "keys_delfiltereditems",  {F.KEY_CTRLDEL,   F.KEY_CTRLNUMDEL})
+  SetParam(self, P, "keys_applyxlat",          F.KEY_CTRLALTX)
 
   self:SetSize()
   self:SetUpperItem()
@@ -344,7 +320,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
       --first, tmr.Interval = false, 30 --> setting timer.Interval is currently not supported in luafar2l
         first = false
       end
-      if not ( (key==KEY_PGUP or key==KEY_PGDN) and
+      if not ( (key==F.KEY_PGUP or key==F.KEY_PGDN) and
                (Y >= y + 2 + self.slider_start) and
                (Y  < y + 2 + self.slider_start + self.slider_len) ) then
         self:Key(hDlg, key, true)
@@ -371,13 +347,13 @@ function List:MouseEvent (hDlg, Ev, x, y)
           -- click on scrollbar
           local period = 50 -- was:300
           if Y == y + 1 then                           -- click on "up" arrow
-            self.timer = far.Timer(period, MakeScrollFunction(KEY_UP))
+            self.timer = far.Timer(period, MakeScrollFunction(F.KEY_UP))
           elseif Y == y + self.h then                  -- click on "down" arrow
-            self.timer = far.Timer(period, MakeScrollFunction(KEY_DOWN))
+            self.timer = far.Timer(period, MakeScrollFunction(F.KEY_DOWN))
           elseif Y < y + 2 + self.slider_start then    -- click above the slider
-            self.timer = far.Timer(period, MakeScrollFunction(KEY_PGUP))
+            self.timer = far.Timer(period, MakeScrollFunction(F.KEY_PGUP))
           elseif Y >= y + 2 + self.slider_start + self.slider_len then -- click below the slider
-            self.timer = far.Timer(period, MakeScrollFunction(KEY_PGDN))
+            self.timer = far.Timer(period, MakeScrollFunction(F.KEY_PGDN))
           else                                         -- click on slider
             -- start dragging slider
             self.clickY = Y
@@ -536,8 +512,9 @@ function List:ChangePattern (hDlg, pattern)
   end
   self.fulltitle = (self.pattern == "") and self.title or
     self.title.." ["..self.pattern.."]"
-  self.bottom = ("%d of %d items [%s]"):format(#self.drawitems, #self.items,
-    self.searchmethod)
+  self.bottom = ("%d of %d items [%s:%s, %s:xlat=%s]"):format(#self.drawitems, #self.items,
+    far.KeyToName(self.keys_searchmethod) or "", self.searchmethod,
+    far.KeyToName(self.keys_xlatonoff) or "", self.xlat and "on" or "off")
   self:UpdateSizePos(hDlg)
 end
 
@@ -552,11 +529,236 @@ function List:PrepareToDisplay (hDlg)
   self:UpdateSizePos(hDlg)
 end
 
+local ConvertTable = {
+  Space=" ", BackSlash="\\", Divide="/", Multiply="*", Subtract="-", Add="+",
+}
+
+function List:KeyDown (wrap)
+  local oldsel = self.sel
+  for i = self.sel+1, #self.drawitems do
+    local v = self.drawitems[i]
+    if not v.separator then
+      self.sel = i
+      self.upper = max(self.upper, self.sel - self.h + 1)
+      break
+    end
+  end
+  if wrap and self.sel==oldsel and btest(self.flags, "FMENU_WRAPMODE") then
+    for i=1, self.sel-1 do
+      local v = self.drawitems[i]
+      if not v.separator then
+        self.sel = i
+        self.upper = max(1, self.sel - self.h + 1)
+        break
+      end
+    end
+  end
+end
+
+function List:KeyUp (wrap)
+  local oldsel = self.sel
+  for i = self.sel-1, 1, -1 do
+    local v = self.drawitems[i]
+    if not v.separator then
+      self.sel = i
+      self.upper = min(self.upper, self.sel)
+      break
+    end
+  end
+  if wrap and self.sel==oldsel and btest(self.flags, "FMENU_WRAPMODE") then
+    for i = #self.drawitems, self.sel+1, -1 do
+      local v = self.drawitems[i]
+      if not v.separator then
+        self.sel = i
+        self.upper = max(1, self.sel - self.h + 1)
+        break
+      end
+    end
+  end
+end
+
+function List:KeyPageDown()
+  local oldsel = self.sel
+  for i = self.sel+self.h, #self.drawitems do
+    local v = self.drawitems[i]
+    if not v.separator then
+      self.sel = i
+      self.upper = self.upper + self.sel - oldsel
+      self.upper = max(1, min(self.upper, #self.drawitems - self.h + 1))
+      break
+    end
+  end
+  if self.sel == oldsel then
+    for i = self.sel+self.h-1, self.sel+1, -1 do
+      local v = self.drawitems[i]
+      if v and not v.separator then
+        self.sel = i
+        self.upper = max(self.upper, self.sel - self.h + 1)
+        break
+      end
+    end
+  end
+end
+
+function List:KeyPageUp()
+  local oldsel = self.sel
+  for i = self.sel-self.h, 1, -1 do
+    local v = self.drawitems[i]
+    if not v.separator then
+      self.sel = i
+      self.upper = max(1, self.upper + self.sel - oldsel)
+      break
+    end
+  end
+  if self.sel == oldsel then
+    for i = self.sel-self.h+1, self.sel-1 do
+      local v = self.drawitems[i]
+      if v and not v.separator then
+        self.sel = i
+        self.upper = max(1, self.upper - self.h)
+        break
+      end
+    end
+  end
+end
+
+function List:KeyHome()
+  self.upper = 1
+  for i,v in ipairs(self.drawitems) do
+    if not v.separator then
+      self.sel = i
+      self.upper = max(1, self.sel - self.h + 1)
+      break
+    end
+  end
+end
+
+function List:KeyEnd()
+  self.upper = max(1, #self.drawitems - self.h + 1)
+  for i = #self.drawitems, 1, -1 do
+    local v = self.drawitems[i]
+    if not v.separator then
+      self.sel = i
+      break
+    end
+  end
+end
+
+function List:DeleteCurrentItem (hDlg)
+  local Item = self.drawitems[self.sel]
+  local index = Item and self.idata[Item].index
+  if index then
+    local items, idata = self.items, self.idata
+    for k=index+1,#items do
+      local t = idata[items[k]]
+      t.index = t.index - 1
+    end
+    table.remove(items, index)
+    idata[Item] = nil
+
+    local old_sel, old_upper = self.sel, self.upper
+    local old_frame = min(#self.drawitems, self.h)
+    self:ChangePattern(hDlg, self.pattern)
+
+    local num = #self.drawitems
+    if num > 1 then
+      local frame = min(num, self.h)
+      if frame == old_frame then
+        if old_upper + old_frame - 1 < num + 1 then
+          self.upper, self.sel = old_upper, old_sel
+        else
+          self.upper, self.sel = old_upper-1, old_sel
+          if self.sel > num then self.sel = num end
+        end
+      else
+        if old_sel < num + 1 then self.sel = old_sel
+        else self.sel = old_sel - 1
+        end
+      end
+    end
+  end
+end
+
+-- Delete all currently displayed items
+function List:DeleteFilteredItems (hDlg, bConfirm)
+  if self.drawitems[1] then
+    if not bConfirm or far.Message(("Are you sure to delete %d items?"):format(#self.drawitems),
+                                    "Delete items", ";YesNo", "w") == 1 then
+      local items, idata = self.items, self.idata
+      for _,v in ipairs(self.drawitems) do
+        items[idata[v].index] = false
+        idata[v] = nil
+      end
+      local shift = 0
+      for i,v in ipairs(items) do
+        if v == false then
+          shift = shift + 1
+        elseif shift > 0 then
+          items[i-shift] = v
+          idata[v].index = i-shift
+        end
+      end
+      for i=#items,#items-shift+1,-1 do items[i] = nil end
+      self:ChangePattern(hDlg, self.pattern)
+    end
+  end
+end
+
+-- Delete some items from the currently displayed items
+function List:DeleteNonexistentItems (hDlg, fExist, fConfirm)
+  if self.drawitems[1] then
+    local n = 0
+    local items, idata = self.items, self.idata
+    -- mark nonexistent items
+    for _,v in ipairs(self.drawitems) do
+      if not fExist(v) then
+        idata[v].marked = true
+        n = n + 1
+      end
+    end
+    if n > 0 then
+      if not fConfirm or fConfirm(n) then
+        for k,v in pairs(idata) do
+          if v.marked then
+            items[v.index] = false
+            idata[k] = nil
+          end
+        end
+        local shift = 0
+        for i,v in ipairs(items) do
+          if v == false then
+            shift = shift + 1
+          elseif shift > 0 then
+            items[i-shift] = v
+            idata[v].index = i-shift
+          end
+        end
+        for i=#items,#items-shift+1,-1 do items[i] = nil end
+        self:ChangePattern(hDlg, self.pattern)
+      else
+        for _,v in pairs(idata) do v.marked = nil end
+      end
+    end
+  end
+end
+
+function List:CopyItemToClipboard()
+  local Item = self.drawitems[self.sel]
+  if Item then far.CopyToClipboard(Item.text:sub(self.searchstart)) end
+end
+
+function List:CopyFilteredItemsToClipboard()
+  local t = {}
+  for k,v in ipairs(self.drawitems) do t[k]=v.text end
+  t[#t+1] = ""
+  far.CopyToClipboard(table.concat(t, "\n"))
+end
+
 local tNumPad = {
-  [KEY_MULTIPLY] = "*",
-  [KEY_ADD]      = "+",
-  [KEY_SUBTRACT] = "-",
-  [KEY_DIVIDE]   = "/",
+  [F.KEY_MULTIPLY] = "*",
+  [F.KEY_ADD]      = "+",
+  [F.KEY_SUBTRACT] = "-",
+  [F.KEY_DIVIDE]   = "/",
 }
 
 local function KeyToChar (key)
@@ -566,167 +768,118 @@ local function KeyToChar (key)
   return c:len() == 1 and c
 end
 
-function List:Key (hDlg, key, nowrap)
---far.Show(key, far.KeyToName(key))
---local bNumpad = (0 == bit.band(1, far.GetKeyState("NUMLOCK")))
---far.Message(string.format("%x", key))
+function List:ToggleSearchMethod (hDlg)
+  if     self.searchmethod == "dos"   then self.searchmethod = "lua"
+  elseif self.searchmethod == "lua"   then self.searchmethod = "regex"
+  elseif self.searchmethod == "regex" then self.searchmethod = "plain"
+  else self.searchmethod = "dos"
+  end
+  self:ChangePattern(hDlg, self.pattern)
+end
 
-  local Item = self.drawitems[self.sel]
-  if self.bkeys then
-    for i,v in ipairs(self.bkeys) do
-      if v.BreakKey == key then
-        if v.Action then
-          if v.Action(self) then return end
-        else
-          return v, Item and self.idata[Item].index
-        end
-      end
+local function FindKey (t, key)
+  if t == key then return key end
+  if type(t) == "table" then
+    for _,v in ipairs(t) do
+      if v == key then return key end
     end
   end
+end
 
-  if key == KEY_HOME or key == KEY_NUMPAD7 then
-    self.upper = 1
-    for i,v in ipairs(self.drawitems) do
-      if not v.separator then
-        self.sel = i
-        self.upper = max(1, self.sel - self.h + 1)
-        break
-      end
-    end
+function List:Key (hDlg, key)
+  local Item = self.drawitems[self.sel]
+  if self.keyfunction then
+    local strKey = far.KeyToName(key)
+    local ret = self:keyfunction(hDlg, strKey, Item)
+    if ret == "break" then return { BreakKey=strKey }, Item and self.idata[Item].index end
+    if ret == "done" then return "done" end
+  end
 
-  elseif key == KEY_END or key == KEY_NUMPAD1 then
-    self.upper = max(1, #self.drawitems - self.h + 1)
-    for i = #self.drawitems, 1, -1 do
-      local v = self.drawitems[i]
-      if not v.separator then
-        self.sel = i
-        break
-      end
-    end
+  if key == F.KEY_HOME or key == F.KEY_NUM7 then
+    self:KeyHome()
+  elseif key == F.KEY_END or key == F.KEY_NUM1 then
+    self:KeyEnd()
+  elseif key == F.KEY_DOWN or key == F.KEY_RIGHT or key == F.KEY_NUM2 or key == F.KEY_NUM6 then
+    self:KeyDown(true)
+  elseif key == F.KEY_UP or key == F.KEY_LEFT or key == F.KEY_NUM8 or key == F.KEY_NUM4 then
+    self:KeyUp(true)
+  elseif key == F.KEY_PGDN or key == F.KEY_NUM3 then
+    self:KeyPageDown()
+  elseif key == F.KEY_PGUP or key == F.KEY_NUM9 then
+    self:KeyPageUp()
 
-  elseif key==KEY_DOWN or key==KEY_RIGHT or key==KEY_NUMPAD2 or key==KEY_NUMPAD6 then
-    local oldsel = self.sel
-    for i = self.sel+1, #self.drawitems do
-      local v = self.drawitems[i]
-      if not v.separator then
-        self.sel = i
-        self.upper = max(self.upper, self.sel - self.h + 1)
-        break
-      end
-    end
-    if not nowrap and self.sel==oldsel and btest(self.flags, "FMENU_WRAPMODE") then
-      for i=1, self.sel-1 do
-        local v = self.drawitems[i]
-        if not v.separator then
-          self.sel = i
-          self.upper = max(1, self.sel - self.h + 1)
-          break
-        end
-      end
-    end
-
-  elseif key==KEY_UP or key==KEY_LEFT or key==KEY_NUMPAD8 or key==KEY_NUMPAD4 then
-    local oldsel = self.sel
-    for i = self.sel-1, 1, -1 do
-      local v = self.drawitems[i]
-      if not v.separator then
-        self.sel = i
-        self.upper = min(self.upper, self.sel)
-        break
-      end
-    end
-    if not nowrap and self.sel==oldsel and btest(self.flags, "FMENU_WRAPMODE") then
-      for i = #self.drawitems, self.sel+1, -1 do
-        local v = self.drawitems[i]
-        if not v.separator then
-          self.sel = i
-          self.upper = max(1, self.sel - self.h + 1)
-          break
-        end
-      end
-    end
-
-  elseif key == KEY_PGDN or key == KEY_NUMPAD3 then
-    local oldsel = self.sel
-    for i = self.sel+self.h, #self.drawitems do
-      local v = self.drawitems[i]
-      if not v.separator then
-        self.sel = i
-        self.upper = self.upper + self.sel - oldsel
-        self.upper = max(1, min(self.upper, #self.drawitems - self.h + 1))
-        break
-      end
-    end
-    if self.sel == oldsel then
-      for i = self.sel+self.h-1, self.sel+1, -1 do
-        local v = self.drawitems[i]
-        if v and not v.separator then
-          self.sel = i
-          self.upper = max(self.upper, self.sel - self.h + 1)
-          break
-        end
-      end
-    end
-
-  elseif key == KEY_PGUP or key == KEY_NUMPAD9 then
-    local oldsel = self.sel
-    for i = self.sel-self.h, 1, -1 do
-      local v = self.drawitems[i]
-      if not v.separator then
-        self.sel = i
-        self.upper = max(1, self.upper + self.sel - oldsel)
-        break
-      end
-    end
-    if self.sel == oldsel then
-      for i = self.sel-self.h+1, self.sel-1 do
-        local v = self.drawitems[i]
-        if v and not v.separator then
-          self.sel = i
-          self.upper = max(1, self.upper - self.h)
-          break
-        end
-      end
-    end
-
-  elseif key == KEY_ENTER or key == KEY_NUMENTER then
+  elseif key == F.KEY_ENTER or key == F.KEY_NUMENTER then
     return Item, Item and self.idata[Item].index
 
-  elseif key == KEY_CTRLC or key == KEY_CTRLINS then
-    if Item then far.CopyToClipboard(Item.text:sub(self.searchstart)) end
+  elseif FindKey(self.keys_copyitem, key) then
+    self:CopyItemToClipboard()
 
-  elseif key == KEY_INS or key == KEY_NUMPAD0 then
+  elseif FindKey(self.keys_copyfiltereditems, key) then
+    self:CopyFilteredItemsToClipboard()
+
+  elseif FindKey(self.keys_checkitem, key) then
     if Item then Item.checked = not Item.checked or nil end
 
-  elseif key == KEY_F6 then
+  elseif FindKey(self.keys_ellipsis, key) then
     self.ellipsis = (self.ellipsis + 1) % 4
 
-  elseif key == KEY_F7 then
+  elseif FindKey(self.keys_showitem, key) then
     if Item then far.Message(Item.text:sub(self.searchstart), "Full Item Text", ";Ok") end
-
---~   elseif key == KEY_CTRLF9 then -- make dump
---~     local serial = require "serial"
---~     serial.SaveToFile("e:/bb/f/today/custommenu.dump", "list", self)
 
   elseif self.filterlines then
 
-    if key == KEY_DEL or key == KEY_NUMDEL then
-      self:ChangePattern (hDlg, "")
+    if FindKey(self.keys_clearpattern, key) and self.pattern ~= "" then
+      self:ChangePattern(hDlg, "")
 
-    elseif key == KEY_BS then
-      self:ChangePattern (hDlg, self.pattern:sub(1,-2))
+    elseif FindKey(self.keys_insertpattern, key) then
+      local str = far.PasteFromClipboard()
+      self:ChangePattern(hDlg, str and str:match("^[^\r\n]*") or "")
 
+    elseif key == F.KEY_BS and self.pattern ~= "" then
+      self:ChangePattern(hDlg, self.pattern:sub(1,-2))
+
+    elseif FindKey(self.keys_searchmethod, key) then
+      self:ToggleSearchMethod(hDlg)
+
+    elseif FindKey(self.keys_deleteitem, key) then
+      self:DeleteCurrentItem(hDlg)
+
+    elseif FindKey(self.keys_delfiltereditems, key) then
+      self:DeleteFilteredItems(hDlg, true)
+
+    elseif FindKey(self.keys_xlatonoff, key) then
+      self.xlat = not self.xlat
+      self:ChangePattern(hDlg, self.pattern)
+
+    elseif FindKey(self.keys_applyxlat, key) then
+      local result = far.XLat(self.pattern, nil, nil, "XLAT_SWITCHKEYBLAYOUT")
+      if result then self:ChangePattern(hDlg, result) end
+
+    --elseif key:len() == 1 then
     elseif KeyToChar(key) then
-      self:ChangePattern (hDlg, self.pattern..KeyToChar(key))
+      local c = KeyToChar(key)
+      self:ChangePattern(hDlg, self.pattern..c)
+
+    elseif ConvertTable[key] then
+      self:ChangePattern(hDlg, self.pattern..ConvertTable[key])
 
     end
-
   end
 
   if self.onlistchange then
     local CurItem = self.drawitems[self.sel]
     if CurItem ~= Item then self:onlistchange(hDlg, key, CurItem) end
   end
+end
+
+function List:SetIndexData()
+  self.idata = {}
+  for i,v in ipairs(self.items) do self.idata[v] = { index=i } end
+end
+
+function List:Sort (fCompare)
+  table.sort(self.items, fCompare)
+  self:SetIndexData()
 end
 
 function _M.Menu (props, list)
@@ -741,8 +894,8 @@ function _M.Menu (props, list)
   list.autocenter = (list.autocenter ~= false)
   list.resizeW    = (list.resizeW ~= false)
   list.resizeH    = (list.resizeH ~= false)
-  local UId = 1
-  list.startId = UId
+  local pos_usercontrol = 1
+  list.startId = pos_usercontrol
 
   local ret_item, ret_pos
   local Rect
@@ -759,21 +912,22 @@ function _M.Menu (props, list)
     elseif msg == F.DN_CTLCOLORDIALOG then
       return list.col_text
 
-    elseif msg == F.DN_CTLCOLORDLGITEM then
---       if param1 == IdDbox then return 0x003F003F end
-
     elseif msg == F.DN_DRAWDLGITEM then
-      if param1 == UId then
+      if param1 == pos_usercontrol then
         list:OnDrawDlgItem (Rect.Left, Rect.Top)
       end
 
     elseif msg == F.DN_KEY then
-      if param1 == UId then
+      if param1 == pos_usercontrol then
         ret_item, ret_pos = list:Key(hDlg, param2)
-        if not ret_item then
-          hDlg:Redraw()
+        if ret_item == "done" then
+          return true
+        elseif ret_item then
+          if param2~=F.KEY_ENTER and param2~=F.KEY_NUMENTER then -- prevent DN_CLOSE from coming twice
+            hDlg:Close(-1, 0)
+          end
         else
-          hDlg:Close(-1, 0)
+          hDlg:Redraw()
         end
       end
 
@@ -794,13 +948,20 @@ function _M.Menu (props, list)
       return 1
 
     elseif msg == F.DN_CLOSE then
-      list:OnDialogClose()
+      local canclose = true
+      if param1 == pos_usercontrol and type(list.CanClose) == "function" and ret_item and ret_pos then
+        canclose = list:CanClose(list.items[ret_pos], ret_item.BreakKey)
+      end
+      if canclose then
+        list:OnDialogClose(); return 1
+      end
+      return 0
 
     end
   end
   ----------------------------------------------------------------------------
   local ret = far.Dialog (-1,-1,list.w+6,list.h+4, props.HelpTopic, D, 0, DlgProc)
-  if ret == UId then
+  if ret == pos_usercontrol then
     return ret_item, ret_pos
   end
   return nil

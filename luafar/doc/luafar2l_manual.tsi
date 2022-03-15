@@ -5730,21 +5730,21 @@ lv=2
 dt=Text
 nm=far.XLat
 ctime=3480362672
-mtime=3480365807
+mtime=3856507931
 <article>
 #_result = far.XLat (Line, StartPos, EndPos, Flags)
 #_
 #_**Parameters:**
 #_  Line:     string
-#_  StartPos: integer (1-based)
-#_  EndPos:   integer
-#_  Flags:    flags combination
+#_  StartPos: integer (optional, default=1)
+#_  EndPos:   integer (optional, default=Line:len())
+#_  Flags:    flags
 #_
 #_**Returns:**
 #_  result:   string, or nil
 #_
 #_**Far API used:**
-#_  FSF.XLat
+#_  XLat
 #_
 #_@@@
 #_
@@ -7554,6 +7554,27 @@ mtime=3854291050
 </article>
 </node>
 <node>
+id=465
+lv=3
+dt=Text
+nm=win.FileTimeToLocalFileTime
+ctime=3856361840
+mtime=3856361940
+<article>
+#_local_ftime = win.FileTimeToLocalFileTime (ftime)
+#_
+#_**Parameters:**
+#_  ftime       : number (number of milliseconds since January 1, 1601)
+#_
+#_**Returns:**
+#_  local_ftime : number (number of milliseconds since January 1, 1601)
+#_
+#_**Windows API used:**
+#_  FileTimeToLocalFileTime
+#_
+</article>
+</node>
+<node>
 id=215
 lv=3
 dt=Text
@@ -7583,25 +7604,20 @@ mtime=3853777145
 id=217
 lv=3
 dt=Text
-nm=win.GetSystemTime
-mtime=3853777154
+nm=win.GetSystemTimeAsFileTime
+mtime=3856438297
 <article>
-#_result = win.GetSystemTime ([asFileTime])
+#_result = win.GetSystemTimeAsFileTime()
 #_
 #_**Parameters:**
-#_  asFileTime : boolean
+#_  none
 #_
 #_**Returns:**
-#_  result     : table SystemTime, or number
+#_  result : number of milliseconds since January 1, 1601
 #_
-#_**Description:**
-#_  If *asFileTime* is false or not supplied, then SystemTime
-#_  table is returned, otherwise, the system time is first
-#_  converted to number (number of milliseconds since January 1,
-#_  1601).
 #_
 #_**Windows API used:**
-#_  GetSystemTime, SystemTimeToFileTime
+#_  GetSystemTimeAsFileTime
 #_
 #_@@@
 #_<lua> Links = { SystemTime="218.html" } </lua>

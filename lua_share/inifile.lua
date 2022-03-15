@@ -33,9 +33,9 @@ function lib.New(fname, nocomment)
         if key then
           local first = val:sub(1,1)
           if first == '"' then
-            val = val:match('^"(.-)"') -- in double quotes
+            val = val:match('^"(.*)"') -- in double quotes
           elseif first == "'" then
-            val = val:match("^'(.-)'") -- in single quotes
+            val = val:match("^'(.*)'") -- in single quotes
           else
             if not nocomment then
               val = val:match("^[^;]+")  -- semicolon starts the comment
