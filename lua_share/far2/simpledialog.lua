@@ -89,41 +89,22 @@ end
 
 -- supported dialog item types
 local TypeMap = {
+    butt           =  F.DI_BUTTON;
+    chbox          =  F.DI_CHECKBOX;
+    combobox       =  F.DI_COMBOBOX;
     dbox           =  F.DI_DOUBLEBOX;
-    dblbox         =  F.DI_DOUBLEBOX;
-    doublebox      =  F.DI_DOUBLEBOX;
-    sbox           =  F.DI_SINGLEBOX;
-    sngbox         =  F.DI_SINGLEBOX;
-    singlebox      =  F.DI_SINGLEBOX;
-    text           =  F.DI_TEXT;
-    vtext          =  F.DI_VTEXT;
-    sep            =  "sep";
-    separ          =  "sep";
-    separator      =  "sep";
-    sep2           =  "sep2";
-    separ2         =  "sep2";
-    separator2     =  "sep2";
     edit           =  F.DI_EDIT;
     fixedit        =  F.DI_FIXEDIT;
-    pswedit        =  F.DI_PSWEDIT;
-    cbox           =  F.DI_CHECKBOX;
-    chbox          =  F.DI_CHECKBOX;
-    checkbox       =  F.DI_CHECKBOX;
-    but            =  F.DI_BUTTON;
-    butt           =  F.DI_BUTTON;
-    button         =  F.DI_BUTTON;
-    radiobutton    =  F.DI_RADIOBUTTON;
-    rbut           =  F.DI_RADIOBUTTON;
-    rbutt          =  F.DI_RADIOBUTTON;
-    rbutton        =  F.DI_RADIOBUTTON;
-    combobox       =  F.DI_COMBOBOX;
     listbox        =  F.DI_LISTBOX;
+    pswedit        =  F.DI_PSWEDIT;
+    rbutt          =  F.DI_RADIOBUTTON;
+    sbox           =  F.DI_SINGLEBOX;
+    sep            =  "sep";
+    sep2           =  "sep2";
+    text           =  F.DI_TEXT;
     user           =  F.DI_USERCONTROL;
-    ucontrol       =  F.DI_USERCONTROL;
-    usercontrol    =  F.DI_USERCONTROL;
     user2          =  "usercontrol2";
-    ucontrol2      =  "usercontrol2";
-    usercontrol2   =  "usercontrol2";
+    vtext          =  F.DI_VTEXT;
 }
 
 -- supported dialog item flags

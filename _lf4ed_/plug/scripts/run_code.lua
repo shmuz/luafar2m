@@ -51,18 +51,18 @@ local function GetText (aOpt)
   {
     guid = DlgGuid;
     width = 76;
-    {tp="dbox"; text=Title;                                                  };
-    {tp="text"; text="&Sequence:";                                           };
-    {tp="edit"; hist="PostMacroSequence"; flags=edtFlags;   name="sequence"; };
-    {tp="text"; text="&Parameters:";                                         };
-    {tp="edit"; hist="PostMacroParams";   flags=edtFlags;   name="params";   };
-    {tp="rbut"; group=1; text="&Lua"; ystep=2;              name="lua";      };
-    {tp="rbut"; text="&MoonScript";                         name="moon";     };
-    {tp="cbox"; x1=35; text="&Reuse environment"; ystep=-1; name="reuse";    };
-    {tp="cbox"; x1=""; text="Loop this &dialog";            name="loop";     };
-    {tp="sep";  ystep=2;                                                     };
-    {tp="butt"; text="OK";     default=1; centergroup=1;                     };
-    {tp="butt"; text="Cancel"; cancel=1;  centergroup=1;                     };
+    {tp="dbox";  text=Title;                                                  };
+    {tp="text";  text="&Sequence:";                                           };
+    {tp="edit";  hist="PostMacroSequence"; flags=edtFlags;   name="sequence"; };
+    {tp="text";  text="&Parameters:";                                         };
+    {tp="edit";  hist="PostMacroParams";   flags=edtFlags;   name="params";   };
+    {tp="rbutt"; group=1; text="&Lua"; ystep=2;              name="lua";      };
+    {tp="rbutt"; text="&MoonScript";                         name="moon";     };
+    {tp="chbox"; x1=35; text="&Reuse environment"; ystep=-1; name="reuse";    };
+    {tp="chbox"; x1=""; text="Loop this &dialog";            name="loop";     };
+    {tp="sep";   ystep=2;                                                     };
+    {tp="butt";  text="OK";     default=1; centergroup=1;                     };
+    {tp="butt";  text="Cancel"; cancel=1;  centergroup=1;                     };
   }
 
   local Pos, Elem = sDialog.Indexes(Items)

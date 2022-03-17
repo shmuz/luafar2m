@@ -158,11 +158,11 @@ local function Main()
     {tp="rbutt"; text=M.REMNONUNIQ;  name="remnonuniq";                          },
     {tp="rbutt"; text=M.CLRNONUNIQ;  name="clrnonuniq";                          },
     -------------------------------------------------------------------------------
-    {tp="cbox";  text=M.KEEPEMPTY;   name="cbEmpty"; x1=35; ystep=-3;            },
-    {tp="cbox";  text=M.SHOWSTATS;   name="cbStat";  x1=35                       },
+    {tp="chbox"; text=M.KEEPEMPTY;   name="cbEmpty"; x1=35; ystep=-3;            },
+    {tp="chbox"; text=M.SHOWSTATS;   name="cbStat";  x1=35                       },
     -------------------------------------------------------------------------------
-    {tp="cbox";  text=M.USEEXPR;     name="cbExpr"; ystep=4;                     },
-    {tp="cbox";  text=M.TOBOOLEAN;   name="cbBool"; ystep=0; x1=35;              },
+    {tp="chbox"; text=M.USEEXPR;     name="cbExpr"; ystep=4;                     },
+    {tp="chbox"; text=M.TOBOOLEAN;   name="cbBool"; ystep=0; x1=35;              },
     {tp="text";  text=M.EXPRESSION;  name="lbExpr";                              },
     {tp="edit";  uselasthistory=1;   name="edExpr"; hist="DupFighterExpression"; },
     -------------------------------------------------------------------------------

@@ -36,9 +36,6 @@ title. There are 4 switchable filtering methods available:
    #Ctrl-Alt-X#         Apply XLat conversion on filter and also
                       switch the keyboard layout.
    #Ctrl-I#             Inverse sort order.
-   #Alt-F8#             Switch to Commands history.
-   #Alt-F11#            Switch to View/Edit history.
-   #Alt-F12#            Switch to Folders history.
    #Ins#                Check the item (it protects from deleting by Ctrl-Del or Ctrl-F8)
 
  \3BCommands history\-

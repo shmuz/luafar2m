@@ -15,7 +15,6 @@ local M          = require "lfh_message"
 local F          = far.Flags
 local Field      = Sett.field
 local band, bor  = bit.band, bit.bor
-local PlugTitleCache = {}
 
 local DefaultCfg = {
   bDynResize  = true,
@@ -286,16 +285,6 @@ local function FoldersHistory_CanClose (self, item, breakkey)
     return true
   end
   ----------------------------------------------------------------------------
-  if item.PluginId then
-    if far.FindPlugin("PFM_GUID", item.PluginId) then
-      panel.SetPanelDirectory(breakkey==nil and 1 or 0, item.PanelDir)
-      return true
-    else
-      far.Message(M.mPluginNotFound.."\n"..win.Uuid(item.PluginId):upper(), M.mError, M.mOk, "w")
-      return false
-    end
-  end
-  ----------------------------------------------------------------------------
   if panel.SetPanelDirectory(breakkey==nil and 1 or 0, item.text) then
     return true
   end
@@ -365,7 +354,7 @@ local function DelayedSaveHistory (hst_name, hst, delay)
   end)
 end
 
-local function get_history (aConfig, obj)
+local function get_history (aConfig)
   local menu_items, map = {}, {}
 
   -- add plugin database items
@@ -437,10 +426,8 @@ local function get_history (aConfig, obj)
 
   -- execute the menu
   local menuProps, list = MakeMenuParams(_Plugin.Cfg, aConfig, settings, menu_items, hst)
-  list.pattern = obj.pattern
   SortListItems(list, _Plugin.Cfg.bDirectSort, nil)
   local item, itempos = custommenu.Menu(menuProps, list)
-  obj.pattern = list.pattern
   settings.searchmethod = list.searchmethod
   settings.xlat = list.xlat
   hst["items"] = list.items
@@ -459,8 +446,8 @@ local function IsCmdLineAvail()
          ar==F.MACROAREA_QVIEWPANEL or ar==F.MACROAREA_TREEPANEL
 end
 
-local function commands_history(obj)
-  local item, key = get_history(cfgCommands, obj)
+local function commands_history()
+  local item, key = get_history(cfgCommands)
 
   if key=="AltF11" or key=="RAltF11" then return "view" end
   if key=="AltF12" or key=="RAltF12" then return "folders" end
@@ -474,8 +461,8 @@ local function commands_history(obj)
   end
 end
 
-local function folders_history(obj)
-  local item, key = get_history(cfgFolders, obj)
+local function folders_history()
+  local item, key = get_history(cfgFolders)
 
   if key=="AltF8" or key=="RAltF8" then return "commands" end
   if key=="AltF11" or key=="RAltF11" then return "view" end
@@ -491,8 +478,8 @@ local function CallEditor (fname, disablehistory)
   editor.Editor(fname, nil, nil, nil, nil, nil, flags)
 end
 
-local function view_history(obj)
-  local item, key = get_history(cfgView, obj)
+local function view_history()
+  local item, key = get_history(cfgView)
 
   if key=="AltF8" or key=="RAltF8" then return "commands" end
   if key=="AltF12" or key=="RAltF12" then return "folders" end
@@ -570,21 +557,6 @@ local function export_Configure()
   end
 end
 
-local function RunCycle (op)
-
-  local obj_commands = { func=commands_history; pattern=""; }
-  local obj_view     = { func=view_history;     pattern=""; }
-  local obj_folders  = { func=folders_history;  pattern=""; }
-
-  while op do
-    if     op == "commands" then op = obj_commands:func()
-    elseif op == "view"     then op = obj_view:func()
-    elseif op == "folders"  then op = obj_folders:func()
-    else break
-    end
-  end
-end
-
 local function export_Open (From, Item)
   if band(From, F.OPEN_FROMMACRO) ~= 0 then
     if band(From, F.OPEN_FROMMACROSTRING) ~= 0 then
@@ -593,27 +565,31 @@ local function export_Open (From, Item)
 
   elseif From == F.OPEN_COMMANDLINE then
     return
-  end
-  ------------------------------------------------------------------------------
-  if From==F.OPEN_PLUGINSMENU or From==F.OPEN_EDITOR or From==F.OPEN_VIEWER then
+
+  elseif From==F.OPEN_PLUGINSMENU or From==F.OPEN_EDITOR or From==F.OPEN_VIEWER then
     local properties = {
       Title=M.mPluginTitle, HelpTopic="Contents", Flags="FMENU_WRAPMODE",
     }
-    local items = {
-      { text=M.mMenuCommands,   run_cycle=true; param="commands" },
-      { text=M.mMenuView,       run_cycle=true; param="view"     },
-      { text=M.mMenuFolders,    run_cycle=true; param="folders"  },
-      { text=M.mMenuConfig,     action=export_Configure },
-      { text=M.mMenuLocateFile, action=LocateFile2      },
+    local allitems = {
+      { text=M.mMenuCommands,   action=commands_history; areas="p";   },
+      { text=M.mMenuView,       action=view_history;     areas="epv"; },
+      { text=M.mMenuFolders,    action=folders_history;  areas="p";   },
+      { text=M.mMenuConfig,     action=export_Configure; areas="epv"; },
+      { text=M.mMenuLocateFile, action=LocateFile2;      areas="p";   },
     }
-    for i,v in ipairs(items) do
-      v.text = "&"..i..". "..v.text
-    end
-    local item, pos = far.Menu(properties, items)
-    if item then
-      if item.run_cycle then RunCycle(item.param)
-      elseif item.action then item.action()
+    local items = {}
+    for _,v in ipairs(allitems) do
+      if From==F.OPEN_PLUGINSMENU and v.areas:find("p") or
+         From==F.OPEN_EDITOR      and v.areas:find("e") or
+         From==F.OPEN_VIEWER      and v.areas:find("v")
+      then
+        table.insert(items, v)
+        v.text = "&"..#items..". "..v.text
       end
+    end
+    local item = far.Menu(properties, items)
+    if item then
+      item.action()
     end
   end
 end
