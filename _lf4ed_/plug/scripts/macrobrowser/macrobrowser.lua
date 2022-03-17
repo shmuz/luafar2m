@@ -103,7 +103,7 @@ local function RunMenu()
         local r = far.Message("Do you want to save the changes?", Title, "&Yes;&No;Cancel", "w")
         if r == 1 then
           cfg:write(macrofile)
-          far.Timer(10, function(hnd) hnd:Close(); far.MacroLoadAll(); end) -- another bug in FAR ?
+          far.Timer(100, function(hnd) hnd:Close(); far.MacroLoadAll(); end) -- another bug in FAR ?
         end
         if r==1 or r==2 then
           break

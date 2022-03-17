@@ -4,8 +4,8 @@
 far.ReloadDefaultScript = true
 package.loaded["far2.custommenu"] = nil
 
-local SETTINGS_KEY  = "shmuz"
-local SETTINGS_NAME = "plugin_lfhistory"
+local SETTINGS_KEY  = "lfhistory"
+local SETTINGS_NAME = "settings"
 
 local IniFile    = require "inifile"
 local custommenu = require "far2.custommenu"
@@ -27,7 +27,7 @@ local DefaultCfg = {
 }
 
 local cfgView = {
-  PluginHistoryType = "lfhistory_view",
+  PluginHistoryType = "view",
   FarFileName = "view.hst",
   FarHistoryType = "SavedViewHistory",
   title = "mTitleView",
@@ -42,7 +42,7 @@ local cfgView = {
 }
 
 local cfgCommands = {
-  PluginHistoryType = "lfhistory_commands",
+  PluginHistoryType = "commands",
   FarFileName = "commands.hst",
   FarHistoryType = "SavedHistory",
   title = "mTitleCommands",
@@ -55,7 +55,7 @@ local cfgCommands = {
 }
 
 local cfgFolders = {
-  PluginHistoryType  = "lfhistory_folders",
+  PluginHistoryType  = "folders",
   FarFileName = "folders.hst",
   FarHistoryType = "SavedFolderHistory",
   title = "mTitleFolders",
@@ -68,7 +68,7 @@ local cfgFolders = {
 }
 
 local cfgLocateFile = {
-  PluginHistoryType  = "lfhistory_locatefile",
+  PluginHistoryType  = "locatefile",
   title = "mTitleLocateFile",
   brkeys = {
     "F3", "F4",
@@ -384,22 +384,35 @@ local function get_history (aConfig, obj)
 
   local file = os.getenv("HOME") .. "/.config/far2l/history/" .. aConfig.FarFileName
   local ini = IniFile.New(file, "nocomment")
+  local far_lines, far_times = {}, {}
+
   local lines = ini:GetString(aConfig.FarHistoryType, "Lines")
-  local t_lines = {}
   lines = lines:gsub("(\\.)", { ["\\\\"]="\\"; ["\\n"]="\n"; })
-  for name in (lines.."\n"):gmatch("(.-)\n") do
+  for text in (lines.."\n"):gmatch("(.-)\n") do
+    if text ~= "" then table.insert(far_lines, text) end
+  end
 
-    if name ~= "" then table.insert(t_lines, name) end
+  local i = 0
+  local times = ini:GetString(aConfig.FarHistoryType, "Times")
+  for a,b,c,d,e,f,g,h in times:gmatch("(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)") do
+    i = i + 1
+    if far_lines[i] == nil then break end
+    local low  = tonumber(d..c..b..a, 16)
+    local high = tonumber(h..g..f..e, 16)
+    local time = math.floor((low + 2^32*high) / 10000)
+    table.insert(far_times, time)
+  end
 
+  for i,name in ipairs(far_lines) do
+    local fartime = far_times[i] or 0
     local item = map[name]
     if item then
---~       if not (item.time and item.time >= v.Time) then
---~         item.time = v.Time
---~         item.typ = aType
---~       end
+      if item.time < fartime then
+        item.time = fartime
+      end
     else
-      if true or v.Time >= last_time then
-        item = { text=name, time=0, typ=0 }
+      if fartime >= last_time then
+        item = { text=name; time=fartime; }
         table.insert(menu_items, item)
         map[name] = item
       end
@@ -543,7 +556,6 @@ end
 
 local function export_GetPluginInfo()
   return {
-    CommandPrefix = "lfh",
     Flags = bor(F.PF_EDITOR, F.PF_VIEWER),
     PluginConfigStrings = { M.mPluginTitle },
     PluginMenuStrings = { M.mPluginTitle },
@@ -576,23 +588,11 @@ end
 local function export_Open (From, Item)
   if band(From, F.OPEN_FROMMACRO) ~= 0 then
     if band(From, F.OPEN_FROMMACROSTRING) ~= 0 then
-      local area = band(From, F.OPEN_FROM_MASK)
-      if area == F.MACROAREA_SHELL and Item == "Enter" then
-        local cmd = panel.GetCmdLine()
-        if cmd ~= "" then
-          --far.Show(cmd)
-        else
-          local item = panel.GetCurrentPanelItem(1)
-          if item.FileAttributes:find("d") then
-            --far.Show(panel.GetPanelDirectory(1))
-          end
-        end
-      end
+      return
     end
-    return
 
   elseif From == F.OPEN_COMMANDLINE then
-    return Utils.OpenCommandLine(Item, commandTable, nil)
+    return
   end
   ------------------------------------------------------------------------------
   if From==F.OPEN_PLUGINSMENU or From==F.OPEN_EDITOR or From==F.OPEN_VIEWER then
@@ -606,6 +606,9 @@ local function export_Open (From, Item)
       { text=M.mMenuConfig,     action=export_Configure },
       { text=M.mMenuLocateFile, action=LocateFile2      },
     }
+    for i,v in ipairs(items) do
+      v.text = "&"..i..". "..v.text
+    end
     local item, pos = far.Menu(properties, items)
     if item then
       if item.run_cycle then RunCycle(item.param)
