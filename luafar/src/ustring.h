@@ -30,11 +30,11 @@ void   PutWStrToTable     (lua_State *L, const char* key, const wchar_t* str, in
 
 DLLFUNC wchar_t* check_utf8_string (lua_State *L, int pos, int* pTrgSize);
 DLLFUNC const wchar_t* opt_utf8_string (lua_State *L, int pos, const wchar_t* dflt);
-DLLFUNC char* push_utf8_string (lua_State* L, const wchar_t* str, int numchars);
+DLLFUNC void push_utf8_string (lua_State* L, const wchar_t* str, int numchars);
 
 wchar_t* utf8_to_utf16 (lua_State *L, int pos, int* pTrgSize);
 wchar_t* oem_to_utf16 (lua_State *L, int pos, int* pTrgSize);
-char* push_oem_string (lua_State* L, const wchar_t* str, int numchars);
+void push_oem_string (lua_State* L, const wchar_t* str, int numchars);
 
 int ustring_EnumSystemCodePages (lua_State *L);
 int ustring_GetACP (lua_State* L);
@@ -63,8 +63,8 @@ inline wchar_t* utf8_to_utf16 (lua_State *L, int pos) {
   return utf8_to_utf16(L, pos, NULL);
 }
 
-inline char* push_utf8_string (lua_State* L, const wchar_t* str) {
-  return push_utf8_string(L, str, -1);
+inline void push_utf8_string (lua_State* L, const wchar_t* str) {
+  push_utf8_string(L, str, -1);
 }
 
 inline void PutWStrToArray(lua_State *L, int key, const wchar_t* str) {

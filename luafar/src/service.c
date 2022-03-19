@@ -18,7 +18,7 @@ void Log(const char* str)
   static int N = 0;
   const char* home = getenv("HOME");
   if (home) {
-    char* buf = malloc(strlen(home) + 64);
+    char* buf = (char*) malloc(strlen(home) + 64);
     if (buf) {
       strcpy(buf, home);
       strcat(buf, "/luafar_log.txt");
@@ -3544,7 +3544,7 @@ int far_GetMsg(lua_State *L)
   PSInfo *Info = GetPluginStartupInfo(L);
   int MsgId = luaL_checkinteger(L, 1);
   const wchar_t* msg = (MsgId < 0) ? NULL : Info->GetMsg(Info->ModuleNumber, MsgId);
-  msg ? (void)push_utf8_string(L,msg,-1) : lua_pushnil(L);
+  msg ? push_utf8_string(L,msg,-1) : lua_pushnil(L);
   return 1;
 }
 
@@ -4923,7 +4923,7 @@ int far_XLat (lua_State *L)
   StartPos < 0 ? StartPos = 0 : StartPos > (intptr_t)size ? StartPos = size : 0;
   EndPos < StartPos ? EndPos = StartPos : EndPos > (intptr_t)size ? EndPos = size : 0;
   str = GetPluginStartupInfo(L)->FSF->XLat(Line, StartPos, EndPos, Flags);
-  str ? (void)push_utf8_string(L, str, -1) : lua_pushnil(L);
+  str ? push_utf8_string(L, str, -1) : lua_pushnil(L);
   return 1;
 }
 

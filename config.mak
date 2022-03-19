@@ -20,4 +20,4 @@ CFLAGS = -O2 -Wall -Wno-unused-function \
          -I$(INC_FAR) -I$(INC_WIN) -I$(INC_LUA) \
          -m$(DIRBIT) -fPIC $(MYCFLAGS)
 
-LDFLAGS = -shared -m$(DIRBIT) -s -fPIC $(MYLDFLAGS)
+LDFLAGS = -shared -m$(DIRBIT) -fPIC $(MYLDFLAGS)

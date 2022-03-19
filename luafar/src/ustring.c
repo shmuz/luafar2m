@@ -187,8 +187,7 @@ wchar_t* oem_to_utf16 (lua_State *L, int pos, int* pTrgSize)
   return convert_multibyte_string (L, pos, CP_OEMCP, 0, pTrgSize, FALSE);
 }
 
-char* push_multibyte_string (lua_State* L, UINT CodePage, const wchar_t* str,
-  int numchars)
+void push_multibyte_string (lua_State* L, UINT CodePage, const wchar_t* str, int numchars)
 {
   int targetSize = WINPORT(WideCharToMultiByte)(
     CodePage, // UINT CodePage,
@@ -203,23 +202,22 @@ char* push_multibyte_string (lua_State* L, UINT CodePage, const wchar_t* str,
   if (targetSize == 0 && numchars == -1 && str[0]) {
     luaL_error(L, "invalid UTF-16 string");
   }
-  char *target = (char*)lua_newuserdata(L, targetSize+1);
+  char *target = (char*)malloc(targetSize+1);
   WINPORT(WideCharToMultiByte)(CodePage, 0, str, numchars, target, targetSize, NULL, NULL);
   if (numchars == -1)
     --targetSize;
   lua_pushlstring(L, target, targetSize);
-  lua_remove(L, -2);
-  return target;
+  free(target);
 }
 
-char* push_utf8_string (lua_State* L, const wchar_t* str, int numchars)
+void push_utf8_string (lua_State* L, const wchar_t* str, int numchars)
 {
-  return push_multibyte_string(L, CP_UTF8, str, numchars);
+  push_multibyte_string(L, CP_UTF8, str, numchars);
 }
 
-char* push_oem_string (lua_State* L, const wchar_t* str, int numchars)
+void push_oem_string (lua_State* L, const wchar_t* str, int numchars)
 {
-  return push_multibyte_string(L, CP_OEMCP, str, numchars);
+  push_multibyte_string(L, CP_OEMCP, str, numchars);
 }
 
 int ustring_MultiByteToWideChar (lua_State *L)
