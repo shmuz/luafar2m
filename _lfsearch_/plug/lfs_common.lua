@@ -109,11 +109,12 @@ local function ConfigDialog()
   local Items = {
     width = 76;
     help = "Contents";
-    {tp="dbox"; text=M.MConfigTitle; },
-    {tp="text"; text=M.MPickFrom; },
-    {tp="rbutt"; x1=7; name="rPickEditor";  text=M.MPickEditor; group=1; val=1; },
-    {tp="rbutt"; x1=7; name="rPickHistory"; text=M.MPickHistory; },
-    {tp="rbutt"; x1=7; name="rPickNowhere"; text=M.MPickNowhere; },
+    {tp="dbox";  text=M.MConfigTitle; },
+    {tp="chbox"; name="bForceScopeToBlock";  text=M.MOptForceScopeToBlock; },
+    {tp="text";  text=M.MPickFrom; ystep=2; },
+    {tp="rbutt"; x1=7;  name="rPickEditor";  text=M.MPickEditor; group=1; val=1; },
+    {tp="rbutt"; x1=27; name="rPickHistory"; text=M.MPickHistory; y1=""; },
+    {tp="rbutt"; x1=47; name="rPickNowhere"; text=M.MPickNowhere; y1=""; },
     {tp="sep"; ystep=2; },
     {tp="butt"; centergroup=1; text=M.MOk;    default=1; },
     {tp="butt"; centergroup=1; text=M.MCancel; cancel=1; },
@@ -129,9 +130,6 @@ end
 
 local function CreateUfindMethod (tb_methods)
   if tb_methods.ufind == nil then
-    local find = tb_methods.find
-    local ssub = string.sub
-    local ulen = ("").len -- length in utf8 chars
     tb_methods.ufind = function(r, s, init)
       init = init and s:offset(init)
       local fr,to,t = r:tfind(s, init)
@@ -454,6 +452,7 @@ end
 function SRFrame:OnDataLoaded (aData, aScriptCall)
   local Pos = self.Pos or sd.Indexes(self.Items)
   self.Pos = Pos
+  self.ScriptCall = aScriptCall
   local Items = self.Items
   local bInEditor = self.bInEditor
 
@@ -491,19 +490,27 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
   self.Pos = Pos
   local Data, bInEditor = self.Data, self.bInEditor
   local bReplace = Pos.sReplacePat
-  local name
   ----------------------------------------------------------------------------
   if msg == F.DN_INITDIALOG then
     if bInEditor then
-      if editor.GetInfo().BlockType == F.BTYPE_NONE then
+      local EI = editor.GetInfo()
+      if EI.BlockType == F.BTYPE_NONE then
         hDlg:SetCheck (Pos.rScopeGlobal, 1)
         hDlg:Enable   (Pos.rScopeBlock, 0)
       else
-        name = (Data.sScope=="block") and "rScopeBlock" or "rScopeGlobal"
-        hDlg:SetCheck(Pos[name], 1)
+        local bScopeBlock
+        local bForceBlock = field(_Plugin.History, "config").bForceScopeToBlock
+        if self.ScriptCall or not bForceBlock then
+          bScopeBlock = (Data.sScope == "block")
+        else
+          local line = editor.GetString(EI.BlockStartLine+1) -- test the 2-nd selected line
+          bScopeBlock = line and line.SelStart>0
+        end
+        local name = bScopeBlock and "rScopeBlock" or "rScopeGlobal"
+        hDlg:SetCheck(Pos[name], true)
       end
-      name = (Data.sOrigin=="scope") and "rOriginScope" or "rOriginCursor"
-      hDlg:SetCheck(Pos[name], 1)
+      local name = (Data.sOrigin=="scope") and "rOriginScope" or "rOriginCursor"
+      hDlg:SetCheck(Pos[name], true)
       self:CheckAdvancedEnab(hDlg)
     end
     self:CheckRegexInit(hDlg)
