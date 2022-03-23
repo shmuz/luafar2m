@@ -461,8 +461,12 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
                 tInfo.TotalLines = tInfo.TotalLines + nAdded - nDeleted
               end
 
-              if sChoice == "yes" then editor.Redraw() end
-              if tBlockInfo then EditorSelect(tBlockInfo) end
+              if sChoice == "yes" then
+                editor.Redraw()
+              end
+              if sChoice ~= "all" and tBlockInfo then
+                EditorSelect(tBlockInfo)
+              end
               tStartPos = editor.GetInfo() -- save position
               nReps = nReps + 1
               return bLineDeleted

@@ -57,12 +57,12 @@ local function SR_Dialog (aData, aReplace, aScriptCall)
   ------------------------------------------------------------------------------
   insert(Items, { tp="chbox"; name="bAdvanced";            text=M.MDlgAdvanced; })
   insert(Items, { tp="text";  name="labFilterFunc"; x1=39; text=M.MDlgFilterFunc; y1=""; })
-  insert(Items, { tp="edit";  name="sFilterFunc";   x1=39; hist=HIST_FILTERFUNC; })
+  insert(Items, { tp="edit";  name="sFilterFunc";   x1=39; hist=HIST_FILTERFUNC; ext="lua"; })
   ------------------------------------------------------------------------------
   insert(Items, { tp="text";  name="labInitFunc";  text=M.MDlgInitFunc; })
-  insert(Items, { tp="edit";  name="sInitFunc";    x2=36; hist=HIST_INITFUNC; })
+  insert(Items, { tp="edit";  name="sInitFunc";    x2=36; hist=HIST_INITFUNC; ext="lua"; })
   insert(Items, { tp="text";  name="labFinalFunc"; x1=39; text=M.MDlgFinalFunc; ystep=-1; })
-  insert(Items, { tp="edit";  name="sFinalFunc";   x1=39; hist=HIST_FINALFUNC; })
+  insert(Items, { tp="edit";  name="sFinalFunc";   x1=39; hist=HIST_FINALFUNC; ext="lua"; })
   ------------------------------------------------------------------------------
   insert(Items, { tp="sep"; })
   ------------------------------------------------------------------------------
@@ -146,7 +146,7 @@ local function EditorAction (aOp, aData, aScriptCall)
     elseif aOp == "repeat" or aOp == "repeat_rev" then
       aData.bSearchBack = (aOp == "repeat_rev")
       bReplace = (aData.sLastOp == "replace")
-      local searchtext = Common.GetFarHistory("SearchText")
+      local searchtext = Common.GetDialogHistory("SearchText")
       if searchtext ~= aData.sSearchPat then
         bReplace = false
         if searchtext then aData.sSearchPat = searchtext end

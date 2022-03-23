@@ -1,12 +1,13 @@
 -- lfs_common.lua
 
-local sd = require "far2.simpledialog"
-local Sett  = require "far2.settings"
-local field = Sett.field
-
+local M      = require "lfs_message"
 local RepLib = require "lfs_replib"
-local M = require "lfs_message"
+local sd     = require "far2.simpledialog"
+local Sett   = require "far2.settings"
+local field  = Sett.field
+
 local F = far.Flags
+local KEEP_DIALOG_OPEN = 0
 
 local function ErrorMsg (text, title)
   far.Message (text, title or M.MError, nil, "w")
@@ -72,7 +73,7 @@ end
 
 local hst_map = { ["\\"]="\\"; n="\n"; r="\r"; t="\t"; }
 
-local function GetFarHistory (name)
+local function GetDialogHistory (name)
   local value
   local fname = os.getenv("HOME").."/.config/far2l/history/dialogs.hst"
   local fp = io.open(fname)
@@ -355,79 +356,16 @@ local function ProcessDialogData (aData, bReplace)
   return params
 end
 
-local SRFrameBase = {}
-SRFrameBase.Libs = {"far", "lua", "oniguruma", "pcre"}
-local SRFrameMeta = {__index = SRFrameBase}
+local SRFrame = {}
+SRFrame.Libs = {"far", "lua", "oniguruma", "pcre"}
+local SRFrameMeta = {__index = SRFrame}
 
 local function CreateSRFrame (Items, aData, bInEditor)
   local self = {Items=Items, Data=aData, bInEditor=bInEditor}
   return setmetatable(self, SRFrameMeta)
 end
 
-function SRFrameBase:GetLibName (hDlg)
-  local pos = hDlg:ListGetCurPos(self.Pos.cmbRegexLib)
-  return self.Libs[pos.SelectPos]
-end
-
-function SRFrameBase:CheckRegexInit (hDlg)
-  local Data = self.Data
-  local Pos = self.Pos or sd.Indexes(self.Items)
-  self.Pos = Pos
-  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
-  local lib = self:GetLibName(hDlg)
-  local bLua = (lib == "lua")
-  self.PrevLib = lib
-  hDlg:SetCheck (Pos.bWholeWords, not (bRegex or bLua) and Data.bWholeWords)
-  hDlg:Enable   (Pos.bWholeWords, not (bRegex or bLua))
-  hDlg:SetCheck (Pos.bExtended, bRegex and Data.bExtended)
-  hDlg:Enable   (Pos.bExtended, bRegex)
-  hDlg:SetCheck (Pos.bCaseSens, bLua or Data.bCaseSens)
-  hDlg:Enable   (Pos.bCaseSens, not bLua)
-end
-
-function SRFrameBase:CheckRegexEnab (hDlg)
-  local Pos = self.Pos or sd.Indexes(self.Items)
-  self.Pos = Pos
-  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
-  if self:GetLibName(hDlg) ~= "lua" then
-    if bRegex then hDlg:SetCheck(Pos.bWholeWords, 0) end
-    hDlg:Enable(Pos.bWholeWords, not bRegex)
-  end
-  if not bRegex then hDlg:SetCheck(Pos.bExtended, 0) end
-  hDlg:Enable(Pos.bExtended, bRegex)
-end
-
-function SRFrameBase:CheckRegexLib (hDlg)
-  local Pos = self.Pos or sd.Indexes(self.Items)
-  self.Pos = Pos
-  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
-  local lib = self:GetLibName(hDlg)
-  local bPrevLua = (self.PrevLib == "lua")
-  local bLua = (lib == "lua")
-  if bLua ~= bPrevLua then
-    if not bRegex then
-      if bLua then hDlg:SetCheck(Pos.bWholeWords, 0) end
-      hDlg:Enable(Pos.bWholeWords, not bLua)
-    end
-    if bLua then hDlg:SetCheck(Pos.bCaseSens, 1) end
-    hDlg:Enable(Pos.bCaseSens, not bLua)
-  end
-  self.PrevLib = lib
-end
-
-function SRFrameBase:CheckAdvancedEnab (hDlg)
-  local Pos = self.Pos or sd.Indexes(self.Items)
-  self.Pos = Pos
-  local bEnab = hDlg:GetCheck(Pos.bAdvanced)
-  hDlg:Enable(Pos.labFilterFunc, bEnab)
-  hDlg:Enable(Pos.sFilterFunc  , bEnab)
-  hDlg:Enable(Pos.labInitFunc  , bEnab)
-  hDlg:Enable(Pos.sInitFunc    , bEnab)
-  hDlg:Enable(Pos.labFinalFunc , bEnab)
-  hDlg:Enable(Pos.sFinalFunc   , bEnab)
-end
-
-function SRFrameBase:InsertInDialog (aReplace)
+function SRFrame:InsertInDialog (aReplace)
   local insert = table.insert
   local Items = self.Items
   local s1, s2 = M.MDlgSearchPat, M.MDlgReplacePat
@@ -455,8 +393,65 @@ function SRFrameBase:InsertInDialog (aReplace)
   insert(Items, { tp="chbox"; name="bExtended"; x1=26; y1=""; text=M.MDlgExtended; })
 end
 
+function SRFrame:CheckRegexInit (hDlg)
+  local Data = self.Data
+  local Pos = self.Pos or sd.Indexes(self.Items)
+  self.Pos = Pos
+  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
+  local lib = self:GetLibName(hDlg)
+  local bLua = (lib == "lua")
+  self.PrevLib = lib
+  hDlg:SetCheck (Pos.bWholeWords, not (bRegex or bLua) and Data.bWholeWords)
+  hDlg:Enable   (Pos.bWholeWords, not (bRegex or bLua))
+  hDlg:SetCheck (Pos.bExtended, bRegex and Data.bExtended)
+  hDlg:Enable   (Pos.bExtended, bRegex)
+  hDlg:SetCheck (Pos.bCaseSens, bLua or Data.bCaseSens)
+  hDlg:Enable   (Pos.bCaseSens, not bLua)
+end
 
-function SRFrameBase:OnDataLoaded (aData, aScriptCall)
+function SRFrame:CheckRegexEnab (hDlg)
+  local Pos = self.Pos or sd.Indexes(self.Items)
+  self.Pos = Pos
+  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
+  if self:GetLibName(hDlg) ~= "lua" then
+    if bRegex then hDlg:SetCheck(Pos.bWholeWords, 0) end
+    hDlg:Enable(Pos.bWholeWords, not bRegex)
+  end
+  if not bRegex then hDlg:SetCheck(Pos.bExtended, 0) end
+  hDlg:Enable(Pos.bExtended, bRegex)
+end
+
+function SRFrame:CheckRegexLib (hDlg)
+  local Pos = self.Pos or sd.Indexes(self.Items)
+  self.Pos = Pos
+  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
+  local lib = self:GetLibName(hDlg)
+  local bPrevLua = (self.PrevLib == "lua")
+  local bLua = (lib == "lua")
+  if bLua ~= bPrevLua then
+    if not bRegex then
+      if bLua then hDlg:SetCheck(Pos.bWholeWords, 0) end
+      hDlg:Enable(Pos.bWholeWords, not bLua)
+    end
+    if bLua then hDlg:SetCheck(Pos.bCaseSens, 1) end
+    hDlg:Enable(Pos.bCaseSens, not bLua)
+  end
+  self.PrevLib = lib
+end
+
+function SRFrame:CheckAdvancedEnab (hDlg)
+  local Pos = self.Pos or sd.Indexes(self.Items)
+  self.Pos = Pos
+  local bEnab = hDlg:GetCheck(Pos.bAdvanced)
+  hDlg:Enable(Pos.labFilterFunc, bEnab)
+  hDlg:Enable(Pos.sFilterFunc  , bEnab)
+  hDlg:Enable(Pos.labInitFunc  , bEnab)
+  hDlg:Enable(Pos.sInitFunc    , bEnab)
+  hDlg:Enable(Pos.labFinalFunc , bEnab)
+  hDlg:Enable(Pos.sFinalFunc   , bEnab)
+end
+
+function SRFrame:OnDataLoaded (aData, aScriptCall)
   local Pos = self.Pos or sd.Indexes(self.Items)
   self.Pos = Pos
   local Items = self.Items
@@ -466,7 +461,7 @@ function SRFrameBase:OnDataLoaded (aData, aScriptCall)
     if bInEditor then
       local data = field(_Plugin.History, "config")
       if data.rPickHistory then
-        Items[Pos.sSearchPat].text = GetFarHistory("SearchText") or aData.sSearchPat or ""
+        Items[Pos.sSearchPat].text = GetDialogHistory("SearchText") or aData.sSearchPat or ""
       elseif data.rPickNowhere then
         Items[Pos.sSearchPat].text = ""
         if Pos.sReplacePat then Items[Pos.sReplacePat].text = ""; end
@@ -475,7 +470,7 @@ function SRFrameBase:OnDataLoaded (aData, aScriptCall)
       end
     else
       Items[Pos.sSearchPat].text = (aData.sSearchPat == "") and "" or
-        GetFarHistory("SearchText") or aData.sSearchPat or ""
+        GetDialogHistory("SearchText") or aData.sSearchPat or ""
     end
   end
 
@@ -486,8 +481,12 @@ function SRFrameBase:OnDataLoaded (aData, aScriptCall)
   end
 end
 
+function SRFrame:GetLibName (hDlg)
+  local pos = hDlg:ListGetCurPos(self.Pos.cmbRegexLib)
+  return self.Libs[pos.SelectPos]
+end
 
-function SRFrameBase:DlgProc (hDlg, msg, param1, param2)
+function SRFrame:DlgProc (hDlg, msg, param1, param2)
   local Pos = self.Pos or sd.Indexes(self.Items)
   self.Pos = Pos
   local Data, bInEditor = self.Data, self.bInEditor
@@ -532,7 +531,8 @@ function SRFrameBase:DlgProc (hDlg, msg, param1, param2)
       ------------------------------------------------------------------------
       if bInEditor then
         if Data.sSearchPat == "" then
-          ErrorMsg(M.MSearchFieldEmpty); return 0
+          ErrorMsg(M.MSearchFieldEmpty)
+          return KEEP_DIALOG_OPEN
         end
         Data.bSearchBack = hDlg:GetCheck(Pos.bSearchBack)
 
@@ -552,11 +552,16 @@ function SRFrameBase:DlgProc (hDlg, msg, param1, param2)
       ------------------------------------------------------------------------
       local lib = self:GetLibName(hDlg)
       local ok, err = pcall(GetRegexLib, lib)
-      if not ok then (export.OnError or ErrorMsg)(err) return 0 end
+      if not ok then
+        (export.OnError or ErrorMsg)(err)
+        return KEEP_DIALOG_OPEN
+      end
       Data.sRegexLib = lib
       ------------------------------------------------------------------------
       self.close_params = ProcessDialogData(Data, bReplace)
-      if not self.close_params then return 0 end -- do not close the dialog
+      if not self.close_params then
+        return KEEP_DIALOG_OPEN
+      end
     end
   end
 end
@@ -593,7 +598,7 @@ return {
   CreateSRFrame      = CreateSRFrame;
   ErrorMsg           = ErrorMsg;
   FormatInt          = FormatInt;
-  GetFarHistory      = GetFarHistory;
+  GetDialogHistory   = GetDialogHistory;
   GetReplaceFunction = GetReplaceFunction;
   Gsub               = MakeGsub("byte");
   GsubW              = MakeGsub("widechar");

@@ -23,9 +23,9 @@ local Cfg = {
   --  set true for libraries debugging, false for normal use;
   ReloadOnRequire = true,
 
-  histfield_Main   = "main",
-  histfield_Menu   = "menu",
-  histfield_Config = "config",
+  field_Main   = "main",
+  field_Menu   = "menu",
+  field_Config = "config",
 
   UserMenuFile = "@_usermenu.lua",
   RegPath = "LuaFAR\\LF Search\\",
@@ -35,7 +35,6 @@ local Cfg = {
 local Sett     = require "far2.settings"
 local Utils    = require "far2.utils"
 local M        = require "lfs_message"
-  package.loaded["lfs_mreplace"]=nil
 local MReplace = require "lfs_mreplace"
 local field = Sett.field
 
@@ -45,6 +44,19 @@ local F = far.Flags
 local EditorAction, History, ModuleDir
 
 
+-- Set the defaults: prioritize safety and "least surprise".
+local function NormDataOnFirstRun()
+  local data = field(_Plugin.History, Cfg.field_Main)
+  data.bAdvanced          = false
+  data.bDelEmptyLine      = false
+  data.bDelNonMatchLine   = false
+  data.bRepIsFunc         = false
+  data.bSearchBack        = false
+  --------------------------------
+  --data = _Plugin.History["panels"] or {}       --TODO
+  --data.sSearchArea        = "FromCurrFolder"   --TODO
+end
+
 local function Require (name)
   if Cfg.ReloadOnRequire then package.loaded[name] = nil; end
   return require(name)
@@ -53,7 +65,7 @@ end
 local function InitUpvalues (_Plugin)
   EditorAction   = Require("lfs_editmain").EditorAction
   History   = _Plugin.History
-  field(History, Cfg.histfield_Config)
+  field(History, Cfg.field_Config)
   ModuleDir = _Plugin.ModuleDir
 end
 
@@ -104,7 +116,7 @@ local function export_OpenPlugin (From, Item)
   end
 
   if From == F.OPEN_EDITOR then
-    local hMenu = field(History, Cfg.histfield_Menu)
+    local hMenu = field(History, Cfg.field_Menu)
     local items = MakeMenuItems(ResolvePath(Cfg.UserMenuFile))
     local ret, pos = far.Menu( {
       Flags = {FMENU_WRAPMODE=1, FMENU_AUTOHIGHLIGHT=1},
@@ -115,7 +127,7 @@ local function export_OpenPlugin (From, Item)
     if ret then
       hMenu.position = pos
       if ret.action then
-        local data = field(History, Cfg.histfield_Main)
+        local data = field(History, Cfg.field_Main)
         data.fUserChoiceFunc = nil
         if ret.action == "mreplace" then
           MReplace.ReplaceWithDialog(data, true)
@@ -166,6 +178,7 @@ local function main()
     _Plugin.History = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
     _Plugin.RegPath = Cfg.RegPath
     package.cpath = _Plugin.ModuleDir .. "?.dl;" .. package.cpath --TODO
+    NormDataOnFirstRun()
   end
   SetExportFunctions()
   InitUpvalues(_Plugin)
