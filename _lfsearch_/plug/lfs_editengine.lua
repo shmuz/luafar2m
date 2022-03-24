@@ -201,16 +201,22 @@ end
 -- @aOp: "search", "replace", "count", "showall"
 local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
   -----------------------------------------------------------------------------
-  local sTitle = (aOp == "replace") and M.MTitleReplace or M.MTitleSearch
-  local bForward = not aParams.bSearchBack
-  local bAllowEmpty = aWithDialog
-  local fFilter, Regex = aParams.FilterFunc, aParams.Regex
-  local fChoice = aChoiceFunc or GetReplaceChoice
-  local fReplace = (aOp == "replace") and Common.GetReplaceFunction(aParams.ReplacePat)
-  local tItems = (aOp == "showall") and {}
-  local bFastCount = (aOp == "count") and bForward
+  local bForward         = not aParams.bSearchBack
+  local bAllowEmpty      = aWithDialog
+  local fFilter, Regex   = aParams.FilterFunc, aParams.Regex
+  local fChoice          = aChoiceFunc or GetReplaceChoice
+  local bFastCount       = (aOp == "count") and bForward
+  local sTitle           = (aOp == "replace") and M.MTitleReplace or M.MTitleSearch
+  local fReplace         = (aOp == "replace") and Common.GetReplaceFunction(aParams.ReplacePat)
+  local bDelNonMatchLine = (aOp == "replace") and aWithDialog and aParams.bDelNonMatchLine
+  local tItems           = (aOp == "showall") and {}
 
   local sChoice, bEurBegin
+  if aWithDialog and not aParams.bConfirmReplace then
+    sChoice, bEurBegin = "all", true
+    editor.UndoRedo("EUR_BEGIN") -- for undoing the bulk replacement in a single step
+  end
+
   local nFound, nReps, nLine = 0, 0, 0
   local tInfo, tStartPos = editor.GetInfo(), editor.GetInfo()
   local nOp, nOpMax, last_update = 0, 5, 0
@@ -333,9 +339,11 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
     local bLineDeleted
     ---------------------------------------------------------------------------
     if not (fFilter and fFilter(sLine, nLine)) then
+      -------------------------------------------------------------------------
+      -- iterate on current line
+      -------------------------------------------------------------------------
+      local bLineHasMatch
       while bForward and x <= sLineLen+1 or not bForward and x >= 1 do
-        -- iterate on current line
-        -----------------------------------------------------------------------
         nOp = nOp + 1
         if nOp >= nOpMax then -- don't use "==" here (int vs floating point)
           nOp = 0
@@ -349,28 +357,20 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
         end
         -----------------------------------------------------------------------
         local collect, fr, to
-        if bForward then collect = Regex:ufind(sLine, x)
-        else collect = find_back(sLine, Regex, x)
+        if bForward then
+          collect = Regex:ufind(sLine, x)
+        else
+          collect = find_back(sLine, Regex, x)
         end
-        if not collect then break end
-        fr, to = collect[1], collect[2]
         -----------------------------------------------------------------------
-        if fr==x and to+1==x and not bAllowEmpty then
-          if bForward then
-            if x > sLineLen then break end
-            x = x + 1
-            collect = Regex:ufind(sLine, x)
-          else
-            if x == 1 then break end
-            x = x - 1
-            collect = find_back(sLine, Regex, x)
-          end
-          if not collect then break end
+        if collect then
           fr, to = collect[1], collect[2]
+          bLineHasMatch = true
+        elseif bDelNonMatchLine and not bLineHasMatch then
+          fr, to = 1, sLineLen
+        else
+          break
         end
-        -----------------------------------------------------------------------
-        nFound = nFound + 1
-        bAllowEmpty = false
         -----------------------------------------------------------------------
         local function ShowFound (scroll)
           --editor.SetPosition(y, x)
@@ -381,23 +381,48 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
           tStartPos = editor.GetInfo()
         end
         -----------------------------------------------------------------------
-        if aOp == "search" then
-          update_x(fr, to)
-          ShowFound()
-          return 1, 0
-        -----------------------------------------------------------------------
-        elseif aOp == "count" then
-          update_x(fr, to)
-        -----------------------------------------------------------------------
-        elseif aOp == "showall" then
-          update_x(fr, to)
-          if #tItems == 0 or y ~= tItems[#tItems].lineno then
-            table.insert(tItems, {lineno=y, text=sLine, fr=fr, to=to})
+        if collect then
+          if fr==x and to+1==x and not bAllowEmpty then
+            if bForward then
+              if x > sLineLen then break end
+              x = x + 1
+              collect = Regex:ufind(sLine, x)
+            else
+              if x == 1 then break end
+              x = x - 1
+              collect = find_back(sLine, Regex, x)
+            end
+            if not collect then break end
+            fr, to = collect[1], collect[2]
           end
+          -----------------------------------------------------------------------
+          nFound = nFound + 1
+          bAllowEmpty = false
+          -----------------------------------------------------------------------
+          if aOp == "search" then
+            update_x(fr, to)
+            ShowFound()
+            return 1, 0
+          -----------------------------------------------------------------------
+          elseif aOp == "count" then
+            update_x(fr, to)
+          -----------------------------------------------------------------------
+          elseif aOp == "showall" then
+            update_x(fr, to)
+            if #tItems == 0 or y ~= tItems[#tItems].lineno then
+              table.insert(tItems, {lineno=y, text=sLine, fr=fr, to=to})
+            end
+          end
+        end
         -----------------------------------------------------------------------
-        elseif aOp == "replace" then
-          collect[2] = sLine:sub(fr, to)
-          local sRepFinal = fReplace(collect, nFound, nReps, y)
+        if aOp == "replace" then
+          local sRepFinal
+          if collect then
+            collect[2] = sLine:sub(fr, to)
+            sRepFinal = fReplace(collect, nFound, nReps, y)
+          else
+            sRepFinal = true
+          end
           if sRepFinal then
             --=================================================================
             local function Replace()
@@ -489,14 +514,16 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
                 if sChoice == "yes" then ShowFound() end
               -----------------------------------------------------------------
               elseif sChoice == "no" then
-                update_x(fr, to)
+                if collect then update_x(fr, to)
+                else break
+                end
               -----------------------------------------------------------------
               elseif sChoice == "cancel" then
                 break
               -----------------------------------------------------------------
               end
             end
-          else
+          else -- (if not sRepFinal)
             update_x(fr, to)
           end
         -----------------------------------------------------------------------

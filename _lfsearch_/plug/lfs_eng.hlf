@@ -204,12 +204,9 @@ It can be any Lua type.
        "sSearchPat"      : search pattern
        "sReplacePat"     : replace pattern
        "sRegexLib"       : regular expression library, either of:
-                           "far" (default), "lua", "oniguruma" or
-                           "pcre"
-       "sScope"          : search scope: "global" (default) or
-                           "block"
-       "sOrigin"         : search origin: "cursor" (default) or
-                           "scope"
+                           "far" (default), "lua", "oniguruma" or "pcre"
+       "sScope"          : search scope: "global" (default) or "block"
+       "sOrigin"         : search origin: "cursor" (default) or "scope"
 
        "bCaseSens"       : case sensitive search
        "bRegExpr"        : regular expression mode
@@ -217,9 +214,10 @@ It can be any Lua type.
        "bExtended"       : ignore whitespace in regexp
        "bSearchBack"     : search in reverse direction
 
-       "bRepInBlock"     : replace in selection
        "bRepIsFunc"      : Function mode
        "bDelEmptyLine"   : delete empty line after replacement
+       "bDelNonMatchLine": delete line with no matches found
+       "bConfirmReplace" : call fUserChoiceFunc to confirm replacement
 
        "bFilterFunc"     : Line filter is on
        "sFilterFunc"     : Line filter function

@@ -211,12 +211,9 @@ $ #LuaFAR Поиск (версия 2.4)#
        "sSearchPat"      : образец поиска
        "sReplacePat"     : образец замены
        "sRegexLib"       : библиотека регулярных выражений:
-                           "far" (по умолчанию), "lua", "oniguruma"
-                           или "pcre"
-       "sScope"          : область поиска: "global" (по умолчанию)
-                           или "block"
-       "sOrigin"         : начало поиска: "cursor" (по умолчанию)
-                           или "scope"
+                           "far" (по умолчанию), "lua", "oniguruma" или "pcre"
+       "sScope"          : область поиска: "global" (по умолчанию) или "block"
+       "sOrigin"         : начало поиска: "cursor" (по умолчанию) или "scope"
 
        "bCaseSens"       : регистрозависимый поиск
        "bRegExpr"        : режим регулярных выражений
@@ -224,9 +221,10 @@ $ #LuaFAR Поиск (версия 2.4)#
        "bExtended"       : игнорировать пробелы в рег.выраж.
        "bSearchBack"     : искать в обратном направлении
 
-       "bRepInBlock"     : заменить только в выделенном
        "bRepIsFunc"      : режим функции
        "bDelEmptyLine"   : удалять пустые строки после замены
+       "bDelNonMatchLine": удалять строки без найденных вхождений
+       "bConfirmReplace" : вызывать fUserChoiceFunc для подтверждения замены
 
        "bFilterFunc"     : фильтр строки включен
        "sFilterFunc"     : функция фильтра строки

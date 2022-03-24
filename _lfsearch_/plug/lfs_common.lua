@@ -260,8 +260,10 @@ end
 local function ProcessDialogData (aData, bReplace)
   local params = {}
   params.bFileAsLine = aData.bFileAsLine
+  params.bConfirmReplace = aData.bConfirmReplace
   params.bSearchBack = aData.bSearchBack
   params.bDelEmptyLine = aData.bDelEmptyLine
+  params.bDelNonMatchLine = aData.bDelNonMatchLine
   params.sOrigin = aData.sOrigin
   params.sSearchPat = aData.sSearchPat
   ---------------------------------------------------------------------------
@@ -368,15 +370,17 @@ function SRFrame:InsertInDialog (aReplace)
   local Items = self.Items
   local s1, s2 = M.MDlgSearchPat, M.MDlgReplacePat
   local x = aReplace and math.max(M.MDlgSearchPat:len(), M.MDlgReplacePat:len())
-    or M.MDlgSearchPat:len()
+            or M.MDlgSearchPat:len()
   insert(Items, { tp="text"; text=s1; })
   insert(Items, { tp="edit"; name="sSearchPat"; y1=""; x1=5+x, hist="SearchText"; })
   ------------------------------------------------------------------------------
   if aReplace then
     insert(Items, { tp="text";  text=s2; ystep=2; })
     insert(Items, { tp="edit";  name="sReplacePat"; y1=""; x1=5+x, hist="ReplaceText"; })
-    insert(Items, { tp="chbox"; name="bRepIsFunc";  x1=6+x, text=M.MDlgRepIsFunc; })
-    insert(Items, { tp="chbox"; name="bDelEmptyLine"; x1=45, y1=""; text=M.MDlgDelEmptyLine; })
+    insert(Items, { tp="chbox"; name="bRepIsFunc";       x1=7, text=M.MDlgRepIsFunc; })
+    insert(Items, { tp="chbox"; name="bDelEmptyLine";    x1=38, y1=""; text=M.MDlgDelEmptyLine; })
+    insert(Items, { tp="chbox"; name="bConfirmReplace";  x1=7, text=M.MDlgConfirmReplace; })
+    insert(Items, { tp="chbox"; name="bDelNonMatchLine"; x1=38, y1=""; text=M.MDlgDelNonMatchLine; })
   end
   ------------------------------------------------------------------------------
   insert(Items, { tp="sep"; })
@@ -527,8 +531,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
   ----------------------------------------------------------------------------
   elseif msg == F.DN_CLOSE then
     if (param1 == Pos.btnOk) or bInEditor and
-      (Pos.btnCount and param1 == Pos.btnCount or
-      Pos.btnShowAll and param1 == Pos.btnShowAll)
+      (Pos.btnCount and param1 == Pos.btnCount or Pos.btnShowAll and param1 == Pos.btnShowAll)
     then
       Data.sSearchPat  = hDlg:GetText(Pos.sSearchPat)
       Data.bCaseSens   = hDlg:GetCheck(Pos.bCaseSens)
@@ -552,9 +555,11 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
       end
       ------------------------------------------------------------------------
       if bReplace then
-        Data.sReplacePat   = hDlg:GetText (Pos.sReplacePat)
-        Data.bRepIsFunc    = hDlg:GetCheck(Pos.bRepIsFunc)
-        Data.bDelEmptyLine = hDlg:GetCheck(Pos.bDelEmptyLine)
+        Data.sReplacePat      = hDlg:GetText (Pos.sReplacePat)
+        Data.bRepIsFunc       = hDlg:GetCheck(Pos.bRepIsFunc)
+        Data.bDelEmptyLine    = hDlg:GetCheck(Pos.bDelEmptyLine)
+        Data.bConfirmReplace  = hDlg:GetCheck(Pos.bConfirmReplace)
+        Data.bDelNonMatchLine = hDlg:GetCheck(Pos.bDelNonMatchLine)
       end
       ------------------------------------------------------------------------
       local lib = self:GetLibName(hDlg)

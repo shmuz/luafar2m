@@ -158,7 +158,7 @@ local function TestEditorAction(aLibs)
     for k=0,1 do
     -- test "user choice function"
       SetEditorText("line1\rline2\rline3\r")
-      local dt = { sSearchPat=".", sReplacePat="$0", bRegExpr=true }
+      local dt = { sSearchPat=".", sReplacePat="$0", bRegExpr=true, bConfirmReplace=true }
       dt.bSearchBack = (k==1)
       dt.sOrigin = "scope"
       for _,ch in ipairs {"yes","all","no","cancel"} do
@@ -359,6 +359,32 @@ local function TestEditorAction(aLibs)
         AssertEditorText("@@@ WORD2  \t\t  word1 @@@")
       end
     end
+
+    -- test "Delete non-matched line"
+    local dt = { sSearchPat=".*a.*", sReplacePat="$0", bRegExpr=true }
+    dt.sOrigin = "scope"
+    dt.bDelNonMatchLine = true
+    for k=0,1 do
+      dt.bSearchBack = (k==1)
+      SetEditorText("foo1\rbar1\rfoo2\rbar2\rfoo3\rbar3\r")
+      RunEditorAction(lib, "test:replace", dt, 3, 7)
+      AssertEditorText("bar1\rbar2\rbar3\r")
+    end
+    for k=0,1 do
+      dt.bSearchBack = (k==1)
+      SetEditorText("foo1\rfoo2\rfoo3\r")
+      RunEditorAction(lib, "test:replace", dt, 0, 4)
+      AssertEditorText("")
+    end
+    dt.sScope = "block"
+    for k=0,1 do
+      dt.bSearchBack = (k==1)
+      SetEditorText("foo1\rbar1\rfoo2\rbar2\rfoo3\rbar3\rfoo4\rbar4\r")
+      editor.Select("BTYPE_STREAM",3,1,-1,4)
+      RunEditorAction(lib, "test:replace", dt, 2, 4)
+      AssertEditorText("foo1\rbar1\rbar2\rbar3\rfoo4\rbar4\r")
+    end
+
   end
 
   local function test_Encodings(lib)
