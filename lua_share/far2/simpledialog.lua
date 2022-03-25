@@ -1,12 +1,26 @@
 -- Started:                 2020-08-15
 -- Started for far2l:       2022-01-23
 -- Author:                  Shmuel Zeigerman
--- Far plugin:              any LuaFAR plugin
+-- Far3 minimal version:    3.0.3300
+-- Far3 plugin:             any LuaFAR plugin
 
-local F = far.Flags
-local VK = win.GetVirtualKeys()
+local F         = far.Flags
+local DirSep    = package.config:sub(1,1)
+local OpSys     = DirSep=="/" and "linux" or "windows"
+local FarVer    = F.ACTL_GETFARMANAGERVERSION and 3 or 2
+local VK        = win.GetVirtualKeys()
+local bit       = (FarVer==2) and bit or bit64
 local band, bor = bit.band, bit.bor
-local IND_TYPE, IND_X1, IND_Y1, IND_X2, IND_Y2, IND_VALUE, IND_DATA = 1,2,3,4,5,7,10
+local Send      = far.SendDlgMessage
+
+local IND_TYPE, IND_X1, IND_Y1, IND_X2, IND_Y2, IND_HISTORY, IND_DATA = 1,2,3,4,5,7,10
+local IND_FOCUS    = (FarVer==2) and 6 or nil
+local IND_SELECTED = (FarVer==2) and 7 or 6
+local IND_MASK     = (FarVer==2) and 7 or 8
+local IND_LIST     = (FarVer==2) and 7 or 6
+local IND_VBUF     = (FarVer==2) and 7 or 6
+local IND_FLAGS    = (FarVer==2) and 8 or 9
+local IND_DFLT     = (FarVer==2) and 9 or nil
 
 --- Edit some text (e.g. a DI_EDIT dialog field) in Far editor
 -- @param text     : input text
@@ -14,15 +28,21 @@ local IND_TYPE, IND_X1, IND_Y1, IND_X2, IND_Y2, IND_VALUE, IND_DATA = 1,2,3,4,5,
 -- @return         : output text (or nil)
 local function OpenInEditor(text, ext)
   local tempdir = "/tmp"
+  if OpSys == "windows" then
+    tempdir = win.GetEnv("TEMP")
+    if not tempdir then
+      far.Message("Environment variable TEMP is not set", "Error", nil, "w"); return nil
+    end
+  end
   ext = type(ext)=="string" and ext or ".tmp"
   if ext~="" and ext:sub(1,1)~="." then ext = "."..ext; end
-  local fname = ("%s/far2l-%s%s"):format(tempdir, win.Uuid(win.Uuid()):sub(1,8), ext)
+  local fname = ("%s%sFar-%s%s"):format(tempdir, DirSep, win.Uuid(win.Uuid()):sub(1,8), ext)
   local fp = io.open(fname, "w")
   if fp then
     fp:write(text or "")
     fp:close()
     text = nil
-    local flags = {EF_DISABLEHISTORY=1}
+    local flags = bor(F.EF_DISABLEHISTORY, (FarVer==2) and 0 or F.EF_DISABLESAVEPOS)
     if editor.Editor(fname,nil,nil,nil,nil,nil,flags,nil,nil,65001) == F.EEC_MODIFIED then
       fp = io.open(fname)
       if fp then
@@ -30,7 +50,7 @@ local function OpenInEditor(text, ext)
         fp:close()
       end
     end
-    actl.RedrawAll()
+    if (FarVer==2) then far.AdvControl("ACTL_REDRAWALL") end
     win.DeleteFile(fname)
     return text
   end
@@ -43,7 +63,8 @@ end
 -- @return 2      : number: usercontrol width
 -- @return 3      : number: usercontrol height
 local function usercontrol2 (txt, h_char, h_color)
-  local COLOR_NORMAL = actl.GetColor(F.COL_DIALOGTEXT)
+  local Colors = (OpSys=="windows") and far.Colors or F
+  local COLOR_NORMAL = far.AdvControl("ACTL_GETCOLOR", Colors.COL_DIALOGTEXT)
   local CELL_BLANK = { Char=" "; Attributes=COLOR_NORMAL }
   h_char = h_char or "#"
   h_color = h_color or 0xF0
@@ -113,16 +134,11 @@ local FlagsMap = {
     btnnoclose             = F.DIF_BTNNOCLOSE;
     centergroup            = F.DIF_CENTERGROUP;
     centertext             = F.DIF_CENTERTEXT;
-    colormask              = F.DIF_COLORMASK;          --! Far2 only
-    default                = 0; --! keep it at 0 it's important! F.DIF_DEFAULTBUTTON;
-    defaultbutton          = 0; --! keep it at 0 it's important! F.DIF_DEFAULTBUTTON;
     disable                = F.DIF_DISABLE;
     dropdownlist           = F.DIF_DROPDOWNLIST;
     editexpand             = F.DIF_EDITEXPAND;
     editor                 = F.DIF_EDITOR;
     editpath               = F.DIF_EDITPATH;
---! editpathexec           = F.DIF_EDITPATHEXEC;
-    focus                  = 0; --! keep it at 0 it's important! F.DIF_FOCUS;
     group                  = F.DIF_GROUP;
     hidden                 = F.DIF_HIDDEN;
     lefttext               = F.DIF_LEFTTEXT;
@@ -130,8 +146,6 @@ local FlagsMap = {
     listnoampersand        = F.DIF_LISTNOAMPERSAND;
     listnobox              = F.DIF_LISTNOBOX;
     listnoclose            = F.DIF_LISTNOCLOSE;
---! listtrackmouse         = F.DIF_LISTTRACKMOUSE;
---! listtrackmouseinfocus  = F.DIF_LISTTRACKMOUSEINFOCUS;
     listwrapmode           = F.DIF_LISTWRAPMODE;
     manualaddhistory       = F.DIF_MANUALADDHISTORY;
     moveselect             = F.DIF_MOVESELECT;
@@ -139,15 +153,24 @@ local FlagsMap = {
     nobrackets             = F.DIF_NOBRACKETS;
     nofocus                = F.DIF_NOFOCUS;
     readonly               = F.DIF_READONLY;
---! righttext              = F.DIF_RIGHTTEXT;
     selectonentry          = F.DIF_SELECTONENTRY;
-    setcolor               = F.DIF_SETCOLOR;           --! Far2 only
     setshield              = F.DIF_SETSHIELD;
     showampersand          = F.DIF_SHOWAMPERSAND;
     tristate               = F.DIF_3STATE;                -- !!!
     uselasthistory         = F.DIF_USELASTHISTORY;
---! wordwrap               = F.DIF_WORDWRAP;
 }
+if (FarVer == 2) then
+    FlagsMap.colormask             = F.DIF_COLORMASK
+    FlagsMap.setcolor              = F.DIF_SETCOLOR
+else
+    FlagsMap.default               = F.DIF_DEFAULTBUTTON
+    FlagsMap.editpathexec          = F.DIF_EDITPATHEXEC
+    FlagsMap.focus                 = F.DIF_FOCUS
+    FlagsMap.listtrackmouse        = F.DIF_LISTTRACKMOUSE
+    FlagsMap.listtrackmouseinfocus = F.DIF_LISTTRACKMOUSEINFOCUS
+    FlagsMap.righttext             = F.DIF_RIGHTTEXT
+    FlagsMap.wordwrap              = F.DIF_WORDWRAP
+end
 
 ---- Replacement for far.Dialog() with much cleaner syntax of dialog description.
 -- @param inData table : contains an array part ("items") and a dictionary part ("properties")
@@ -206,9 +229,7 @@ local function Run (inData)
       if f then flags = bor(flags,f); end
     end
 
-    local focus = v.focus and 1 or 0
-    local dflt = (v.default or v.defaultbutton) and 1 or 0
-    local text = tostring(v.text or v.val or "")
+    local text = v.text or (type(v.val)=="string" and v.val) or ""
     local hist = v.hist or ""
     local mask = v.mask or ""
 
@@ -239,41 +260,65 @@ local function Run (inData)
       cgroup.width, cgroup.y = 0, nil
     end
 
+    local function MkItem (inp)
+      inp = inp or {}
+      local t = { tp, x1, y1, x2, y2, 0, 0, 0, 0, text }
+      t [IND_FLAGS] = inp.flags or flags
+      if inp.tp                  then t [IND_TYPE    ] = inp.tp;   end
+      if inp.x1                  then t [IND_X1      ] = inp.x1;   end
+      if inp.x2                  then t [IND_X2      ] = inp.x2;   end
+      if inp.y1                  then t [IND_Y1      ] = inp.y1;   end
+      if inp.y2                  then t [IND_Y2      ] = inp.y2;   end
+      if inp.mask                then t [IND_MASK    ] = inp.mask; end
+      if inp.list                then t [IND_LIST    ] = inp.list; end
+      if inp.hist                then t [IND_HISTORY ] = inp.hist; end
+      if inp.val                 then t [IND_SELECTED] = inp.val;  end
+      if inp.vbuf                then t [IND_VBUF    ] = inp.vbuf; end
+      if v.focus   and FarVer==2 then t [IND_FOCUS   ] = 1;        end
+      if v.default and FarVer==2 then t [IND_DFLT    ] = 1;        end
+      return t
+    end
+
     if tp == F.DI_DOUBLEBOX or tp == F.DI_SINGLEBOX then
-      if i == 1 then outData[i] = {tp,  HMARGIN,y1,x2,0,   0,0,flags,0, text}
-      else           outData[i] = {tp,  x1,     y1,x2,y2,  0,0,flags,0, text}
+      if i == 1 then outData[i] = MkItem { x1=HMARGIN; y2=0; }
+      else           outData[i] = MkItem()
       end
 
     elseif tp == F.DI_TEXT then
-      outData[i] = {tp,  x1,y1,x2,y1,  0,0,flags,0, text}
+      outData[i] = MkItem()
 
     elseif tp == F.DI_VTEXT then
-      outData[i] = {tp,  x1,y1,x1,y2,  0,0,flags,0,  text}
+      if v.mask then flags = bor(flags, F.DIF_SEPARATORUSER); end -- set the flag automatically
+      outData[i] = MkItem { flags=flags; mask=mask; }
 
     elseif tp=="sep" or tp=="sep2" then
       x1, x2 = v.x1 or -1, v.x2 or -1
       flags = bor(flags, tp=="sep2" and F.DIF_SEPARATOR2 or F.DIF_SEPARATOR)
-      outData[i] = {F.DI_TEXT,  x1,y1,x2,y1,  0,0,flags,0,  text}
+      if v.mask then flags = bor(flags, F.DIF_SEPARATORUSER); end -- set the flag automatically
+      outData[i] = MkItem { tp=F.DI_TEXT; y2=y1, mask=mask; }
 
     elseif tp == F.DI_EDIT then
       if v.hist then flags = bor(flags, F.DIF_HISTORY); end -- set the flag automatically
-      outData[i] = {tp,  x1,y1,x2,0,  focus,hist,flags,0,  text}
+      outData[i] = MkItem { y2=0; flags=flags; hist=hist; }
 
     elseif tp == F.DI_FIXEDIT then
-      if v.hist then flags = bor(flags, F.DIF_HISTORY)      -- set the flag automatically
-      elseif v.mask then flags = bor(flags, F.DIF_MASKEDIT) -- set the flag automatically
-      end
-      local pos7 = v.hist or v.mask or ""
-      outData[i] = {tp,  x1,y1,x2,0,  focus,pos7,flags,0,  text}
+      if v.hist then flags = bor(flags, F.DIF_HISTORY);  end -- set the flag automatically
+      if v.mask then flags = bor(flags, F.DIF_MASKEDIT); end -- set the flag automatically
+      outData[i] = MkItem { y2=0; flags=flags; hist=hist; mask=mask; }
 
     elseif tp == F.DI_PSWEDIT then
-      outData[i] = {tp,  x1,y1,x2,0,  focus,"",flags,0,  text}
+      outData[i] = MkItem { y2=0; }
 
-    elseif tp == F.DI_CHECKBOX or tp == F.DI_RADIOBUTTON then
-      outData[i] = {tp,  x1,y1,0,y1,  focus,v.val,flags,0,  text}
+    elseif tp == F.DI_CHECKBOX then
+      local val = (v.val==2 and 2) or (v.val and v.val~=0 and 1) or 0
+      outData[i] = MkItem { x2=0; y2=y1; val=val; }
+
+    elseif tp == F.DI_RADIOBUTTON then
+      local val = v.val and v.val~=0 and 1 or 0
+      outData[i] = MkItem { x2=0; y2=y1; val=val; }
 
     elseif tp == F.DI_BUTTON then
-      outData[i] = {tp,  x1,y1,0,y1,  focus,0,flags,dflt,  text}
+      outData[i] = MkItem { x2=0; y2=y1; }
 
     elseif tp == F.DI_COMBOBOX then
       assert(type(v.list)=="table", "\"list\" field must be a table")
@@ -281,25 +326,24 @@ local function Run (inData)
       local index = dropdown and v.val and v.val>=1 and v.val<=#v.list and v.val
       v.list.SelectIndex = index or v.list.SelectIndex
       text = dropdown and "" or text
-      outData[i] = {tp,  x1,y1,x2,y1,  focus,v.list,flags,0, text}
+      outData[i] = MkItem { y2=y1; list=v.list; }
 
     elseif tp == F.DI_LISTBOX then
       assert(type(v.list)=="table", "\"list\" field must be a table")
-      outData[i] = {tp,  x1,y1,x2,y2,  focus,v.list,flags,0,  text}
+      outData[i] = MkItem { list=v.list; }
 
     elseif tp == F.DI_USERCONTROL then
-      local buffer = v.buffer or 0
-      outData[i] = {tp,  x1,y1,x2,y2,  focus,buffer,flags,0,  text}
+      outData[i] = MkItem { vbuf=v.buffer; }
 
     elseif tp == "usercontrol2" then
-      assert(far.CreateUserControl, "function far.CreateUserControl does not exist")
+      assert(far.CreateUserControl, "Far 3.0.3590 or newer required to support usercontrol")
       assert(type(v.text)=="string" and v.text~="",    "invalid 'text' attribute in usercontrol2")
       assert(not v.hchar  or type(v.hchar)=="string",  "invalid 'hchar' attribute in usercontrol2")
       assert(not v.hcolor or type(v.hcolor)=="number", "invalid 'hcolor' attribute in usercontrol2")
       local buffer, wd, ht = usercontrol2(v.text, v.hchar, v.hcolor)
       x2 = x1 + wd - 1
       y2 = y1 + ht - 1
-      outData[i] = {F.DI_USERCONTROL,  x1,y1,x2,y2,  focus,buffer,flags}
+      outData[i] = MkItem { tp=F.DI_USERCONTROL; x2=x2; y2=y2; vbuf=buffer; }
 
     end
 
@@ -311,7 +355,7 @@ local function Run (inData)
     if type(v.colors) == "table" then
       outData[i].colors = {}
       for j,w in ipairs(v.colors) do
-        outData[i].colors[j] = actl.GetColor(F[w] or w)
+        outData[i].colors[j] = far.AdvControl(F.ACTL_GETCOLOR, far.Colors[w] or w)
       end
     end
 
@@ -343,14 +387,22 @@ local function Run (inData)
       if not (v.noauto or v.nosave) then
         local tp = type(v.name)
         if tp=="string" or tp=="number" then
-          local item = hDlg:GetDlgItem(i)
+          local item = Send(hDlg, "DM_GETDLGITEM", i)
           tp = item[IND_TYPE]
-          if tp==F.DI_CHECKBOX or tp==F.DI_RADIOBUTTON then
-            out[v.name] = item[IND_VALUE]
+          if tp==F.DI_CHECKBOX then
+            local val = item[IND_SELECTED]
+            if FarVer == 2 then out[v.name] = val
+            else                out[v.name] = (val==2) and 2 or (val ~= 0) -- false,true,2
+            end
+          elseif tp==F.DI_RADIOBUTTON then
+            local val = item[IND_SELECTED]
+            if FarVer == 2 then out[v.name] = val
+            else                out[v.name] = (val ~= 0) -- false,true
+            end
           elseif tp==F.DI_EDIT or tp==F.DI_FIXEDIT or tp==F.DI_PSWEDIT then
             out[v.name] = item[IND_DATA] -- string
           elseif tp==F.DI_COMBOBOX or tp==F.DI_LISTBOX then
-            local pos = hDlg:ListGetCurPos(i)
+            local pos = Send(hDlg, "DM_LISTGETCURPOS", i)
             out[v.name] = pos.SelectPos
           end
         end
@@ -366,7 +418,7 @@ local function Run (inData)
     if Msg == F.DN_INITDIALOG then
       if inData.initaction then inData.initaction(hDlg); end
 
-    elseif Msg == F.DN_GETDIALOGINFO then
+    elseif (FarVer == 2) and Msg == F.DN_GETDIALOGINFO then
       return guid
 
     elseif Msg == F.DN_CLOSE then
@@ -374,7 +426,7 @@ local function Run (inData)
         return inData.closeaction(hDlg, Par1, get_dialog_state(hDlg))
       end
 
-    elseif Msg == F.DN_KEY then
+    elseif (FarVer == 2) and Msg == F.DN_KEY then
       local keyname = far.KeyToName(Par2)
       if inData.keyaction and inData.keyaction(hDlg, Par1, keyname) then
         return true
@@ -385,9 +437,26 @@ local function Run (inData)
         end
       elseif keyname == "F4" then
         if outData[Par1][IND_TYPE] == F.DI_EDIT then
-          local txt = hDlg:GetText(Par1)
+          local txt = Send(hDlg, "DM_GETTEXT", Par1)
           txt = OpenInEditor(txt, inData[Par1].ext)
-          if txt then hDlg:SetText(Par1, txt); end
+          if txt then Send(hDlg, "DM_SETTEXT", Par1, txt); end
+        end
+      end
+
+    elseif (FarVer == 3) and Msg==F.DN_CONTROLINPUT and Par2.EventType==F.KEY_EVENT and Par2.KeyDown then
+      if inData.keyaction and inData.keyaction(hDlg, Par1, far.InputRecordToName(Par2)) then
+        return
+      end
+      local mod = band(Par2.ControlKeyState,0x1F) ~= 0
+      if Par2.VirtualKeyCode == VK.F1 and not mod then
+        if type(inData.help) == "function" then
+          inData.help()
+        end
+      elseif Par2.VirtualKeyCode == VK.F4 and not mod then
+        if outData[Par1][IND_TYPE] == F.DI_EDIT then
+          local txt = Send(hDlg, "DM_GETTEXT", Par1)
+          txt = OpenInEditor(txt, inData[Par1].ext)
+          if txt then Send(hDlg, "DM_SETTEXT", Par1, txt); end
         end
       end
 
@@ -395,8 +464,10 @@ local function Run (inData)
       if inData[Par1].action then inData[Par1].action(hDlg,Par1,Par2); end
 
     elseif Msg == F.DN_CTLCOLORDLGITEM then
-      --! local colors = outData[Par1].colors
-      --! if colors then return colors; end
+      if FarVer == 3 then -- TODO for Far 2
+        local colors = outData[Par1].colors
+        if colors then return colors; end
+      end
 
     end
 
@@ -406,7 +477,15 @@ local function Run (inData)
   local x1, y1 = inData.x1 or -1, inData.y1 or -1
   local x2 = x1==-1 and W or x1+W-1
   local y2 = y1==-1 and H or y1+H-1
-  local hDlg = far.DialogInit(x1,y1,x2,y2, help, outData, inData.flags, DlgProc)
+  local hDlg
+  if FarVer == 2 then
+    hDlg = far.DialogInit(x1,y1,x2,y2, help, outData, inData.flags, DlgProc)
+  else
+    hDlg = far.DialogInit(guid, x1,y1,x2,y2, help, outData, inData.flags, DlgProc)
+    if hDlg and F.FDLG_NONMODAL and 0 ~= band(inData.flags, F.FDLG_NONMODAL) then
+      return hDlg -- non-modal dialogs were introduced in build 3.0.5047
+    end
+  end
   if not hDlg then
     far.Message("Error occured in far.DialogInit()", "module 'simpledialog'", nil, "w")
     return nil
