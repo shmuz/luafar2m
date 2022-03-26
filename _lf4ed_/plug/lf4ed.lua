@@ -49,30 +49,25 @@ local function ScriptErrMsg(msg)
   (type(export.OnError)=="function" and export.OnError or ErrMsg)(msg)
 end
 
-local RequireWithReload, ResetPackageLoaded do
-  local bypass_reload = {
-    -- Lua global tables --
-    _G=1; coroutine=1; debug=1; io=1; math=1; os=1; package=1; string=1; table=1;
-    -- LuaFAR global tables --
-    actl=1; bit=1; editor=1; far=1; panel=1; regex=1; utf8=1; viewer=1; win=1;
-    -- Other libraries
-    moonscript=1;
-  }
+local bypass_reload = {
+  -- Lua global tables --
+  _G=1; coroutine=1; debug=1; io=1; math=1; os=1; package=1; string=1; table=1;
+  -- LuaFAR global tables --
+  actl=1; bit=1; editor=1; far=1; panel=1; regex=1; utf8=1; viewer=1; win=1;
+}
 
-  RequireWithReload = function(name)
-    if name and not bypass_reload[name] then
-      package.loaded[name] = nil
-    end
-    return _Plugin.OriginalRequire(name)
-  end
-
-  ResetPackageLoaded = function()
-    for name in pairs(package.loaded) do
-      if not bypass_reload[name] then
-        package.loaded[name] = nil
+local function RequireWithReload (name)
+  assert(type(name)=="string", "bad require() argument")
+  if not bypass_reload[name] then
+    local reload = true
+    if type(package.nounload) == "table" then
+      for patt in pairs(package.nounload) do
+        if name:find(patt,1,true) then reload=false; break; end
       end
     end
+    if reload then package.loaded[name]=nil; end
   end
+  return _Plugin.OriginalRequire(name)
 end
 
 local function OnConfigChange (cfg)
@@ -363,7 +358,6 @@ end
 local function fReloadUserFile()
   if not FirstRun then
     RunExitScriptHandlers()
-    ResetPackageLoaded()
   end
   package.path = _Plugin.PackagePath -- restore to original value
   _Plugin.HotKeyTable = {}
