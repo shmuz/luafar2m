@@ -78,9 +78,9 @@ error when the script is invoked.
 #Pass parameters to the script# checkbox is checked.
 
    The #Run# command stores the parameters and runs the script.
- 
+
    The #Store# command stores the parameters for future script invocations.
- 
+
  ~Contents~@Contents@
 
 @BlockSum
@@ -307,6 +307,12 @@ when the default script needs to be debugged.
 disk. Subsequent 'require's of the same library return it from the memory.
 With this option checked, libraries are always loaded from the disk (this may
 be needed when debugging a library).
+
+    #Except:#
+
+    Here the list of (substrings of) module names may be specified.
+Those modules will not be reloaded on 'require'. The valid delimiters
+are commas, semicolons and white space.
 
  #[x] Use 'strict' mode#
 

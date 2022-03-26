@@ -18,6 +18,8 @@ local DefaultCfg = {
   -- set true for libraries debugging, false for normal use;
   RequireWithReload = false;
 
+  ExcludeFromReload = ""; -- comma-separated list of modules excluded from reload on require()
+
   -- After executing utility from main menu, return to the menu again
   ReturnToMainMenu = false;
 
@@ -60,8 +62,8 @@ local function RequireWithReload (name)
   assert(type(name)=="string", "bad require() argument")
   if not bypass_reload[name] then
     local reload = true
-    if type(package.nounload) == "table" then
-      for patt in pairs(package.nounload) do
+    if type(_Cfg.ExcludeFromReload) == "string" then
+      for patt in _Cfg.ExcludeFromReload:gmatch("[%w_.]+") do
         if name:find(patt,1,true) then reload=false; break; end
       end
     end

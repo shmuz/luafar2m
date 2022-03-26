@@ -597,32 +597,6 @@ nm=lf4ed.version
 </article>
 </node>
 <node>
-id=87
-lv=1
-dt=Text
-nm=package.nounload
-ctime=3857492032
-mtime=3857493656
-<article>
-#_<markdown>
-#_
-#_`package.nounload` is a table whose keys are (substrings of) module names,
-#_that should not be deleted from `package.loaded` when the option
-#_*Always reload on 'require'* is set.
-#_
-#_* This table is optional and is not created automatically.
-#_* It can be created in `_plug_init.lua` file.
-#_* A use case: place in this table names of modules using LuaJIT FFI that call `ffi.cdef`.
-#_
-#_###Example
-#_      package.nounload = {
-#_          moonscript = true;
-#_          luacheck = true;
-#_      }
-#_
-</article>
-</node>
-<node>
 id=21
 lv=0
 dt=Text

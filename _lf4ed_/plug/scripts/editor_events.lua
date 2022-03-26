@@ -1,7 +1,7 @@
 -- EE_SAVE: delete trailing spaces
 
 local filemask =
-  ([[ bat  c  cmd  cpp  da_  h  hex  hpp  htm  html  lua  luacheckrc  mak  pas  py  txt ]])
+  ([[ bat c cmd cpp da_ h hex hlf hpp htm html lua luacheckrc mak pas py txt ]])
   : gsub("%s*(%S+)%s*", "*.%1,") .. "changelog,makefile,readme"
 
 local F = far.Flags
