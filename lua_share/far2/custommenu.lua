@@ -5,6 +5,7 @@
 
 local _M = {} -- module
 
+local XLat = require "far2.xlat"
 local F = far.Flags
 local min, max, floor, ceil = math.min, math.max, math.floor, math.ceil
 
@@ -436,32 +437,41 @@ function List:MouseEvent (hDlg, Ev, x, y)
   return 1
 end
 
-local function ProcessSearchMethod (pattern, method)
+local function ProcessSearchMethod (method, pattern)
   local sNeedEscape = "[~!@#$%%^&*()%-+[%]{}\\|:;'\",<.>/?]"
   ----------------------------------------------------------
-  if type(method) == "function" then
-    return method
-  ----------------------------------------------------------
-  elseif method == "regex" then -- pass
-  ----------------------------------------------------------
-  elseif method == "dos" then
+  if method == "dos" then
     pattern = pattern:gsub("%*+", "*"):gsub(sNeedEscape, "\\%1")
                      :gsub("\\[?*]", {["\\?"]=".", ["\\*"]=".*?"})
-  ----------------------------------------------------------
   elseif method == "plain" then
     pattern = pattern:gsub(sNeedEscape, "\\%1")
-  ----------------------------------------------------------
   elseif method == "lua" then
     local map = { l="%a", u="%a", L="%A", U="%A" }
-    return function(s, p, init)
-      p = p:gsub("(%%?)(.)", function(a,b) return a=="" and b:lower() or map[b] end)
-      local fr, to = s:lower():find(p, init)
-      return fr, to
+    if ("").charpattern then -- luautf8 library (since 30-Aug-2019)
+      return function(s, p, init)
+        p = p:gsub("(%%?)(.)", function(a,b) return a=="" and b:lower() or map[b] end)
+        local ok, fr, to = pcall(("").find, s:lower(), p, init)
+        if ok then return fr, to end
+        return fr, to
+      end
+    else -- Selene Unicode library (prior to 30-Aug-2019)
+      return function(s, p, init)
+        p = p:gsub("(%%?)(.)", function(a,b) return a=="" and b:lower() or map[b] end)
+        local ok, fr, to = pcall(("").find, s:lower(), p, #(s:sub(1, init-1)) + 1)
+        if not (ok and fr) then return nil end
+        return string.sub(s,1,fr-1):len()+1, string.sub(s,1,to):len()
+      end
     end
-  ----------------------------------------------------------
-  else error ("invalid search method")
+  elseif method ~= "regex" then
+    error("invalid search method")
   end
-  return pcall(regex.new, pattern, "i")
+  ----------------------------------------------------------
+  local ok, cregex = pcall(regex.new, pattern, "i")
+  if ok then
+    return function (text, pattern, start)
+      return cregex:find(text, start)
+    end
+  end
 end
 
 function List:UpdateSizePos (hDlg)
@@ -488,25 +498,33 @@ function List:ChangePattern (hDlg, pattern)
   local oldsel = self.drawitems[self.sel]
   self.drawitems = {}
 
-  local ok, regex = ProcessSearchMethod (pattern, self.searchmethod)
-  local findfunc = type(ok)=="function" and ok
-  if findfunc or ok then
-    for i,v in ipairs(self.items) do
+  local find, find2
+  local pat2 = self.xlat and XLat(pattern)
+  if type(self.searchmethod)=="function" then
+    find, find2 = self.searchmethod, self.searchmethod
+  else
+    find = ProcessSearchMethod(self.searchmethod, pattern)
+    find2 = pat2 and ProcessSearchMethod(self.searchmethod, pat2)
+  end
+
+  if find or find2 then
+    for _,v in ipairs(self.items) do
       local fr, to
-      if findfunc then ok, fr, to = pcall(findfunc, v.text, pattern, self.searchstart)
-      else ok, fr, to = true, regex:find(v.text, self.searchstart)
+      if find then
+        fr, to = find(v.text, pattern, self.searchstart)
       end
-      if ok then
-        local vdata = self.idata[v]
-        vdata.fr, vdata.to = fr, to
-        if fr then
-          self.drawitems[#self.drawitems+1] = v
-          if oldsel == v then
-            self.sel = #self.drawitems
-          end
-        else
-          if oldsel == v then self.sel = 1 end
+      if fr==nil and find2 then
+        fr, to = find2(v.text, pat2, self.searchstart)
+      end
+      local vdata = self.idata[v]
+      vdata.fr, vdata.to = fr, to
+      if fr then
+        self.drawitems[#self.drawitems+1] = v
+        if oldsel == v then
+          self.sel = #self.drawitems
         end
+      else
+        if oldsel == v then self.sel = 1 end
       end
     end
   end
@@ -852,7 +870,8 @@ function List:Key (hDlg, key)
       self:ChangePattern(hDlg, self.pattern)
 
     elseif FindKey(self.keys_applyxlat, key) then
-      local result = far.XLat(self.pattern, nil, nil, "XLAT_SWITCHKEYBLAYOUT")
+    --local result = far.XLat(self.pattern, nil, nil, "XLAT_SWITCHKEYBLAYOUT")
+      local result = XLat(self.pattern)
       if result then self:ChangePattern(hDlg, result) end
 
     --elseif key:len() == 1 then
