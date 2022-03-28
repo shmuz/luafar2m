@@ -135,9 +135,9 @@ local function ScrollToPosition (row, pos, from, to, scroll)
 end
 
 
-local function ShowInEditor(item)
+local function SelectItemInEditor(item)
   local fr, to = item.fr-item.offset, item.to-item.offset
-  ScrollToPosition(item.lineno, to, fr, to)
+  ScrollToPosition(item.lineno, to+1, fr, to)
   editor.Select("BTYPE_STREAM", nil, fr, to-fr+1, 1)
   actl.RedrawAll() -- editor.Redraw doesn't work from the dialog
 end
@@ -178,7 +178,7 @@ local function ShowCollectedLines (items, params)
     }, items)
 
   function list:onlistchange (hDlg, key, item)
-    ShowInEditor(item)
+    SelectItemInEditor(item)
   end
 
   local item = custommenu.Menu({
@@ -188,7 +188,7 @@ local function ShowCollectedLines (items, params)
       HelpTopic="Contents",
     }, list)
   if item then
-    ShowInEditor(item)
+    SelectItemInEditor(item)
   end
 end
 

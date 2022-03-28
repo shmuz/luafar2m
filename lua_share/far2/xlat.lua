@@ -25,19 +25,25 @@ for i,r in ipairs(rus1) do
 end
 
 -- the algorithm is not silly but also not too smart
-local function xlat (txt)
+local function xlat (Line, StartPos, EndPos)
+  if StartPos or EndPos then
+    Line = Line:sub(StartPos, EndPos)
+  end
   local k, from = 0, 1
+  local prev_src
   local t = {}
-  for c in txt:gmatch(".") do
+  for c in Line:gmatch(".") do
     k = k + 1
     t[k] = c
     local src
     if     map_rus[c] and not map_lat[c] then src = map_rus
     elseif map_lat[c] and not map_rus[c] then src = map_lat
+    elseif map_lat[c] and map_rus[c] and from==k then src = prev_src
     end
     if src then
+      prev_src = src
       for i=from,k do t[i]=src[t[i]] or t[i]; end
-      from = k+1
+      from = k + 1
     end
   end
   return table.concat(t)
