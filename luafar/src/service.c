@@ -1123,8 +1123,8 @@ int editor_SaveFile(lua_State *L)
   struct EditorSaveFile esf;
   esf.FileName = opt_utf8_string(L, 1, L"");
   esf.FileEOL = opt_utf8_string(L, 2, NULL);
-  esf.CodePage = luaL_optinteger(L, 3, CP_AUTODETECT);
-  if (esf.CodePage == CP_AUTODETECT) { //workaround: CP_AUTODETECT causes creating an empty file
+  esf.CodePage = luaL_optinteger(L, 3, 0);
+  if (esf.CodePage == 0) {
     struct EditorInfo ei;
     if (Info->EditorControl(ECTL_GETINFO, &ei))
       esf.CodePage = ei.CodePage;

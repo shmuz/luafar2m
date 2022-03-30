@@ -27,74 +27,11 @@ end
 
 
 local function EditorSelectCurLine (editInfo)
-  return editor.Select ("BTYPE_STREAM", editInfo.CurLine, 1, nil, 1)
+  return editor.Select ("BTYPE_STREAM", editInfo.CurLine, 1, -1, 1)
 end
 
 
-local function Incr (input, first, last)
-  for k = #input, 1, -1 do
-    if input[k] == last then
-      input[k] = first
-    else
-      input[k] = string.char (string.byte(input[k]) + 1)
-      return
-    end
-  end
-  insert (input, 1, first)
-end
-
-
--- Prefix can be made smart:
---     "S:12"     --  12 spaces
---     "L:>> "    --  prefix ">> "
---     "N:5."     --  automatic numbering, beginning from "5."
---     "N:5)"     --  automatic numbering, beginning from "5)"
---     "N:c"      --  automatic numbering, beginning from "c"
---     "N:C."     --  automatic numbering, beginning from "C."
---
-local function GetPrefix (aCode)
-  local op = aCode:sub(1,2):upper()
-  local param = aCode:sub(3):gsub ("%:$", "")
-  if op == "S:" then
-    local n = assert (tonumber (param), "Prefix parameter must be a number")
-    assert (n <= 1000, "Prefix length is limited at 1000")
-    return string.rep (" ", n)
-
-  elseif op == "L:" then
-    return param
-
-  elseif op == "N:" then
-    local init, places, delim = param:match ("^(%w+)%,?(%d*)%,?(.*)")
-    if not init then return end
-    if places == "" then places = 0 end
-    if tonumber(init) then
-      init = tonumber(init)
-      return function()
-        local cur_init = tostring(init)
-        init = init + 1
-        return string.rep(" ", places - #cur_init) .. cur_init .. delim
-      end
-    else
-      local first, last
-      if init:find ("^[a-z]+$") then first,last = "a","z"
-      elseif init:find ("^[A-Z]+$") then first,last = "A","Z"
-      else error("Prefix Lines: invalid starting number")
-      end
-      local t = {}
-      for k=1,#init do t[k] = init:sub(k,k) end
-      init = t
-      return function()
-        local cur_init = concat(init)
-        Incr(init, first, last)
-        return string.rep(" ", places - #cur_init) .. cur_init .. delim
-      end
-    end
-
-  end
-end
-
-
-local function Wrap (aColumn1, aColumn2, aPrefix, aJustify, aFactor)
+local function Wrap (aColumn1, aColumn2, aJustify, aFactor)
   local editInfo = editor.GetInfo()
   if not EditorHasSelection (editInfo) then
     if EditorSelectCurLine (editInfo) then
@@ -130,7 +67,6 @@ local function Wrap (aColumn1, aColumn2, aPrefix, aJustify, aFactor)
 
   -- Compile the next output line and store it.
   local function make_line (from, to, len, words)
-    local prefix = type(aPrefix) == "string" and aPrefix or aPrefix()
     local extra = aMaxLineLen - len
     if aJustify and (aFactor * (to - from) >= extra) then
       for i = from, to - 1 do
@@ -138,9 +74,9 @@ local function Wrap (aColumn1, aColumn2, aPrefix, aJustify, aFactor)
         words[i] = words[i] .. string.rep (" ", sp+1)
         extra = extra - sp
       end
-      insert (lines_out, indent .. prefix .. concat (words, "", from, to))
+      insert (lines_out, indent .. concat (words, "", from, to))
     else
-      insert (lines_out, indent .. prefix .. concat (words, " ", from, to))
+      insert (lines_out, indent .. concat (words, " ", from, to))
     end
   end
 
@@ -173,56 +109,34 @@ local function Wrap (aColumn1, aColumn2, aPrefix, aJustify, aFactor)
   end
 
   -- Put reformatted lines into the editor
-  local Pos = { CurLine = editInfo.BlockStartLine, CurPos = 1 }
+  local Pos = { CurLine=editInfo.BlockStartLine, CurPos=1, TopScreenLine=editInfo.TopScreenLine }
   editor.SetPosition (Pos)
   for i = #lines_out, 1, -1 do
     editor.InsertString()
     editor.SetPosition (Pos)
     editor.SetString(nil, lines_out[i])
   end
-end
-
-
-local function PrefixBlock (aPrefix)
-  local bNotSelected
-  local editInfo = editor.GetInfo()
-  if not EditorHasSelection (editInfo) then
-    assert (EditorSelectCurLine (editInfo))
-    editInfo = editor.GetInfo()
-    bNotSelected = true
-  end
-
-  if type(aPrefix) == "string" then
-    local p = aPrefix
-    aPrefix = function() return p end
-  end
-
-  for line in EditorBlock (editInfo.BlockStartLine) do
-    editor.SetString(nil, aPrefix() .. line.StringText)
-  end
-
-  editor.SetPosition (editInfo)
-  if bNotSelected then editor.Select("BTYPE_NONE") end
+  editor.Redraw()
 end
 
 
 local function ExecuteWrapDialog (aData)
-  local HIST_PREFIX = "LuaFAR\\Reformat\\Prefix"
+  local HIST_PROCESS = "LuaFAR\\Reformat\\ProcessLines"
   local Items = {
     guid = "6D5C7EC2-8C2F-413C-81E6-0CC8FFC0799A";
     width = 76;
     help = "Wrap";
-    {tp="dbox";    text=M.MReformatBlock;                                 },
+    {tp="dbox";                        text=M.MReformatBlock;             },
     {tp="chbox";   name="cbxReformat"; text=M.MReformatBlock2; val=1;     },
-    {tp="text";    name="labStart";          x1=9;  text=M.MStartColumn;  },
-    {tp="fixedit"; name="edtColumn1"; y1=""; x1=22; x2=25; val=1;         },
+    {tp="text";    name="labStart"; x1=9; text=M.MStartColumn;            },
+    {tp="fixedit"; name="edtColumn1"; y1=""; x1=22; x2=25; val=1;  mask="9999"; },
     {tp="text";    name="labEnd";     y1=""; x1=29; text=M.MEndColumn;    },
-    {tp="fixedit"; name="edtColumn2"; y1=""; x1=41; x2=44; val=70;        },
+    {tp="fixedit"; name="edtColumn2"; y1=""; x1=41; x2=44; val=70; mask="9999"; },
     {tp="chbox";   name="cbxJustify";        x1=9; text=M.MJustifyBorder; },
     {tp="sep";                                                            },
-    {tp="chbox";   name="cbxPrefix";  text=M.MPrefixLines;                },
-    {tp="text";    name="labCommand"; x1=9; text=M.MCommand;              },
-    {tp="edit";    name="edtPrefix";  x1=17; y1=""; hist=HIST_PREFIX; val="S:4"; },
+    {tp="chbox";   name="cbxProcess";  text=M.MProcessLines;              },
+    {tp="text";    name="labExpress";  text=M.MLineExpr; x1=9;            },
+    {tp="edit";    name="edtExpress";  x1=21; y1=""; hist=HIST_PROCESS;   },
     {tp="sep";                                                            },
     {tp="butt";    text=M.MOk;     centergroup=1; default=1;              },
     {tp="butt";    text=M.MCancel; centergroup=1; cancel=1;               },
@@ -230,20 +144,30 @@ local function ExecuteWrapDialog (aData)
   local Pos = sd.Indexes(Items)
   ----------------------------------------------------------------------------
   -- Handlers of dialog events --
-  local function Check (hDlg, c1, ...)
-    local enbl = hDlg:GetCheck(c1)
-    for _, elem in ipairs {...} do hDlg:Enable(elem, enbl) end
+  local function CheckGroup (hDlg, c1, ...)
+    local enbl = hDlg:GetCheck(Pos[c1])
+    for _, name in ipairs {...} do hDlg:Enable(Pos[name], enbl) end
+  end
+
+  local function CheckAll (hDlg)
+    CheckGroup (hDlg, "cbxReformat", "labStart", "edtColumn1", "labEnd", "edtColumn2", "cbxJustify")
+    CheckGroup (hDlg, "cbxProcess", "edtExpress", "labExpress")
+    if hDlg:GetCheck(Pos.cbxReformat) then hDlg:SetFocus(Pos.edtColumn1)
+    elseif hDlg:GetCheck(Pos.cbxProcess) then hDlg:SetFocus(Pos.edtExpress)
+    end
   end
 
   function Items.proc (hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
-      Check (hDlg, Pos.cbxReformat, Pos.labStart, Pos.edtColumn1, Pos.labEnd, Pos.edtColumn2, Pos.cbxJustify)
-      Check (hDlg, Pos.cbxPrefix, Pos.edtPrefix, Pos.labCommand)
+      if hDlg:GetCheck(Pos.cbxReformat) then hDlg:SetCheck(Pos.cbxProcess, false) end
+      CheckAll (hDlg)
     elseif msg == F.DN_BTNCLICK then
       if param1 == Pos.cbxReformat then
-        Check (hDlg, param1, Pos.labStart, Pos.edtColumn1, Pos.labEnd, Pos.edtColumn2, Pos.cbxJustify)
-      elseif param1 == Pos.cbxPrefix then
-        Check (hDlg, param1, Pos.edtPrefix, Pos.labCommand)
+        if hDlg:GetCheck(Pos.cbxReformat) then hDlg:SetCheck(Pos.cbxProcess, false) end
+        CheckAll (hDlg)
+      elseif param1 == Pos.cbxProcess then
+        if hDlg:GetCheck(Pos.cbxProcess) then hDlg:SetCheck(Pos.cbxReformat, false) end
+        CheckAll (hDlg)
       end
     end
   end
@@ -257,9 +181,62 @@ local function ExecuteWrapDialog (aData)
 end
 
 
+local function ProcessBlock (aCode)
+  local func, err = loadstring("L,N=... return " .. aCode)
+  if func==nil then
+    far.Message(err, "Error", nil, "w")
+    return
+  end
+  local env = setmetatable({}, { __index=_G })
+  setfenv(func,env)
+
+  local bNotSelected
+  local eInfo = editor.GetInfo()
+  if not EditorHasSelection (eInfo) then
+    assert (EditorSelectCurLine (eInfo))
+    eInfo = editor.GetInfo()
+    bNotSelected = true
+  end
+
+  local lnum, N = eInfo.BlockStartLine, 0
+  while lnum <= eInfo.TotalLines do
+    local line = editor.GetString(lnum, 1)
+    if not (line and line.SelStart >= 1 and line.SelEnd ~= 0) then
+      break
+    end
+    N = N + 1
+    local repl = func(line.StringText, N)
+    if type(repl) == "string" then
+      if repl == "" then
+        editor.SetString(nil, repl, line.StringEOL)
+      else
+        for s,eol in repl:gmatch("([^\r\n]*)(\r?\n?)") do
+          if s=="" and eol=="" then break end
+          editor.SetString(lnum, s)
+          if eol ~= "" then
+            editor.SetPosition(lnum, s:len()+1)
+            editor.InsertString()
+            lnum = lnum + 1
+            eInfo.TotalLines = eInfo.TotalLines + 1
+          end
+        end
+      end
+      lnum = lnum + 1
+    elseif not repl then
+      editor.DeleteString()
+      eInfo.TotalLines = eInfo.TotalLines - 1
+    else
+      lnum = lnum + 1
+    end
+  end
+
+  editor.SetPosition (eInfo)
+  if bNotSelected then editor.Select("BTYPE_NONE") end
+end
+
+
 local function WrapWithDialog (aData)
   if not ExecuteWrapDialog(aData) then return end
-  local prefix = aData.cbxPrefix and aData.edtPrefix and GetPrefix(aData.edtPrefix) or ""
 
   if aData.cbxReformat then
     local offs1 = assert(tonumber(aData.edtColumn1), "start column is not a number")
@@ -268,12 +245,13 @@ local function WrapWithDialog (aData)
     assert(offs2 >= offs1, "end column is less than start column")
 
     editor.UndoRedo("EUR_BEGIN")
-    Wrap (offs1, offs2, prefix, aData.cbxJustify, 2.0)
+    Wrap (offs1, offs2, aData.cbxJustify, 2.0)
     editor.UndoRedo("EUR_END")
 
-  elseif prefix ~= "" then
+  elseif aData.cbxProcess then
+    local code = aData.edtExpress or ""
     editor.UndoRedo("EUR_BEGIN")
-    PrefixBlock(prefix)
+    ProcessBlock(code)
     editor.UndoRedo("EUR_END")
   end
 end

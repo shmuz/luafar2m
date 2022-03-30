@@ -230,8 +230,6 @@ local function Run (inData)
     end
 
     local text = v.text or (type(v.val)=="string" and v.val) or ""
-    local hist = v.hist or ""
-    local mask = v.mask or ""
 
     local prev = (i > 1) and outData[i-1] or EMPTY
     local is_cgroup = (tp==F.DI_BUTTON) and band(flags,F.DIF_CENTERGROUP)~=0
@@ -289,22 +287,22 @@ local function Run (inData)
 
     elseif tp == F.DI_VTEXT then
       if v.mask then flags = bor(flags, F.DIF_SEPARATORUSER); end -- set the flag automatically
-      outData[i] = MkItem { flags=flags; mask=mask; }
+      outData[i] = MkItem { flags=flags; mask=v.mask; }
 
     elseif tp=="sep" or tp=="sep2" then
       x1, x2 = v.x1 or -1, v.x2 or -1
       flags = bor(flags, tp=="sep2" and F.DIF_SEPARATOR2 or F.DIF_SEPARATOR)
       if v.mask then flags = bor(flags, F.DIF_SEPARATORUSER); end -- set the flag automatically
-      outData[i] = MkItem { tp=F.DI_TEXT; y2=y1, mask=mask; }
+      outData[i] = MkItem { tp=F.DI_TEXT; y2=y1, mask=v.mask; }
 
     elseif tp == F.DI_EDIT then
       if v.hist then flags = bor(flags, F.DIF_HISTORY); end -- set the flag automatically
-      outData[i] = MkItem { y2=0; flags=flags; hist=hist; }
+      outData[i] = MkItem { y2=0; flags=flags; hist=v.hist; }
 
     elseif tp == F.DI_FIXEDIT then
       if v.hist then flags = bor(flags, F.DIF_HISTORY);  end -- set the flag automatically
       if v.mask then flags = bor(flags, F.DIF_MASKEDIT); end -- set the flag automatically
-      outData[i] = MkItem { y2=0; flags=flags; hist=hist; mask=mask; }
+      outData[i] = MkItem { y2=0; flags=flags; hist=v.hist; mask=v.mask; }
 
     elseif tp == F.DI_PSWEDIT then
       outData[i] = MkItem { y2=0; }
