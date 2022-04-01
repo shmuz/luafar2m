@@ -171,7 +171,10 @@ local function EditorAction (aOp, aData, aScriptCall)
 ----profiler.stop()
   if aData.bAdvanced then tParams.FinalFunc() end
   ---------------------------------------------------------------------------
-  if not bTest and sChoice ~= "broken" then
+  if sChoice == "newsearch" then
+    editor.SetTitle("")
+    return EditorAction(aOp, aData, aScriptCall)
+  elseif not bTest and sChoice ~= "broken" then
     if nFound == 0 then
       ErrorMsg (M.MNotFound .. aData.sSearchPat .. "\"", M.MMenuTitle)
     elseif sOperation == "count" then

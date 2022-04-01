@@ -1276,3 +1276,19 @@ treated as the body of a Lua function (see below).
     *  undocumented type of #ret1# : no replacement is done.
 
  ~Contents~@Contents@
+
+@EditorShowAll
+$ #"Show All" operation#
+ Do search and show the list with all lines containing the found text.
+Each line in the list contains an editor line where the search succeeded.
+
+    #Enter#            Go to the selected line in the editor.
+    #F6#               Show different parts of long lines.
+    #F7#               Show the selected line in a message box.
+    #F8#               Close the list and reopen the Search Dialog.
+    #Ctrl-C#           Copy the selected line to the clipboard.
+    #Ctrl-Up#, #Ctrl-Down#, #Ctrl-Home#, #Ctrl-End#
+                     Scroll the editor not closing the list.
+    #Ctrl-Num0#        Restore editor position after scrolling.
+
+ ~Contents~@Contents@

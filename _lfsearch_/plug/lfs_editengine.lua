@@ -3,6 +3,7 @@
 local M             = require "lfs_message"
 local Common        = require "lfs_common"
 local CustomMessage = require "far2.message"
+local CustomMenu    = require "far2.custommenu"
 local F = far.Flags
 local EditorGetString = editor.GetString
 local EditorSetString = editor.SetString
@@ -33,8 +34,13 @@ end
 
 
 local function EditorSelect (b)
-  editor.Select(b.BlockType, b.StartLine, b.StartPos, b.EndPos - b.StartPos + 1,
-                   b.EndLine - b.StartLine + 1)
+  if b then
+    local startPos = b.TabStartPos or b.StartPos
+    local endPos = b.TabEndPos or b.EndPos
+    editor.Select(b.BlockType, b.StartLine, startPos, endPos-startPos+1, b.EndLine-b.StartLine+1)
+  else
+    editor.Select("BTYPE_NONE")
+  end
 end
 
 
@@ -143,53 +149,94 @@ local function SelectItemInEditor(item)
 end
 
 
-local function ShowCollectedLines (items, params)
+local function ShowAll_ChangeState (hDlg, item, force_dock)
+  local EI = editor.GetInfo()
+  local rect = hDlg:GetDlgRect()
+  local scrline = item.lineno - EI.TopScreenLine + 1
+  if force_dock or (scrline >= rect.Top and scrline <= rect.Bottom) then
+    local X = force_dock and (EI.WindowSizeX - (rect.Right - rect.Left + 1)) or rect.Left
+    local Y = scrline <= EI.WindowSizeY/2 and EI.WindowSizeY - (rect.Bottom - rect.Top) or 1
+    hDlg:MoveDialog(1, {X=X, Y=Y})
+  end
+  -- This additional editor.Redraw() is a workaround due to a bug in FAR
+  -- that makes selection invisible in modal editors.
+  editor.Redraw()
+end
+
+
+local function ShowCollectedLines (items, title, bForward, tBlockInfo)
   if #items == 0 then return end
 
-  package.loaded["far2.custommenu"] = nil
-  local custommenu = require("far2.custommenu")
+  local Info = editor.GetInfo()
 
-  table.sort(items, function(a,b) return a.lineno < b.lineno end)
-  local maxno, n = 1, items[#items].lineno+1
-  while n >= 10 do maxno=maxno+1; n=n/10; end
-
+  local maxno = #tostring(items.maxline)
   local fmt = ("%%%dd%s %%s"):format(maxno, ("").char(9474))
   for _, item in ipairs(items) do
     local s = item.text:gsub("%z", " ") -- replace null bytes with spaces
-                       :gsub("^%s*",    -- delete leading spaces
-      function(c)                       -- adjust offsets for highlighting
-        local len_delete = min(c:len(), item.fr-1)
-        local m = maxno + 2 - len_delete
-        item.offset, item.fr, item.to = m, item.fr+m, item.to+m
-        return c:sub(len_delete + 1)
-      end)
+    local n = maxno + 2
+    item.offset, item.fr, item.to = n, item.fr+n, item.to+n
     item.text = fmt:format(item.lineno, s)
   end
-  local bottom = #items..M.MLinesFound.." [F6,F7,Ctrl-C]"
+  local bottom = #items..M.MLinesFound.." [F6,F7,F8,Ctrl-C]"
 
-  local list = custommenu.NewList({
-      resizeScreen = true,          -- make it the default for CustomMenu?
---~       col_highlight = 0x3A,
---~       col_selectedhighlight = 0x0A,
+  local list = CustomMenu.NewList({
+      hmax = floor(Info.WindowSizeY * 0.5) - 4,
+      wmax = floor(Info.WindowSizeX * 0.7) - 6,
+      autocenter = false,
+      --resizeScreen = true, -- make it the default for CustomMenu?
       col_highlight = 0x6F,
       col_selectedhighlight = 0x4F,
-      ellipsis = 3,                 -- position ellipsis at line end
-      searchstart = maxno + 3,      -- needed for correct work of ellipsis
+      ellipsis = bForward and 3 or 0, -- position ellipsis at either line end or beginning
+      searchstart = maxno + 3, -- required for correct work of ellipsis
     }, items)
 
   function list:onlistchange (hDlg, key, item)
     SelectItemInEditor(item)
+    ShowAll_ChangeState(hDlg, item, false)
   end
 
-  local item = custommenu.Menu({
-      Title=M.MSearchResults.." ["..params.sSearchPat.."]",-- honored by CustomMenu
-      Bottom=bottom,                -- honored by CustomMenu
-      Flags=F.FMENU_SHOWAMPERSAND,  -- ignored by CustomMenu?
-      HelpTopic="Contents",
-    }, list)
-  if item then
-    SelectItemInEditor(item)
+  local newsearch = false
+  function list:keyfunction (hDlg, key, item)
+    if regex.match(key, "^R?Ctrl(?:Up|Down|Home|End|Num[1278])$") then
+      editor.ProcessKey(far.NameToKey(key))
+      actl.RedrawAll()
+      hDlg:Redraw()
+      return "done"
+    elseif key=="CtrlNum0" or key=="RCtrlNum0" then
+      self:onlistchange(hDlg, key, item)
+      return "done"
+    elseif key=="F8" then
+      newsearch = true
+      return "break"
+    end
   end
+
+  local OnInitDialog_original = list.OnInitDialog
+  list.OnInitDialog = function (self, hDlg)
+    OnInitDialog_original(self, hDlg)
+    ShowAll_ChangeState(hDlg, self.items[1], true)
+  end
+
+  SelectItemInEditor(list.items[1])
+  local item = CustomMenu.Menu(
+    {
+      DialogId  = win.Uuid("D0596479-B9AB-4C0E-A28B-D009C000C63C"),
+      Title     = title,                  -- honored by CustomMenu
+      Bottom    = bottom,                 -- honored by CustomMenu
+      Flags     = F.FMENU_SHOWAMPERSAND + F.FMENU_WRAPMODE,
+      HelpTopic = "EditorShowAll",
+      X = Info.WindowSizeX - list.wmax - 6,
+      Y = Info.WindowSizeY - list.hmax - 3,
+    },
+    list)
+  if item and not newsearch then
+    SelectItemInEditor(item)
+  else
+    editor.SetPosition(Info)
+    EditorSelect(tBlockInfo) -- if tBlockInfo is false then selection is reset;
+    editor.Redraw()
+  end
+  return newsearch
 end
 
 
@@ -540,7 +587,12 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
   editor.Redraw()
   update_info()
   if aOp == "showall" then
-    ShowCollectedLines(tItems, aParams)
+    local newsearch = ShowCollectedLines(
+        tItems,
+        ("%s [%s]"):format(M.MSearchResults, aParams.sSearchPat),
+        bForward,
+        tBlockInfo)
+    if newsearch then sChoice = "newsearch" end
   elseif aOp == "replace" and bEurBegin then
     editor.UndoRedo("EUR_END")
   end

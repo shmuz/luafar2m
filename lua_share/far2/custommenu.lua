@@ -3,8 +3,6 @@
  Started: 2010-03-25 by Shmuel Zeigerman
 --]]
 
-local _M = {} -- module
-
 local XLat = require "far2.xlat"
 local F = far.Flags
 local min, max, floor, ceil = math.min, math.max, math.floor, math.ceil
@@ -42,7 +40,7 @@ local function SetParam(trg, src, key, default)
 end
 
 -- new custom list
-function _M.NewList (props, items, bkeys, startId)
+local function NewList (props, items, bkeys, startId)
   assert (type(props) == "table")
   assert (type(items) == "table")
   assert (not bkeys or type(bkeys)=="table")
@@ -901,7 +899,7 @@ function List:Sort (fCompare)
   self:SetIndexData()
 end
 
-function _M.Menu (props, list)
+local function Menu (props, list)
   assert(type(props) == "table")
   assert(type(list) == "table")
 
@@ -924,6 +922,9 @@ function _M.Menu (props, list)
     if msg == F.DN_INITDIALOG then
       hDlg:SetMouseEventNotify(1, 0)
       list:OnInitDialog (hDlg)
+
+    elseif msg == F.DN_GETDIALOGINFO then
+      return props.DialogId
 
     elseif msg == F.DN_DRAWDIALOG then
       Rect = hDlg:GetDlgRect()
@@ -986,4 +987,7 @@ function _M.Menu (props, list)
   return nil
 end
 
-return _M
+return {
+  Menu = Menu;
+  NewList = NewList;
+}

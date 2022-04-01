@@ -2820,20 +2820,7 @@ int DoSendDlgMessage (lua_State *L, int Msg, int delta)
     case DM_SETDLGITEM:
       return SetDlgItem(L, hDlg, Param1, pos4, Info);
 
-    case DM_MOVEDIALOG: {
-      COORD* out;
-      int base = Param1 ? 1 : 0;  // Param1: TRUE=absolute coordinates; FALSE=relative coordinates
-      luaL_checktype(L, pos4, LUA_TTABLE);
-      coord.X = GetOptIntFromTable(L, "X", base) - base;
-      coord.Y = GetOptIntFromTable(L, "Y", base) - base;
-      Param2 = (LONG_PTR)&coord;
-      out = (COORD*) Info->SendDlgMessage (hDlg, Msg, Param1, Param2);
-      lua_createtable(L, 0, 2);
-      PutIntToTable(L, "X", 1 + out->X);
-      PutIntToTable(L, "Y", 1 + out->Y);
-      return 1;
-    }
-
+    case DM_MOVEDIALOG:
     case DM_RESIZEDIALOG: {
       COORD* out;
       luaL_checktype(L, pos4, LUA_TTABLE);
@@ -2842,8 +2829,8 @@ int DoSendDlgMessage (lua_State *L, int Msg, int delta)
       Param2 = (LONG_PTR)&coord;
       out = (COORD*) Info->SendDlgMessage (hDlg, Msg, Param1, Param2);
       lua_createtable(L, 0, 2);
-      PutIntToTable(L, "X", out->X);
-      PutIntToTable(L, "Y", out->Y);
+      PutIntToTable(L, "X", 1 + out->X);
+      PutIntToTable(L, "Y", 1 + out->Y);
       return 1;
     }
 
