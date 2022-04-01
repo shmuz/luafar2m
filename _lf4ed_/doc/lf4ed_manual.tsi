@@ -456,7 +456,7 @@ id=59
 lv=0
 dt=Text
 nm=Command line and macro calls
-mtime=3851459121
+mtime=3857977223
 <article>
 #_<markdown>
 #_
@@ -490,7 +490,7 @@ lv=1
 dt=Text
 nm=Another syntax
 ctime=3851458231
-mtime=3851458894
+mtime=3857977179
 <article>
 #_<markdown>
 #_
@@ -501,6 +501,37 @@ mtime=3851458894
 #_      lfe: = 5, 6+44, "apple"
 #_is equivalent to
 #_      far.Show(5, 6+44, "apple")
+#_
+</article>
+</node>
+<node>
+id=87
+lv=1
+dt=Text
+nm=Other command line prefixes
+ctime=3857976423
+mtime=3857977960
+<article>
+#_The following command line prefixes provide some functionality
+#_of FarCmds plugin which is not currently available for Far2L.
+#_
+#_**view:** <file_path>
+#_
+#_**view:** < <command>
+#_
+#_**edit:** <file_path>
+#_
+#_**edit:** < <command>
+#_
+#_**macro:** load
+#_
+#_**macro:** save
+#_
+#_**macro:** post <sequence>
+#_
+#_**load:** <plugin_path>
+#_
+#_**unload:** <plugin_path>
 #_
 </article>
 </node>

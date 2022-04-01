@@ -163,7 +163,7 @@ local function ShowCollectedLines (items, params)
         item.offset, item.fr, item.to = m, item.fr+m, item.to+m
         return c:sub(len_delete + 1)
       end)
-    item.text = fmt:format(item.lineno+1, s)
+    item.text = fmt:format(item.lineno, s)
   end
   local bottom = #items..M.MLinesFound.." [F6,F7,Ctrl-C]"
 

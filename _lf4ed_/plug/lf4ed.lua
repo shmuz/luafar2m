@@ -543,8 +543,7 @@ end
 -------------------------------------------------------------------------------
 -- This function processes both command line calls and calls from macros.
 -------------------------------------------------------------------------------
-local function ProcessCommand (source, sFrom)
-  local args = SplitCommandLine(source)
+local function ProcessCommand (args, sFrom)
   if #args==0 then return CommandSyntaxMessage() end
   local opt, async
   local args2 = {}
@@ -588,6 +587,21 @@ local function ProcessCommand (source, sFrom)
   end
 end
 
+local function Redirect(command)
+  local fp = io.popen(command)
+  if fp then
+    local fname = far.MkTemp()
+    local fp2 = io.open(fname, "w")
+    if fp2 then
+      for line in fp:lines() do fp2:write(line,"\n") end
+      fp2:close()
+      fp:close()
+      return fname
+    end
+    fp:close()
+  end
+end
+
 local function export_OpenPlugin (aFrom, aItem)
 
   -- Called from macro
@@ -600,20 +614,75 @@ local function export_OpenPlugin (aFrom, aItem)
         [F.MACROAREA_DIALOG] = "dialog",
       }
       local area = band(aFrom, F.OPEN_FROM_MASK)
-      ProcessCommand(aItem, map[area] or aFrom)
+      local args = SplitCommandLine(aItem)
+      ProcessCommand(args, map[area] or aFrom)
     end
     return
   end
 
   -- Called from command line
   if aFrom == F.OPEN_COMMANDLINE then
-    local to_show = aItem:match("^%s*=(.*)")
-    if to_show then
-      local f = assert(loadstring("far.Show(".. to_show..")"))
-      local env = setmetatable({}, {__index=_G})
-      setfenv(f,env)()
-    else
-      ProcessCommand(aItem, "panels")
+    local prefix, command = aItem:match("^(.-):(.*)")
+    local args = SplitCommandLine(command)
+    prefix = prefix:lower()
+    ----------------------------------------------------------------------------
+    if prefix == "lfe" then
+      local expr = command:match("^%s*=(.*)")
+      if expr then
+        local f = assert(loadstring("far.Show(".. expr..")"))
+        local env = setmetatable({}, {__index=_G})
+        setfenv(f,env)()
+      else
+        ProcessCommand(args, "panels")
+      end
+    ----------------------------------------------------------------------------
+    elseif prefix == "edit" and args[1] then
+      if args[1] == "<" then
+        if args[2] then
+          local cmd = command:match("^%s*<%s+(.+)")
+          local fname = Redirect(cmd)
+          if fname then
+            local flags = bor(F.EF_NONMODAL, F.EF_IMMEDIATERETURN, F.EF_ENABLE_F6, F.EF_DELETEONCLOSE)
+            editor.Editor(fname,nil,nil,nil,nil,nil,flags)
+          end
+        end
+      else
+        local flags = bor(F.EF_NONMODAL, F.EF_IMMEDIATERETURN, F.EF_ENABLE_F6)
+        editor.Editor(args[1],nil,nil,nil,nil,nil,flags)
+      end
+    ----------------------------------------------------------------------------
+    elseif prefix == "view" and args[1] then
+      if args[1] == "<" then
+        if args[2] then
+          local cmd = command:match("^%s*<%s+(.+)")
+          local fname = Redirect(cmd)
+          if fname then
+            local flags = bor(F.VF_NONMODAL, F.VF_IMMEDIATERETURN, F.VF_ENABLE_F6, F.VF_DELETEONCLOSE)
+            viewer.Viewer(fname,nil,nil,nil,nil,nil,flags)
+          end
+        end
+      else
+        local flags = bor(F.VF_NONMODAL, F.VF_IMMEDIATERETURN, F.VF_ENABLE_F6)
+        viewer.Viewer(args[1],nil,nil,nil,nil,nil,flags)
+      end
+    ----------------------------------------------------------------------------
+    elseif prefix == "macro" and args[1] then
+      local arg1 = args[1]:lower()
+      if     arg1 == "load" then
+        far.MacroLoadAll()
+      elseif arg1 == "save" then
+        far.MacroSaveAll()
+      elseif arg1 == "post" and args[2] then
+        local sequence = command:match("^%s*%w+%s+(.+)")
+        far.MacroPost(sequence)
+      end
+    ----------------------------------------------------------------------------
+    elseif prefix == "load" and args[1] then
+      far.LoadPlugin("PLT_PATH", args[1])
+    ----------------------------------------------------------------------------
+    elseif prefix == "unload" and args[1] then
+      far.UnloadPlugin("PLT_PATH", args[1])
+    ----------------------------------------------------------------------------
     end
     return
   end
@@ -655,7 +724,7 @@ local function export_OpenPlugin (aFrom, aItem)
 end
 
 local function export_GetPluginInfo()
-  local flags = bor(F.PF_EDITOR, F.PF_DISABLEPANELS)
+  local flags = bor(F.PF_EDITOR, F.PF_DISABLEPANELS, F.PF_FULLCMDLINE)
   local useritems = _Plugin.UserItems
   if useritems then
     if #useritems.panels > 0 then flags = band(flags, bnot(F.PF_DISABLEPANELS)) end
@@ -666,7 +735,7 @@ local function export_GetPluginInfo()
     Flags = flags,
     PluginMenuStrings = { M.MPluginName },
     PluginConfigStrings = { M.MPluginName },
-    CommandPrefix = "lfe",
+    CommandPrefix = "lfe:edit:view:macro:load:unload",
     SysId = 0x10000,
   }
 end

@@ -876,7 +876,7 @@ end
 
 function TmpPanelBase:SetDirectory (Handle, Dir, OpMode)
   if 0 == band(OpMode, F.OPM_FIND) then
-    panel.ClosePlugin (Handle, (Dir ~= "\\" and Dir or nil))
+    panel.ClosePlugin (Handle, (Dir ~= "/" and Dir or nil))
     return true
   end
 end
