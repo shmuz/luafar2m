@@ -125,6 +125,7 @@ local function ConfigDialog()
   local out = sd.Run(Items)
   if out then
     sd.SaveData(out, Data)
+    return true
   end
 end
 

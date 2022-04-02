@@ -569,6 +569,9 @@ local function SearchFromPanel (aHistory)
       return SearchFromPanel(aHistory)
     end
   end
+  return true
 end
 
-return SearchFromPanel
+return {
+  SearchFromPanel = SearchFromPanel;
+}

@@ -29,7 +29,7 @@ local fgsub = require "fgsub"
 local sd = require "far2.simpledialog"
 local rex = require "rex_pcre"
 
-local _RequiredLuafarVersion = "1.0.0" -- earlier versions had a bug (DM_GETTEXT crash)
+local _RequiredLuafarVersion = "2.9.0"
 
 local M = {
   MTitle             = "Multiline Search",

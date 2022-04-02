@@ -129,8 +129,7 @@ local function EditorAction (aOp, aData, aScriptCall)
     tParams = assert(Common.ProcessDialogData (aData, bReplace))
   else
     if aOp == "config" then
-      Common.ConfigDialog()
-      return
+      return Common.ConfigDialog()
     elseif aOp == "search" or aOp == "replace" then
       bWithDialog = true
       bReplace = (aOp == "replace")
