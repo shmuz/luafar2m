@@ -4,6 +4,7 @@
 
 local sd = require "far2.simpledialog"
 local F = far.Flags
+local KEEP_DIALOG_OPEN = 0
 
 local AreaShortNames = {
   "Dialog", "Disks", "Editor", "Help", "Info", "MainMenu", "Menu", "QView", "Search", "Shell",
@@ -19,12 +20,12 @@ local AreaList = {
   {Text="User menu"},      {Text="AutoCompletion"},
 }
 
-local function MacroDialog (input)
+local function MacroDialog (aTitle, aInput, aCanClose)
   local hw = 33 -- half-width of space inside the double-box
   local items = {
     guid = "E5DBC50D-DEAC-49C0-AE3A-357602A418AE";
     width=2*hw+10;
-    {tp="dbox"; text="Macro settings"; },
+    {tp="dbox"; text=aTitle; },
     {tp="text"; text="Command of e&xecution"; width=hw-2; },
     {tp="edit"; hist="MacroKey";           name="MacroKey"; width=hw-2; },
     {tp="text"; text="&Work area"; ystep=-1; x1=hw+6; },
@@ -33,7 +34,7 @@ local function MacroDialog (input)
     {tp="vtext"; x1=hw+4; y1=2; y2=4; text="││┴"; },
     ------------------------------------------------------------------------------------------------
     {tp="text"; text="Sequen&ce"; y1=5; },
-    {tp="edit";   hist="MacroCmd";         name="Sequence"; focus=input; },
+    {tp="edit";   hist="MacroCmd";         name="Sequence"; focus=aInput; },
     {tp="text"; text="&Description"; },
     {tp="edit";   hist="MacroDescr";       name="Description"; },
     {tp="sep"; },
@@ -60,14 +61,14 @@ local function MacroDialog (input)
     {tp="sep"; },
     ------------------------------------------------------------------------------------------------
     {tp="butt"; text="&Save";  default=1;    centergroup=1; },
-    {tp="butt"; text="Check";  btnnoclose=1; centergroup=1; Action="check"; },
+    {tp="butt"; text="Check";  btnnoclose=1; centergroup=1; name="btnCheck"; },
     {tp="butt"; text="Cancel"; cancel=1;     centergroup=1; },
   }
 
   ---------------
   -- Preparations
   ---------------
-  local Pos = sd.Indexes(items)
+  local Pos, Elem = sd.Indexes(items)
 
   -- Give all checkboxes a (numeric) names so that
   -- their final values appear in the output table.
@@ -78,7 +79,7 @@ local function MacroDialog (input)
   ---------------------------------
   -- Initialize from the input data
   ---------------------------------
-  if type(input) ~= "table" then -- no input data
+  if type(aInput) ~= "table" then -- no input data
     local area = far.MacroGetArea()
     local item = items[Pos.WorkArea]
     if     area == F.MACROAREA_DIALOG         then item.val =  1
@@ -108,8 +109,8 @@ local function MacroDialog (input)
       if v.DefInput then
         v.val = 1
       end
-      if type(v.name)=="string" and input[v.name] ~= nil then
-        local val = input[v.name]
+      if type(v.name)=="string" and aInput[v.name] ~= nil then
+        local val = aInput[v.name]
         if v.tp == "edit" then
           if type(val) == "string" then
             v.val = val
@@ -123,7 +124,7 @@ local function MacroDialog (input)
         end
       elseif v.Flags then
         for k,w in pairs(v.Flags) do
-          if input[k] and input[k] ~= 0 then
+          if aInput[k] and aInput[k] ~= 0 then
             items[i].val = w
           end
         end
@@ -150,49 +151,44 @@ local function MacroDialog (input)
     end
   end
 
-  items.proc = function(hDlg, Msg, Par1, Par2) -- luacheck: ignore Par2
-    if Msg == F.DN_BTNCLICK then
-      if items[Par1].Action == "check" then
-        CheckSeq(hDlg)
-      end
-    elseif Msg == F.DN_CLOSE then
-      if items[Par1] and not items[Par1].cancel then
-        local nm = hDlg:GetText(Pos.MacroKey) : match("^%s*(.-)%s*$")
-        if not far.NameToKey(nm) then
-          far.Message("Invalid Macro Key: "..nm, "Error", nil, "w")
-          return 0
+  Elem.btnCheck.action = CheckSeq
+
+  local function ConvertOutput(raw)
+    local out = {}
+    for i,w in ipairs(items) do
+      if w.tp == "edit" then
+        if raw[w.name]:find("%S") then
+          out[w.name] = raw[w.name]:match("^%s*(.-)%s*$") -- strip spaces from both ends
         end
-        if not CheckSeq(hDlg) then
-          return 0
+      elseif w.tp == "combobox" then -- there is 1 combobox only
+        out[w.name] = AreaShortNames[raw[w.name]]
+      elseif w.tp == "chbox" then
+        if w.Flags then
+          for k,v in pairs(items[i].Flags) do
+            v = (v ~= 0) -- convert 0,1 -> false,true
+            if raw[i]==v then out[k]=1; break; end
+          end
+        elseif w.name then
+          if raw[w.name] then out[w.name]=1; end -- [x] Deactivate macro
         end
       end
+    end
+    return out
+  end
+
+  items.closeaction = function(hDlg, Par1, tOut)
+    local nm = tOut.MacroKey : match("^%s*(.-)%s*$")
+    if not far.NameToKey(nm) then
+      far.Message("Invalid Macro Key: "..nm, "Error", nil, "w")
+      return KEEP_DIALOG_OPEN
+    end
+    if not (CheckSeq(hDlg) and aCanClose(ConvertOutput(tOut))) then
+      return KEEP_DIALOG_OPEN
     end
   end
 
   local raw = sd.Run(items)
-  if not raw then return nil end
-  local out = {}
-
-  for i,w in ipairs(items) do
-    if w.tp == "edit" then
-      if raw[w.name]:find("%S") then
-        out[w.name] = raw[w.name]:match("^%s*(.-)%s*$") -- strip spaces from both ends
-      end
-    elseif w.tp == "combobox" then -- there is 1 combobox only
-      out[w.name] = AreaShortNames[raw[w.name]]
-    elseif w.tp == "chbox" then
-      if w.Flags then
-        for k,v in pairs(items[i].Flags) do
-          v = (v ~= 0) -- convert 0,1 -> false,true
-          if raw[i]==v then out[k]=1; break; end
-        end
-      elseif w.name then
-        if raw[w.name] then out[w.name]=1; end -- [x] Deactivate macro
-      end
-    end
-  end
-
-  return out
+  return raw and ConvertOutput(raw)
 end
 
 return MacroDialog
