@@ -2822,15 +2822,14 @@ int DoSendDlgMessage (lua_State *L, int Msg, int delta)
 
     case DM_MOVEDIALOG:
     case DM_RESIZEDIALOG: {
-      COORD* out;
+      COORD* c;
       luaL_checktype(L, pos4, LUA_TTABLE);
       coord.X = GetOptIntFromTable(L, "X", 0);
       coord.Y = GetOptIntFromTable(L, "Y", 0);
-      Param2 = (LONG_PTR)&coord;
-      out = (COORD*) Info->SendDlgMessage (hDlg, Msg, Param1, Param2);
+      c = (COORD*) Info->SendDlgMessage (hDlg, Msg, Param1, (LONG_PTR)&coord);
       lua_createtable(L, 0, 2);
-      PutIntToTable(L, "X", 1 + out->X);
-      PutIntToTable(L, "Y", 1 + out->Y);
+      PutIntToTable(L, "X", c->X);
+      PutIntToTable(L, "Y", c->Y);
       return 1;
     }
 

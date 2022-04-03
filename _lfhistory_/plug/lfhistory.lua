@@ -557,9 +557,20 @@ local function export_Configure()
   end
 end
 
+local function OpenFromMacro (aItem)
+  local Op, Cmd = aItem:match("^([%w_]+):([%w_]+)")
+  if Op=="own" then
+    if     Cmd == "commands" then commands_history()
+    elseif Cmd == "view"     then view_history()
+    elseif Cmd == "folders"  then folders_history()
+    end
+  end
+end
+
 local function export_Open (From, Item)
   if band(From, F.OPEN_FROMMACRO) ~= 0 then
     if band(From, F.OPEN_FROMMACROSTRING) ~= 0 then
+      far.Timer(50, function(h) h:Close(); OpenFromMacro(Item); end) -- to avoid running from a macro
       return
     end
 
