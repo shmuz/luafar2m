@@ -191,6 +191,7 @@ const wchar_t** CreateStringsArray(lua_State* L, int cpos, const char* field,
 // collector table is one under the top (-2)
 void FillPluginPanelItem (lua_State *L, struct PluginPanelItem *pi)
 {
+  int Collector = lua_gettop(L) - 1;
   memset(pi, 0, sizeof(*pi));
   pi->FindData.dwFileAttributes = GetAttrFromTable(L);
   pi->FindData.ftCreationTime   = GetFileTimeFromTable(L, "CreationTime");
@@ -199,9 +200,22 @@ void FillPluginPanelItem (lua_State *L, struct PluginPanelItem *pi)
   pi->FindData.nFileSize        = GetFileSizeFromTable(L, "FileSize");
   pi->NumberOfLinks             = GetOptIntFromTable  (L, "NumberOfLinks", 0);
 
-  pi->FindData.lpwszFileName = (wchar_t*)AddStringToCollectorField(L, -2, "FileName");
-  pi->Description            = (wchar_t*)AddStringToCollectorField(L, -2, "Description");
-  pi->Owner                  = (wchar_t*)AddStringToCollectorField(L, -2, "Owner");
+  pi->FindData.lpwszFileName = (wchar_t*)AddStringToCollectorField(L, Collector, "FileName");
+  pi->Description            = (wchar_t*)AddStringToCollectorField(L, Collector, "Description");
+  pi->Owner                  = (wchar_t*)AddStringToCollectorField(L, Collector, "Owner");
+
+  // custom column data
+  lua_getfield(L, -1, "CustomColumnData");
+  if (lua_istable(L,-1)) {
+    int i;
+    pi->CustomColumnNumber = lua_objlen(L,-1);
+    pi->CustomColumnData = malloc(pi->CustomColumnNumber * sizeof(wchar_t**));
+    for (i=0; i < pi->CustomColumnNumber; i++) {
+      lua_rawgeti(L, -1, i+1);
+      *(wchar_t**)(pi->CustomColumnData+i) = (wchar_t*)_AddStringToCollector(L, Collector);
+    }
+  }
+  lua_pop(L,1);
 
   // prevent Far from treating UserData as pointer and copying data from it
   pi->Flags = GetOptIntFromTable(L, "Flags", 0) & ~PPIF_USERDATA;
@@ -305,6 +319,7 @@ void free_find_data(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelI
     int ref = PanelItems[i].UserData;
     if (ref != LUA_NOREF)
       luaL_unref(L, -1, ref);
+    free((void*)PanelItems[i].CustomColumnData);
   }
   luaL_unref(L, -1, (int)(PanelItems-1)->CustomColumnNumber); //free the collector
   lua_pop(L, 1);

@@ -1,0 +1,477 @@
+﻿.Language=English,English
+.PluginContents=Polygon
+.Options CtrlColorChar=\
+
+@Contents
+$^ #Polygon - Help Contents#
+ #Polygon# - a Far Manager plugin for viewing and editing SQLite database files.
+
+ The plugin is based on SQLiteDB plugin by Artem Senichev.
+
+ The plugin requires an external sqlite3.dll (version >= 3.22)
+ having the same bitness as the plugin and located either in
+ the plugin's directory, Far Manager directory, or on the PATH.
+
+
+ ~Reference of keyboard actions~@Keyboard@
+ ~Multi-database mode~@MultiDbMode@
+ ~Custom Panel View Dialog~@PanelView@
+ ~Panel Filter~@PanelFilter@
+ ~Invoking the plugin~@Invoke@
+ ~Configuration Dialog~@ConfigDialog@
+ ~Edit Table Row~@EditInsertRow@
+ ~Data Export Dialog~@Export@
+ ~Data Dump Dialog~@Dump@
+ ~Data Recovery Dialog~@Recovery@
+ ~Queries History Menu~@queries_history@
+ ~Create table dialog~@CreateTableDialog@
+ ~User modules~@UserModules@
+ ~Misc~@Misc@
+
+@MultiDbMode
+$^ #Multi-database mode#
+ There are 2 major modes in plugin's browsing database and setting "directories":
+simple mode and multi-database mode.
+
+ In the simple mode the plugin "sees" only #main# database and ignores any other database
+that may be attached to the open database connection.
+ 
+ In the multi-database mode it is possible to navigate between all attached databases.
+
+ Pressing #Ctrl+BackSlash# or pressing #Enter# on #..# directory item behave differently
+depending on the current plugin's mode.
+
+ The initial starting plugin's mode is determined by the ~configuration~@ConfigDialog@ setting.
+It is also possible to switch between those 2 modes by a keyboard ~shortcut~@Keyboard@.
+
+
+ ~Contents~@Contents@
+
+@Invoke
+$^ #Invoking the plugin#
+ The plugin can be invoked in the following ways:
+
+   1. From the plugins menu. The plugin opens the file under cursor.
+
+   2. Pressing Enter on the file in panels.
+
+   3. From the command line: #polygon: [<options>] <filename>#
+      - Options may include:
+          #-u# - load common user modules
+          #-i# - load individual user modules
+          #-e# - enable extensions
+          #-F# - do not honor foreign keys
+        Multiple options may be passed together (e.g. #-ue#) or separate (e.g. #-u -e#).
+      - If the file <filename> does not exist it will be created.
+      - If no file name is specified then an in-memory database will be opened.
+
+   4. From ~Folder shortcuts~@:FolderShortcuts@.
+
+   5. From a ~macro~@CallFromMacro@.
+
+
+ ~Contents~@Contents@
+
+@Keyboard
+$^ #Reference of keyboard actions#
+   #View mode#     │ #Key#                 │ #Action#
+   ──────────────┼─────────────────────┼───────────────────────────────────────────────────
+   Any           │ F6                  │ SQL queries history
+                 │ Alt-Shift-F6        │ Toggle between simple and multi-database mode
+                 │ LCtrl-1             │ Two-panel view mode
+                 │ LCtrl-2             │ One-panel view mode
+                 │ Ctrl-Shift-BackSlash│ Close the plugin panel
+   ──────────────┼─────────────────────┼───────────────────────────────────────────────────
+   Database      │ F3                  │ Show contents of an item under cursor
+                 │ F4                  │ Show create statement of an item under cursor
+                 │ Shift-F4            │ Show pragma statements
+                 │ F5                  │ Dialog: export data of an item under cursor
+                 │ Shift-F5            │ Dialog: make data dump
+                 │ Shift-F6            │ Dialog: recover data
+                 │ F7                  │ Dialog: create a new table
+                 │ F8                  │ Dialog: delete selected database items
+   ──────────────┼─────────────────────┼───────────────────────────────────────────────────
+   Table or View │ Shift-F3            │ Dialog: custom panel view mode
+                 │ Alt-F3              │ Toggle panel view mode: full/custom
+                 │ Shift-F6            │ Dialog: panel filter
+                 │ Alt-F6              │ Toggle panel filter: on/off
+                 │ Ctrl-N              │ Menu: select sort compare mode
+   ──────────────┼─────────────────────┼───────────────────────────────────────────────────
+   Table         │ F4, Enter           │ Dialog: edit a row
+                 │ Shift-F4            │ Dialog: insert a row
+                 │ Shift-F5            │ Show/hide columns affinity
+                 │                     │   (i=integer, t=text, b=blob, r=real, n=numeric)
+                 │ F8                  │ Dialog: delete selected rows
+   ──────────────┴─────────────────────┴───────────────────────────────────────────────────
+
+^#Command line execution in the plugin's panel#
+
+     #lua <text>#     <text> is executed as a Lua chunk.
+                    The chunk receives 2 arguments as in ~Plugin.Call(<guid>, "lua")~@CallFromMacro@.
+
+     #cd <text>#      The command is processed by Far Manager.
+                    This makes possible to move between plugin's emulated directories.
+
+     #<word>:<text>#  The command is processed by Far Manager.
+                    This makes possible to use other plugins' commands.
+
+     #<Other cases>#  The command is executed as an SQL query.
+
+
+ ~Contents~@Contents@
+
+@PanelView
+$^ #Custom panel view dialog#
+   This dialog allows to choose what columns to display and set their widths.
+Column widths are specified with the same syntax as in
+~panel view modes~@:PanelViewModes@ dialog of Far Manager (it may be either 0,
+or number of characters, or percentage of the total panel width).
+
+   If the dialog was closed with OK button then the panel will be rearranged
+according to the dialog settings. These settings will also be stored permanently
+in the plugin's local database.
+
+   Pressing Alt-F3 in the plugin panel will toggle between full and custom views.
+
+ ~Contents~@Contents@
+
+@PanelFilter
+$^ #Panel Filter
+ Panel filter allows to display only records that match the given SQL query.
+
+ #Example:#
+
+   ╔══════════════════ Panel Filter ════════════════════╗
+   ║ #SELECT * FROM 'Personnel'#                          ║
+   ║ <optional text>                                   ↓║
+   ║ #WHERE#                                              ║
+   ║ salary between 2000 and 3000                      ↓║
+   ╟────────────────────────────────────────────────────╢
+   ║                 { OK } [ Cancel ]                  ║
+   ╚════════════════════════════════════════════════════╝
+
+
+ ~Contents~@Contents@
+
+@ConfigDialog
+$^ #Configuration Dialog
+ The following settings belong to common plugin configuration.
+
+ #[ ] Add to plugins menu#            The plugin will appear in Plugins Menu
+ #[ ] Confirm closing the panel#      Confirm closing the panel
+ #[ ] Multi-database mode#            Show all connected data bases
+ #Prefix:#                            Command line prefix of the plugin
+ #Exclude files matching masks:#      Do not try to open file matching these
+                                    masks when pressing Enter or CtrlPgDn
+
+ The following settings are applied when a new database connection is created.
+Changing these settings does not affect the already opened panels.
+
+ #[ ] Load common user modules#       Modules from %farprofile%\PluginsData\Polygon
+ #[ ] Load individual user modules#   Modules referenced within a database file
+ #[ ] Enable extensions#              Execute #sqlite3_enable_load_extension(db,1)#
+ #[ ] Do not honor foreign keys#      Do not execute #PRAGMA foreign_keys = ON#
+
+
+ ~Contents~@Contents@
+
+@UserModules
+$^ #User Modules
+ User module is a set of Lua functions placed in a table.
+ The modules are loaded from files with #.lua# extension whose locations
+are specified below in (1) and (2).
+ When a file is executed it receives its full name as the first parameter.
+
+ #1.# Modules are loaded from files that reside in
+#%FARPROFILE%\PluginsData\Polygon#
+    directory and its subdirectories.
+
+    This mechanism acts for any database file being opened by the plugin,
+    therefore these modules are better contain some utilities of common use.
+
+ #2.# If a database file contains a table named #modules-D4BC5EA7-8229-4FFE-AAC1-5A4F51A0986A#
+    then modules specified in that table will be loaded too.
+
+    - Column #script# should contain file name (either absolute or relative to database file directory).
+    - Column #enabled# should be equal to 1 in order to load the script.
+    - The numeric column #load_priority# affects order of loading scripts (the greater the earlier).
+
+    This mechanism acts individually for the given database file, therefore
+    these modules may contain actions that are specific for this database.
+
+ #3.# Modules are loaded immediately after a successful connection of the plugin
+to a data base is established.
+
+ #4.# A module may contain all or some of the following fields referring to
+functions called by the plugin in various situations:
+~OnOpenConnection~@OnOpenConnection@, ~ProcessPanelEvent~@ProcessPanelEvent@,
+~ProcessPanelInput~@ProcessPanelInput@ and ~ClosePanel~@ClosePanel@.
+
+ #5.# A module may contain the #Priority# field (a number between 0 and 100).
+If the field is not specified then it defaults to 50.
+Functions of a module with higher priority are called earlier.
+
+ #6.# For loading modules the #UserModule# function should be used.
+
+ #7.# As an example the user module code looks like that:
+
+    #local mod = { Priority=60 }#
+    #mod.OnOpenConnection  = function() ... end#
+    #mod.ProcessPanelEvent = function() ... end#
+    #mod.ProcessPanelInput = function() ... end#
+    #mod.ClosePanel        = function() ... end#
+    #UserModule(mod)#
+
+
+ ~Contents~@Contents@
+
+@OnOpenConnection
+$^ #OnOpenConnection
+ #OnOpenConnection(info)#
+
+ #Parameters:#
+   info:   table ~tInfo~@tInfo@
+
+ #Returns:#
+   nothing
+
+ #Description:#
+   This function is called right after a connection with data base is established.
+
+
+ ~User Modules~@UserModules@
+ ~Contents~@Contents@
+
+@ProcessPanelEvent
+$^ #ProcessPanelEvent
+ #result = ProcessPanelEvent(info, handle, event, param)#
+
+ #Parameters:#
+   info   :  table ~tInfo~@tInfo@
+   handle :  panel handle
+   event  :  integer
+   param  :  string (for FE_CHANGEVIEWMODE and FE_COMMAND), or nil
+
+ #Returns:#
+   result :  boolean
+
+ #Description:#
+   Except for its 1-st parameter, this function is identical to export.ProcessPanelEvent function
+(see LuaFAR manual).
+
+
+ ~User Modules~@UserModules@
+ ~Contents~@Contents@
+
+@ProcessPanelInput
+$^ #ProcessPanelInput
+ #result = ProcessPanelInput (info, handle, rec)#
+
+ #Parameters:#
+   info   : table ~tInfo~@tInfo@
+   handle : panel handle
+   rec    : table tInputRecord
+
+ #Returns:#
+   result :  boolean
+
+ #Description:#
+   Except for its 1-st parameter, this function is identical to export.ProcessPanelInput function
+(see LuaFAR manual).
+
+
+ ~User Modules~@UserModules@
+ ~Contents~@Contents@
+
+@ClosePanel
+$^ #ClosePanel
+ #ClosePanel(info, handle)#
+
+ #Parameters:#
+   info   : table ~tInfo~@tInfo@
+   handle : panel handle
+
+ #Returns:#
+   nothing
+
+ #Description:#
+   Except for its 1-st parameter, this function is identical to export.ClosePanel function
+(see LuaFAR manual).
+   This function must not close the database connection as the plugin does that.
+
+
+ ~User Modules~@UserModules@
+ ~Contents~@Contents@
+
+@tInfo
+$^ #Table tInfo#
+ This table has the following fields:
+
+    #db         # : userdata : database connection (see ~LuaSQLite3~@http://lua.sqlite.org/index.cgi/doc/tip/doc/lsqlite3.wiki@ manual)
+    #file_name  # : string   : name of database file
+    #multi_db   # : boolean  : multi-database mode
+    #schema     # : string   : current schema, e.g. "main", "temp", etc.
+    #panel_mode # : string   : "root", "db", "table", "view", "query"
+    #curr_object# : string   : name of the current displayed object (parent directory)
+    #rowid_name # : string   : name that can be used in SQL-queries as ROWID
+    #get_rowid  # : function : called with 1 parameter of #tPanelItem# type
+                             (see LuaFAR manual); returns an integer
+
+
+ ~User Modules~@UserModules@
+ ~Contents~@Contents@
+
+@EditInsertRow
+$^ #Edit Table Row#
+ This dialog allows to edit either an existing or new table row.
+ It is possible to insert multiple rows at once (see #Quantity# field).
+
+ Each edit field displays its contents as text, numeric, BLOB or NULL.
+
+   - Text values are displayed like     #'some text'#
+   - Numeric values are displayed like  #15#, #0.35# or #2.35e6#
+   - BLOB values are displayed like     #x'13E6BC64'#
+   - NULL values are displayed as       #NULL#
+   
+   If the #OK# button is pressed and a field is detected that does not match
+   any of the above formats then such a field is treated as a text one
+   and is normalized by the plugin.
+
+ The following keys are available:
+   #Ctrl-N#  toggle between NULL and the initial value
+   #Ctrl-O#  toggle between plain and normalized representation
+   #F3#      view a field in the internal viewer
+   #F4#      edit a field in the internal editor
+   #Alt-F3#  convert blob to text and show in a message box 
+
+
+ ~Contents~@Contents@
+
+@CallFromMacro
+$^ #Call from a macro#
+ #Plugin.Call(<guid>, "open", <filename> [,<flags>])#
+
+   Opens SQLite3 file <filename> in the active panel.
+     <filename>: file name with full path.
+     <flags>: string, a combination of zero or more options:
+              #"u"# - load common user modules
+              #"i"# - load individual user modules
+              #"e"# - enable extensions
+              #"F"# - do not honor foreign keys
+        If <flags> is not a string (or omitted) then
+        the plugin's configuration settings are used.
+
+ #Plugin.Call(<guid>, "lua", <whatpanel>, <Lua code>)#
+
+   Executes the given Lua code string.
+     <whatpanel> : 0 = active panel, 1 = passive panel.
+                   nil can be passed for panel-unrelated code.
+        If <whatpanel> specifies this plugin's open panel
+        then <Lua code> will be called with 2 arguments:
+            info    :  table ~tInfo~@tInfo@
+            handle  :  panel handle
+     <Lua code>  : Lua code in textual representation
+
+ #Plugin.Call(<guid>, "sql", <whatpanel>, <SQL code>)#
+
+   Executes the given SQL statements.
+     <whatpanel> : 0 = active panel, 1 = passive panel
+     <SQL code>  : one or more SQL statements
+
+
+ ~Contents~@Contents@
+
+@Export
+$^ #Data Export Dialog#
+  #Export <table name> to:#
+    Specify the file to export the data to.
+
+  #File format:#
+    #(•) CSV#
+        export in comma-separated values format
+        #[x] Preserve line feeds#
+            If checked:    preserve line feeds
+            If unchecked:  replace line feeds with spaces
+    #(•) Text#
+        export in plain text format
+
+
+ ~Contents~@Contents@
+
+@Dump
+$^ #Data Dump Dialog#
+  #IMPORTANT NOTE:#
+  The plugin requires #sqlite3.exe# for making dumps.
+  sqlite3.exe should be placed either on the PATH or in the plugin's directory.
+
+
+  #[x] Dump all#
+  If checked:    make dump of the entire database.
+  If unchecked:  make dump of selected items only.
+
+  #[x] Preserve rowids#
+  If checked:    preserve rowids.
+
+  #[x] Preserve new lines#
+  If checked:    new line characters are preserved and a row may span on multiple lines.
+  If unchecked:  the text is encoded in such a way that every row takes only one line.
+
+
+ ~Contents~@Contents@
+
+@Recovery
+$^ #Data Recovery Dialog#
+  #IMPORTANT NOTE:#
+  The plugin requires #sqlite3.exe# for making recovery.
+  sqlite3.exe should be placed either on the PATH or in the plugin's directory.
+
+  There are 2 options:
+    #(•) Recover as dump  #
+    #( ) Recover as database#
+
+ ~Contents~@Contents@
+
+@queries_history
+$^ Queries History Menu
+ This menu shows the history of SQL queries.
+
+ #Enter#                         Execute the query
+ #Ctrl+Enter#                    Insert the query in the command line
+ #F4#                            Edit the query and execute if modified
+ #F6#                            Open an empty editor
+ #Shift+Del#                     Delete the query
+ #Ctrl+C, Ctrl+Ins#              Copy the query
+ #Ctrl+Shift+C, Ctrl+Shift+Ins#  Copy all queries serialized
+
+
+ ~Contents~@Contents@
+
+@Misc
+$^ #Misc#
+ 1. A collation named #utf8_ncase# (case-insensitive UTF-8 collation) is automatically added
+to any database connection. This collation can be used in SQL schemas and statements.
+
+ 2. SQLite core functions #lower#, #upper# and #like# are replaced by their UTF-8 equivalents.
+
+ 3. Added #regexp# user function. It makes possible the #REGEXP# operator in SQL expressions.
+
+
+ ~Contents~@Contents@
+
+@CreateTableDialog
+$^ #Create Table dialog#
+
+ This dialog assists in creation of a new table.
+
+ - Enter the table name and column definitions into their dedicated input fields.
+
+ - If additional conditions (e.g. CHECK, UNIQUE, etc.) are needed, they can be entered
+   into the next available column definition fields.
+
+ - Empty column fields are ignored but at least one of them must be non-empty.
+
+ - The entered names are used with no processing. If the syntax requires enclosing some names
+   in quotes then it should be done by the user.
+
+
+ ~Contents~@Contents@

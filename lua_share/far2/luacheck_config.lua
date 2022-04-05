@@ -362,9 +362,9 @@ local luafar = {
         "GetCurrentPanelItem", "GetPanelDirectory", "GetPanelFormat", "GetPanelHostFile",
         "GetPanelInfo", "GetPanelItem", "GetSelectedPanelItem", "GetUserScreen",
         "InsertCmdLine", "IsActivePanel", "RedrawPanel", "SetCaseSensitiveSort",
-        "SetCmdLine", "SetCmdLinePos", "SetCmdLineSelection", "SetNumericSort",
-        "SetPanelDirectory", "SetSelection", "SetSortMode", "SetSortOrder", "SetUserScreen",
-        "SetViewMode", "UpdatePanel",
+        "SetCmdLine", "SetCmdLinePos", "SetCmdLineSelection", "SetDirectoriesFirst",
+        "SetNumericSort", "SetPanelDirectory", "SetSelection", "SetSortMode",
+        "SetSortOrder", "SetUserScreen", "SetViewMode", "UpdatePanel",
       };
     };
 
