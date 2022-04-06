@@ -44,7 +44,7 @@ end
 
 
 local function get_sqlite_exe()
-  local t_execs = { far.PluginStartupInfo().ModuleDir.."sqlite3.exe", "sqlite3.exe" }
+  local t_execs = { "sqlite3" }
   local i = 0
   return function() i=i+1; return t_execs[i]; end
 end
@@ -57,12 +57,12 @@ end
 
 
 function exporter:get_destination_dir()
-  local dir = panel.GetPanelDirectory(nil, 0).Name
+  local dir = panel.GetPanelDirectory(0)
   if dir == "" then -- passive panel's directory is unknown, choose host file directory
-    dir = self._filename:match(".*\\") or ""
+    dir = self._filename:match(".*/") or ""
   end
-  if not (dir=="" or dir:sub(-1)=="\\") then
-    dir = dir .. "\\"
+  if not (dir=="" or dir:sub(-1)=="/") then
+    dir = dir .. "/"
   end
   return dir
 end
@@ -72,7 +72,7 @@ function exporter:export_data_with_dialog()
   local data = config.load().exporter
 
   -- Get source table/view name
-  local item = panel.GetCurrentPanelItem(nil, 1)
+  local item = panel.GetCurrentPanelItem(1)
   if not (item and item.FileName~=".." and item.FileAttributes:find("d")) then
     return false
   end
@@ -103,10 +103,10 @@ function exporter:export_data_with_dialog()
 
     elseif Msg == F.DN_BTNCLICK then
       if Param1 == Pos.csv or Param1 == Pos.text then
-        local csv = hDlg:send(F.DM_GETCHECK, Pos.csv) == F.BSTATE_CHECKED
+        local csv = hDlg:send(F.DM_GETCHECK, Pos.csv)
         local fname = dst_file_name .. (csv and ".csv" or ".txt")
         hDlg:send(F.DM_SETTEXT, Pos.targetfile, fname)
-        hDlg:send(F.DM_ENABLE, Pos.multiline, csv and 1 or 0)
+        hDlg:send(F.DM_ENABLE, Pos.multiline, csv)
       end
     end
   end
@@ -131,9 +131,9 @@ function exporter:dump_data_with_dialog()
 
   -- Collect selected items for dump
   local t_selected = {}
-  local p_info = panel.GetPanelInfo(nil,1)
+  local p_info = panel.GetPanelInfo(1)
   for i=1,p_info.SelectedItemsNumber do
-    local item = panel.GetSelectedPanelItem(nil, 1, i)
+    local item = panel.GetSelectedPanelItem(1, i)
     if item
        and item.FileName ~= ".."
        and item.FileAttributes:find("d")
@@ -209,8 +209,8 @@ function exporter:recover_data_with_dialog()
   local Pos, Elem = sdialog.Indexes(Items)
   ------------------------------------------------------------------------------
   local function set_output_name(hDlg)
-    local as_dump = 1==hDlg:send("DM_GETCHECK", Pos.as_dump)
-    local fname = self._filename:match("[^\\]+$"):gsub("(.*)%.[^.]*$", "%1")
+    local as_dump = hDlg:send("DM_GETCHECK", Pos.as_dump)
+    local fname = self._filename:match("[^/]+$"):gsub("(.*)%.[^.]*$", "%1")
     local target = ("%s%s.recovered.%s"):format(
       self:get_destination_dir(), fname, as_dump and "dump" or "db")
     hDlg:send("DM_SETTEXT", Pos.targetfile, target)
@@ -230,12 +230,13 @@ function exporter:recover_data_with_dialog()
   if rc then
     for exec in get_sqlite_exe() do
       local cmd = rc.as_dump and
-        ([[""%s" "%s" .recover 1> "%s" 2>NUL"]]):format(exec, self._filename, rc.targetfile) or
-        ([[""%s" "%s" .recover 2>NUL | "%s" "%s" 2>NUL"]]):format(exec, self._filename, exec, rc.targetfile)
-      if 0==win.system(cmd) then break end
+        ([[%s "%s" .recover 1> "%s" 2>NUL]]):format(exec, self._filename, rc.targetfile) or
+        ([[%s "%s" .recover 2>NUL | %s "%s" 2>NUL]]):format(exec, self._filename, exec, rc.targetfile)
+      far.Message(cmd)
+      if 0==os.execute(cmd) then break end
     end
-    panel.UpdatePanel(nil,0)
-    panel.RedrawPanel(nil,0)
+    panel.UpdatePanel(0)
+    panel.RedrawPanel(0)
   end
 end
 
@@ -476,15 +477,16 @@ function exporter:export_data_as_dump(Args)
   ------------------------
   far.Message("Please wait...", "", "")
   for exec in get_sqlite_exe() do
-    -- use win.system because win.ShellExecute wouldn't reuse Far console.
-    if 0 == win.system('""'..exec..'" '..cmd..'"') then break; end
+    -- use os.execute because win.ShellExecute wouldn't reuse Far console.
+    far.Message(exec..' '..cmd)
+    if 0 == os.execute(exec..' '..cmd) then break; end
   end
   ------------------------
-  panel.RedrawPanel(nil,1)
-  panel.RedrawPanel(nil,0)
+  panel.RedrawPanel(1)
+  panel.RedrawPanel(0)
   ------------------------
-  panel.UpdatePanel(nil,0)
-  panel.RedrawPanel(nil,0)
+  panel.UpdatePanel(0)
+  panel.RedrawPanel(0)
 end
 
 

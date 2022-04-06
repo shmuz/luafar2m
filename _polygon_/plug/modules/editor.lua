@@ -193,7 +193,7 @@ local function edit_row(db, schema, table_name, rowid_name, handle)
       -- connections may have hard time trying to access this DB
       stmt:finalize()
       if row_dialog(db, schema, table_name, rowid_name, db_data, row_id) then
-        panel.UpdatePanel(handle, nil, true) -- keep selection
+        panel.UpdatePanel(handle, true) -- keep selection
         panel.RedrawPanel(handle)
       end
     else
@@ -213,7 +213,7 @@ local function insert_row(db, schema, table_name, rowid_name, handle)
     end
     if row_dialog(db, schema, table_name, rowid_name, col_data, nil) then
       local pos
-      panel.UpdatePanel(handle, nil, true) -- keep selection
+      panel.UpdatePanel(handle, true) -- keep selection
 
       -- Find position of the newly inserted item in order to place the cursor on it.
       -- Don't search on very big tables to avoid slow operation.
@@ -222,13 +222,13 @@ local function insert_row(db, schema, table_name, rowid_name, handle)
         local row_id = db:last_insert_rowid()
         if row_id and row_id ~= 0 then
           for k=1,pInfo.ItemsNumber do
-            local item = panel.GetPanelItem(handle,nil,k)
+            local item = panel.GetPanelItem(handle,k)
             if utils.get_rowid(item) == row_id then pos=k; break; end
           end
         end
       end
 
-      panel.RedrawPanel(handle, nil, pos and { CurrentItem=pos; })
+      panel.RedrawPanel(handle, pos and { CurrentItem=pos; })
     end
   end
 end

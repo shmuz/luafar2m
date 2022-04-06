@@ -402,24 +402,30 @@ function export.ClosePlugin(object, handle)
 end
 
 
---function export.ProcessKey(object, handle, rec)
 function export.ProcessKey(object, handle, key, controlstate)
+  if 0 ~= band(key, F.PKF_PREPROCESS) then
+    return
+  end
+  local cs = 0
+  if 0 ~= band(controlstate, F.PKF_CONTROL) then cs = bor(cs, 0x08) end -- LEFT_CTRL_PRESSED
+  if 0 ~= band(controlstate, F.PKF_ALT    ) then cs = bor(cs, 0x02) end -- LEFT_ALT_PRESSED
+  if 0 ~= band(controlstate, F.PKF_SHIFT  ) then cs = bor(cs, 0x10) end -- SHIFT_PRESSED
   local rec = {
     EventType = F.KEY_EVENT;
     KeyDown = true;
     VirtualKeyCode = key;
-    ControlKeyState = controlstate;
+    ControlKeyState = cs;
   }
   for _,mod in ipairs(object.LoadedModules) do
     if type(mod.ProcessPanelInput) == "function" then
       local ok, msg = xpcall(
         function() return mod.ProcessPanelInput(object:get_info(), handle, rec) end,
         debug.traceback)
-        if ok and msg then return true end
+      if ok and msg then return true end
       if not ok then ErrMsg(msg) end
     end
   end
-  return rec.EventType == F.KEY_EVENT and object:handle_keyboard(handle, rec)
+  return object:handle_keyboard(handle, rec)
 end
 
 
@@ -482,5 +488,5 @@ end
 
 if plugdebug.Running() then
   plugdebug.Start()
-  win.OutputDebugString("On_Default_Script_Loaded")
+  far.Log("On_Default_Script_Loaded")
 end

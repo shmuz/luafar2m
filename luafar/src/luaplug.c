@@ -32,6 +32,12 @@ lua_State* LS;
 TPluginData PluginData;
 //---------------------------------------------------------------------------
 
+lua_State* GetLuaState()
+{
+  return LS;
+}
+//---------------------------------------------------------------------------
+
 // This function must have __cdecl calling convention, it is not `LUAPLUG'.
 int _export luaopen_luaplug (lua_State *L)
 {

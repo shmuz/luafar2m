@@ -71,7 +71,7 @@ local function Inject(_, name)
       ------------------------------------------------------------------------------
       end
     --------------------------------------------------------------------------------
-    elseif name=="ProcessPanelEvent" then
+    elseif name=="ProcessEvent" then
       local Event, Param = select(3, ...)
       if Event==F.FE_IDLE then -- don't show this event
         txt = nil
@@ -79,15 +79,9 @@ local function Inject(_, name)
         txt = ("%s (%s, %s)"):format(name, PanelEvents[Event], quote(Param))
       end
     --------------------------------------------------------------------------------
-    elseif name=="ProcessPanelInput" then
-      local Rec = select(3, ...)
-      if Rec.EventType==F.KEY_EVENT then
-        txt = ("%s (KEY_EVENT, %s)"):format(name, quote(far.InputRecordToName(Rec)))
-      elseif Rec.EventType==F.MENU_EVENT then -- don't show this event
-        txt = nil
-      else
-        txt = ("%s (%s)"):format(name, tostring(InputEvents[Rec.EventType]))
-      end
+    elseif name=="ProcessKey" then
+      local key, ctrlstate = select(3, ...)
+      txt = ("%s (key=0x%X, ctrlstate=0x%X)"):format(name, key, ctrlstate)
     --------------------------------------------------------------------------------
     elseif name=="SetDirectory" then
       local Dir, OpMode = select(3, ...)
@@ -95,7 +89,7 @@ local function Inject(_, name)
     --------------------------------------------------------------------------------
     end
     if txt then
-      win.OutputDebugString(txt)
+      far.Log(txt)
     end
     return func(...)
   end
@@ -109,11 +103,7 @@ local function Start()
   -- If table 'export' contains real elements then replace it and add injections.
   -- Else do nothing.
   if next(export) then
-    -- As export.GetGlobalInfo is located in a separate file that is not reloaded
-    -- due to far.ReloadDefaultScript==true let's take care it is not lost.
-    -- Also keep Old_export as a global variable to withstand reloading this module.
-    export.GetGlobalInfo = rawget(export,"GetGlobalInfo") or (Old_export and Old_export.GetGlobalInfo)
-    -- Do main work
+    -- Keep Old_export as a global variable to withstand reloading this module.
     Old_export, export = export, {}
     setmetatable(Old_export, nil)
     setmetatable(export, { __index=Inject; })

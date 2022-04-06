@@ -895,7 +895,7 @@ function mypanel:prepare_panel_info(handle)
   }
   local pm2 = {}
   for k,v in pairs(pm1) do pm2[k]=v; end
-  pm2.Flags = F.PMFLAGS_FULLSCREEN
+  pm2.FullScreen = true
   for k=1,10 do
     info.modes[k] = (k%2==1) and pm2 or pm1
   end
@@ -1204,8 +1204,8 @@ function mypanel:view_db_object()
   local title = M.title_short .. ": " .. RealItemName
   viewer.Viewer(tmp_file_name, title, 0, 0, -1, -1, bit.bor(
     F.VF_ENABLE_F6, F.VF_DISABLEHISTORY, F.VF_DELETEONLYFILEONCLOSE, F.VF_IMMEDIATERETURN, F.VF_NONMODAL), 65001)
-  viewer.SetMode(nil, { Type=F.VSMT_WRAP,     iParam=0,          Flags=0 })
-  viewer.SetMode(nil, { Type=F.VSMT_VIEWMODE, iParam=F.VMT_TEXT, Flags=F.VSMFL_REDRAW })
+  viewer.SetMode { Type=F.VSMT_WRAP,     iParam=0,          Flags=0 }
+  viewer.SetMode { Type=F.VSMT_VIEWMODE, iParam=F.VMT_TEXT, Flags=F.VSMFL_REDRAW }
 end
 
 
@@ -1337,7 +1337,7 @@ function mypanel:edit_query(query)
 
   -- Open query editor
   query = nil
-  local flags = F.EF_DISABLESAVEPOS + F.EF_DISABLEHISTORY
+  local flags = F.EF_DISABLEHISTORY
   if F.EEC_MODIFIED==editor.Editor(tmp_name,"SQLite query",nil,nil,nil,nil,flags,nil,nil,65001) then
     fp = io.open(tmp_name)
     if fp then

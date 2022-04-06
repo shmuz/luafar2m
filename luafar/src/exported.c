@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------
 #include <windows.h>
 #include <dlfcn.h> //dlclose
+#include <farkeys.h>
 #include "luafar.h"
 #include "util.h"
 #include "ustring.h"
@@ -741,9 +742,11 @@ int LF_ProcessHostFile(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *Pan
   return FALSE;
 }
 
-int LF_ProcessKey(lua_State* L, HANDLE hPlugin, int Key,
-  unsigned int ControlState)
+int LF_ProcessKey(lua_State* L, HANDLE hPlugin, int Key, unsigned int ControlState)
 {
+  if ((Key & ~PKF_PREPROCESS) == KEY_NONE)
+    return FALSE; //ignore garbage
+
   if (GetExportFunction(L, "ProcessKey")) {   //+1: Func
     PushPluginPair(L, hPlugin);        //+3: Func,Pair
     lua_pushinteger(L, Key);           //+4

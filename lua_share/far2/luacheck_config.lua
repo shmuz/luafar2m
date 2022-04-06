@@ -25,7 +25,7 @@ local luafar = {
         "GetFileOwner", "GetMsg", "GetNumberOfLinks", "GetPathRoot", "GetPluginDirList",
         "GetReparsePointInfo", "Guids", "InputBox", "InputRecordToKey", "InputRecordToName",
         "Keys", "KeyToName", "LIsAlpha", "LIsAlphanum", "LIsLower", "LIsUpper",
-        "LLowerBuf", "LoadPlugin", "LStricmp", "LStrnicmp", "LuafarVersion",
+        "LLowerBuf", "LoadPlugin", "Log", "LStricmp", "LStrnicmp", "LuafarVersion",
         "LUpperBuf", "MacroCheck", "MacroGetArea", "MacroGetState", "MacroLoadAll",
         "MacroPost", "MacroSaveAll", "MakeMenuItems", "Menu", "Message",
         "MkLink", "MkTemp", "NameToKey", "PasteFromClipboard", "PluginStartupInfo",
