@@ -51,17 +51,10 @@ local function First_load_actions()
     local pluginDir = far.PluginStartupInfo().ModuleDir
     ReadIniFile(pluginDir.."polygon.ini")
 
-    -- Provide priority access to lsqlite3.dll residing in the plugin's folder
+    -- Provide priority access to lsqlite3.so residing in the plugin's folder
     -- (needed for deployment of the plugin)
     package.cpath = pluginDir.."?.so;"..package.cpath
-
-    -- Provide access to sqlite3.dll residing in the plugin's folder
-    ----local path = win.GetEnv("PATH") or ""
-    ----win.SetEnv("PATH", pluginDir..";"..path) -- modify PATH
-    local ok, msg = pcall(require, "lsqlite3")
-    ----win.SetEnv("PATH", path) -- restore PATH
-    if not ok then error(msg) end
-
+    require "lsqlite3"
     package.path = pluginDir.."?.lua;"..package.path
   end
 end

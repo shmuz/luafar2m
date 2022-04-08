@@ -3,6 +3,7 @@
 local settings = require "far2.settings"
 local sdialog  = require "far2.simpledialog"
 local M        = require "modules.string_rc"
+local SETTINGS_KEY = "polygon"
 
 local Data
 local mod = {} -- this module
@@ -25,8 +26,8 @@ mod.EXCL_MASKS=            "excl_masks"
 
 function mod.load()
   Data = Data or {}
-  Data.plugin   = settings.mload("root", "plugin") or {}
-  Data.exporter = settings.mload("root", "exporter") or {}
+  Data.plugin   = settings.mload(SETTINGS_KEY, "plugin") or {}
+  Data.exporter = settings.mload(SETTINGS_KEY, "exporter") or {}
 
   InitSetting(Data.plugin,  mod.PREFIX,               "polygon")
   InitSetting(Data.plugin,  mod.ADD_TO_MENU,          false)
@@ -77,14 +78,14 @@ function mod.showdialog()
   -- save the dialog data
   if rc then
     for k,v in pairs(rc) do Pdata[k] = v; end
-    settings.msave("root", "plugin", Pdata)
+    settings.msave(SETTINGS_KEY, "plugin", Pdata)
   end
 end
 
 function mod.save()
   if Data then
-    settings.msave("root", "plugin", Data.plugin)
-    settings.msave("root", "exporter", Data.exporter)
+    settings.msave(SETTINGS_KEY, "plugin", Data.plugin)
+    settings.msave(SETTINGS_KEY, "exporter", Data.exporter)
   end
 end
 

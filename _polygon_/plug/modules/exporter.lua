@@ -94,12 +94,12 @@ function exporter:export_data_with_dialog()
     {tp="butt";   text=M.exp_exp; centergroup=1; default=1;                  },
     {tp="butt";   text=M.cancel;  centergroup=1; cancel=1;                   },
   }
-  local Pos, _ = sdialog.Indexes(Items)
+  local Pos = sdialog.Indexes(Items)
   ------------------------------------------------------------------------------
   Items.proc = function(hDlg, Msg, Param1, Param2)
     if Msg == F.DN_INITDIALOG then
-      hDlg:send(F.DM_SETCHECK, data.format=="csv" and Pos.csv or Pos.text, 1)
-      hDlg:send(F.DM_SETCHECK, Pos.multiline, data.multiline and 1 or 0)
+      hDlg:send(F.DM_SETCHECK, data.format=="csv" and Pos.csv or Pos.text, true)
+      hDlg:send(F.DM_SETCHECK, Pos.multiline, data.multiline)
 
     elseif Msg == F.DN_BTNCLICK then
       if Param1 == Pos.csv or Param1 == Pos.text then
@@ -158,12 +158,12 @@ function exporter:dump_data_with_dialog()
     {tp="butt";  text=M.dump_dump; centergroup=1; default=1;                  },
     {tp="butt";  text=M.cancel;    centergroup=1; cancel=1;                   },
   }
-  local Pos, _ = sdialog.Indexes(Items)
+  local Pos = sdialog.Indexes(Items)
   ------------------------------------------------------------------------------
   function Items.initaction(hDlg)
     if t_selected[1] == nil then
-      hDlg:send(F.DM_SETCHECK, Pos.dumpall, 1)
-      hDlg:send(F.DM_ENABLE,   Pos.dumpall, 0)
+      hDlg:send(F.DM_SETCHECK, Pos.dumpall, true)
+      hDlg:send(F.DM_ENABLE,   Pos.dumpall, false)
     end
   end
 

@@ -17,8 +17,10 @@ local KEEP_DIALOG_OPEN = 0
 local SM_USER = F.SM_USER or 100 -- SM_USER appeared in Far 3.0.5655
 
 local CMP_ALPHA, CMP_INT, CMP_FLOAT = 0,1,2 -- CRITICAL: must match the enum in polygon.c
-local SETTINGS_KEY = "polygon"
-local SECTION_FILES = "files" -- keys in this section are lower-cased full file names
+local SETTINGS_KEY    = "polygon"
+local SECTION_GENERAL = "general"
+local SECTION_FILES   = "files" -- keys in this section are lower-cased full file names
+local SECTION_QUERIES = "queries"
 
 
 -- Clean up "files" history
@@ -28,16 +30,14 @@ local function RemoveOldHistoryRecords()
   local RETAIN_TIME = DAY * 365
 
   ------------------------------------------------------------------------
-  local pSection, pKey = "general", "last_check"
-  ------------------------------------------------------------------------
   local now = win.GetSystemTimeAsFileTime()
-  local sect = settings.mload(SETTINGS_KEY, pSection) or {}
-  local last = sect[pKey]
+  local sect = settings.mload(SETTINGS_KEY, SECTION_GENERAL) or {}
+  local last = sect["last_check"]
   if last and (now - last) < CHECK_PERIOD then
     return
   end
-  sect[pKey] = now
-  settings.msave(SETTINGS_KEY, pSection, sect)
+  sect["last_check"] = now
+  settings.msave(SETTINGS_KEY, SECTION_GENERAL, sect)
   ------------------------------------------------------------------------
   local items = settings.mload(SETTINGS_KEY, SECTION_FILES)
   if items then
@@ -102,7 +102,8 @@ function mypanel.open(filename, extensions, ignore_foreign_keys, multi_db)
       self._db:exec("PRAGMA foreign_keys = ON;")
     end
     RemoveOldHistoryRecords()
-    self._histfile = settings.mload(SECTION_FILES, filename:lower(), "local") or {}
+    local sect = settings.mload(SETTINGS_KEY, SECTION_FILES) or {}
+    self._histfile = settings.field(sect, filename:lower())
     self._histfile.tables = self._histfile.tables or {}
     self._tables = self._histfile.tables
     return self
@@ -311,13 +312,13 @@ local meta_q_history = { __index=q_history; }
 
 function q_history.new()
   local self = setmetatable({}, meta_q_history)
-  self._array = settings.mload("queries", "queries", "local") or {}
+  self._array = settings.mload(SETTINGS_KEY, SECTION_QUERIES) or {}
   return self
 end
 
 
 function q_history:save()
-  settings.msave("queries", "queries", self._array, "local")
+  settings.msave(SETTINGS_KEY, SECTION_QUERIES, self._array)
 end
 
 
@@ -704,7 +705,7 @@ function mypanel:set_column_mask(handle)
   local function SetEnable(hDlg)
     hDlg:send(F.DM_ENABLEREDRAW, 0)
     for pos = 1,col_num do
-      local enab = hDlg:send(F.DM_GETCHECK, 2*pos+1)==F.BSTATE_CHECKED and 1 or 0
+      local enab = hDlg:send(F.DM_GETCHECK, 2*pos+1)
       hDlg:send(F.DM_ENABLE, 2*pos, enab)
     end
     hDlg:send(F.DM_ENABLEREDRAW, 1)
@@ -715,10 +716,9 @@ function mypanel:set_column_mask(handle)
       SetEnable(hDlg)
       hDlg:send(F.DM_SETFOCUS, 3)
     elseif Msg == F.DN_BTNCLICK then
-      local state = Param1==btnSet and F.BSTATE_CHECKED or Param1==btnReset and F.BSTATE_UNCHECKED
-      if state then
+      if Param1==btnSet or Param1==btnReset then
         hDlg:send(F.DM_ENABLEREDRAW, 0)
-        for pos = 1,col_num do hDlg:send(F.DM_SETCHECK, 2*pos+1, state); end
+        for pos = 1,col_num do hDlg:send(F.DM_SETCHECK, 2*pos+1, Param1==btnSet); end
         hDlg:send(F.DM_ENABLEREDRAW, 1)
       end
       SetEnable(hDlg)
@@ -739,7 +739,11 @@ function mypanel:set_column_mask(handle)
     end
     self._col_masks_used[self._objname] = true
     self._histfile["time"] = win.GetSystemTimeAsFileTime()
-    settings.msave(SECTION_FILES, self._filename:lower(), self._histfile, "local")
+
+    local t = settings.mload(SETTINGS_KEY, SECTION_FILES) or {}
+    t[self._filename:lower()] = self._histfile
+    settings.msave(SETTINGS_KEY, SECTION_FILES, t)
+
     self:invalidate_panel_info()
     panel.RedrawPanel(handle)
   end
