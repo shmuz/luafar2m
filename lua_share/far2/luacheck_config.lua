@@ -403,7 +403,7 @@ local luafar = {
 
     ["win"] = {
       fields = {
-        "CompareString", "CreateDir", "DeleteFile", "DeleteRegKey", "EnumSystemCodePages",
+        "Clock", "CompareString", "CreateDir", "DeleteFile", "DeleteRegKey", "EnumSystemCodePages",
         "ExtractKey", "FileTimeToLocalFileTime", "FileTimeToSystemTime", "GetACP",
         "GetConsoleScreenBufferInfo", "GetCPInfo", "GetCurrentDir", "GetDriveType", "GetEnv",
         "GetFileAttr", "GetFileInfo", "GetOEMCP", "GetRegKey", "GetSystemTimeAsFileTime",

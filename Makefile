@@ -1,14 +1,9 @@
-# Uncomment the next line to build plugin LF4Editor
-LF4ED = 1
-
-# Uncomment the next line to build plugin LFSearch
-LFSEARCH = 1
-
-# Uncomment the next line to build plugin LFTempPanel
-LFTMP = 1
-
-# Uncomment the next line to build plugin LFHistory
+# Comment out a line to exclude a plugin from compilation
+LF4ED     = 1
+LFSEARCH  = 1
+LFTMP     = 1
 LFHISTORY = 1
+POLYGON   = 1
 
 noembed embed:
 	cd luafar/src && $(MAKE)
@@ -23,6 +18,9 @@ ifdef LFTMP
 endif
 ifdef LFHISTORY
 	cd _lfhistory_/build && $(MAKE) $@
+endif
+ifdef POLYGON
+	cd _polygon_/build   && $(MAKE) $@
 endif
 
 .PHONY: embed noembed

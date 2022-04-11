@@ -27,7 +27,7 @@ end
 function progress:show()
   if not self._visible then
     self._visible = true
-    far.AdvControl("ACTL_SETPROGRESSSTATE", "TBPS_INDETERMINATE")
+    far.AdvControl("ACTL_SETPROGRESSSTATE", "PGS_INDETERMINATE")
   end
 
   if self._bar == nil then
@@ -41,7 +41,7 @@ end
 function progress:hide()
   if self._visible then
     far.AdvControl("ACTL_PROGRESSNOTIFY")
-    far.AdvControl("ACTL_SETPROGRESSSTATE", "TBPS_NOPROGRESS")
+    far.AdvControl("ACTL_SETPROGRESSSTATE", "PGS_NOPROGRESS")
     panel.RedrawPanel(1)
     panel.RedrawPanel(0)
     self._visible = false
