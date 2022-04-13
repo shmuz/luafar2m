@@ -186,7 +186,7 @@ local function SplitCommandLine (str)
   local from = 1
   while true do
     local to
-    from = regex.find(str, "\\S", from)
+    from = str:find("%S", from)
     if not from then break end
     if str:sub(from,from) == '"' then
       from, to = from+1, from+1
@@ -640,10 +640,11 @@ local function export_OpenPlugin (aFrom, aItem)
       if args[1] == "<" then
         if args[2] then
           local cmd = command:match("^%s*<%s+(.+)")
-          local fname = Redirect(cmd)
-          if fname then
-            local flags = bor(F.EF_NONMODAL, F.EF_IMMEDIATERETURN, F.EF_ENABLE_F6, F.EF_DELETEONCLOSE)
-            editor.Editor(fname,nil,nil,nil,nil,nil,flags)
+          local tmpname = Redirect(cmd)
+          if tmpname then
+            local flags = bor(F.EF_NONMODAL, F.EF_IMMEDIATERETURN, F.EF_ENABLE_F6,
+                              F.EF_DELETEONLYFILEONCLOSE, F.EF_DISABLEHISTORY)
+            editor.Editor(tmpname,nil,nil,nil,nil,nil,flags)
           end
         end
       else
@@ -655,10 +656,11 @@ local function export_OpenPlugin (aFrom, aItem)
       if args[1] == "<" then
         if args[2] then
           local cmd = command:match("^%s*<%s+(.+)")
-          local fname = Redirect(cmd)
-          if fname then
-            local flags = bor(F.VF_NONMODAL, F.VF_IMMEDIATERETURN, F.VF_ENABLE_F6, F.VF_DELETEONCLOSE)
-            viewer.Viewer(fname,nil,nil,nil,nil,nil,flags)
+          local tmpname = Redirect(cmd)
+          if tmpname then
+            local flags = bor(F.VF_NONMODAL, F.VF_IMMEDIATERETURN, F.VF_ENABLE_F6,
+                              F.VF_DELETEONLYFILEONCLOSE, F.VF_DISABLEHISTORY)
+            viewer.Viewer(tmpname,nil,nil,nil,nil,nil,flags)
           end
         end
       else
