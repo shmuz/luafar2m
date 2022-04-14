@@ -361,7 +361,7 @@ int far_Match   (lua_State *L)  { return rx_find_match(L, 0, 1); }
 int regex_gsub  (lua_State *L)  { return rx_gsub(L, 0); }
 int far_Gsub    (lua_State *L)  { return rx_gsub(L, 1); }
 
-const luaL_reg regex_methods[] = {
+const luaL_Reg regex_methods[] = {
   {"find",          regex_find},
   {"match",         regex_match},
   {"gsub",          regex_gsub},

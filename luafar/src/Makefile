@@ -4,14 +4,13 @@ include ../../config.mak
 
 OUT= Out$(DIRBIT)
 MYCFLAGS  = -DBUILD_DLL -DFAR_DONT_USE_INTERNALS -fvisibility=hidden
-MYLDFLAGS = -llua5.1 -luuid
+MYLDFLAGS = -luuid
 TARGET = ../../$(LUAFARDLL)
 
 OBJ = \
   $(OUT)/farflags.o    \
   $(OUT)/farcolor.o    \
   $(OUT)/farkeys.o     \
-  $(OUT)/bit.o         \
   $(OUT)/exported.o    \
   $(OUT)/lregex.o      \
   $(OUT)/service.o     \
@@ -22,6 +21,10 @@ OBJ = \
   $(OUT)/reg.o         \
   $(OUT)/mytimer.o     \
   $(OUT)/lusercontrol.o
+
+ifneq ($(USE_LUAJIT),1)
+  OBJ += $(OUT)/bit.o
+endif
 
 .PHONY: directories all
 all: directories $(TARGET)

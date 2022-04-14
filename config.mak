@@ -1,23 +1,36 @@
 # User-configurable settings
 # ---------------------------
 
-FARSOURCE  = $(HOME)/far2l
+# Far2l source tree
+FARSOURCE = $(HOME)/far2l
+
+# Set USE_LUAJIT=0 to use Lua5.1 rather than LuaJIT
+USE_LUAJIT = 1
 
 # Settings below do not usually require editing
 # ----------------------------------------------
 
 INC_FAR = $(FARSOURCE)/far2l/far2sdk
 INC_WIN = $(FARSOURCE)/WinPort
-INC_LUA = /usr/include/lua5.1
+
+ifneq ($(USE_LUAJIT),1)
+  INC_LUA = /usr/include/lua5.1
+  LIB_LUA = -llua5.1
+  LUAEXE  = lua
+else
+  INC_LUA = /usr/include/luajit-2.1
+  LIB_LUA = -lluajit-5.1
+  LUAEXE  = luajit
+  JITCFLAG = -DUSE_LUAJIT
+endif
 
 LUA_SHARE   = ../../lua_share
 LUAFARDLL   = luafar2l.so
 
 DIRBIT = 64
 CC     = gcc
-LUAEXE = lua
 CFLAGS = -O2 -Wall -Wno-unused-function \
          -I$(INC_FAR) -I$(INC_WIN) -I$(INC_LUA) \
-         -m$(DIRBIT) -fPIC $(MYCFLAGS)
+         -m$(DIRBIT) -fPIC $(JITCFLAG) $(MYCFLAGS)
 
-LDFLAGS = -shared -m$(DIRBIT) -fPIC $(MYLDFLAGS)
+LDFLAGS = -shared -m$(DIRBIT) -fPIC $(LIB_LUA) $(MYLDFLAGS)

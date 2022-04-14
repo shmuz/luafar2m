@@ -13,6 +13,12 @@
 #include "ustring.h"
 #include "version.h"
 
+#ifdef USE_LUAJIT
+#  define LUADLL "libluajit-5.1.so"
+#else
+#  define LUADLL "liblua5.1.so"
+#endif
+
 void Log(const char* str)
 {
   static int N = 0;
@@ -5136,7 +5142,7 @@ int win_IsProcess64bit(lua_State *L)
   return 1;
 }
 
-const luaL_reg filefilter_methods[] = {
+const luaL_Reg filefilter_methods[] = {
   {"__gc",             filefilter_gc},
   {"__tostring",       filefilter_tostring},
   {"FreeFileFilter",   filefilter_Free},
@@ -5146,7 +5152,7 @@ const luaL_reg filefilter_methods[] = {
   {NULL, NULL},
 };
 
-const luaL_reg dialog_methods[] = {
+const luaL_Reg dialog_methods[] = {
   {"__gc",                 far_DialogFree},
   {"__tostring",           dialog_tostring},
   {"rawhandle",            dialog_rawhandle},
@@ -5360,7 +5366,7 @@ const luaL_Reg panel_funcs[] =
   {NULL, NULL},
 };
 
-const luaL_reg win_funcs[] = {
+const luaL_Reg win_funcs[] = {
   {"GetConsoleScreenBufferInfo", win_GetConsoleScreenBufferInfo},
 //$  {"CopyFile",                win_CopyFile},
   {"DeleteFile",                 win_DeleteFile},
@@ -5410,7 +5416,7 @@ const luaL_reg win_funcs[] = {
   {NULL, NULL},
 };
 
-const luaL_reg far_funcs[] = {
+const luaL_Reg far_funcs[] = {
   {"PluginStartupInfo",   far_PluginStartupInfo},
 
   {"CmpName",             far_CmpName},
@@ -5710,7 +5716,7 @@ int LF_LuaOpen (TPluginData* aPlugData, lua_CFunction aOpenLibs, const char* aEn
 
   // without dlopen() all attempts to require() a binary Lua module would fail, e.g.
   // require "lfs" --> undefined symbol: lua_gettop
-  handle = dlopen("liblua5.1.so", RTLD_NOW | RTLD_GLOBAL);
+  handle = dlopen(LUADLL, RTLD_NOW | RTLD_GLOBAL);
   if (handle == NULL)
     return 0;
 

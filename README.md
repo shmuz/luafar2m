@@ -8,7 +8,7 @@ for Far2L written in Lua.
 
 ## Prerequisites
 
-Lua 5.1
+Either Lua 5.1 or LuaJIT 2.1 (configurable in `config.mak`)
 
 ## How to build
 
