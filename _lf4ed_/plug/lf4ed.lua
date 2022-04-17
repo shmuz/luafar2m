@@ -3,9 +3,7 @@
 -------------------------------------------------------------------------------
 
 local PluginVersion = "2.9.0"
-local ReqLuafarVer = "2.8"
-
-local SETTINGS_KEY = "shmuz"
+local SETTINGS_KEY  = "shmuz"
 local SETTINGS_NAME = "plugin_lf4ed"
 
 -- CONFIGURATION : keep it at the file top !!
@@ -22,8 +20,6 @@ local DefaultCfg = {
 
   -- After executing utility from main menu, return to the menu again
   ReturnToMainMenu = false;
-
-  UseStrict = false; -- Use require 'strict'
 }
 
 -- UPVALUES : keep them above all function definitions !!
@@ -74,13 +70,8 @@ end
 
 local function OnConfigChange (cfg)
   -- 1 --
-  package.loaded.strict = nil
-  if cfg.UseStrict then require "strict"
-  else setmetatable(_G, nil)
-  end
-  -- 2 --
   require = cfg.RequireWithReload and RequireWithReload or _Plugin.OriginalRequire --luacheck:ignore 121
-  -- 3 --
+  -- 2 --
   far.ReloadDefaultScript = cfg.ReloadDefaultScript
 end
 

@@ -15,7 +15,6 @@ local function ExecuteDialog (aData)
     {tp="chbox"; text=M.MRequireWithReload;       name="RequireWithReload";   },
     {tp="text";  text=M.MExcludeFromReload; x1=9; name="txtExclude";          },
     {tp="edit";                             x1=9; name="ExcludeFromReload";   },
-    {tp="chbox"; text=M.MUseStrict;               name="UseStrict";           },
     {tp="chbox"; text=M.MReturnToMainMenu;        name="ReturnToMainMenu";    },
     {tp="sep";                                                                },
     {tp="butt";  text=M.MOk;     default=1; centergroup=1;                    },

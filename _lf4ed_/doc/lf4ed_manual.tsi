@@ -6,7 +6,7 @@ ver=2.7
 id=1
 lv=0
 dt=Text
-nm=LuaFAR for Editor (version 2.8)
+nm=LuaFAR for Editor (version 2.9)
 mtime=3851705231
 <article>
 #_<markdown>
@@ -565,7 +565,7 @@ id=32
 lv=1
 dt=Text
 nm=lf4ed.config
-mtime=3855739827
+mtime=3859383744
 <article>
 #_Get the plugin configuration.
 #_
@@ -576,7 +576,6 @@ mtime=3855739827
 #_         Fields of *cfg*:
 #_           ReloadDefaultScript : boolean
 #_           RequireWithReload   : boolean
-#_           UseStrict           : boolean
 #_           ReturnToMainMenu    : boolean
 #_
 #_**Description:**
@@ -827,24 +826,6 @@ mtime=3854196934
 #_<lua> Links = {
 #_  deserialize="84.html"
 #_} </lua>
-#_
-</article>
-</node>
-<node>
-id=10
-lv=0
-dt=Text
-nm=Credits
-mtime=3502994029
-<article>
-#_<markdown>
-#_Many thanks to:
-#_
-#_* **maxfl** (gmaxfl@gmail.com): ideas, bug reports and the *Searchable Menu* module.
-#_* **GalS**: bug reports.
-#_* **ccaid**: bug reports.
-#_* **Aidar Rakhmatullin**: ideas, translation of the help file into
-#_  Russian; bug reports.
 #_
 </article>
 </node>

@@ -304,11 +304,6 @@ be needed when debugging a library).
 Those modules will not be reloaded on 'require'. The valid delimiters
 are commas, semicolons and white space.
 
- #[x] Use 'strict' mode#
-
-    With this option turned on, the plugin does not allow access to
-"undeclared" global variables.
-
  #[x] Return to Main menu#
 
     When a utility that was activated via the main menu finishes its execution,

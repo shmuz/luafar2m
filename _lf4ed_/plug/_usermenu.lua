@@ -53,6 +53,7 @@ if os.getenv("USER") == "shmuel" then
   AddUserFile("scripts/coding.lua")
   AddUserFile("scripts/compare_by_hash.lua")
   AddUserFile("scripts/hashes.lua")
+  AddUserFile("scripts/file2hex.lua")
 
   AddToMenu("e", nil, "Ctrl+F11", function() -- insert a new GUID
     editor.InsertText('"'..win.Uuid(win.Uuid()):upper()..'"', true) end)
