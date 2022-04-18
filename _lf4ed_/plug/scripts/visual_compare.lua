@@ -53,7 +53,7 @@ local function Run()
   end
 
   if trgActive and trgPassive then
-    os.execute(("meld %q %q"):format(trgActive,trgPassive))
+    os.execute(("meld %q %q &"):format(trgActive,trgPassive))
   else
     far.Message("No suitable file pair found", "Visual compare", nil, "w")
   end

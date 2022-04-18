@@ -377,7 +377,7 @@ end
 
 local function RunMenuItem(aItem)
   local function wrapfunc()
-    return aItem.action()
+    return aItem.action(aItem)
   end
 
   local ok, result = xpcall(wrapfunc, traceback3)
@@ -701,7 +701,7 @@ local function export_OpenPlugin (aFrom, aItem)
     if not item then break end
 
     history.position = pos
-    if sFrom == "dialog" then item.hDlg = aItem.hDlg end
+    item.hDlg = (sFrom == "dialog") and aItem.hDlg or nil
     local ok, result, bRetToMainMenu = RunMenuItem(item)
     if not ok then break end
 

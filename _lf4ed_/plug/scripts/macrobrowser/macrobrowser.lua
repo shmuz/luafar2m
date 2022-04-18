@@ -2,9 +2,21 @@
 -- started: 2022-01-20
 
 local Title = "Macro Browser"
-local thisdir = (...):match(".*/")
-local macrofile = os.getenv("HOME") .. "/.config/far2l/settings/key_macros.ini"
+local ThisDir = (...):match(".*/")
+local MacroFile = os.getenv("HOME") .. "/.config/far2l/settings/key_macros.ini"
 local F = far.Flags
+
+local Browser = {
+  cfg    = nil;
+  hidden = nil;
+  items  = nil;
+  macrodialog = nil;
+}
+local Browser_meta = { __index=Browser }
+
+local function NewBrowser()
+  return setmetatable({}, Browser_meta)
+end
 
 local function MakeMenuItem(cfg, sec)
   local name, area, tilde, key = sec.name:match("^(%w+)/(%w+)/(~?)(%w+)")
@@ -13,23 +25,27 @@ local function MakeMenuItem(cfg, sec)
     local seq = cfg:GetString(sec.name, "Sequence") or "<no sequence>"
     local txt = ("%-12s│ %-16s│ %s"):format(area, key, descr)
     tilde = tilde=="~" and "~" or nil
-    return {text=txt; columns={area,key,descr,seq}; section=sec; checked=tilde; }
+    return {text=txt; area=area; columns={area,key,descr,seq}; section=sec; checked=tilde; }
   end
 end
 
-local function CreateItems(cfg)
-  local Items = {}
-  for sec in cfg:sections() do
-    local item = MakeMenuItem(cfg, sec)
-    if item then table.insert(Items,item) end
+function Browser:CreateItems()
+  self.items = {}
+  local area = self.macrodialog.GetArea()
+  for sec in self.cfg:sections() do
+    local item = MakeMenuItem(self.cfg, sec)
+    if item then
+      if not self.hidden or item.area=="Common" or item.area==area then
+        table.insert(self.items,item)
+      end
+    end
   end
-  return Items
 end
 
-local Items
-local Props = { Title=Title; Bottom="F1, F4, F5, Ins, F8, Space";
-                Flags=F.FMENU_SHOWAMPERSAND+F.FMENU_WRAPMODE; }
+local Props = { Title=Title; Bottom="F1, F4, F5, Ins, F8, Space, Ctrl-H";
+                Flags=F.FMENU_SHOWAMPERSAND+F.FMENU_WRAPMODE+F.FMENU_CHANGECONSOLETITLE; }
 local Bkeys = {
+  {BreakKey = "C+H";      hide=1;     },
   {BreakKey = "C+F1";     sortcol=1;  },
   {BreakKey = "C+F2";     sortcol=2;  },
   {BreakKey = "C+F3";     sortcol=3;  },
@@ -48,10 +64,10 @@ local function CompareByCol(a, b, aCol)
   return 0
 end
 
-local function SortItems()
+function Browser:SortItems()
   -- This sort algorithm is stable because the combination of 1-st
   -- and 2-nd columns (area/key) cannot be the same for 2 macros.
-  table.sort(Items,
+  table.sort(self.items,
     function(a,b)
       local res = 0
       if Col == 1 then     -- sort by 1-st then 2-nd col.
@@ -78,8 +94,8 @@ local function SortItems()
     Props.Title = ("%s [ %d%s ]"):format(Title,Col,Rev and "↓" or "↑")
 end
 
-local function SetSelected(section)
-  for _,v in ipairs(Items) do
+function Browser:SetSelected(section)
+  for _,v in ipairs(self.items) do
     v.selected = (v.section==section) or nil
   end
 end
@@ -90,61 +106,69 @@ local function ConfirmReplace(newname)
 end
 
 local function RunMenu()
-  local ini = require "inifile"
-  local mdialog = dofile(thisdir.."macrodialog.lua")
+  local self = NewBrowser()
 
-  local cfg, msg = ini.New(macrofile, "nocomment")
-  if cfg then
-    Items = CreateItems(cfg)
-  else
-    far.Message(msg, Title, nil, "w"); return
+  local inifile = require "inifile"
+  local cfg, msg = inifile.New(MacroFile, "nocomment")
+  if not cfg then
+    far.Message(msg, Title, nil, "w")
+    return
   end
 
+  self.cfg = cfg
+  self.hidden = true
+  self.macrodialog = dofile(ThisDir.."macrodialog.lua")
+
+  self:CreateItems()
+  local mdialog = self.macrodialog.Dialog
   local modified = false
+
   while true do
-    SortItems()
-    local item,pos = far.Menu(Props, Items, Bkeys)
+    self:SortItems()
+    local item,pos = far.Menu(Props, self.items, Bkeys)
+
     if not item then
-      if modified then
-        local r = far.Message("Do you want to save the changes?", Title, "&Yes;&No;Cancel", "w")
-        if r == 1 then
-          cfg:write(macrofile)
-          far.Timer(100, function(hnd) hnd:Close(); far.MacroLoadAll(); end) -- another bug in FAR ?
-        end
-        if r==1 or r==2 then
-          break
-        else
-          item, pos = {}, 0
-          SetSelected(nil)
-        end
-      else
+      if not modified then break end
+      local r = far.Message("Do you want to save the changes?", Title, "&Yes;&No;Cancel", "w")
+      if r == 1 then
+        cfg:write(MacroFile)
+        far.Timer(100, function(hnd) hnd:Close(); far.MacroLoadAll(); end) -- another bug in FAR ?
+        break
+      elseif r == 2 then
         break
       end
-    end
-
-    if pos >= 1 then
-      SetSelected(Items[pos].section)
+      item, pos = {}, 0
+      self:SetSelected(nil)
+    else
+      if pos >= 1 then
+        self:SetSelected(self.items[pos].section)
+      end
     end
     --------------------------------------------------------------------------------------------
-    if item.sortcol then -- sort requested
+    if item.hide then --
+      self.hidden = not self.hidden
+      self:CreateItems()
+      self:SetSelected(nil)
+    --------------------------------------------------------------------------------------------
+    elseif item.sortcol then -- sort requested
       if item.sortcol == Col then Rev = not Rev
       else Col,Rev = item.sortcol,false
       end
-      SetSelected(nil)
+      self:SetSelected(nil)
     --------------------------------------------------------------------------------------------
     elseif item.delete and pos >= 1 then -- F8 pressed
-      local fullname = Items[pos].section.name
+      local fullname = self.items[pos].section.name
       local shortname = fullname:match(".-/(.*)")
       local msg = ("Delete '%s' macro?"):format(shortname)
       if 1 == far.Message(msg, "Confirm", "&Yes;&No", "w") then
         cfg:del_section(fullname)
-        Items = CreateItems(cfg)
-        SetSelected(nil)
+        self:CreateItems()
+        self:SetSelected(nil)
         modified = true
       end
     --------------------------------------------------------------------------------------------
     elseif (item.section or item.edit) and pos >= 1 then -- Enter or F4 pressed
-      local sec = Items[pos].section
+      local sec = self.items[pos].section
       local CanClose = function(out)
         local tilde = out.Deactivate and "~" or ""
         local newname = ("KeyMacros/%s/%s%s"):format(out.WorkArea, tilde, out.MacroKey)
@@ -173,8 +197,8 @@ local function RunMenu()
             sec:set(k,v)
           end
         end
-        Items = CreateItems(cfg)
-        SetSelected(sec)
+        self:CreateItems()
+        self:SetSelected(sec)
         modified = true
       end
     --------------------------------------------------------------------------------------------
@@ -188,7 +212,7 @@ local function RunMenu()
       local data = nil
       if item.copy then
         local tilde
-        local sec = Items[pos].section
+        local sec = self.items[pos].section
         data = sec:dict()
         data.WorkArea, tilde, data.MacroKey = sec.name:match("KeyMacros/(%w+)/(~?)(%w+)")
         data.Deactivate = tilde ~= ""
@@ -211,13 +235,13 @@ local function RunMenu()
             sec:set(k,v)
           end
         end
-        Items = CreateItems(cfg)
-        SetSelected(sec)
+        self:CreateItems()
+        self:SetSelected(sec)
         modified = true
       end
     --------------------------------------------------------------------------------------------
     elseif item.activate and pos >= 1 then -- Space pressed
-      local sec = Items[pos].section
+      local sec = self.items[pos].section
       local area, tilde, key = sec.name:match("KeyMacros/(%w+)/(~?)(%w+)")
       tilde = tilde=="" and "~" or "" -- toggle
       local newname = ("KeyMacros/%s/%s%s"):format(area, tilde, key)
@@ -234,16 +258,17 @@ local function RunMenu()
       end
 
       if sec then
-        Items = CreateItems(cfg)
-        SetSelected(sec)
+        self:CreateItems()
+        self:SetSelected(sec)
         modified = true
       end
     --------------------------------------------------------------------------------------------
     elseif item.help then -- F1 pressed
     far.Message([[
-CtrlF1    - Sort by the 1-st column
-CtrlF2    - Sort by the 2-nd column
-CtrlF3    - Sort by the 3-rd column
+Ctrl-F1   - Sort by the 1-st column
+Ctrl-F2   - Sort by the 2-nd column
+Ctrl-F3   - Sort by the 3-rd column
+Ctrl-H    - Hide macros from other areas
 F1        - Help window
 F4, Enter - Edit a macro
 F5        - Copy a macro

@@ -20,6 +20,34 @@ local AreaList = {
   {Text="User menu"},      {Text="AutoCompletion"},
 }
 
+local function GetNumArea()
+  local area = far.MacroGetArea()
+  local val
+  if     area == F.MACROAREA_DIALOG         then val =  1
+  elseif area == F.MACROAREA_DISKS          then val =  2
+  elseif area == F.MACROAREA_EDITOR         then val =  3
+  elseif area == F.MACROAREA_HELP           then val =  4
+  elseif area == F.MACROAREA_INFOPANEL      then val =  5
+  elseif area == F.MACROAREA_MAINMENU       then val =  6
+  elseif area == F.MACROAREA_MENU           then val =  7
+  elseif area == F.MACROAREA_QVIEWPANEL     then val =  8
+  elseif area == F.MACROAREA_SEARCH         then val =  9
+  elseif area == F.MACROAREA_SHELL          then val = 10
+  elseif area == F.MACROAREA_TREEPANEL      then val = 11
+  elseif area == F.MACROAREA_VIEWER         then val = 12
+  elseif area == F.MACROAREA_OTHER          then val = 13
+  elseif area == F.MACROAREA_FINDFOLDER     then val = 15
+  elseif area == F.MACROAREA_USERMENU       then val = 16
+  elseif area == F.MACROAREA_AUTOCOMPLETION then val = 17
+  else                                           val = 14 -- Common
+  end
+  return val
+end
+
+local function GetArea()
+  return AreaShortNames[GetNumArea()]
+end
+
 local function MacroDialog (aTitle, aInput, aCanClose)
   local hw = 33 -- half-width of space inside the double-box
   local items = {
@@ -80,27 +108,7 @@ local function MacroDialog (aTitle, aInput, aCanClose)
   -- Initialize from the input data
   ---------------------------------
   if type(aInput) ~= "table" then -- no input data
-    local area = far.MacroGetArea()
-    local item = items[Pos.WorkArea]
-    if     area == F.MACROAREA_DIALOG         then item.val =  1
-    elseif area == F.MACROAREA_DISKS          then item.val =  2
-    elseif area == F.MACROAREA_EDITOR         then item.val =  3
-    elseif area == F.MACROAREA_HELP           then item.val =  4
-    elseif area == F.MACROAREA_INFOPANEL      then item.val =  5
-    elseif area == F.MACROAREA_MAINMENU       then item.val =  6
-    elseif area == F.MACROAREA_MENU           then item.val =  7
-    elseif area == F.MACROAREA_QVIEWPANEL     then item.val =  8
-    elseif area == F.MACROAREA_SEARCH         then item.val =  9
-    elseif area == F.MACROAREA_SHELL          then item.val = 10
-    elseif area == F.MACROAREA_TREEPANEL      then item.val = 11
-    elseif area == F.MACROAREA_VIEWER         then item.val = 12
-    elseif area == F.MACROAREA_OTHER          then item.val = 13
-    elseif area == F.MACROAREA_FINDFOLDER     then item.val = 15
-    elseif area == F.MACROAREA_USERMENU       then item.val = 16
-    elseif area == F.MACROAREA_AUTOCOMPLETION then item.val = 17
-    else                                           item.val = 14 -- Common
-    end
-
+    Elem.WorkArea.val = GetNumArea()
     for _,v in ipairs(items) do
       if v.DefDialog then v.val=1 end
     end
@@ -191,4 +199,7 @@ local function MacroDialog (aTitle, aInput, aCanClose)
   return raw and ConvertOutput(raw)
 end
 
-return MacroDialog
+return {
+  Dialog = MacroDialog;
+  GetArea = GetArea;
+}

@@ -302,22 +302,24 @@ lv=1
 dt=Text
 nm=Input data of installed scripts
 ctime=3491725586
-mtime=3491811735
+mtime=3859449743
 <article>
 #_<markdown>
-#_An installed script, when it is run conventionally, always receives a single argument of *table* type.
 #_
 #_### Scripts installed via `AddToMenu` call (run from plugin menu or shortcut)
 #_
-#_* The array part of the table contains the additional arguments specified in the `AddToMenu` call.
-#_* The hash part of the table has the field **`From`** that contains either of the following strings: **"config"**, **"dialog"**, **"editor"**, **"panels"** or **"viewer"**.
-#_* In the case `From=="dialog"`, the table also has the field **`hDlg`**, that contains the dialog handle (a userdata value).
+#_* An installed script, when it is run conventionally, receives a single argument of *table* type.
+#_* In the case `From=="dialog"`, the table has the field **`hDlg`**, that contains the dialog handle (a userdata value).
 #_
 #_### Scripts installed via `AddCommand` call (run via plugin command)
 #_
-#_* The array part of the table contains the additional arguments specified in the `AddCommand` call followed by the command line arguments.
-#_* The hash part of the table has the field **`From`** that contains the string **"panels"**.
+#_The invoked function receives all the arguments (if any) specified after the command name.
 #_
+#_*Example:*
+#_      local function fShow(...) far.Show(...) end
+#_      AddCommand("Show", fShow)
+#_      ...
+#_      lfe: Show 45 67 foo bar
 </article>
 </node>
 <node>

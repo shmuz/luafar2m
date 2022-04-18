@@ -27,12 +27,7 @@ local CharMap = {Space=" ", ShiftSpace=" ", Tab="\t",     BackSlash="\\",
                  Add="+",   Subtract="-",   Multiply="*", Divide="/",     Decimal="."}
 local KeyMap = {Num2="Down", Num4="Left", Num6="Right", Num8="Up", NumDel="Del", ShiftIns="CtrlV", ShiftNum0="CtrlV"}
 
-local Event = {
-  description="SciTE-like multiline input";
-  group="EditorInput";
-}
-
-local action=function(Rec)
+local function scite_like(Rec)
   if Rec.EventType ~= F.KEY_EVENT then return false end
 
   local EI = editor.GetInfo()
@@ -149,4 +144,4 @@ local action=function(Rec)
   return true
 end
 
-AddEvent("EditorInput", action)
+AddEvent("EditorInput", scite_like)
