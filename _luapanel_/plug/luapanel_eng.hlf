@@ -1,0 +1,17 @@
+﻿.Language=English,English
+.PluginContents=Luapanel
+.Options CtrlColorChar=\
+
+@Contents
+$ #Luapanel - Help Contents#
+ #Description:#
+ Luapanel is a plugin for representation of Lua values in a Far file panel.
+It can be called from either plugins menu, command line or via a shortcut.
+
+ #Command line:#
+   #luapanel: [<table_name>]#
+   Display contents of <table_name> table (default: #_G#)
+
+ #Keyboard control:#
+   #F1#        Show help
+   #Enter#     Enter a table pointed to by panel cursor

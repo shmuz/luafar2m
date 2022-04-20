@@ -1,8 +1,9 @@
 # Comment out a line to exclude a plugin from compilation
 LF4ED     = 1
+LFHISTORY = 1
 LFSEARCH  = 1
 LFTMP     = 1
-LFHISTORY = 1
+LUAPANEL  = 1
 POLYGON   = 1
 
 noembed embed:
@@ -21,6 +22,9 @@ ifdef LFHISTORY
 endif
 ifdef POLYGON
 	cd _polygon_/build   && $(MAKE) $@
+endif
+ifdef LUAPANEL
+	cd _luapanel_/build  && $(MAKE) $@
 endif
 
 .PHONY: embed noembed

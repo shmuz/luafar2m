@@ -494,7 +494,6 @@ void PushPanelItem(lua_State *L, const struct PluginPanelItem *PanelItem)
   if (PanelItem->Owner)
     PutWStrToTable(L, "Owner",  PanelItem->Owner, -1);
 
-  /* not clear why custom columns are defined on per-file basis */
   if (PanelItem->CustomColumnNumber > 0) {
     int j;
     lua_createtable (L, PanelItem->CustomColumnNumber, 0);
@@ -503,9 +502,13 @@ void PushPanelItem(lua_State *L, const struct PluginPanelItem *PanelItem)
     lua_setfield(L, -2, "CustomColumnData");
   }
 
-  if (lua_type(L, -2) == LUA_TTABLE && PanelItem->UserData != LUA_NOREF) {
-    lua_rawgeti(L, -2, PanelItem->UserData);
-    lua_setfield(L, -2, "UserData");
+  if (PanelItem->UserData && lua_istable(L, -2)) {
+    lua_getfield(L, -2, COLLECTOR_UD);
+    if (lua_istable(L,-1)) {
+      lua_rawgeti(L, -1, (int)PanelItem->UserData);
+      lua_setfield(L, -3, "UserData");
+    }
+    lua_pop(L,1);
   }
 }
 

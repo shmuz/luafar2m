@@ -19,6 +19,7 @@ extern int  GetFlagsFromTable(lua_State *L, int pos, const char* key);
 // chars.
 const char COLLECTOR_OPI[] = "Collector_OpenPluginInfo";
 const char COLLECTOR_PI[]  = "Collector_PluginInfo";
+const char COLLECTOR_FD[]  = "Collector_FindData";
 const char KEY_OBJECT[]    = "Panel_Object";
 
 // taken from lua.c v5.1.2
@@ -190,7 +191,8 @@ const wchar_t** CreateStringsArray(lua_State* L, int cpos, const char* field,
 
 // input table is on stack top (-1)
 // collector table is one under the top (-2)
-void FillPluginPanelItem (lua_State *L, struct PluginPanelItem *pi)
+// userdata table is two under the top (-3)
+void FillPluginPanelItem (lua_State *L, struct PluginPanelItem *pi, int index)
 {
   int Collector = lua_gettop(L) - 1;
   memset(pi, 0, sizeof(*pi));
@@ -221,40 +223,45 @@ void FillPluginPanelItem (lua_State *L, struct PluginPanelItem *pi)
   // prevent Far from treating UserData as pointer and copying data from it
   pi->Flags = GetOptIntFromTable(L, "Flags", 0) & ~PPIF_USERDATA;
   lua_getfield(L, -1, "UserData");
-  if (!lua_isnil(L, -1))
-    pi->UserData = luaL_ref(L, -3);
+  if (!lua_isnil(L, -1)) {
+    pi->UserData = index;
+    lua_rawseti(L, Collector-1, index);
+  }
   else {
-    pi->UserData = LUA_NOREF;
+    pi->UserData = 0;
     lua_pop(L, 1);
   }
 }
 
-// Two known values on the stack top: Tbl (at -2) and FindData (at -1).
-// Both are popped off the stack on return.
+// Two known values on the stack top: Plugin table (Tbl; at -2) and FindData (at -1).
 void FillFindData(lua_State* L, struct PluginPanelItem **pPanelItems, int *pItemsNumber)
 {
   struct PluginPanelItem *ppi;
-  int i, num;
+  int i, num=0;
   int numLines = lua_objlen(L,-1);
 
-  // allocate array with an additional element at its beginning to keep the reference to collector
-  ppi = (struct PluginPanelItem*) malloc(sizeof(struct PluginPanelItem) * (1+numLines));
-  lua_newtable(L);                           //+3  Tbl,FindData,Coll
-  lua_pushvalue(L,-1);                       //+4: Tbl,FindData,Coll,Coll
-  ppi[0].CustomColumnNumber = (size_t)luaL_ref(L,-4);  //+3: Tbl,FindData,Coll
+  ppi = (struct PluginPanelItem*) malloc(sizeof(struct PluginPanelItem) * numLines);
+  if (ppi) {
+    lua_newtable(L);                     //+3  Tbl,FindData,UData
+    lua_pushvalue(L,-1);                 //+4: Tbl,FindData,UData,UData
+    lua_setfield(L, -4, COLLECTOR_UD);   //+3: Tbl,FindData,UData
 
-  for (i=1,num=1; i<=numLines; i++) {
-    lua_pushinteger(L, i);                   //+4
-    lua_gettable(L, -3);                     //+4: Tbl,FindData,Coll,FindData[i]
-    if (lua_istable(L,-1)) {
-      FillPluginPanelItem(L, ppi+num);
-      ++num;
+    lua_newtable(L);                     //+4  Tbl,FindData,UData,Coll
+    lua_pushvalue(L,-1);                 //+5: Tbl,FindData,UData,Coll,Coll
+    lua_setfield(L, -5, COLLECTOR_FD);   //+4: Tbl,FindData,UData,Coll
+
+    for (i=1; i<=numLines; i++) {
+      lua_rawgeti(L, -3, i);             //+5: Tbl,FindData,UData,Coll,FindData[i]
+      if (lua_istable(L,-1)) {
+        FillPluginPanelItem(L, ppi+num, num+1);
+        ++num;
+      }
+      lua_pop(L,1);                      //+4
     }
-    lua_pop(L,1);                            //+3
+    lua_pop(L,2);                        //+2
   }
-  lua_pop(L,3);                              //+0
-  *pItemsNumber = num - 1;
-  *pPanelItems = ppi + 1;
+  *pItemsNumber = num;
+  *pPanelItems = ppi;
 }
 
 int LF_GetFindData(lua_State* L, HANDLE hPlugin, struct PluginPanelItem **pPanelItem,
@@ -274,6 +281,7 @@ int LF_GetFindData(lua_State* L, HANDLE hPlugin, struct PluginPanelItem **pPanel
           PushPluginTable(L, hPlugin);         //+2: FindData,Tbl
           lua_insert(L, -2);                   //+2: Tbl,FindData
           FillFindData(L, pPanelItem, pItemsNumber);
+          lua_pop(L,2);                        //+0
         }
         return TRUE;
       }
@@ -300,6 +308,7 @@ int LF_GetVirtualFindData (lua_State* L, HANDLE hPlugin, struct PluginPanelItem 
           PushPluginTable(L, hPlugin);         //+2: FindData,Tbl
           lua_insert(L, -2);                   //+2: Tbl,FindData
           FillFindData(L, pPanelItem, pItemsNumber);
+          lua_pop(L,2);                        //+0
         }
         return TRUE;
       }
@@ -312,20 +321,15 @@ int LF_GetVirtualFindData (lua_State* L, HANDLE hPlugin, struct PluginPanelItem 
 void free_find_data(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItems, int ItemsNumber)
 {
   int i;
-  if (ItemsNumber <= 0)
-    return;
-
-  PushPluginTable(L, hPlugin);
   for (i=0; i<ItemsNumber; i++) {
-    int ref = PanelItems[i].UserData;
-    if (ref != LUA_NOREF)
-      luaL_unref(L, -1, ref);
     free((void*)PanelItems[i].CustomColumnData);
   }
-  luaL_unref(L, -1, (int)(PanelItems-1)->CustomColumnNumber); //free the collector
+  PushPluginTable(L, hPlugin);
+  lua_pushnil(L);
+  lua_setfield(L, -2, COLLECTOR_FD); //free the collector
   lua_pop(L, 1);
   lua_gc(L, LUA_GCCOLLECT, 0); //free memory taken by Collector
-  free(PanelItems-1);
+  free(PanelItems);
 }
 
 void LF_FreeFindData(lua_State* L, HANDLE hPlugin, struct PluginPanelItem *PanelItems, int ItemsNumber)

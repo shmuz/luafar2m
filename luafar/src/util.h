@@ -10,6 +10,8 @@
 /* convert a stack index to positive */
 #define abs_index(L,i) ((i)>0 || (i)<=LUA_REGISTRYINDEX ? (i):lua_gettop(L)+(i)+1)
 
+#define COLLECTOR_UD "Collector_UserData"
+
 typedef struct {
   struct PluginStartupInfo *Info;
   size_t    timer_id;
