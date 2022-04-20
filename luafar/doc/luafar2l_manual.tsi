@@ -6698,7 +6698,7 @@ id=85
 lv=2
 dt=Text
 nm=PluginPanelItem
-mtime=3851611769
+mtime=3859629606
 <article>
 #_<markdown>
 #_**`PluginPanelItem`** is a table with the following predefined fields:
@@ -6719,7 +6719,7 @@ mtime=3851611769
 #_      Description:        string
 #_      Owner:              string
 #_      CustomColumnData:   table, or nil
-#_      UserData:           integer
+#_      UserData:           any Lua value
 #_
 #_@@@
 #_<lua> Links = { FindData="90.html" } </lua>

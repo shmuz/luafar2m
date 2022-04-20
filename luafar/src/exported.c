@@ -168,8 +168,7 @@ void* AddBufToCollector(lua_State *L, int pos, size_t size)
 // -- a table is on stack top
 // -- its field 'field' is an array of strings
 // -- 'cpos' - collector stack position
-const wchar_t** CreateStringsArray(lua_State* L, int cpos, const char* field,
-                                   int *numstrings)
+const wchar_t** CreateStringsArray(lua_State* L, int cpos, const char* field, int *numstrings)
 {
   const wchar_t **buf = NULL;
   if(numstrings) *numstrings = 0;

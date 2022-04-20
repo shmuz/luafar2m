@@ -7,45 +7,17 @@
 -- luacheck: new_globals Settings
 
 far.ReloadDefaultScript = true
-local SETTINGS_KEY  = "shmuz"
-local SETTINGS_NAME = "plugin_luapanel"
-
-local Sett = require "far2.settings"
-_G.Settings = Settings or {}
 
 local F = far.Flags
 local Title = "Lua Panel"
 local VK = win.GetVirtualKeys()
-local band, bor = bit.band, bit.bor
+local band = bit.band
 
-local LoadSettings, SaveSettings, SettingsAreLoaded do
-  local Params = {
-    { Name="LastPanelMode"; Default=("1"):byte(); },
-    { Name="LastSortMode";  Default=F.SM_NAME;    },
-    { Name="LastSortOrder"; Default=0;            },
-  }
-
-  function LoadSettings()
-    local data = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
-    for _,v in ipairs(Params) do
-      Settings[v.Name] = data[v.Name] or v.Default
-    end
-  end
-
-  function SaveSettings()
-    Sett.msave(SETTINGS_KEY, SETTINGS_NAME, Settings)
-  end
-
-  function SettingsAreLoaded()
-    return not not Settings[Params[1].Name]
-  end
-end
-
-if not SettingsAreLoaded() then
-  LoadSettings()
-end
-
-local OpenPanelInfoFlags = bor(F.OPIF_ADDDOTS, 0)
+local Settings = {
+  LastPanelMode = ("1"):byte();
+  LastSortMode  = F.SM_NAME;
+  LastSortOrder = 0;
+}
 
 function export.GetPluginInfo()
   return {
@@ -69,10 +41,6 @@ function export.OpenPlugin(OpenFrom, Item)
     end
     return obj
   end
-end
-
-function export.Configure()
-  far.Message("Nothing to configure as yet", Title)
 end
 
 --
@@ -124,7 +92,7 @@ end
 
 function export.GetOpenPluginInfo (obj, handle)
   return {
-    Flags            = OpenPanelInfoFlags,
+    Flags            = F.OPIF_ADDDOTS,
   --CurDir           = obj.CurDir,
     PanelTitle       = obj.CurDir=="" and Title or Title..": "..obj.CurDir,
     PanelModesArray  = PanelModes,
@@ -143,10 +111,6 @@ function export.ProcessEvent (object, handle, Event, Param)
   elseif Event == F.FE_CHANGEVIEWMODE then
     local info = panel.GetPanelInfo(handle)
     Settings.LastPanelMode = tostring(info.ViewMode):byte()
-  ---- elseif Event == F.FE_CHANGESORTPARAMS then
-  ----   local info = panel.GetPanelInfo(handle)
-  ----   Settings.LastSortMode = info.SortMode
-  ----   Settings.LastSortOrder = band(info.Flags,F.PFLAGS_REVERSESORTORDER)==0 and 0 or 1
   end
 end
 
@@ -171,9 +135,6 @@ function export.ProcessKey (object, handle, Key, ControlState)
         return true
       end
     else  -- try to "enter" a table
-      --far.Show(handle, object, item.UserData, type(item.UserData))
-      --do return end
-
       local curr = item.UserData and item.UserData.element
       if type(curr) == "table" then
         object[#object+1] = { table=curr, info=panel.GetPanelInfo(handle) }
@@ -185,14 +146,3 @@ function export.ProcessKey (object, handle, Key, ControlState)
     end
   end
 end
-
--- function export.GetFiles (object, handle, PanelItems, Move, DestPath, OpMode)
--- end
-
--- function export.ClosePlugin (object, handle)
---  SaveSettings()
--- end
-
--- function export.ExitFAR()
---   SaveSettings()
--- end
