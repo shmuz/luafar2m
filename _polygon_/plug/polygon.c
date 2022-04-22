@@ -74,6 +74,11 @@ static int ResetSort(lua_State *L)
 
 int luaopen_polygon (lua_State *L)
 {
+#ifdef EMBED
+  extern int luafar_openlibs(lua_State*);
+  lua_pushcfunction(L, luafar_openlibs);
+  lua_call(L,0,0);
+#endif
   lua_pushcfunction(L, ResetSort);
   lua_setglobal(L, "polygon_ResetSort");
   return 0;

@@ -3,7 +3,7 @@
 include ../../config.mak
 
 OUT= Out$(DIRBIT)
-MYCFLAGS  = -DBUILD_DLL -DFAR_DONT_USE_INTERNALS -fvisibility=hidden
+MYCFLAGS  = -DBUILD_DLL -DFAR_DONT_USE_INTERNALS
 MYLDFLAGS = -luuid
 TARGET = ../../$(LUAFARDLL)
 

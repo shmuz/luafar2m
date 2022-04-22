@@ -31,26 +31,25 @@ else
   TRG_E = $(PLUGNAME)_e.far-plug-wide
 endif
 
-CFLAGS1 = $(CFLAGS) $(EXPORTS)
-CFLAGS2 = $(CFLAGS1) -DFUNC_OPENLIBS=luafar_openlibs
+FUNC_OPENLIBS ?= luafar_openlibs
 
-OBJ_N   = luaplug1.o
-OBJ_E   = luaplug2.o linit.o
+CFLAGS1 = $(CFLAGS) $(EXPORTS)
+CFLAGS2 = $(CFLAGS1) -DEMBED -DFUNC_OPENLIBS=$(FUNC_OPENLIBS)
+
 LIBS    = ../../$(LUAFARDLL)
 
-embed: $(TRG_E)
-	mv -f $< $(PATH_PLUGIN)
-	cd $(PATH_PLUGIN) && $(MAKE_LANG)
+ifdef EMBED
+  TRG = $(TRG_E)
+  OBJ = luaplug2.o linit.o
+else
+  TRG = $(TRG_N)
+  OBJ = luaplug1.o
+endif
 
-noembed: $(TRG_N)
-	mv -f $< $(PATH_PLUGIN)
-	cd $(PATH_PLUGIN) && $(MAKE_LANG)
-
-$(TRG_N): $(OBJ_N) $(LIBS)
+$(TRG): $(OBJ) $(LIBS)
 	$(CC) -o $@ $^ $(LDFLAGS)
-
-$(TRG_E): $(OBJ_E) $(LIBS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	mv -f $@ $(PATH_PLUGIN)
+	cd $(PATH_PLUGIN) && $(MAKE_LANG)
 
 # Since linit.c has changing prerequisites (sets of Lua files),
 # that can not be specified in this makefile, it is better be
@@ -65,4 +64,4 @@ luaplug1.o: $(C_SOURCE)
 luaplug2.o: $(C_SOURCE)
 	$(CC) -c -o $@ $< $(CFLAGS2)
 
-.PHONY: noembed embed
+.PHONY:

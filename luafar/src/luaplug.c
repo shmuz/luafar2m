@@ -38,8 +38,7 @@ lua_State* GetLuaState()
 }
 //---------------------------------------------------------------------------
 
-// This function must have __cdecl calling convention, it is not `LUAPLUG'.
-int _export luaopen_luaplug (lua_State *L)
+int LUAPLUG luaopen_luaplug (lua_State *L)
 {
   LF_InitLuaState(L, &Info, FUNC_OPENLIBS, ENV_PREFIX);
   return 0;

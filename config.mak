@@ -29,7 +29,7 @@ LUAFARDLL   = luafar2l.so
 
 DIRBIT = 64
 CC     = gcc
-CFLAGS = -O2 -Wall -Wno-unused-function \
+CFLAGS = -O2 -Wall -Wno-unused-function -fvisibility=hidden \
          -I$(INC_FAR) -I$(INC_WIN) -I$(INC_LUA) \
          -m$(DIRBIT) -fPIC $(JITCFLAG) $(MYCFLAGS)
 

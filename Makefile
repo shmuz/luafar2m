@@ -1,30 +1,26 @@
-# Comment out a line to exclude a plugin from compilation
-LF4ED     = 1
-LFHISTORY = 1
-LFSEARCH  = 1
-LFTMP     = 1
-LUAPANEL  = 1
-POLYGON   = 1
+# Makefile
 
-noembed embed:
+all: luafar lf4ed lfsearch lftmp lfhistory polygon luapanel
+
+luafar:
 	cd luafar/src && $(MAKE)
-ifdef LF4ED
-	cd _lf4ed_/build     && $(MAKE) $@
-endif
-ifdef LFSEARCH
-	cd _lfsearch_/build  && $(MAKE) $@
-endif
-ifdef LFTMP
-	cd _lftmp_/build     && $(MAKE) $@
-endif
-ifdef LFHISTORY
-	cd _lfhistory_/build && $(MAKE) $@
-endif
-ifdef POLYGON
-	cd _polygon_/build   && $(MAKE) $@
-endif
-ifdef LUAPANEL
-	cd _luapanel_/build  && $(MAKE) $@
-endif
 
-.PHONY: embed noembed
+lf4ed:
+	cd _lf4ed_/build && $(MAKE)
+
+lfsearch:
+	cd _lfsearch_/build && $(MAKE)
+
+lftmp:
+	cd _lftmp_/build && $(MAKE)
+
+lfhistory:
+	cd _lfhistory_/build && $(MAKE)
+
+polygon:
+	cd _polygon_/build && $(MAKE)
+
+luapanel:
+	cd _luapanel_/build && $(MAKE)
+
+.PHONY: all luafar lf4ed lfsearch lftmp lfhistory polygon luapanel
