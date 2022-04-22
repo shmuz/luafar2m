@@ -31,20 +31,23 @@ else
   TRG_E = $(PLUGNAME)_e.far-plug-wide
 endif
 
-FUNC_OPENLIBS ?= luafar_openlibs
-
-CFLAGS1 = $(CFLAGS) $(EXPORTS)
-CFLAGS2 = $(CFLAGS1) -DEMBED -DFUNC_OPENLIBS=$(FUNC_OPENLIBS)
-
-LIBS    = ../../$(LUAFARDLL)
-
-ifdef EMBED
-  TRG = $(TRG_E)
-  OBJ = luaplug2.o linit.o
-else
+ifndef EMBED
   TRG = $(TRG_N)
   OBJ = luaplug1.o
+else
+  TRG = $(TRG_E)
+  OBJ = luaplug2.o linit.o
+  FUNC_OPENLIBS ?= luafar_openlibs
 endif
+
+ifdef FUNC_OPENLIBS
+  CFLAGS3 = -DFUNC_OPENLIBS=$(FUNC_OPENLIBS)
+endif
+
+CFLAGS1 = $(CFLAGS) $(EXPORTS) $(CFLAGS3)
+CFLAGS2 = $(CFLAGS1) -DEMBED
+
+LIBS    = ../../$(LUAFARDLL)
 
 $(TRG): $(OBJ) $(LIBS)
 	$(CC) -o $@ $^ $(LDFLAGS)
