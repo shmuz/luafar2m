@@ -300,6 +300,13 @@ local function MakeAddUserFile (aEnv, aItems)
       if not info or info.FileAttributes:find("d") then return end
     end
     ---------------------------------------------------------------------------
+    local loadfile = loadfile
+    local ext = filename:match("%.([^.]+)$")
+    if ext and ext:lower() == "moon" then
+      local ms = require "moonscript"
+      loadfile = ms.loadfile
+    end
+    ---------------------------------------------------------------------------
     local chunk, msg1 = loadfile(filename)
     if not chunk then error(msg1, 3) end
     setfenv(chunk, aEnv)

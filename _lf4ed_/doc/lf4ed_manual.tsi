@@ -7,7 +7,7 @@ id=1
 lv=0
 dt=Text
 nm=LuaFAR for Editor (version 2.9)
-mtime=3851705231
+mtime=3859904262
 <article>
 #_<markdown>
 #_**LuaFAR for Editor** (a FAR plugin) is a collection of utilities
@@ -23,8 +23,6 @@ mtime=3851705231
 #_- [Command line](59.html)
 #_- [Plugin API](31.html)
 #_- [Lua Modules](21.html)
-#_- [Credits](10.html)
-#_
 #_
 </article>
 </node>
@@ -229,7 +227,7 @@ id=34
 lv=2
 dt=Text
 nm=AddUserFile
-mtime=3853952196
+mtime=3859904187
 <article>
 #_<markdown>
 #_**`AddUserFile (filename)`**
@@ -239,6 +237,9 @@ mtime=3853952196
 #_This function executes the script `filename` passing `filename` as the argument.
 #_The script can set some top-level variable to this value so that script's
 #_functions could use it.
+#_
+#_If the file's extension is `.moon` then it is treated as a MoonScript file,
+#_otherwise as a Lua file.
 #_
 #_Parameter `filename` (its path is relative to the plugin's directory)
 #_specifies a file that is treated as an additional *_usermenu.lua* file.
