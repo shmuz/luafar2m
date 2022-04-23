@@ -44,7 +44,6 @@ if os.getenv("USER") == "shmuel" then
   AddUserFile("scripts/dup_line.lua")
   AddUserFile("scripts/editor_events.lua")
   AddUserFile("scripts/lf_fin.lua")
-  AddUserFile("scripts/multiline.lua")
   AddUserFile("scripts/scite_like.lua")
   AddUserFile("scripts/test_sortlines.lua")
   AddUserFile("scripts/run_code.lua")

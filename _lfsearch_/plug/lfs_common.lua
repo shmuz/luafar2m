@@ -267,6 +267,7 @@ local function ProcessDialogData (aData, bReplace)
   params.bDelNonMatchLine = aData.bDelNonMatchLine
   params.sOrigin = aData.sOrigin
   params.sSearchPat = aData.sSearchPat
+  params.FileFilter = aData.bUseFileFilter and aData.FileFilter
   ---------------------------------------------------------------------------
   params.Envir = setmetatable({}, {__index=_G})
   params.Envir.dofile = function(fname)

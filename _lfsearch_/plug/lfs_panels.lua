@@ -178,7 +178,7 @@ local function GetCodePages (aData)
   return items
 end
 
-local function GetSearchAreas(dataPanels)
+local function GetSearchAreas(aData)
   local Info = panel.GetPanelInfo(1)
   local RootFolderItem = {}
   if Info.PanelType == F.PTYPE_FILEPANEL and not Info.Plugin then
@@ -195,7 +195,7 @@ local function GetSearchAreas(dataPanels)
     [saRootFolder]     = RootFolderItem,
     [saPathFolders]    = { Text = M.MSaPathFolders },
   }
-  local idx = dataPanels.iSearchArea or 1
+  local idx = aData.iSearchArea or 1
   if (idx < 1) or (idx > #T) or (T[idx].Flags == F.LIF_GRAYED) then
     idx = 1
   end
@@ -206,16 +206,14 @@ end
 local searchGuid  = "3CD8A0BB-8583-4769-BBBC-5B6667D13EF9"
 local replaceGuid = "F7118D4A-FBC3-482E-A462-0167DF7CC346"
 
-local function PanelDialog (aHistory, aReplace, aHelpTopic)
+local function PanelDialog (aData, aReplace, aHelpTopic)
   local insert = table.insert
-  local dataMain = field(aHistory, "main")
-  local dataPanels = field(aHistory, "panels")
   local Items = {
     width = 76;
     help = aHelpTopic;
     guid = aReplace and replaceGuid or searchGuid;
   }
-  local Frame = Common.CreateSRFrame(Items, dataMain, false)
+  local Frame = Common.CreateSRFrame(Items, aData, false)
   ------------------------------------------------------------------------------
   insert(Items, { tp="dbox"; text=M.MTitlePanels; })
   insert(Items, { tp="text"; text=M.MFileMask; })
@@ -224,13 +222,16 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
   ------------------------------------------------------------------------------
   Frame:InsertInDialog(aReplace)
   ------------------------------------------------------------------------------
+  local X2 = 40 + M.MDlgUseFileFilter:gsub("&",""):len() + 5
   insert(Items, { tp="sep"; })
   insert(Items, { tp="text"; text=M.MCodePages; })
-  insert(Items, { tp="combobox"; name="cmbCodePage"; list=GetCodePages(dataPanels); dropdownlist=1; noauto=1; })
+  insert(Items, { tp="combobox"; name="cmbCodePage"; list=GetCodePages(aData); dropdownlist=1; noauto=1; })
   insert(Items, { tp="text"; text=M.MSearchArea; })
-  insert(Items, { tp="combobox"; name="cmbSearchArea"; list=GetSearchAreas(dataPanels); x2=36; dropdownlist=1; noauto=1; })
+  insert(Items, { tp="combobox"; name="cmbSearchArea"; list=GetSearchAreas(aData); x2=36; dropdownlist=1; noauto=1; })
   insert(Items, { tp="chbox"; name="bSearchFolders"; text=M.MSearchFolders; ystep=-1; x1=40; })
-  insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MSearchSymLinks; x1=40; })
+  insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MSearchSymLinks;   x1=40; })
+  insert(Items, { tp="chbox"; name="bUseFileFilter";  text=M.MDlgUseFileFilter; x1=40; })
+  insert(Items, { tp="butt";  name="btnFileFilter";   text=M.MDlgBtnFileFilter; x1=X2; y1=""; btnnoclose=1; })
   insert(Items, { tp="sep"; })
   insert(Items, { tp="butt"; centergroup=1; text=M.MOk; default=1; name="btnOk"; })
   insert(Items, { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; })
@@ -239,7 +240,7 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
   local Pos,Elem = sd.Indexes(Items)
 
   local function SetBtnFilterText(hDlg)
-    hDlg:SetText(Pos.btnConfig, M.MBtnDirFilter..(dataPanels[Excl_Key] and "*" or ""))
+    hDlg:SetText(Pos.btnConfig, M.MBtnDirFilter..(aData[Excl_Key] and "*" or ""))
   end
 
   function Items.proc (hDlg, msg, param1, param2)
@@ -253,9 +254,19 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
           hDlg:ListSetData(Pos.cmbCodePage, t)
         end
       end
-      hDlg:SetText  (Pos.sFileMask, dataPanels.sFileMask or "")
-      hDlg:SetCheck (Pos.bSearchFolders, dataPanels.bSearchFolders)
-      hDlg:SetCheck (Pos.bSearchSymLinks, dataPanels.bSearchSymLinks)
+      hDlg:SetText  (Pos.sFileMask,       aData.sFileMask or "")
+      hDlg:SetCheck (Pos.bSearchFolders,  aData.bSearchFolders)
+      hDlg:SetCheck (Pos.bSearchSymLinks, aData.bSearchSymLinks)
+      hDlg:SetCheck (Pos.bUseFileFilter,  aData.bUseFileFilter)
+      hDlg:Enable   (Pos.btnFileFilter,   aData.bUseFileFilter)
+
+    elseif msg == F.DN_BTNCLICK then
+      if param1 == Pos.bUseFileFilter then
+        hDlg:Enable(Pos.btnFileFilter, hDlg:GetCheck(Pos.bUseFileFilter))
+      elseif param1 == Pos.btnFileFilter then
+        local filter = far.CreateFileFilter(1, "FFT_FINDFILE")
+        if filter and filter:OpenFiltersMenu() then aData.FileFilter = filter end
+      end
 
     elseif msg == F.DN_KEY then
       if param1 == Pos.cmbCodePage then
@@ -273,7 +284,7 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
       if Pos.btnConfig and param1 == Pos.btnConfig then
         hDlg:ShowDialog(0)
         --ConfigDialog(aHistory) --TODO
-        if DirFilterDialog(dataPanels) then
+        if DirFilterDialog(aData) then
           SetBtnFilterText(hDlg)
         end
         hDlg:ShowDialog(1)
@@ -286,24 +297,25 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
         end
         ------------------------------------------------------------------------
         local pos = hDlg:ListGetCurPos(Pos.cmbCodePage)
-        dataPanels.iCodePage = Elem.cmbCodePage.list[pos.SelectPos].CodePage
+        aData.iCodePage = Elem.cmbCodePage.list[pos.SelectPos].CodePage
         ------------------------------------------------------------------------
         pos = hDlg:ListGetCurPos(Pos.cmbSearchArea)
-        dataPanels.iSearchArea = pos.SelectPos
+        aData.iSearchArea = pos.SelectPos
         ------------------------------------------------------------------------
-        dataPanels.sFileMask = hDlg:GetText(Pos.sFileMask)
-        dataPanels.bSearchFolders = hDlg:GetCheck(Pos.bSearchFolders)
-        dataPanels.bSearchSymLinks = hDlg:GetCheck(Pos.bSearchSymLinks)
+        aData.sFileMask       = hDlg:GetText(Pos.sFileMask)
+        aData.bSearchFolders  = hDlg:GetCheck(Pos.bSearchFolders)
+        aData.bSearchSymLinks = hDlg:GetCheck(Pos.bSearchSymLinks)
+        aData.bUseFileFilter  = hDlg:GetCheck(Pos.bUseFileFilter)
       end
       --------------------------------------------------------------------------
       -- store selected code pages no matter what user pressed: OK or Esc.
-      dataPanels.SelectedCodePages = {}
+      aData.SelectedCodePages = {}
       local info = hDlg:ListInfo(Pos.cmbCodePage)
       for i=1,info.ItemsNumber do
         local item = hDlg:ListGetItem(Pos.cmbCodePage, i)
         if 0 ~= bit.band(item.Flags, F.LIF_CHECKED) then
           local t = hDlg:ListGetData(Pos.cmbCodePage, i)
-          if t then dataPanels.SelectedCodePages[t] = true end
+          if t then aData.SelectedCodePages[t] = true end
         end
       end
       --------------------------------------------------------------------------
@@ -311,12 +323,12 @@ local function PanelDialog (aHistory, aReplace, aHelpTopic)
     return Frame:DlgProc(hDlg, msg, param1, param2)
   end
 
-  local dataTP = field(aHistory, "TmpPanel")
+  local dataTP = field(_Plugin.History, "TmpPanel")
   for k,v in pairs(TmpPanelDefaults) do
     if dataTP[k] == nil then dataTP[k] = v end
   end
-  sd.LoadData(dataMain, Items)
-  Frame:OnDataLoaded(dataMain, false)
+  sd.LoadData(aData, Items)
+  Frame:OnDataLoaded(aData, false)
   local out = sd.Run(Items)
   if not out then return "cancel" end
   return aReplace and "replace" or "search", Frame.close_params
@@ -393,14 +405,13 @@ local function MakeItemList (panelInfo, area)
   return itemList, flags
 end
 
-local function SearchFromPanel (aHistory)
-  local sOperation, tParams = PanelDialog(aHistory, false, "OperInPanels")
+local function SearchFromPanel (aData)
+  local sOperation, tParams = PanelDialog(aData, false, "OperInPanels")
   if sOperation == "cancel" then return end
 
   -- take care of the future "repeat" operations in the Editor
-  local dataMain = field(aHistory, "main")
-  dataMain.sLastOp = "search"
-  dataMain.bSearchBack = false
+  aData.sLastOp = "search"
+  aData.bSearchBack = false
   ----------------------------------------------------------------------------
   local WID = 60
   local W1 = 3
@@ -410,10 +421,9 @@ local function SearchFromPanel (aHistory)
   local BLOCKLEN, OVERLAP = 32*1024, -1024
   ----------------------------------------------------------------------------
   local codePages
-  local dataPanels = field(aHistory, "panels")
-  local storedPages = dataPanels.SelectedCodePages
-  if dataPanels.iCodePage then
-    codePages = { dataPanels.iCodePage }
+  local storedPages = aData.SelectedCodePages
+  if aData.iCodePage then
+    codePages = { aData.iCodePage }
   elseif storedPages and next(storedPages) then
     codePages = {}
     for k in pairs(storedPages) do table.insert(codePages, k) end
@@ -422,11 +432,11 @@ local function SearchFromPanel (aHistory)
   end
   ----------------------------------------------------------------------------
   local panelInfo = panel.GetPanelInfo(1)
-  local area = dataPanels.iSearchArea or 1
+  local area = aData.iSearchArea or 1
   if area < 1 or area > 7 then area = 1 end
   local bRecurse, bSymLinks
   local itemList, flags = MakeItemList(panelInfo, area)
-  if dataPanels.bSearchSymLinks then
+  if aData.bSearchSymLinks then
     bSymLinks = true
   end
   if bit.band(flags, F.FRS_RECUR) ~= 0 then
@@ -456,9 +466,11 @@ local function SearchFromPanel (aHistory)
   end
   --===========================================================================
 
-  local function ProcessFile(fdata, fullname, mask_incl, mask_excl, mask_dirs)
+  local function ProcessFile(fdata, fullname, file_filter, mask_incl, mask_excl, mask_dirs)
     ---------------------------------------------------------------------------
     if win.ExtractKey()=="ESCAPE" and ConfirmEsc() then return true end
+    ---------------------------------------------------------------------------
+    if file_filter and not file_filter:IsFileInFilter(fdata) then return end
     ---------------------------------------------------------------------------
     nShow = nShow + 1
     if nShow % 32 == 0 then ShowProgress(fullname) end
@@ -467,7 +479,7 @@ local function SearchFromPanel (aHistory)
       not (mask_excl and far.ProcessName(mask_excl, fdata.FileName, F.PN_CMPNAMELIST+F.PN_SKIPPATH))
     ---------------------------------------------------------------------------
     if fdata.FileAttributes:find("d") then
-      if mask_ok and dataPanels.bSearchFolders and dataMain.sSearchPat == "" then
+      if mask_ok and aData.bSearchFolders and aData.sSearchPat == "" then
         cnt = cnt+1
         tOut[cnt] = fullname
       end
@@ -478,7 +490,7 @@ local function SearchFromPanel (aHistory)
       ---------------------------------------------------------------------------
       if bRecurse then
         if bSymLinks or not fdata.FileAttributes:find("e") then
-          return far.RecursiveSearch(fullname, "*", ProcessFile, 0, mask_incl, mask_excl, mask_dirs)
+          return far.RecursiveSearch(fullname, "*", ProcessFile, 0, file_filter, mask_incl, mask_excl, mask_dirs)
         end
       end
       return
@@ -486,7 +498,7 @@ local function SearchFromPanel (aHistory)
     ---------------------------------------------------------------------------
     if not mask_ok then return end
     ---------------------------------------------------------------------------
-    local found = dataMain.sSearchPat == ""
+    local found = aData.sSearchPat == ""
     if not found then
       local fp = io.open(fullname, "rb")
       if fp then
@@ -521,23 +533,25 @@ local function SearchFromPanel (aHistory)
   end
   --===========================================================================
 
+  local FileFilter = tParams.FileFilter
+  if FileFilter then FileFilter:StartingToFilter() end
   for _, item in ipairs(itemList) do
     local fdata = win.GetFileInfo(item)
     -- note: fdata can be nil for root directories
     local isFile = fdata and not fdata.FileAttributes:find("d")
     ---------------------------------------------------------------------------
     if isFile or ((area==saFromCurrFolder or area==saOnlyCurrFolder) and panelInfo.Plugin) then
-      ProcessFile(fdata, item, "*")
+      ProcessFile(fdata, item, FileFilter, "*")
     end
     if not isFile and not (area == saOnlyCurrFolder and panelInfo.Plugin) then
-      local mask_incl, mask_excl = dataPanels.sFileMask:match("(.-)|(.*)")
+      local mask_incl, mask_excl = aData.sFileMask:match("(.-)|(.*)")
       if mask_incl then
         if mask_incl=="" then mask_incl = "*" end
         if mask_excl=="" then mask_excl = nil end
       else
-        mask_incl = dataPanels.sFileMask
+        mask_incl = aData.sFileMask
       end
-      far.RecursiveSearch(item, "*", ProcessFile, 0, mask_incl, mask_excl, dataPanels[Excl_Key])
+      far.RecursiveSearch(item, "*", ProcessFile, 0, FileFilter, mask_incl, mask_excl, aData[Excl_Key])
     end
     ---------------------------------------------------------------------------
     if userbreak then break end
@@ -566,7 +580,7 @@ local function SearchFromPanel (aHistory)
   else
     actl.RedrawAll()
     if userbreak or 1==far.Message(M.MNoFilesFound,M.MMenuTitle,M.MButtonsNewSearch) then
-      return SearchFromPanel(aHistory)
+      return SearchFromPanel(aData)
     end
   end
   return true

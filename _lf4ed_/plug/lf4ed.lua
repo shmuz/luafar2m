@@ -377,7 +377,7 @@ end
 
 local function RunMenuItem(aItem)
   local function wrapfunc()
-    return aItem.action(aItem)
+    return aItem.action()
   end
 
   local ok, result = xpcall(wrapfunc, traceback3)

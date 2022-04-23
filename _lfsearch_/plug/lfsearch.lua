@@ -12,10 +12,6 @@ local Cfg = {
   --  set true for libraries debugging, false for normal use;
   ReloadOnRequire = true,
 
-  field_Main   = "main",
-  field_Menu   = "menu",
-  field_Config = "config",
-
   RegPath = "LuaFAR\\LF Search\\",
 }
 
@@ -39,12 +35,13 @@ end
 
 -- Set the defaults: prioritize safety and "least surprise".
 local function NormDataOnFirstRun()
-  local data = Field(_Plugin.History, Cfg.field_Main)
+  local data = Field(_Plugin.History, "main")
   data.bAdvanced          = false
   data.bDelEmptyLine      = false
   data.bDelNonMatchLine   = false
   data.bRepIsFunc         = false
   data.bSearchBack        = false
+  data.bUseFileFilter     = false
   --------------------------------
   --data = _Plugin.History["panels"] or {}       --TODO
   --data.sSearchArea        = "FromCurrFolder"   --TODO
@@ -58,7 +55,7 @@ end
 local function InitUpvalues (_Plugin)
   EditorAction = Require("lfs_editmain").EditorAction
   History = _Plugin.History
-  Field(History, Cfg.field_Config)
+  Field(History, "config")
   ModuleDir = _Plugin.ModuleDir
 end
 
@@ -100,7 +97,7 @@ local function OpenFromMacro (aItem)
 
   if Op=="own" then
     local area = far.MacroGetArea()
-    local data = Field(History, Cfg.field_Main)
+    local data = Field(History, "main")
     data.fUserChoiceFunc = nil
     ----------------------------------------------------------------------------
     if Where=="editor" then
@@ -120,7 +117,7 @@ local function OpenFromMacro (aItem)
       then
         if Cmd=="search" then
           local lib = Require("lfs_panels")
-          return lib.SearchFromPanel(History) and true
+          return lib.SearchFromPanel(data) and true
         end
       end
     end
@@ -144,7 +141,7 @@ local function export_OpenPlugin (From, Item)
   end
 
   if From == F.OPEN_EDITOR then
-    local hMenu = Field(History, Cfg.field_Menu)
+    local hMenu = Field(History, "menu")
     local items = MakeMenuItems(ModuleDir.."_usermenu.lua")
     local ret, pos = far.Menu( {
       Flags = {FMENU_WRAPMODE=1, FMENU_AUTOHIGHLIGHT=1},
@@ -155,7 +152,7 @@ local function export_OpenPlugin (From, Item)
     if ret then
       hMenu.position = pos
       if ret.action then
-        local data = Field(History, Cfg.field_Main)
+        local data = Field(History, "main")
         data.fUserChoiceFunc = nil
         if ret.action == "mreplace" then
           MReplace.ReplaceWithDialog(data, true)
@@ -170,7 +167,8 @@ local function export_OpenPlugin (From, Item)
 
   elseif From == F.OPEN_PLUGINSMENU then
     local lib = Require("lfs_panels")
-    if lib.SearchFromPanel(History) then
+    local data = Field(History, "main")
+    if lib.SearchFromPanel(data) then
       SaveSettings()
     end
   end
