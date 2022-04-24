@@ -1103,12 +1103,24 @@ int editor_AddColor(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   struct EditorColor ec;
-  ec.StringNumber = luaL_optinteger(L, 1, 0) - 1;
+  ec.StringNumber = luaL_optinteger  (L, 1, 0) - 1;
   ec.StartPos     = luaL_checkinteger(L, 2) - 1;
   ec.EndPos       = luaL_checkinteger(L, 3) - 1;
-  ec.Color        = luaL_checkinteger(L, 4);
+  ec.Color        = luaL_checkinteger(L, 4) & 0x0000FFFF;
+  ec.Color       |= CheckFlags       (L, 5) & 0xFFFF0000;
   ec.ColorItem    = 0;
   lua_pushboolean(L, Info->EditorControl(ECTL_ADDCOLOR, &ec));
+  return 1;
+}
+
+int editor_DelColor(lua_State *L)
+{
+  PSInfo *Info = GetPluginStartupInfo(L);
+  struct EditorColor ec;
+  memset(&ec, 0, sizeof(ec)); // set ec.Color = 0
+  ec.StringNumber = luaL_optinteger  (L, 1, 0) - 1;
+  ec.StartPos     = luaL_optinteger  (L, 2, 0) - 1;
+  lua_pushboolean(L, Info->EditorControl(ECTL_ADDCOLOR, &ec)); // ECTL_ADDCOLOR (sic)
   return 1;
 }
 
@@ -1116,14 +1128,19 @@ int editor_GetColor(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   struct EditorColor ec;
+  memset(&ec, 0, sizeof(ec));
   ec.StringNumber = luaL_optinteger(L, 1, 0) - 1;
-  ec.StartPos     = luaL_checkinteger(L, 2) - 1;
-  ec.EndPos       = luaL_checkinteger(L, 3) - 1;
-  ec.ColorItem    = luaL_checkinteger(L, 4);
-  ec.Color        = 0;
+  ec.ColorItem    = luaL_checkinteger(L, 2) - 1;
   if (Info->EditorControl(ECTL_GETCOLOR, &ec))
-    return lua_pushinteger(L, ec.Color), 1;
-  return 0;
+  {
+    lua_createtable(L, 0, 3);
+    PutNumToTable(L, "StartPos", ec.StartPos+1);
+    PutNumToTable(L, "EndPos", ec.EndPos+1);
+    PutNumToTable(L, "Color", ec.Color);
+  }
+  else
+    lua_pushnil(L);
+  return 1;
 }
 
 int editor_SaveFile(lua_State *L)
@@ -5293,6 +5310,7 @@ const luaL_Reg editor_funcs[] =
   {"AddColor",            editor_AddColor},
   {"AddStackBookmark",    editor_AddStackBookmark},
   {"ClearStackBookmarks", editor_ClearStackBookmarks},
+  {"DelColor",            editor_DelColor},
   {"DeleteBlock",         editor_DeleteBlock},
   {"DeleteChar",          editor_DeleteChar},
   {"DeleteStackBookmark", editor_DeleteStackBookmark},

@@ -7,11 +7,11 @@ OptCaseSensitive=true
 
 F=far.Flags
 band,bor,lshift,rshift = bit.band, bit.bor, bit.lshift, bit.rshift
-color = far.AdvControl(F.ACTL_GETCOLOR, F.COL_EDITORTEXT)
+color = actl.GetColor "COL_EDITORTEXT"
 color = bor lshift(band(color,0xF),4), rshift(color,4)
 words={}
 
--- Color Word Under Cursor
+-- Highlight Word Under Cursor
 AddToMenu "e", nil, "F5", ->
   ei=editor.GetInfo!
   id=ei.EditorID

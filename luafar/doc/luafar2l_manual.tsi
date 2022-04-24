@@ -2619,15 +2619,16 @@ id=22
 lv=2
 dt=Text
 nm=editor.AddColor
-mtime=3851868818
+mtime=3859993738
 <article>
-#_result = editor.AddColor (StringNumber, StartPos, EndPos, Color)
+#_result = editor.AddColor (StringNumber, StartPos, EndPos, Color [, Flags])
 #_
 #_**Parameters:**
 #_  StringNumber: integer, or nil
 #_  StartPos:     integer (1-based)
 #_  EndPos:       integer (1-based)
 #_  Color:        integer
+#_  Flags:        flags combination
 #_
 #_**Returns:**
 #_  result: boolean
@@ -2676,6 +2677,30 @@ nm=editor.ClearStackBookmarks
 #_**Far API used:**
 #_  EditorControl, ECTL_CLEARSTACKBOOKMARKS
 #_
+#_
+</article>
+</node>
+<node>
+id=466
+lv=2
+dt=Text
+nm=editor.DelColor
+ctime=3859993119
+mtime=3859993309
+<article>
+#_result = editor.DelColor (StringNumber [, StartPos])
+#_
+#_**Parameters:**
+#_  StringNumber: integer, or nil
+#_  StartPos:     integer (1-based); default=0
+#_
+#_**Returns:**
+#_  result: boolean
+#_
+#_**Far API used:**
+#_  EditorControl, ECTL_ADDCOLOR
+#_
+#_@@@
 #_
 </article>
 </node>
@@ -2853,22 +2878,22 @@ id=28
 lv=2
 dt=Text
 nm=editor.GetColor
+mtime=3859991225
 <article>
-#_color = editor.GetColor(StringNumber, StartPos, EndPos, ColorItem)
+#_colordata = editor.GetColor(StringNumber, ColorItem)
 #_
 #_**Parameters:**
-#_  StringNumber: integer, or nil
-#_  StartPos:     integer
-#_  EndPos:       integer
-#_  ColorItem:    integer
+#_  StringNumber: integer (1-based), or nil
+#_  ColorItem:    integer (1-based)
 #_
 #_**Returns:**
-#_  color: integer, or nil
+#_  colordata:    table (or nil)
+#_                  StartPos:     integer
+#_                  EndPos:       integer
+#_                  Color:        integer
 #_
 #_**Far API used:**
 #_  EditorControl, ECTL_GETCOLOR
-#_
-#_@@@
 #_
 </article>
 </node>
