@@ -93,10 +93,12 @@ id=13
 lv=2
 dt=Text
 nm=AddToMenu
-mtime=3855599582
+mtime=3860309876
 <article>
 #_<markdown>
 #_**`AddToMenu (where, text, hotkey, handler)`**
+#_
+#_### Description
 #_
 #_Function `AddToMenu` is available to the *_usermenu.lua* script.<br>
 #_It allows to add a specified utility to the plugin's menu and
@@ -146,10 +148,12 @@ id=57
 lv=2
 dt=Text
 nm=AddCommand
-mtime=3855599457
+mtime=3860309881
 <article>
 #_<markdown>
 #_**`AddCommand (command, handler [, description])`**
+#_
+#_### Description
 #_
 #_Function `AddCommand` is available to the *_usermenu.lua* script.<br>
 #_It establishes a correspondence between the given `command` and
@@ -185,10 +189,12 @@ id=20
 lv=2
 dt=Text
 nm=AddEvent
-mtime=3853171692
+mtime=3860309886
 <article>
 #_<markdown>
 #_**`AddEvent (event_name, handler)`**
+#_
+#_### Description
 #_
 #_Function `AddEvent` is available to the *_usermenu.lua* script.<br>
 #_It allows to add a function handler that will be further called on some FAR event.
@@ -227,10 +233,12 @@ id=34
 lv=2
 dt=Text
 nm=AddUserFile
-mtime=3859904187
+mtime=3860305827
 <article>
 #_<markdown>
 #_**`AddUserFile (filename)`**
+#_
+#_### Description
 #_
 #_Function `AddUserFile` is available to the *_usermenu.lua* script.
 #_
@@ -238,11 +246,16 @@ mtime=3859904187
 #_The script can set some top-level variable to this value so that script's
 #_functions could use it.
 #_
+#_### Parameters
+#_
+#_1. `filename`<br>
+#_Specifies a file that is treated as an additional *_usermenu.lua* file.
+#_Either an absolute path or a path relative to the plugin's directory can be specified.
+#_
+#_### Notes
+#_
 #_If the file's extension is `.moon` then it is treated as a MoonScript file,
 #_otherwise as a Lua file.
-#_
-#_Parameter `filename` (its path is relative to the plugin's directory)
-#_specifies a file that is treated as an additional *_usermenu.lua* file.
 #_
 #_All utilities added by [`AddToMenu`](13.html) and
 #_[`AddCommand`](57.html) calls within the file specified by `filename`
@@ -259,41 +272,33 @@ id=35
 lv=2
 dt=Text
 nm=AutoInstall
-mtime=3491216961
+mtime=3860306007
 <article>
 #_<markdown>
-#_**`AutoInstall (startpath, [filepattern], [depth])`**
+#_**`AutoInstall (startpath)`**
+#_
+#_### Description
 #_
 #_Function `AutoInstall` is available to the *_usermenu.lua* script.<br>
-#_It looks for files whose names match `filepattern` in the directory
-#_given by `startpath` and its subdirectories recursively,
+#_It looks for Lua and MoonScript files in `startpath` and its
+#_subdirectories recursively,
 #_and calls [`AddUserFile`](34.html) for each matching file found.
 #_
 #_### Parameters
 #_
-#_1. `startpath` (string)<br>
-#_A path relative to the plugin's directory
+#_1. `startpath`<br>
+#_Either an absolute path or a path relative to the plugin's directory
 #_
-#_1. `filepattern` (string, or nil)<br>
-#_Lua regular expression specifying what files to install.
-#_Only file name (without path) is matched against this regular
-#_expression. If the parameter is not specified, the value
-#_`"^_usermenu%.lua$"` is used.
-#_
-#_1. `depth` (number, or nil)<br>
-#_The maximum depth of subdirectories to recurse into.
-#_When it is 0, the search is conducted only in `startpath`.
-#_When it is not specified, the recursion depth is unlimited.
-#_
-#_### Warning
-#_This function should be used with caution since it runs
-#_every matching file found.
+#_### Notes
+#_- During the recursive search the directories whose names begin with `_`
+#_  (underscore) are skipped with all their content
+#_- Lua files are determined by the extension `.lua`
+#_- MoonScript files are determined by the extension `.moon`
+#_- Files whose name begin with `_` (underscore) are skipped
 #_
 #_### Examples
 #_
 #_      AutoInstall ("scripts")
-#_      AutoInstall ("scripts", nil, 1)
-#_      AutoInstall ("scripts/cool", "^_.*menu%.lua$", 0)
 #_
 </article>
 </node>

@@ -293,7 +293,9 @@ local function MakeAddUserFile (aEnv, aItems)
   local uDepth, uStack, uMeta = 0, {}, {__index = _G}
   local function AddUserFile (filename)
     uDepth = uDepth + 1
-    filename = _ModuleDir .. filename
+    if filename:sub(1,1) ~= "/" then
+      filename = _ModuleDir .. filename
+    end
     if uDepth == 1 then
       -- if top-level _usermenu.lua doesn't exist, it isn't error
       local info = win.GetFileInfo(filename)
@@ -314,43 +316,30 @@ local function MakeAddUserFile (aEnv, aItems)
     uStack[uDepth] = setmetatable({}, uMeta)
     aEnv.AddToMenu = MakeAddToMenu(aItems, uStack[uDepth])
     aEnv.AddCommand = MakeAddCommand(aItems, uStack[uDepth], filename)
-    local ok, msg2 = pcall(chunk, filename)
-    if not ok then error(msg2, 3) end
+    chunk(filename) -- can raise error
     uDepth = uDepth - 1
   end
   return AddUserFile
 end
 
 local function MakeAutoInstall (AddUserFile)
-  local function AutoInstall (startpath, filepattern, depth)
+  local filepatt = regex.new("^[^_].*\\.(lua|moon)$", "i")
+  local function AutoInstall (startpath)
     assert(type(startpath)=="string", "bad arg. #1 to AutoInstall")
-    assert(filepattern==nil or type(filepattern)=="string", "bad arg. #2 to AutoInstall")
-    assert(depth==nil or type(depth)=="number", "bad arg. #3 to AutoInstall")
-    ---------------------------------------------------------------------------
-    startpath = _ModuleDir .. startpath:gsub("[\\/]*$", dirsep, 1)
-    filepattern = filepattern or "^_usermenu%.lua$"
-    ---------------------------------------------------------------------------
-    local first = depth
-    local offset = _ModuleDir:len() + 1
-    for _, item in ipairs(far.GetDirList(startpath) or {}) do
-      if first then
-        first = false
-        local _, m = item.FileName:gsub(dirsep, "")
-        depth = depth + m
-      end
-      if not item.FileAttributes:find"d" then
-        local try = true
-        if depth then
-          local _, n = item.FileName:gsub(dirsep, "")
-          try = (n <= depth)
-        end
-        if try then
-          local relName = item.FileName:sub(offset)
-          local Name = relName:match("[^\\/]+$")
-          if Name:match(filepattern) then AddUserFile(relName) end
-        end
-      end
+    if startpath:sub(1,1) ~= "/" then
+      startpath = _ModuleDir..startpath
     end
+    far.RecursiveSearch(startpath, "*",
+      function(item, fullpath)
+        if item.FileAttributes:find("d") then
+          if item.FileName:sub(1,1) ~= "_" then
+            AutoInstall(fullpath)
+          end
+        elseif filepatt:match(item.FileName) then
+          local ok, msg = pcall(AddUserFile, fullpath)
+          if not ok then ErrMsg(msg) end
+        end
+      end, F.FRS_SCANSYMLINK)
   end
   return AutoInstall
 end
@@ -423,23 +412,29 @@ end
 
 local function AddMenuItems (src, trg)
   trg = trg or {}
+  local j = trg._NEXT or 1
   for _, item in ipairs(src) do
-    local text = item.text
-    if type(text)=="string" and text:sub(1,2)=="::" then
-      local newitem = {}
-      for k,v in pairs(item) do newitem[k] = v end
-      newitem.text = M[text:sub(3)]
-      trg[#trg+1] = newitem
-    else
-      trg[#trg+1] = item
+    local newitem = {}
+    for k,v in pairs(item) do newitem[k] = v end
+    local prefix = ""
+    if j<36 and not item.separator then
+      prefix =  ("&%s. "):format( (j<10 and j or string.char(j-10+("A"):byte())) )
+      j = j + 1
     end
+    if item.text:sub(1,2)=="::" then
+      newitem.text = prefix .. M[item.text:sub(3)]
+    else
+      newitem.text = prefix .. item.text
+    end
+    trg[#trg+1] = newitem
   end
+  trg._NEXT = j
   return trg
 end
 
 local function MakeMainMenu(aFrom)
   local properties = {
-    Flags = F.FMENU_WRAPMODE+F.FMENU_AUTOHIGHLIGHT, Title = M.MPluginName,
+    Flags = F.FMENU_WRAPMODE, Title = M.MPluginName,
     HelpTopic = "Contents", Bottom = "ctrl+sh+f9 (settings)", }
   --------
   local items = {}

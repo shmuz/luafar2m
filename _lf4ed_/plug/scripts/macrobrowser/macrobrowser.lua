@@ -117,7 +117,7 @@ local function RunMenu()
 
   self.cfg = cfg
   self.hidden = true
-  self.macrodialog = dofile(ThisDir.."macrodialog.lua")
+  self.macrodialog = dofile(ThisDir.."_macrodialog.lua")
 
   self:CreateItems()
   local mdialog = self.macrodialog.Dialog

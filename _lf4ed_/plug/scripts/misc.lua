@@ -45,5 +45,23 @@ local function JumpToNonDir()
   end
 end
 
-AddCommand("timestamp", InsertTimestamp)
-AddCommand("JumpToNonDir", JumpToNonDir)
+local function SmartHome()
+  local info, str = editor.GetInfo(), editor.GetString()
+  local pos = str.StringText:find("%S") or 1
+  editor.SetPosition(nil, pos==info.CurPos and 1 or pos)
+  editor.Redraw()
+end
+
+local function InsertNewGuid()
+  editor.InsertText('"'..win.Uuid(win.Uuid()):upper()..'"', true)
+end
+
+local function Calc() require("far2.calc")() end
+
+AddCommand ("timestamp", InsertTimestamp)
+AddCommand ("luacalc", Calc)
+AddCommand ("JumpToNonDir", JumpToNonDir)
+
+AddToMenu ("e", nil, "Home", SmartHome)
+AddToMenu ("e", nil, "Ctrl+F11", InsertNewGuid)
+AddToMenu ("depv", "Lua Calc", nil, Calc)
