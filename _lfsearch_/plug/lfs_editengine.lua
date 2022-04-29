@@ -246,8 +246,9 @@ end
 
 
 -- @aOp: "search", "replace", "count", "showall"
-local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
+local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
   -----------------------------------------------------------------------------
+  local bSearchBack      = aParams.bSearchBack
   local bForward         = not aParams.bSearchBack
   local bAllowEmpty      = aWithDialog
   local fFilter, Regex   = aParams.FilterFunc, aParams.Regex
@@ -257,6 +258,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
   local fReplace         = (aOp == "replace") and Common.GetReplaceFunction(aParams.ReplacePat)
   local bDelNonMatchLine = (aOp == "replace") and aWithDialog and aParams.bDelNonMatchLine
   local tItems           = (aOp == "showall") and {}
+  local tRepeat          = _Plugin.Repeat
 
   local sChoice, bEurBegin
   if aWithDialog and not aParams.bConfirmReplace then
@@ -338,10 +340,25 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
     else
       y = tInfo.CurLine
       set_sLine(EditorGetString(y, 2))
-      x = min(tInfo.CurPos, sLineLen+1)
+
+      if aOp == "searchword" then
+        x = min(bForward and tInfo.CurPos+1 or tInfo.CurPos, sLineLen+1)
+      elseif not aScriptCall and
+         tRepeat.bSearchBack ~= bSearchBack and
+         tRepeat.FileName == tInfo.FileName and
+         tRepeat.y == tInfo.CurLine and
+         tRepeat.x == tInfo.CurPos
+      then
+        x = bSearchBack and tRepeat.from or tRepeat.to+1
+      else
+        x = min(tInfo.CurPos, sLineLen+1)
+      end
+
       part1, part3 = "", ""
     end
   end
+  tRepeat.bSearchBack = bSearchBack
+  tRepeat.FileName = tInfo.FileName
   -----------------------------------------------------------------------------
   local function update_y (bLineDeleted)
     y = bForward and y+(bLineDeleted and 0 or 1) or y-1
@@ -445,6 +462,10 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc)
           -----------------------------------------------------------------------
           nFound = nFound + 1
           bAllowEmpty = false
+          x = bForward and to+1 or fr
+
+          tRepeat.x, tRepeat.y = x, y
+          tRepeat.from, tRepeat.to = fr, to
           -----------------------------------------------------------------------
           if aOp == "search" then
             update_x(fr, to)

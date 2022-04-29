@@ -156,8 +156,7 @@ local function EditorAction (aOp, aData, aScriptCall)
       end
       -- sOperation : either of "search", "count", "showall", "replace"
     elseif aOp == "repeat" or aOp == "repeat_rev" then
-      aData.bSearchBack = (aOp == "repeat_rev")
-      bReplace = (aData.sLastOp == "replace")
+      bReplace = (State.sLastOp == "replace")
       local searchtext = Common.GetDialogHistory("SearchText")
       if searchtext ~= aData.sSearchPat then
         bReplace = false
@@ -165,22 +164,22 @@ local function EditorAction (aOp, aData, aScriptCall)
       end
       sOperation = bReplace and "replace" or "search"
       tParams = assert(Common.ProcessDialogData (aData, bReplace))
+      tParams.bSearchBack = (aOp == "repeat_rev")
     else
       return
     end
   end
 
-  aData.sLastOp = bReplace and "replace" or "search"
+  State.sLastOp = bReplace and "replace" or "search"
   tParams.sScope = bWithDialog and aData.sScope or "global"
   ---------------------------------------------------------------------------
   if aData.bAdvanced then tParams.InitFunc() end
-----profiler.start[[e:\bb\f\today\projects\luafar\log11.log]]
   local nFound, nReps, sChoice = EditEngine.DoAction(
       sOperation,
       tParams,
       bWithDialog,
-      aData.fUserChoiceFunc)
-----profiler.stop()
+      aData.fUserChoiceFunc,
+      aScriptCall)
   if aData.bAdvanced then tParams.FinalFunc() end
   ---------------------------------------------------------------------------
   if sChoice == "newsearch" then

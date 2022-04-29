@@ -31,6 +31,7 @@ local function FirstRunActions()
     ModuleDir = far.PluginStartupInfo().ModuleDir;
     OriginalRequire = require;
     History = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {};
+    Repeat = {};
     RegPath = RegPath;
   }
   NormDataOnFirstRun()

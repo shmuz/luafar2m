@@ -2,7 +2,7 @@
 -- https://forum.farmanager.com/viewtopic.php?p=134436#p134436
 
 -- Options
-OptCaseSensitive=true
+OptCaseSensitive=false
 -- End of options
 
 F=far.Flags
