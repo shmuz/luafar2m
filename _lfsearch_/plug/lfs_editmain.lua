@@ -1,17 +1,20 @@
 -- lfs_editmain.lua
 
-local sd          = require "far2.simpledialog"
-local Common      = require "lfs_common"
-local EditEngine  = require "lfs_editengine"
-local M           = require "lfs_message"
+local Common     = require "lfs_common"
+local M          = require "lfs_message"
+local EditEngine = require "lfs_editengine"
+local Editors    = require "lfs_editors"
+local sd         = require "far2.simpledialog"
+
+local F = far.Flags
+local FormatInt = Common.FormatInt
+local band = bit.band
 
 local ErrorMsg = Common.ErrorMsg
-local FormatInt = Common.FormatInt
-local F = far.Flags
 
 local function UnlockEditor (Title, EI)
   EI = EI or editor.GetInfo()
-  if bit.band(EI.CurState,F.ECSTATE_LOCKED) ~= 0 then
+  if band(EI.CurState,F.ECSTATE_LOCKED) ~= 0 then
     if far.Message(M.MEditorLockedPrompt, Title, M.MBtnYesNo)==1 then
       if editor.SetParam("ESPT_LOCKMODE",false) then
         editor.Redraw()
@@ -22,11 +25,12 @@ local function UnlockEditor (Title, EI)
   end
   return true
 end
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-local searchGuid  = win.Uuid("0B81C198-3E20-4339-A762-FFCBBC0C549C")
-local replaceGuid = win.Uuid("FE62AEB9-E0A1-4ED3-8614-D146356F86FF")
+local searchGuid  = win.Uuid("0b81c198-3e20-4339-a762-ffcbbc0c549c")
+local replaceGuid = win.Uuid("fe62aeb9-e0a1-4ed3-8614-d146356f86ff")
 
-local function SR_Dialog (aData, aReplace, aScriptCall)
+local function EditorDialog (aData, aReplace, aScriptCall)
   local insert = table.insert
   local sTitle = aReplace and M.MTitleReplace or M.MTitleSearch
   local regpath = _Plugin.RegPath
@@ -113,30 +117,39 @@ local ValidOperations = {
      value 'config.rPickFrom'.
 ------------------------------------------------------------------------------]]
 local function EditorAction (aOp, aData, aScriptCall)
-  if nil == ValidOperations[aOp] then
-    error("invalid operation: "..tostring(aOp))
+  assert(ValidOperations[aOp], "invalid operation")
+
+  if aOp == "config" then
+    Common.EditorConfigDialog()
+    return nil
   end
 
-  local bReplace, bWithDialog, sOperation, tParams
+  local EInfo = editor.GetInfo()
+  local State = Editors.GetState(EInfo.EditorID)
+  local bReplace = aOp:find("replace") or (aOp:find("repeat") and (State.sLastOp == "replace"))
+  if not aScriptCall and bReplace and not UnlockEditor(M.MTitleReplace) then
+    return
+  end
+
+  local bWithDialog, sOperation, tParams
   aData.sSearchPat = aData.sSearchPat or ""
   aData.sReplacePat = aData.sReplacePat or ""
-
   local bTest = aOp:find("^test:")
+
   if bTest then
     bWithDialog = true
     bReplace = (aOp == "test:replace")
     sOperation = aOp:sub(6) -- skip "test:"
     tParams = assert(Common.ProcessDialogData (aData, bReplace))
+
   else
-    if aOp == "config" then
-      return Common.ConfigDialog()
-    elseif aOp == "search" or aOp == "replace" then
+    if aOp == "search" or aOp == "replace" then
       bWithDialog = true
       bReplace = (aOp == "replace")
       while true do
-        sOperation, tParams = SR_Dialog(aData, bReplace, aScriptCall)
+        sOperation, tParams = EditorDialog(aData, bReplace, aScriptCall)
         if sOperation ~= "config" then break end
-        Common.ConfigDialog()
+        Common.EditorConfigDialog()
       end
       if sOperation == "cancel" then
         return

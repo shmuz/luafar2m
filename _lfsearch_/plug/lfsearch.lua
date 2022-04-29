@@ -1,41 +1,18 @@
 -- luacheck: globals lfsearch
+
+local F = far.Flags
 local ReqLuafarVersion = "2.9"
-lfsearch = {}
+_G.lfsearch = {}
 
--- CONFIGURATION : keep it at the file top !!
-local Cfg = {
-  --  Default script will be recompiled and run every time OpenPlugin/
-  --  OpenFilePlugin are called: set true for debugging, false for normal use;
-  ReloadDefaultScript = true,
-
-  --  Reload lua libraries each time they are require()d:
-  --  set true for libraries debugging, false for normal use;
-  ReloadOnRequire = true,
-
-  RegPath = "LuaFAR\\LF Search\\",
-}
-
--- Upvalues --
-local Sett     = require "far2.settings"
-local Utils    = require "far2.utils"
-local M        = require "lfs_message"
-local MReplace = require "lfs_mreplace"
-
+local RegPath       = "LuaFAR\\LF Search\\"
 local SETTINGS_KEY  = "shmuz"
 local SETTINGS_NAME = "plugin_lfsearch"
-local F = far.Flags
-local Field = Sett.field
-local EditorAction
-local History
-local ModuleDir
 
-local function SaveSettings()
-  Sett.msave(SETTINGS_KEY, SETTINGS_NAME, History)
-end
 
 -- Set the defaults: prioritize safety and "least surprise".
 local function NormDataOnFirstRun()
-  local data = Field(_Plugin.History, "main")
+  local Sett = require "far2.settings"
+  local data = Sett.field(_Plugin.History, "main")
   data.bAdvanced          = false
   data.bDelEmptyLine      = false
   data.bDelNonMatchLine   = false
@@ -47,17 +24,41 @@ local function NormDataOnFirstRun()
   --data.sSearchArea        = "FromCurrFolder"   --TODO
 end
 
-local function Require (name)
-  if Cfg.ReloadOnRequire then package.loaded[name] = nil; end
-  return require(name)
+
+local function FirstRunActions()
+  local Sett  = require "far2.settings"
+  _Plugin = {
+    ModuleDir = far.PluginStartupInfo().ModuleDir;
+    OriginalRequire = require;
+    History = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {};
+    RegPath = RegPath;
+  }
+  NormDataOnFirstRun()
 end
 
-local function InitUpvalues (_Plugin)
-  EditorAction = Require("lfs_editmain").EditorAction
-  History = _Plugin.History
-  Field(History, "config")
-  ModuleDir = _Plugin.ModuleDir
+
+local FirstRun = not _Plugin
+if FirstRun then FirstRunActions() end
+
+
+local libUtils   = require "far2.utils"
+local Sett       = require "far2.settings"
+local EditMain   = require "lfs_editmain"
+local Editors    = require "lfs_editors"
+local M          = require "lfs_message"
+local MReplace   = require "lfs_mreplace"
+local Panels     = require "lfs_panels"
+local Field      = Sett.field
+
+local History      = _Plugin.History
+local ModuleDir    = _Plugin.ModuleDir
+local EditorAction = EditMain.EditorAction
+
+
+local function SaveSettings()
+  Sett.msave(SETTINGS_KEY, SETTINGS_NAME, History)
 end
+
 
 local function MakeAddToMenu (Items)
   return function (aItemText, aFileName, aParam1, aParam2)
@@ -70,6 +71,13 @@ local function MakeAddToMenu (Items)
     end
   end
 end
+
+
+local function ForcedRequire (name)
+  package.loaded[name] = nil
+  return _Plugin.OriginalRequire(name)
+end
+
 
 local function MakeMenuItems (aUserMenuFile)
   local items = {
@@ -91,6 +99,7 @@ local function MakeMenuItems (aUserMenuFile)
   end
   return items
 end
+
 
 local function OpenFromMacro (aItem)
   local Op, Where, Cmd = aItem:match("^([%w_]+):([%w_]+):([%w_]+)")
@@ -116,8 +125,7 @@ local function OpenFromMacro (aItem)
          area==F.MACROAREA_QVIEWPANEL or area==F.MACROAREA_INFOPANEL
       then
         if Cmd=="search" then
-          local lib = Require("lfs_panels")
-          return lib.SearchFromPanel(data) and true
+          return Panels.SearchFromPanel(data) and true
         end
       end
     end
@@ -125,22 +133,27 @@ local function OpenFromMacro (aItem)
   end
 end
 
-local function export_OpenPlugin (From, Item)
-  if not Utils.CheckLuafarVersion(ReqLuafarVersion, M.MMenuTitle) then
+
+export.OnError = libUtils.OnError
+export.ProcessEditorEvent = Editors.ProcessEditorEvent
+
+
+function export.OpenPlugin (aFrom, aItem)
+  if not libUtils.CheckLuafarVersion(ReqLuafarVersion, M.MMenuTitle) then
     return
   end
 
-  if bit.band(From, F.OPEN_FROMMACRO) ~= 0 then
-    if bit.band(From, F.OPEN_FROMMACROSTRING) ~= 0 then
+  if bit.band(aFrom, F.OPEN_FROMMACRO) ~= 0 then
+    if bit.band(aFrom, F.OPEN_FROMMACROSTRING) ~= 0 then
       far.Timer(50, function(h) -- to avoid running from a macro
           h:Close()
-          if OpenFromMacro(Item) then SaveSettings() end
+          if OpenFromMacro(aItem) then SaveSettings() end
         end)
     end
     return
   end
 
-  if From == F.OPEN_EDITOR then
+  if aFrom == F.OPEN_EDITOR then
     local hMenu = Field(History, "menu")
     local items = MakeMenuItems(ModuleDir.."_usermenu.lua")
     local ret, pos = far.Menu( {
@@ -165,24 +178,34 @@ local function export_OpenPlugin (From, Item)
       SaveSettings()
     end
 
-  elseif From == F.OPEN_PLUGINSMENU then
-    local lib = Require("lfs_panels")
+  elseif aFrom == F.OPEN_COMMANDLINE then
+    local _, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
+    return libUtils.OpenCommandLine(aItem, commandTable, nil)
+
+  elseif aFrom == F.OPEN_PLUGINSMENU then
     local data = Field(History, "main")
-    if lib.SearchFromPanel(data) then
+    if Panels.SearchFromPanel(data) then
       SaveSettings()
     end
   end
 end
 
-local function export_GetPluginInfo()
+
+function export.GetPluginInfo()
   return {
-    Flags = F.PF_EDITOR,
-    PluginMenuStrings = { M.MMenuTitle },
-    SysId = 0x10001,
+    Flags = F.PF_EDITOR;
+    PluginMenuStrings = { M.MMenuTitle };
+    SysId = 0x10001;
+    CommandPrefix = "lfs";
   }
 end
 
-lfsearch.EditorAction = function(aOp, aData)
+
+lfsearch.MReplaceEditorAction = MReplace.EditorAction
+lfsearch.MReplaceDialog = MReplace.ReplaceWithDialog
+
+
+function lfsearch.EditorAction (aOp, aData)
   assert(type(aOp)=="string", "arg #1: string expected")
   assert(type(aData)=="table", "arg #2: table expected")
   local newdata = {}
@@ -190,26 +213,23 @@ lfsearch.EditorAction = function(aOp, aData)
   return EditorAction(aOp, newdata, true)
 end
 
-lfsearch.MReplaceEditorAction = MReplace.EditorAction
 
-local function SetExportFunctions()
-  export.GetPluginInfo = export_GetPluginInfo
-  export.OpenPlugin    = export_OpenPlugin
-end
-
-local function main()
-  if not _Plugin then
-    export.OnError = Utils.OnError
-    _Plugin = {}
-    _Plugin.ModuleDir = far.PluginStartupInfo().ModuleDir
-    _Plugin.History = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
-    _Plugin.RegPath = Cfg.RegPath
-    package.cpath = _Plugin.ModuleDir .. "?.dl;" .. package.cpath --TODO
-    NormDataOnFirstRun()
+function lfsearch.SetDebugMode (On)
+  if On then
+    require = ForcedRequire -- luacheck: allow defined (require)
+    far.ReloadDefaultScript = true
+  else
+    require = _Plugin.OriginalRequire
+    far.ReloadDefaultScript = false
   end
-  SetExportFunctions()
-  InitUpvalues(_Plugin)
-  far.ReloadDefaultScript = Cfg.ReloadDefaultScript
 end
 
-main()
+
+function lfsearch.SearchFromPanel (data)
+  return Panels.SearchFromPanel(data)
+end
+
+
+do
+  Field(History, "config")
+end

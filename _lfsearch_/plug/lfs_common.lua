@@ -105,7 +105,7 @@ local function GetDialogHistory (name)
 end
 
 
-local function ConfigDialog()
+local function EditorConfigDialog()
   local Items = {
     width = 76;
     help = "Contents";
@@ -608,7 +608,7 @@ end
 
 
 return {
-  ConfigDialog       = ConfigDialog;
+  EditorConfigDialog = EditorConfigDialog;
   CreateSRFrame      = CreateSRFrame;
   ErrorMsg           = ErrorMsg;
   FormatInt          = FormatInt;
