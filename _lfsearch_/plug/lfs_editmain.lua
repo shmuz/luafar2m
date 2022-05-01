@@ -97,15 +97,17 @@ end
 
 
 local ValidOperations = {
-  [ "config"       ] = true;
-  [ "repeat"       ] = true;
-  [ "repeat_rev"   ] = true;
-  [ "replace"      ] = true;
-  [ "search"       ] = true;
-  [ "test:count"   ] = true;
-  [ "test:replace" ] = true;
-  [ "test:search"  ] = true;
-  [ "test:showall" ] = true;
+  [ "config"       ] = true,
+  [ "repeat"       ] = true,
+  [ "repeat_rev"   ] = true,
+  [ "replace"      ] = true,
+  [ "search"       ] = true,
+  [ "searchword"   ] = true,
+  [ "searchword_rev" ] = true,
+  [ "test:count"   ] = true,
+  [ "test:replace" ] = true,
+  [ "test:search"  ] = true,
+  [ "test:showall" ] = true,
 }
 
 
@@ -154,7 +156,7 @@ local function EditorAction (aOp, aData, aScriptCall)
       if sOperation == "cancel" then
         return
       end
-      -- sOperation : either of "search", "count", "showall", "replace"
+
     elseif aOp == "repeat" or aOp == "repeat_rev" then
       bReplace = (State.sLastOp == "replace")
       local searchtext = Common.GetDialogHistory("SearchText")
@@ -165,8 +167,25 @@ local function EditorAction (aOp, aData, aScriptCall)
       sOperation = bReplace and "replace" or "search"
       tParams = assert(Common.ProcessDialogData (aData, bReplace))
       tParams.bSearchBack = (aOp == "repeat_rev")
-    else
-      return
+
+    elseif aOp == "searchword" or aOp == "searchword_rev" then
+      local searchtext = Common.GetWordUnderCursor(_Plugin.History["config"].bSelectFound)
+      if not searchtext then return end
+      aData = {
+        bAdvanced = false;
+        bCaseSens = false;
+        bRegExpr = false;
+        bSearchBack = (aOp == "searchword_rev");
+        bWholeWords = true;
+        sOrigin = "cursor";
+        sScope = "global";
+        sSearchPat = searchtext;
+      }
+      bWithDialog = true
+      bReplace = false
+      sOperation = "searchword"
+      tParams = assert(Common.ProcessDialogData (aData, false))
+
     end
   end
 
@@ -186,7 +205,7 @@ local function EditorAction (aOp, aData, aScriptCall)
     editor.SetTitle("")
     return EditorAction(aOp, aData, aScriptCall)
   elseif not bTest and sChoice ~= "broken" then
-    if nFound == 0 then
+    if nFound == 0 and sOperation ~= "searchword" then
       ErrorMsg (M.MNotFound .. aData.sSearchPat .. "\"", M.MMenuTitle)
     elseif sOperation == "count" then
       far.Message (M.MTotalFound .. FormatInt(nFound), M.MMenuTitle)

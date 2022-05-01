@@ -245,7 +245,7 @@ local function EditorSetCurString (text)
 end
 
 
--- @aOp: "search", "replace", "count", "showall"
+-- @aOp: "search", "replace", "count", "showall", "searchword"
 local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
   -----------------------------------------------------------------------------
   local bSearchBack      = aParams.bSearchBack
@@ -394,6 +394,17 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
       last_update = currclock
     end
   end
+  -----------------------------------------------------------------------------
+  local function ShowFound (x, fr, to, scroll)
+    local p1 = part1:len()
+    ScrollToPosition (y, p1+x, fr, to, scroll)
+    if aOp=="replace" or _Plugin.History["config"].bSelectFound then
+      editor.Select("BTYPE_STREAM", y, p1+fr, to-fr+1, 1)
+    end
+    editor.Redraw()
+    tStartPos = editor.GetInfo()
+  end
+  -----------------------------------------------------------------------------
   _lastclock = os.clock()
   --===========================================================================
   -- ITERATE ON LINES
@@ -436,15 +447,6 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
           break
         end
         -----------------------------------------------------------------------
-        local function ShowFound (scroll)
-          --editor.SetPosition(y, x)
-          local p1 = part1:len()
-          ScrollToPosition (y, p1+x, fr, to, scroll)
-          editor.Select("BTYPE_STREAM", y, p1+fr, to-fr+1, 1)
-          editor.Redraw()
-          tStartPos = editor.GetInfo()
-        end
-        -----------------------------------------------------------------------
         if collect then
           if fr==x and to+1==x and not bAllowEmpty then
             if bForward then
@@ -467,9 +469,10 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
           tRepeat.x, tRepeat.y = x, y
           tRepeat.from, tRepeat.to = fr, to
           -----------------------------------------------------------------------
-          if aOp == "search" then
+          if aOp == "search" or aOp == "searchword" then
             update_x(fr, to)
-            ShowFound()
+            local X = aOp=="searchword" and bForward and x>1 and x-1 or x
+            ShowFound(X, fr, to)
             return 1, 0
           -----------------------------------------------------------------------
           elseif aOp == "count" then
@@ -570,7 +573,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
               editor.SetPosition(y, x)
               tStartPos = editor.GetInfo()
             else
-              ShowFound(14/2 + 2)
+              ShowFound(x, fr, to, 14/2 + 2)
               sChoice = fChoice(sTitle, sLine:sub(fr, to), sRepFinal)
               if sChoice == "all" then
                 editor.UndoRedo("EUR_BEGIN") -- for undoing the bulk replacement in a single step
@@ -579,7 +582,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
               -----------------------------------------------------------------
               if sChoice == "yes" or sChoice == "all" then
                 if Replace() then break end
-                if sChoice == "yes" then ShowFound() end
+                if sChoice == "yes" then ShowFound(x, fr, to) end
               -----------------------------------------------------------------
               elseif sChoice == "no" then
                 if collect then update_x(fr, to)

@@ -3,8 +3,6 @@
 local M      = require "lfs_message"
 local RepLib = require "lfs_replib"
 local sd     = require "far2.simpledialog"
-local Sett   = require "far2.settings"
-local field  = Sett.field
 
 local F = far.Flags
 local KEEP_DIALOG_OPEN = 0
@@ -111,6 +109,7 @@ local function EditorConfigDialog()
     help = "Contents";
     {tp="dbox";  text=M.MConfigTitle; },
     {tp="chbox"; name="bForceScopeToBlock";  text=M.MOptForceScopeToBlock; },
+    {tp="chbox"; name="bSelectFound";        text=M.MOptSelectFound; },
     {tp="text";  text=M.MPickFrom; ystep=2; },
     {tp="rbutt"; x1=7;  name="rPickEditor";  text=M.MPickEditor; group=1; val=1; },
     {tp="rbutt"; x1=27; name="rPickHistory"; text=M.MPickHistory; y1=""; },
@@ -120,7 +119,7 @@ local function EditorConfigDialog()
     {tp="butt"; centergroup=1; text=M.MCancel; cancel=1; },
   }
   ----------------------------------------------------------------------------
-  local Data = field(_Plugin.History, "config")
+  local Data = _Plugin.History["config"]
   sd.LoadData(Data, Items)
   local out = sd.Run(Items)
   if out then
@@ -227,16 +226,19 @@ local function GetRegexLib (engine_name)
   return setmetatable(deriv, {__index=base})
 end
 
-local function GetWordAboveCursor ()
-  local line = editor.GetString(nil, 2)
+-- If cursor is right after the word pick up the word too.
+local function GetWordUnderCursor (select)
+  local line = editor.GetString()
   local pos = editor.GetInfo().CurPos
-  local r = regex.new("\\w+")
-  local start = 1
-  while true do
-    local from, to = r:find(line, start)
-    if not from or from > pos then break end
-    if pos <= (to + 1) then return line:sub(from, to) end
-    start = to + 1
+  local r = regex.new("(\\w+)")
+  local offset = r:find(line.StringText:sub(pos==1 and pos or pos-1, pos))
+  if offset then
+    local _, last = r:find(line.StringText, pos==1 and pos or (pos+offset-2))
+    local from, to, word = r:find(line.StringText:reverse(), line.StringLength-last+1)
+    if select then
+      editor.Select("BTYPE_STREAM", nil, line.StringLength-to+1, to-from+1, 1)
+    end
+    return word:reverse()
   end
 end
 
@@ -464,14 +466,14 @@ function SRFrame:OnDataLoaded (aData, aScriptCall)
 
   if not aScriptCall then
     if bInEditor then
-      local data = field(_Plugin.History, "config")
+      local data = _Plugin.History["config"]
       if data.rPickHistory then
         Items[Pos.sSearchPat].text = GetDialogHistory("SearchText") or aData.sSearchPat or ""
       elseif data.rPickNowhere then
         Items[Pos.sSearchPat].text = ""
         if Pos.sReplacePat then Items[Pos.sReplacePat].text = ""; end
       else -- (default) if data.rPickEditor then
-        Items[Pos.sSearchPat].text = GetWordAboveCursor() or ""
+        Items[Pos.sSearchPat].text = GetWordUnderCursor() or ""
       end
     else
       Items[Pos.sSearchPat].text = (aData.sSearchPat == "") and "" or
@@ -505,7 +507,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
         hDlg:Enable   (Pos.rScopeBlock, 0)
       else
         local bScopeBlock
-        local bForceBlock = field(_Plugin.History, "config").bForceScopeToBlock
+        local bForceBlock = _Plugin.History["config"].bForceScopeToBlock
         if self.ScriptCall or not bForceBlock then
           bScopeBlock = (Data.sScope == "block")
         else
@@ -614,6 +616,7 @@ return {
   FormatInt          = FormatInt;
   GetDialogHistory   = GetDialogHistory;
   GetReplaceFunction = GetReplaceFunction;
+  GetWordUnderCursor = GetWordUnderCursor;
   Gsub               = MakeGsub("byte");
   GsubW              = MakeGsub("widechar");
   GsubMB             = MakeGsub("multibyte");
