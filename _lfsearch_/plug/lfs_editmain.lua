@@ -204,15 +204,24 @@ local function EditorAction (aOp, aData, aScriptCall)
   if sChoice == "newsearch" then
     editor.SetTitle("")
     return EditorAction(aOp, aData, aScriptCall)
-  elseif not bTest and sChoice ~= "broken" then
-    if nFound == 0 and sOperation ~= "searchword" then
-      ErrorMsg (M.MNotFound .. aData.sSearchPat .. "\"", M.MMenuTitle)
-    elseif sOperation == "count" then
-      far.Message (M.MTotalFound .. FormatInt(nFound), M.MMenuTitle)
-    elseif bReplace and nReps > 0 and sChoice ~= "cancel" then
-      far.Message (M.MTotalReplaced .. FormatInt(nReps), M.MMenuTitle)
+  end
+  ---------------------------------------------------------------------------
+  if not (bTest or sChoice == "broken") then
+    if nFound == 0 then
+      if sOperation ~= "searchword" then
+        ErrorMsg (M.MNotFound .. aData.sSearchPat .. "\"", M.MMenuTitle)
+      end
+    else
+      if sOperation == "count" then
+        far.Message (M.MTotalFound .. FormatInt(nFound), M.MMenuTitle)
+      else
+        if bReplace and nReps > 0 and sChoice ~= "cancel" then
+          far.Message (M.MTotalReplaced .. FormatInt(nReps), M.MMenuTitle)
+        end
+      end
     end
   end
+  ---------------------------------------------------------------------------
   editor.SetTitle("")
   return nFound, nReps, sChoice
 end
