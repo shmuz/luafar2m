@@ -10,7 +10,7 @@ local function fReturnYes() return "yes" end
 
 local function OpenHelperEditor()
   local ret = editor.Editor ("/tmp/lfsearch.tmp", nil, nil,nil,nil,nil,
-              {EF_NONMODAL=1, EF_IMMEDIATERETURN=1, EF_CREATENEW=1}, 0, 0)
+              {EF_NONMODAL=1, EF_IMMEDIATERETURN=1, EF_CREATENEW=1, EF_DISABLEHISTORY=1}, 0, 0)
   assert (ret == F.EEC_MODIFIED, "could not open file")
 end
 

@@ -274,6 +274,7 @@ local function Run (inData)
       if inp.vbuf                then t [IND_VBUF    ] = inp.vbuf; end
       if v.focus   and FarVer==2 then t [IND_FOCUS   ] = 1;        end
       if v.default and FarVer==2 then t [IND_DFLT    ] = 1;        end
+      if inp.text                then t [IND_DATA    ] = inp.text; end
       return t
     end
 
@@ -297,12 +298,12 @@ local function Run (inData)
 
     elseif tp == F.DI_EDIT then
       if v.hist then flags = bor(flags, F.DIF_HISTORY); end -- set the flag automatically
-      outData[i] = MkItem { y2=0; flags=flags; hist=v.hist; }
+      outData[i] = MkItem { y2=0; flags=flags; hist=v.hist; text=v.val or v.text; }
 
     elseif tp == F.DI_FIXEDIT then
       if v.hist then flags = bor(flags, F.DIF_HISTORY);  end -- set the flag automatically
       if v.mask then flags = bor(flags, F.DIF_MASKEDIT); end -- set the flag automatically
-      outData[i] = MkItem { y2=0; flags=flags; hist=v.hist; mask=v.mask; }
+      outData[i] = MkItem { y2=0; flags=flags; hist=v.hist; mask=v.mask; text=v.val or v.text; }
 
     elseif tp == F.DI_PSWEDIT then
       outData[i] = MkItem { y2=0; }

@@ -8,7 +8,7 @@ local M  = require "lf4ed_message"
 local F  = far.Flags
 
 local function SortDialog (aData, columntype)
-  local COLPAT_DEFAULT = "%S+"
+  local COLPAT_DEFAULT = "\\S+"
   local regpath = "LuaFAR\\SortLines\\"
   local HIST_EXPR     = regpath .. "Expression"
   local HIST_COLPAT   = regpath .. "ColumnPattern"

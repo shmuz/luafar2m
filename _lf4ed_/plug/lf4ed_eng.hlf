@@ -196,11 +196,11 @@ criteria at a time.
 
  #Column Pattern#
 
-    "Column" is part of Editor line defined by a Lua regex pattern in
+    "Column" is part of Editor line defined by a Far regex pattern in
     the #Column Pattern# field. By default, a column is a sequence of
     non-space characters. Press the #Default# button to restore the
     default pattern. To change the definition of column, familiarize
-    yourself with Lua regular expressions.
+    yourself with regular expressions.
 
  #Load File#
 

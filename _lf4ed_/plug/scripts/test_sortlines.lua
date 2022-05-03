@@ -88,7 +88,7 @@ local function TestCase (data, selection, refer, expr, colpat, onlysel)
     if case == "+" then control.cbxCase3=true end
     control.edtExpr3 = e3:sub(1+#rev+#case)
   end
-  control.edtColPat = colpat or "%S+"
+  control.edtColPat = colpat or "\\S+"
   control.cbxOnlySel = onlysel
   -----------------------------------------------------------------------------
   ClearBuffer()
