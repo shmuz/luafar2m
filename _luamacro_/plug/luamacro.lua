@@ -118,6 +118,7 @@ function export.GetPluginInfo()
     CommandPrefix = "lm:macro:lua:moon:luas:moons"..utils.GetPrefixes()[1],
     PluginMenuGuids = win.Uuid("EF6D67A2-59F7-4DF3-952E-F9049877B492"),
     PluginMenuStrings = { "Macro Browser" },
+    SysId = 0x10003,
   }
   PluginInfo = out
 

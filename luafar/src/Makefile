@@ -50,13 +50,8 @@ farkeys.c: $(INC_FAR)/farkeys.h
 	$(LUAEXE) makefarkeys.lua '$<' > $@
 
 # Dependencies
-$(OUT)/*.o        : $(INC_FAR)/farplug-wide.h
+$(OUT)/*.o        : $(INC_FAR)/farplug-wide.h luafar.h ustring.h util.h
 $(OUT)/reg.o      : reg.h
-$(OUT)/service.o  : reg.h luafar.h util.h version.h ustring.h
-$(OUT)/exported.o : luafar.h util.h ustring.h
-$(OUT)/lregex.o   : luafar.h util.h ustring.h
-$(OUT)/util.o     : util.h ustring.h
-$(OUT)/lflua.o    : luafar.h util.h ustring.h
-$(OUT)/luafar.o   : version.h
+$(OUT)/service.o  : reg.h version.h
 
 # (end of Makefile)

@@ -869,7 +869,7 @@ void LF_GetPluginInfo(lua_State* L, struct PluginInfo *aPI)
   PI->StructSize = sizeof (struct PluginInfo);
   //--------------------------------------------------------------------------
   PI->Flags = GetOptIntFromTable (L, "Flags", 0);
-  PI->Reserved = GetOptIntFromTable (L, "SysId", 0);
+  PI->SysID = GetOptIntFromTable (L, "SysId", 0);
   //--------------------------------------------------------------------------
   PI->DiskMenuStrings = CreateStringsArray (L, cpos, "DiskMenuStrings", &PI->DiskMenuStringsNumber);
   PI->PluginMenuStrings = CreateStringsArray (L, cpos, "PluginMenuStrings", &PI->PluginMenuStringsNumber);
