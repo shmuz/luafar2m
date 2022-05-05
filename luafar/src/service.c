@@ -59,6 +59,8 @@ extern void add_flags (lua_State *L);
 extern void add_colors (lua_State *L);
 extern void add_keys (lua_State *L);
 extern void PushPluginTable(lua_State* L, HANDLE hPlugin);
+extern int  far_MacroCallFar(lua_State *L);
+extern int  far_FarMacroCallToLua(lua_State *L);
 
 #ifndef ARRAYSIZE
 #  define ARRAYSIZE(buff) (sizeof(buff)/sizeof(buff[0]))
@@ -5532,6 +5534,8 @@ end";
 
 int luaopen_far (lua_State *L)
 {
+  PSInfo* Info = GetPluginStartupInfo(L);
+
   lua_newtable(L);
   lua_setfield(L, LUA_REGISTRYINDEX, FAR_DN_STORAGE);
 
@@ -5548,6 +5552,14 @@ int luaopen_far (lua_State *L)
   luaL_register(L, "far", far_funcs);
   lua_insert(L, -2);
   lua_setfield(L, -2, "Flags");
+
+  if (Info->StructSize > offsetof(PSInfo, Private) && Info->Private)
+  {
+    lua_pushcfunction(L, far_MacroCallFar);
+    lua_setfield(L, -2, "MacroCallFar");
+    lua_pushcfunction(L, far_FarMacroCallToLua);
+    lua_setfield(L, -2, "FarMacroCallToLua");
+  }
 
   (void)luaL_dostring(L, far_Guids);
 

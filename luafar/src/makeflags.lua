@@ -22,7 +22,7 @@ local function add_enums (src, trg)
     elseif skip then
       if line:find("#else") or line:find("#endif") then skip = false end
     else
-      if line:find("^%s*enum%s*[%w_]*") then
+      if line:find("^%s*enum%s*[%w_]*%s*$") then
         enum = true
       elseif enum then
         if line:find("^%s*};") then

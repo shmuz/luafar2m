@@ -13,6 +13,7 @@ extern int  PushDNParams    (lua_State *L, int Msg, int Param1, LONG_PTR Param2)
 extern int  ProcessDNResult (lua_State *L, int Msg, LONG_PTR Param2);
 extern BOOL GetFlagCombination (lua_State *L, int stack_pos, int *trg);
 extern int  GetFlagsFromTable(lua_State *L, int pos, const char* key);
+extern HANDLE Open_Luamacro (lua_State* L, int OpenFrom, INT_PTR Item);
 
 // "Collector" is a Lua table referenced from the Plugin Object table by name.
 // Collector contains an array of lightuserdata which are pointers to new[]'ed
@@ -591,6 +592,9 @@ HANDLE LF_OpenPlugin (lua_State* L, int OpenFrom, INT_PTR Item)
 {
   if (!CheckReloadDefaultScript(L) || !GetExportFunction(L, "OpenPlugin"))
     return INVALID_HANDLE_VALUE;
+
+  if(OpenFrom == OPEN_LUAMACRO)
+    return Open_Luamacro(L, OpenFrom, Item);
 
   lua_pushinteger(L, OpenFrom);
 

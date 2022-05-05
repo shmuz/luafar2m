@@ -20,6 +20,7 @@ OBJ = \
   $(OUT)/util.o        \
   $(OUT)/reg.o         \
   $(OUT)/mytimer.o     \
+  $(OUT)/luamacro.o    \
   $(OUT)/lusercontrol.o
 
 ifneq ($(USE_LUAJIT),1)
