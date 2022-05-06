@@ -444,7 +444,7 @@ function export.OpenPlugin (OpenFrom, guid, ...)
     return Open_LuaMacro(guid, ...)
 
   elseif OpenFrom == F.OPEN_COMMANDLINE then
-    local mod, obj = Open_CommandLine(...)
+    local mod, obj = Open_CommandLine(guid)
     return mod and obj and PanelModuleExist(mod) and { module=mod; object=obj }
 
   elseif OpenFrom == F.OPEN_ANALYSE then
@@ -548,11 +548,8 @@ local function Init()
 
   macrobrowser = RunPluginFile("mbrowser.lua", Shared)
 
-  do -- force MoonScript to load lpeg.dll residing in %farhome%
-    local cpath = package.cpath
-    package.cpath = win.GetEnv("farhome").."\\?.dll"
-    RunPluginFile("moonscript.lua")
-    package.cpath = cpath
+  do
+    require "moonscript"
   end
 
   if bit and jit then
@@ -568,11 +565,11 @@ local function Init()
 
   utils.FixInitialModules()
   utils.InitMacroSystem()
-  local macros = win.GetEnv("farprofile").."\\Macros\\"
-  local modules = macros .. "modules\\"
-  package.path = modules.."?.lua;"..modules.."?\\init.lua;"..package.path
-  package.moonpath = modules.."?.moon;"..modules.."?\\init.moon;"..package.moonpath
-  package.cpath = macros..(win.IsProcess64bit() and "lib64" or "lib32").."\\?.dll;"..package.cpath
+  local macros = win.GetEnv("HOME").."/.config/far2l/Macros/"
+  local modules = macros .. "modules/"
+  package.path = modules.."?.lua;"..modules.."?/init.lua;"..package.path
+  package.moonpath = modules.."?.moon;"..modules.."?/init.moon;"..package.moonpath
+  package.cpath = macros..(win.IsProcess64bit() and "lib64" or "lib32").."/?.so;"..package.cpath
 
   if _G.IsLuaStateRecreated then
     _G.IsLuaStateRecreated = nil

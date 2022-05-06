@@ -742,12 +742,12 @@ local function LoadMacros (unload, paths)
   if not unload then
     LoadCounter = LoadCounter + 1
     local DummyFunc = function() end
-    local DirMacros = win.GetEnv("farprofile").."\\Macros\\"
+    local DirMacros = win.GetEnv("HOME").."/.config/far2l/Macros/"
     if 0 == band(MacroCallFar(MCODE_F_GETOPTIONS),0x10) then -- not ReadOnlyConfig
       for _,v in ipairs {"scripts", "modules", "lib32", "lib64"} do
         win.CreateDir(DirMacros..v)
       end
-      win.CreateDir(win.GetEnv("farprofile").."\\Menus")
+      win.CreateDir(win.GetEnv("HOME").."/.config/far2l/Menus")
     end
 
     local moonscript = require "moonscript"

@@ -211,6 +211,70 @@ nm=Common functions
 </article>
 </node>
 <node>
+id=103
+lv=2
+dt=Text
+nm=GetMinFarVersionW
+<article>
+#_**This function is not called by LuaFAR**
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=467
+lv=2
+dt=Text
+nm=GetGlobalInfoW
+ctime=3861011876
+mtime=3861013036
+<article>
+#_SysId = GetGlobalInfoW ()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  SysId: plugin's identifier; integer (0 ... 2^32-1)
+#_
+#_**Far API used:**
+#_  GetGlobalInfoW
+#_
+#_**Notes:**
+#_  1. This function is supported only with a modified Far2L version.
+#_  2. This function lives in C not in Lua.
+#_  3. This function is called by Far prior to SetStartupInfoW()
+#_     and fills the *Private* field of StartupInfo struct if SysId
+#_     identifies one of the "known" plugins.
+#_  4. During compilation of *luaplug.c*, if *SYS_ID* is defined
+#_     then this function will be exported and will return *SYS_ID*
+#_     when called.
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=118
+lv=2
+dt=Text
+nm=SetStartupInfoW
+mtime=3861013835
+<article>
+#_<markdown>
+#_**`This function is not called by LuaFAR`**
+#_
+#_The C-language part of a plugin should implement
+#_and export function `SetStartupInfoW`.
+#_Within this function, it should call the following
+#_LuaFAR functions: [`LF_LuaOpen`](129.html) and [`LF_RunDefaultScript`](130.html).
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=96
 lv=2
 dt=Text
@@ -241,18 +305,6 @@ nm=export.ExitFAR
 #_
 #_**Returns:**
 #_  nothing
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
-id=103
-lv=2
-dt=Text
-nm=export.GetMinFarVersion
-<article>
-#_**This function is not called by LuaFAR**
 #_
 #_@@@
 #_
@@ -347,24 +399,6 @@ ctime=3480185395
 mtime=3851366779
 <article>
 #_**This function is not called by LuaFAR**
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
-id=118
-lv=2
-dt=Text
-nm=export.SetStartupInfo
-<article>
-#_<markdown>
-#_**`This function is not called by LuaFAR`**
-#_
-#_The C-language part of a plugin should implement
-#_and export function `SetStartupInfo`.
-#_Within this function, it should call the following
-#_LuaFAR functions: `LF_LuaOpen` and `LF_RunDefaultScript`.
 #_
 #_@@@
 #_

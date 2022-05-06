@@ -15,6 +15,8 @@ extern BOOL GetFlagCombination (lua_State *L, int stack_pos, int *trg);
 extern int  GetFlagsFromTable(lua_State *L, int pos, const char* key);
 extern HANDLE Open_Luamacro (lua_State* L, int OpenFrom, INT_PTR Item);
 
+void PackMacroValues(lua_State* L, size_t Count, const struct FarMacroValue* Values); // forward declaration
+
 // "Collector" is a Lua table referenced from the Plugin Object table by name.
 // Collector contains an array of lightuserdata which are pointers to new[]'ed
 // chars.
@@ -59,11 +61,14 @@ int docall (lua_State *L, int narg, int nret) {
 int GetExportFunction(lua_State* L, const char* FuncName)
 {
   lua_getglobal(L, "export");
-  lua_getfield(L, -1, FuncName);
-  if (lua_isfunction(L, -1))
-    return lua_remove(L,-2), 1;
-  else
-    return lua_pop(L,2), 0;
+  if (lua_istable(L,-1))
+  {
+    lua_getfield(L, -1, FuncName);
+    if(lua_isfunction(L,-1))
+      return lua_remove(L,-2), 1;
+    lua_pop(L,1);
+  }
+  return lua_pop(L,1), 0;
 }
 
 int pcall_msg (lua_State* L, int narg, int nret)
@@ -458,6 +463,57 @@ HANDLE LF_OpenFilePlugin(lua_State* L, const wchar_t *aName,
   return INVALID_HANDLE_VALUE;
 }
 //---------------------------------------------------------------------------
+
+void PushFarMacroValue(lua_State* L, const struct FarMacroValue* val)
+{
+	switch(val->Type)
+	{
+		case FMVT_INTEGER:
+			//bit64_push(L, val->Value.Integer);
+			lua_pushinteger(L, val->Value.Integer);
+			break;
+		case FMVT_DOUBLE:
+			lua_pushnumber(L, val->Value.Double);
+			break;
+		case FMVT_STRING:
+		case FMVT_ERROR:
+			push_utf8_string(L, val->Value.String, -1);
+			break;
+		case FMVT_BOOLEAN:
+			lua_pushboolean(L, (int)val->Value.Boolean);
+			break;
+		case FMVT_POINTER:
+		case FMVT_PANEL:
+			lua_pushlightuserdata(L, val->Value.Pointer);
+			break;
+		case FMVT_BINARY:
+			lua_createtable(L,1,0);
+			lua_pushlstring(L, (char*)val->Value.Binary.Data, val->Value.Binary.Size);
+			lua_rawseti(L,-2,1);
+			break;
+		case FMVT_ARRAY:
+			PackMacroValues(L, val->Value.Array.Count, val->Value.Array.Values); // recursion
+			lua_pushliteral(L, "array");
+			lua_setfield(L, -2, "type");
+			break;
+		default:
+			lua_pushnil(L);
+			break;
+	}
+}
+
+void PackMacroValues(lua_State* L, size_t Count, const struct FarMacroValue* Values)
+{
+	size_t i;
+	lua_createtable(L, (int)Count, 1);
+	for(i=0; i < Count; i++)
+	{
+		PushFarMacroValue(L, Values + i);
+		lua_rawseti(L, -2, (int)i+1);
+	}
+	lua_pushinteger(L, Count);
+	lua_setfield(L, -2, "n");
+}
 
 void LF_GetOpenPluginInfo(lua_State* L, HANDLE hPlugin, struct OpenPluginInfo *aInfo)
 {
