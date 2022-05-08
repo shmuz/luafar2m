@@ -20,13 +20,13 @@ local luafar = {
       fields = {
         "AdvControl", "CmpName", "Colors", "ConvertPath", "CopyToClipboard",
         "CPluginStartupInfo", "CreateFileFilter", "CreateUserControl", "DefDlgProc", "Dialog",
-        "DialogFree", "DialogInit", "DialogRun", "Execute", "ExecuteLibrary",
+        "DialogFree", "DialogInit", "DialogRun", "Execute", "ExecuteLibrary", "FarMacroCallToLua",
         "Flags", "ForcedLoadPlugin", "GetCurrentDirectory", "GetDirList",
         "GetFileOwner", "GetMsg", "GetNumberOfLinks", "GetPathRoot", "GetPluginDirList",
         "GetReparsePointInfo", "Guids", "InputBox", "InputRecordToKey", "InputRecordToName",
         "Keys", "KeyToName", "LIsAlpha", "LIsAlphanum", "LIsLower", "LIsUpper",
         "LLowerBuf", "LoadPlugin", "Log", "LStricmp", "LStrnicmp", "LuafarVersion",
-        "LUpperBuf", "MacroCheck", "MacroGetArea", "MacroGetState", "MacroLoadAll",
+        "LUpperBuf", "MacroCallFar", "MacroCheck", "MacroGetArea", "MacroGetState", "MacroLoadAll",
         "MacroPost", "MacroSaveAll", "MakeMenuItems", "Menu", "Message",
         "MkLink", "MkTemp", "NameToKey", "PasteFromClipboard", "PluginStartupInfo",
         "ProcessName", "RecursiveSearch", "ReloadDefaultScript", "RestoreScreen", "SaveScreen",
@@ -396,7 +396,7 @@ local luafar = {
 
     ["viewer"] = {
       fields = {
-        "GetInfo", "Quit", "Redraw", "Select", "SetKeyBar", "SetMode", "SetPosition",
+        "GetFileName", "GetInfo", "Quit", "Redraw", "Select", "SetKeyBar", "SetMode", "SetPosition",
         "Viewer",
       };
     };
@@ -407,9 +407,9 @@ local luafar = {
         "ExtractKey", "FileTimeToLocalFileTime", "FileTimeToSystemTime", "GetACP",
         "GetConsoleScreenBufferInfo", "GetCPInfo", "GetCurrentDir", "GetDriveType", "GetEnv",
         "GetFileAttr", "GetFileInfo", "GetOEMCP", "GetRegKey", "GetSystemTimeAsFileTime",
-        "GetVirtualKeys", "MoveFile", "MultiByteToWideChar", "OemToUtf8", "RemoveDir", "RenameFile",
-        "SetCurrentDir", "SetEnv", "SetRegKey", "Sleep", "SystemTimeToFileTime", "Utf16ToUtf8",
-        "Utf8ToOem", "Utf8ToUtf16", "Uuid", "wcscmp",
+        "GetVirtualKeys", "IsProcess64bit", "MoveFile", "MultiByteToWideChar", "OemToUtf8", "RemoveDir",
+        "RenameFile", "SetCurrentDir", "SetEnv", "SetFileAttr", "SetRegKey", "Sleep",
+        "SystemTimeToFileTime", "Utf16ToUtf8", "Utf8ToOem", "Utf8ToUtf16", "Uuid", "wcscmp",
       };
     };
 

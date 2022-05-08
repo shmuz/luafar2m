@@ -28,7 +28,7 @@ local function IsNumOrInt(v)
   return type(v)=="number" or bit64.type(v)
 end
 
-local TmpFileName = assert(win.GetEnv"tmp" or win.GetEnv"temp").."\\tmp.tmp"
+local TmpFileName = "/tmp/tmp.tmp"
 
 local function WriteTmpFile(...)
   local fp = assert(io.open(TmpFileName,"w"))
@@ -445,27 +445,6 @@ local function test_mf_msave()
   assert(getmetatable(T3).__index==T1 and T3[1]==5 and rawget(T3,1)==nil)
   mf.mdelete(Key, "*")
   assert(mf.mload(Key, "name1")==nil)
-
-  -- test locations (profiles)
-  if win.GetEnv("FARPROFILE") ~= win.GetEnv("FARLOCALPROFILE") then
-    mf.msave("key1", "name1", 100)
-    mf.msave("key2", "name2", 200, "roaming")
-    mf.msave("key1", "name1", 300, "local")
-    for k=1,2 do
-      assert(mf.mload("key1", "name1") == 100)
-      assert(mf.mload("key1", "name1", "roaming") == 100)
-      assert(mf.mload("key2", "name2") == 200)
-      assert(mf.mload("key2", "name2", "roaming") == 200)
-      assert(mf.mload("key1", "name1", "local") == 300)
-    end
-    mf.mdelete("key1", "name1")
-    mf.mdelete("key2", "name2", "roaming")
-    assert(mf.mload("key1", "name1") == nil)
-    assert(mf.mload("key2", "name2") == nil)
-    assert(mf.mload("key1", "name1", "local") == 300)
-    mf.mdelete("key1", "name1", "local")
-    assert(mf.mload("key1", "name1", "local") == nil)
-  end
 end
 
 local function test_mf_mod()
@@ -1738,7 +1717,7 @@ end
 
 -- "Several lines are merged into one".
 local function test_issue_3129()
-  local fname = (win.GetEnv("TEMP") or ".").."\\far3-"..win.Uuid(win.Uuid()):sub(1,8)
+  local fname = "/tmp/far2l-"..win.Uuid(win.Uuid()):sub(1,8)
   local fp = assert(io.open(fname, "w"))
   fp:close()
   local flags = {EF_NONMODAL=1, EF_IMMEDIATERETURN=1, EF_DISABLEHISTORY=1}

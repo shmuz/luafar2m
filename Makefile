@@ -1,9 +1,12 @@
 # Makefile
 
-all: luafar lf4ed lfsearch lftmp lfhistory polygon luapanel
+all: luafar luamacro lf4ed lfsearch lftmp lfhistory polygon luapanel
 
 luafar:
 	cd luafar/src && $(MAKE)
+
+luamacro:
+	cd _luamacro_/build && $(MAKE)
 
 lf4ed:
 	cd _lf4ed_/build && $(MAKE)
@@ -23,4 +26,4 @@ polygon:
 luapanel:
 	cd _luapanel_/build && $(MAKE)
 
-.PHONY: all luafar lf4ed lfsearch lftmp lfhistory polygon luapanel
+.PHONY: all luafar luamacro lf4ed lfsearch lftmp lfhistory polygon luapanel

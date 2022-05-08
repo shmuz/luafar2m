@@ -33,7 +33,7 @@ local TrueAreaNames = {
 --~   [F.MACROAREA_DIALOGAUTOCOMPLETION] = "DialogAutoCompletion",
 --~   [F.MACROAREA_GRABBER]              = "Grabber",
 --~   [F.MACROAREA_DESKTOP]              = "Desktop",
---~   [F.MACROAREA_COMMON]               = "Common",
+  [F.MACROAREA_COMMON]               = "Common",
 }
 
 local AllAreaNames = {}
@@ -301,7 +301,7 @@ local ExpandKey do -- измеренное время исполнения на 
     local ctrl,alt,rest
     key = key:lower()
     local start = 1
-    for k=1,3 do
+    for _=1,3 do
       local from,to,word = string_find(key, "^([lr]?ctrl)", start)
       if from then ctrl = ctrl or word
       else
@@ -352,8 +352,9 @@ local function AddRegularMacro (srctable, FileName)
   macro.key = type(srctable.key)=="string" and srctable.key or "none"
   if not macro.key:find("%S") then macro.key = "none" end
 
-  local keyregex, ok = macro.key:match("^/(.+)/$"), nil
+  local keyregex = macro.key:match("^/(.+)/$")
   if keyregex then
+    local ok
     ok, macro.keyregex = pcall(regex.new, "^("..keyregex..")$", "i")
     if not ok then
       ErrMsg("Invalid regex: "..macro.key)
@@ -452,7 +453,7 @@ local function AddRecordedMacro (srctable, filename)
   local key = srctable.key
   -- check correspondence between (a) filename and (b) area_key
   if ("%s_%s"):format(area, (key:gsub(".",CharNames))):lower() ~=
-     filename:gsub("^.*\\",""):sub(1,-5):lower() then return
+     filename:gsub("^.*/",""):sub(1,-5):lower() then return
   end
 
   if srctable.code and srctable.code:sub(1,1) ~= "@" then
@@ -723,7 +724,7 @@ local function LoadMacros (unload, paths)
     local IdUpdated = {}
     for a,areatable in pairs(Areas) do
       for k,macroarray in pairs(areatable) do
-        for i,m in ipairs(macroarray) do
+        for _,m in ipairs(macroarray) do
           if m.guid and not m.disabled then
             newAreas[a][k] = newAreas[a][k] or {}
             table.insert(newAreas[a][k], m)
@@ -840,7 +841,7 @@ local function LoadMacros (unload, paths)
 
     for p in paths:gmatch("[^;]+") do
       p = far.ConvertPath(p, F.CPM_FULL) -- needed for relative paths
-      local macroinit = p:gsub("[\\/]*$", "\\_macroinit.lua")
+      local macroinit = p:gsub("/*$", "/_macroinit.lua")
       local info = win.GetFileInfo(macroinit)
       if info and not info.FileAttributes:find("d") then
         LoadRegularFile(info, macroinit, nil)
@@ -874,7 +875,7 @@ local function InitMacroSystem()
 end
 
 local function WriteOneMacro (dir, macro, keyname, delete)
-  local fname = ("%s\\%s_%s.lua"):format(dir, macro.area, (keyname:gsub(".", CharNames)))
+  local fname = ("%s/%s_%s.lua"):format(dir, macro.area, (keyname:gsub(".", CharNames)))
   local attr = win.GetFileAttr(fname)
   if attr then
     win.SetFileAttr(fname, "")
@@ -884,7 +885,7 @@ local function WriteOneMacro (dir, macro, keyname, delete)
   if delete then return end
 
   -- operation "write"
-  local fp, msg = io.open(fname, "w")
+  local fp = io.open(fname, "w")
   if fp then
     fp:write(([[
 Macro {
@@ -902,7 +903,7 @@ end
 local function WriteMacros()
   if 0 ~= band(MacroCallFar(MCODE_F_GETOPTIONS),0x10) then return end -- ReadOnlyConfig
 
-  local dir = win.GetEnv("farprofile").."\\Macros\\internal"
+  local dir = win.GetEnv("HOME").."/.config/far2l/Macros/internal"
   if not win.CreateDir(dir, true) then return end
 
   for areaname,area in pairs(Areas) do
@@ -921,7 +922,7 @@ local function WriteMacros()
 end
 
 local function GetFromMenu (menuitems, area, key)
-  for i,item in ipairs(menuitems) do
+  for _,item in ipairs(menuitems) do
     local descr = item.macro.description
     if not descr or descr=="" then
       descr = Msg.UtNoDescription_Index:format(item.macro.index)

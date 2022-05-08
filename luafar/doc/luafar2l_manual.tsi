@@ -4460,6 +4460,30 @@ nm=Viewer functions
 </article>
 </node>
 <node>
+id=468
+lv=2
+dt=Text
+nm=viewer.GetFileName
+ctime=3861166983
+mtime=3861167038
+<article>
+#_FileName = viewer.GetFileName ()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  FileName: string
+#_
+#_**Far API used:**
+#_  ViewerControl, VCTL_GETINFO
+#_
+#_@@@
+#_
+#_
+</article>
+</node>
+<node>
 id=132
 lv=2
 dt=Text
@@ -7123,6 +7147,31 @@ mtime=3852044309
 #_
 #_**Linux API used:**
 #_  chdir
+#_
+</article>
+</node>
+<node>
+id=469
+lv=3
+dt=Text
+nm=win.SetFileAttr
+ctime=3861201377
+mtime=3861201471
+<article>
+#_result = win.SetFileAttr (FileName, Attr)
+#_
+#_**Parameters:**
+#_  FileName: string
+#_  Attr:     string (see FindData page)
+#_
+#_**Returns:**
+#_  result:   boolean
+#_
+#_**Windows API used:**
+#_  SetFileAttributesW
+#_
+#_@@@
+#_<lua> Links = { FindData="90.html" } </lua>
 #_
 </article>
 </node>

@@ -440,3 +440,18 @@ int ustring_GetFileAttr(lua_State *L)
   PushAttrString(L, attr);
   return 1;
 }
+
+// for reusing code
+int SetAttr(lua_State *L, const wchar_t* fname, unsigned attr)
+{
+  if (WINPORT(SetFileAttributes)(fname, attr))
+    return lua_pushboolean(L, 1), 1;
+
+  return SysErrorReturn(L);
+}
+
+int ustring_SetFileAttr(lua_State *L)
+{
+  return SetAttr(L, check_utf8_string(L,1,NULL), DecodeAttributes(luaL_checkstring(L,2)));
+}
+

@@ -3445,6 +3445,18 @@ int viewer_GetInfo(lua_State *L)
   return 1;
 }
 
+int viewer_GetFileName(lua_State *L)
+{
+  PSInfo *Info = GetPluginStartupInfo(L);
+  struct ViewerInfo vi;
+  vi.StructSize = sizeof(vi);
+  if (Info->ViewerControl(VCTL_GETINFO, &vi))
+    push_utf8_string(L, vi.FileName, -1);
+  else
+    lua_pushnil(L);
+  return 1;
+}
+
 int viewer_Quit(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
@@ -5297,6 +5309,7 @@ const luaL_Reg regex_funcs[] =
 const luaL_Reg viewer_funcs[] =
 {
   {"Viewer",        viewer_Viewer},
+  {"GetFileName",   viewer_GetFileName},
   {"GetInfo",       viewer_GetInfo},
   {"Quit",          viewer_Quit},
   {"Redraw",        viewer_Redraw},
@@ -5436,6 +5449,7 @@ const luaL_Reg win_funcs[] = {
   {"Utf8ToUtf16",                ustring_Utf8ToUtf16},
   {"Uuid",                       ustring_Uuid},
   {"GetFileAttr",                ustring_GetFileAttr},
+  {"SetFileAttr",                ustring_SetFileAttr},
   {NULL, NULL},
 };
 
@@ -5767,3 +5781,53 @@ int LF_LuaOpen (TPluginData* aPlugData, lua_CFunction aOpenLibs, const char* aEn
   dlclose(handle);
   return 0;
 }
+
+void ConvertLuaValue (lua_State *L, int pos, struct FarMacroValue *target)
+{
+  //~ INT64 val64;
+  int type = lua_type(L, pos);
+  pos = abs_index(L, pos);
+  target->Type = FMVT_UNKNOWN;
+
+  if(type == LUA_TNUMBER)
+  {
+    target->Type = FMVT_DOUBLE;
+    target->Value.Double = lua_tonumber(L, pos);
+  }
+  else if(type == LUA_TSTRING)
+  {
+    target->Type = FMVT_STRING;
+    target->Value.String = check_utf8_string(L, pos, NULL);
+  }
+  else if(type == LUA_TTABLE)
+  {
+    lua_rawgeti(L,pos,1);
+    if (lua_type(L,-1) == LUA_TSTRING)
+    {
+      target->Type = FMVT_BINARY;
+      target->Value.Binary.Data = (void*)lua_tolstring(L, -1, &target->Value.Binary.Size);
+    }
+    lua_pop(L,1);
+  }
+  else if(type == LUA_TBOOLEAN)
+  {
+    target->Type = FMVT_BOOLEAN;
+    target->Value.Boolean = lua_toboolean(L, pos);
+  }
+  else if(type == LUA_TNIL)
+  {
+    target->Type = FMVT_NIL;
+  }
+  else if(type == LUA_TLIGHTUSERDATA)
+  {
+    target->Type = FMVT_POINTER;
+    target->Value.Pointer = lua_touserdata(L, pos);
+  }
+  //###
+  //~ else if(bit64_getvalue(L, pos, &val64))
+  //~ {
+    //~ target->Type = FMVT_INTEGER;
+    //~ target->Value.Integer = val64;
+  //~ }
+}
+

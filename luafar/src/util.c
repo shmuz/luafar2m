@@ -69,16 +69,23 @@ void PutFileTimeToTable(lua_State *L, const char* key, FILETIME ft)
 int DecodeAttributes(const char* str)
 {
   int attr = 0;
-  const char* p;
-  for(p=str; *p; p++) {
-    if      (*p == 'a' || *p == 'A') attr |= FILE_ATTRIBUTE_ARCHIVE;
-    else if (*p == 'r' || *p == 'R') attr |= FILE_ATTRIBUTE_READONLY;
-    else if (*p == 'h' || *p == 'H') attr |= FILE_ATTRIBUTE_HIDDEN;
-    else if (*p == 's' || *p == 'S') attr |= FILE_ATTRIBUTE_SYSTEM;
-    else if (*p == 'd' || *p == 'D') attr |= FILE_ATTRIBUTE_DIRECTORY;
-    else if (*p == 'c' || *p == 'C') attr |= FILE_ATTRIBUTE_COMPRESSED;
-    else if (*p == 'o' || *p == 'O') attr |= FILE_ATTRIBUTE_OFFLINE;
-    else if (*p == 't' || *p == 'T') attr |= FILE_ATTRIBUTE_TEMPORARY;
+  for(; *str; str++)
+  {
+    char c = *str;
+    if     (c == 'a' || c == 'A') attr |= FILE_ATTRIBUTE_ARCHIVE;
+    else if(c == 'c' || c == 'C') attr |= FILE_ATTRIBUTE_COMPRESSED;
+    else if(c == 'd' || c == 'D') attr |= FILE_ATTRIBUTE_DIRECTORY;
+    else if(c == 'e' || c == 'E') attr |= FILE_ATTRIBUTE_REPARSE_POINT;
+    else if(c == 'h' || c == 'H') attr |= FILE_ATTRIBUTE_HIDDEN;
+    else if(c == 'i' || c == 'I') attr |= FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
+    else if(c == 'n' || c == 'N') attr |= FILE_ATTRIBUTE_ENCRYPTED;
+    else if(c == 'o' || c == 'O') attr |= FILE_ATTRIBUTE_OFFLINE;
+    else if(c == 'p' || c == 'P') attr |= FILE_ATTRIBUTE_SPARSE_FILE;
+    else if(c == 'r' || c == 'R') attr |= FILE_ATTRIBUTE_READONLY;
+    else if(c == 's' || c == 'S') attr |= FILE_ATTRIBUTE_SYSTEM;
+    else if(c == 't' || c == 'T') attr |= FILE_ATTRIBUTE_TEMPORARY;
+    else if(c == 'u' || c == 'U') attr |= FILE_ATTRIBUTE_NO_SCRUB_DATA;
+    else if(c == 'v' || c == 'V') attr |= FILE_ATTRIBUTE_VIRTUAL;
   }
   return attr;
 }

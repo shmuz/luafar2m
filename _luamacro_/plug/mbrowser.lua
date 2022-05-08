@@ -93,7 +93,7 @@ end
 local function LocateFile (fname)
   local attr = win.GetFileAttr(fname)
   if attr and not attr:find"d" then
-    local dir, name = fname:match("^(.*\\)([^\\]*)$")
+    local dir, name = fname:match("^(.*/)([^/]*)$")
     if panel.SetPanelDirectory(nil, 1, dir) then
       local pinfo = panel.GetPanelInfo(nil, 1)
       for i=1, pinfo.ItemsNumber do

@@ -85,7 +85,7 @@ function _G.Keys (...)
         elseif lname == "enout"  then keymacro.mmode(1,0)
         else
           local R1,R2 = keymacro.TransformKey(name)
-          for k=1,cnt do co_yield(PROPAGATE, F.MPRT_KEYS, R1, R2) end
+          for _=1,cnt do co_yield(PROPAGATE, F.MPRT_KEYS, R1, R2) end
         end
       end
     end
@@ -110,17 +110,14 @@ end
 -- END: Functions implemented via "returning a key" to Far
 -------------------------------------------------------------------------------
 
-local PluginInfo
-
 function export.GetPluginInfo()
   local out = {
     Flags = bor(F.PF_PRELOAD,F.PF_FULLCMDLINE,F.PF_EDITOR,F.PF_VIEWER,F.PF_DIALOG),
     CommandPrefix = "lm:macro:lua:moon:luas:moons"..utils.GetPrefixes()[1],
     PluginMenuGuids = win.Uuid("EF6D67A2-59F7-4DF3-952E-F9049877B492"),
     PluginMenuStrings = { "Macro Browser" },
-    SysId = 0x10003,
+    SysId = 0x4EBBEFC8,
   }
-  PluginInfo = out
 
   local mode = far.MacroGetArea()
   local area = utils.GetTrueAreaName(mode)
@@ -279,7 +276,7 @@ local function MacroParse (Lang, Text, onlyCheck, skipFile)
     _loadstring, _loadfile = ms.loadstring, ms.loadfile
   end
 
-  local ok,msg = true,nil
+  local ok,msg
   local fname,params = GetFileParams(Text)
   if fname then
     ok,msg = _loadstring("return "..params)
@@ -341,21 +338,12 @@ end
 
 local function ShowAndPass(...) far.Show(...) return ... end
 
-local function ShowCmdLineHelp()
-  local windir, fardir = win.GetEnv("WINDIR"), win.GetEnv("FARHOME")
-  if windir and fardir then
-    local suffix = win.GetEnv("FARLANG")=="Russian" and "ru" or "en"
-    local topic = fardir.."\\Encyclopedia\\macroapi_manual."..suffix..".chm::/92.html"
-    win.ShellExecute(nil, nil, windir.."\\hh.exe", topic)
-  end
-end
-
 local function Open_CommandLine (strCmdLine)
   local prefix, text = strCmdLine:match("^%s*([^:%s]+):%s*(.-)%s*$")
   if not prefix then return end -- this can occur with Plugin.Command()
   prefix = prefix:lower()
   if prefix == "lm" or prefix == "macro" then
-    if text=="" then ShowCmdLineHelp(); return;  end
+    if text=="" then return end
     local cmd = text:match("%S*"):lower()
     if cmd == "load" then
       local paths = text:match("%S.*",5)
@@ -366,12 +354,12 @@ local function Open_CommandLine (strCmdLine)
     elseif cmd == "about" then About()
     elseif cmd ~= "" then ErrMsg(Msg.CL_UnsupportedCommand .. cmd) end
   elseif prefix == "lua" or prefix == "moon" or prefix == "luas" or prefix == "moons" then
-    if text=="" then ShowCmdLineHelp(); return;  end
+    if text=="" then return end
     local show = false
     if text:find("^=") then
       show, text = true, text:sub(2)
     end
-    local fname, params = GetFileParams(text)
+    local fname = GetFileParams(text)
     if show and not fname then
       text = "return "..text
     end
@@ -523,7 +511,7 @@ local function Init()
 
   local ModuleDir = far.PluginStartupInfo().ModuleDir
   local function RunPluginFile (fname, param)
-    local func,msg = assert(loadfile(ModuleDir..fname))
+    local func = assert(loadfile(ModuleDir..fname))
     return func(param)
   end
 
@@ -589,7 +577,7 @@ function export.Analyse(Data)
   end
 end
 
-function export.GetOpenPanelInfo (wrapped_obj, handle, ...)
+function export.GetOpenPluginInfo (wrapped_obj, handle, ...)
   local mod, obj = wrapped_obj.module, wrapped_obj.object
   if type(mod.GetOpenPanelInfo) == "function" then
     local op_info = mod.GetOpenPanelInfo(obj, handle, ...)
