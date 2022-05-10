@@ -1024,7 +1024,7 @@ id=153
 lv=2
 dt=Text
 nm=far.AdvControl
-mtime=3855033932
+mtime=3861339699
 <article>
 #_Result = far.AdvControl (Command, Param [, Param2])
 #_
@@ -1110,12 +1110,6 @@ mtime=3855033932
 #_        Modified:  boolean
 #_        Current:   boolean
 #_
-#_@ACTL_POSTKEYSEQUENCE:
-#_    Param:   table (see its fields below;
-#_             its array part contains integers)
-#_        Flags:   flags combination
-#_    Result:  boolean
-#_
 #_@ACTL_SETARRAYCOLOR:
 #_    Param:   table (see its fields below;
 #_             its array part contains integers)
@@ -1162,7 +1156,7 @@ lv=3
 dt=Text
 nm=actl namespace
 ctime=3853931289
-mtime=3853936518
+mtime=3861339714
 <article>
 #_There is an alternative interface to FAR's advanced control commands.
 #_It is shorter and more expressive, e.g. the following 2 calls do the
@@ -1193,7 +1187,6 @@ mtime=3853936518
 #_  GetSysWordDiv           ACTL_GETSYSWORDDIV
 #_  GetWindowCount          ACTL_GETWINDOWCOUNT
 #_  GetWindowInfo           ACTL_GETWINDOWINFO
-#_  PostKeySequence         ACTL_POSTKEYSEQUENCE
 #_  ProgressNotify          ACTL_PROGRESSNOTIFY
 #_  Quit                    ACTL_QUIT
 #_  RedrawAll               ACTL_REDRAWALL

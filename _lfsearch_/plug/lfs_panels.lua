@@ -405,6 +405,15 @@ local function MakeItemList (panelInfo, area)
   return itemList, flags
 end
 
+local function PressEnter()
+  local ver = far.LuafarVersion(true)
+  if ver <= 2 then
+    far.AdvControl(F.ACTL_POSTKEYSEQUENCE, {13}) -- KEY_ENTER
+  else
+    far.MacroPost("Keys('Enter')")
+  end
+end
+
 local function SearchFromPanel (aData)
   local sOperation, tParams = PanelDialog(aData, false, "OperInPanels")
   if sOperation == "cancel" then return end
@@ -570,7 +579,7 @@ local function SearchFromPanel (aData)
 --~ local usercfg = ChangeTmpPanelSettings(aHistory)
     local cmd = ("%s: -menu %s"):format(prefix, fname)
     panel.SetCmdLine (cmd)
-    actl.PostKeySequence {F.KEY_ENTER}
+    PressEnter()
     far.Timer(1000,
       function(h)
         h:Close()

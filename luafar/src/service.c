@@ -379,7 +379,7 @@ int far_LuafarVersion (lua_State *L)
     lua_pushinteger(L, VER_MICRO);
     return 3;
   }
-  lua_pushliteral(L, VER_STRING);
+  lua_pushfstring(L, "%d.%d.%d", (int)VER_MAJOR, (int)VER_MINOR, (int)VER_MICRO);
   return 1;
 }
 
@@ -4371,27 +4371,6 @@ int DoAdvControl (lua_State *L, int Command, int Delta)
       return 1;
     }
 
-    case ACTL_POSTKEYSEQUENCE: {
-      struct KeySequence ks;
-      int i;
-      DWORD* sequence;
-      luaL_checktype(L, pos2, LUA_TTABLE);
-      lua_getfield(L, pos2, "Flags");
-      GetFlagCombination(L, -1, &i);
-      ks.Flags = i;
-      ks.Count = lua_objlen(L, pos2);
-      sequence = (DWORD*)lua_newuserdata(L, sizeof(DWORD)*ks.Count);
-      ks.Sequence = sequence;
-      for (i=0; i < ks.Count; i++) {
-        lua_pushinteger(L,i+1);
-        lua_gettable(L,pos2);
-        sequence[i] = lua_tointeger(L,-1);
-        lua_pop(L,1);
-      }
-      lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, Command, &ks));
-      return 1;
-    }
-
     case ACTL_SETARRAYCOLOR: {
       int i;
       struct FarSetColors fsc;
@@ -4474,7 +4453,6 @@ AdvCommand( GetSystemSettings,      ACTL_GETSYSTEMSETTINGS, 1)
 AdvCommand( GetSysWordDiv,          ACTL_GETSYSWORDDIV, 1)
 AdvCommand( GetWindowCount,         ACTL_GETWINDOWCOUNT, 1)
 AdvCommand( GetWindowInfo,          ACTL_GETWINDOWINFO, 1)
-AdvCommand( PostKeySequence,        ACTL_POSTKEYSEQUENCE, 1)
 AdvCommand( ProgressNotify,         ACTL_PROGRESSNOTIFY, 1)
 AdvCommand( Quit,                   ACTL_QUIT, 1)
 AdvCommand( RedrawAll,              ACTL_REDRAWALL, 1)
@@ -5283,7 +5261,6 @@ const luaL_Reg actl_funcs[] =
   {"GetSysWordDiv",         adv_GetSysWordDiv},
   {"GetWindowCount",        adv_GetWindowCount},
   {"GetWindowInfo",         adv_GetWindowInfo},
-  {"PostKeySequence",       adv_PostKeySequence},
   {"ProgressNotify",        adv_ProgressNotify},
   {"Quit",                  adv_Quit},
   {"RedrawAll",             adv_RedrawAll},
