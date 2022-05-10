@@ -3,9 +3,10 @@
 local Shared = ...
 local checkarg, utils, yieldcall = Shared.checkarg, Shared.utils, Shared.yieldcall
 local Sett = require "far2.settings"
+local op = require "opcodes"
 
-local MCODE_F_USERMENU = 0x80C66
-local MCODE_F_FAR_GETCONFIG = 0x80C69
+local MCODE_F_USERMENU = op.MCODE_F_USERMENU
+local MCODE_F_FAR_GETCONFIG = op.MCODE_F_FAR_GETCONFIG
 local F=far.Flags
 local band,bor = bit.band,bit.bor
 local MacroCallFar = Shared.MacroCallFar
@@ -25,45 +26,45 @@ end
 
 -- "mf" ("macrofunctions") namespace
 mf = {
-  abs             = function(...) return MacroCallFar(0x80C01, ...) end,
---akey            = function(...) return MacroCallFar(0x80C02, ...) end,
-  asc             = function(...) return MacroCallFar(0x80C03, ...) end,
-  atoi            = function(...) return MacroCallFar(0x80C04, ...) end,
-  beep            = function(...) return MacroCallFar(0x80C48, ...) end,
-  chr             = function(...) return MacroCallFar(0x80C06, ...) end,
-  clip            = function(...) return MacroCallFar(0x80C05, ...) end,
-  date            = function(...) return MacroCallFar(0x80C07, ...) end,
-  env             = function(...) return MacroCallFar(0x80C0D, ...) end,
-  fattr           = function(...) return MacroCallFar(0x80C0E, ...) end,
-  fexist          = function(...) return MacroCallFar(0x80C0F, ...) end,
-  float           = function(...) return MacroCallFar(0x80C41, ...) end,
-  flock           = function(...) return MacroCallFar(0x80C31, ...) end,
-  fmatch          = function(...) return MacroCallFar(0x80C4D, ...) end,
-  fsplit          = function(...) return MacroCallFar(0x80C10, ...) end,
-  index           = function(...) return MacroCallFar(0x80C12, ...) end,
-  int             = function(...) return MacroCallFar(0x80C13, ...) end,
-  itoa            = function(...) return MacroCallFar(0x80C14, ...) end,
-  key             = function(...) return MacroCallFar(0x80C15, ...) end,
-  lcase           = function(...) return MacroCallFar(0x80C16, ...) end,
-  len             = function(...) return MacroCallFar(0x80C17, ...) end,
-  max             = function(...) return MacroCallFar(0x80C18, ...) end,
-  min             = function(...) return MacroCallFar(0x80C1D, ...) end,
-  mod             = function(...) return MacroCallFar(0x80C1E, ...) end,
-  msgbox          = function(...) return MacroCallFar(0x80C21, ...) end,
-  prompt          = function(...) return MacroCallFar(0x80C34, ...) end,
-  replace         = function(...) return MacroCallFar(0x80C33, ...) end,
-  rindex          = function(...) return MacroCallFar(0x80C2A, ...) end,
-  size2str        = function(...) return MacroCallFar(0x80C59, ...) end,
-  sleep           = function(...) return MacroCallFar(0x80C2B, ...) end,
-  string          = function(...) return MacroCallFar(0x80C2C, ...) end,
-  strpad          = function(...) return MacroCallFar(0x80C5F, ...) end,
-  strwrap         = function(...) return MacroCallFar(0x80C5A, ...) end,
-  substr          = function(...) return MacroCallFar(0x80C2D, ...) end,
-  testfolder      = function(...) return MacroCallFar(0x80C42, ...) end,
-  trim            = function(...) return MacroCallFar(0x80C40, ...) end,
-  ucase           = function(...) return MacroCallFar(0x80C2E, ...) end,
-  waitkey         = function(...) return MacroCallFar(0x80C2F, ...) end,
-  xlat            = function(...) return MacroCallFar(0x80C30, ...) end,
+  abs             = function(...) return MacroCallFar( op.MCODE_F_ABS       , ...) end,
+--akey            = function(...) return MacroCallFar( op., ...) end,
+  asc             = function(...) return MacroCallFar( op.MCODE_F_ASC       , ...) end,
+  atoi            = function(...) return MacroCallFar( op.MCODE_F_ATOI      , ...) end,
+  beep            = function(...) return MacroCallFar( op.MCODE_F_BEEP      , ...) end,
+  chr             = function(...) return MacroCallFar( op.MCODE_F_CHR       , ...) end,
+  clip            = function(...) return MacroCallFar( op.MCODE_F_CLIP      , ...) end,
+  date            = function(...) return MacroCallFar( op.MCODE_F_DATE      , ...) end,
+  env             = function(...) return MacroCallFar( op.MCODE_F_ENVIRON   , ...) end,
+  fattr           = function(...) return MacroCallFar( op.MCODE_F_FATTR     , ...) end,
+  fexist          = function(...) return MacroCallFar( op.MCODE_F_FEXIST    , ...) end,
+  float           = function(...) return MacroCallFar( op.MCODE_F_FLOAT     , ...) end,
+  flock           = function(...) return MacroCallFar( op.MCODE_F_FLOCK     , ...) end,
+--fmatch          = function(...) return MacroCallFar( op.MCODE_F_, ...) end,
+  fsplit          = function(...) return MacroCallFar( op.MCODE_F_FSPLIT    , ...) end,
+  index           = function(...) return MacroCallFar( op.MCODE_F_INDEX     , ...) end,
+  int             = function(...) return MacroCallFar( op.MCODE_F_INT       , ...) end,
+  itoa            = function(...) return MacroCallFar( op.MCODE_F_ITOA      , ...) end,
+  key             = function(...) return MacroCallFar( op.MCODE_F_KEY       , ...) end,
+  lcase           = function(...) return MacroCallFar( op.MCODE_F_LCASE     , ...) end,
+  len             = function(...) return MacroCallFar( op.MCODE_F_LEN       , ...) end,
+  max             = function(...) return MacroCallFar( op.MCODE_F_MAX       , ...) end,
+  min             = function(...) return MacroCallFar( op.MCODE_F_MIN       , ...) end,
+  mod             = function(...) return MacroCallFar( op.MCODE_F_MOD       , ...) end,
+  msgbox          = function(...) return MacroCallFar( op.MCODE_F_MSGBOX    , ...) end,
+  prompt          = function(...) return MacroCallFar( op.MCODE_F_PROMPT    , ...) end,
+  replace         = function(...) return MacroCallFar( op.MCODE_F_REPLACE   , ...) end,
+  rindex          = function(...) return MacroCallFar( op.MCODE_F_RINDEX    , ...) end,
+--size2str        = function(...) return MacroCallFar( op.MCODE_F_, ...) end,
+  sleep           = function(...) return MacroCallFar( op.MCODE_F_SLEEP     , ...) end,
+  string          = function(...) return MacroCallFar( op.MCODE_F_STRING    , ...) end,
+--strpad          = function(...) return MacroCallFar( op.MCODE_F_, ...) end,
+--strwrap         = function(...) return MacroCallFar( op.MCODE_F_, ...) end,
+  substr          = function(...) return MacroCallFar( op.MCODE_F_SUBSTR    , ...) end,
+  testfolder      = function(...) return MacroCallFar( op.MCODE_F_TESTFOLDER, ...) end,
+  trim            = function(...) return MacroCallFar( op.MCODE_F_TRIM      , ...) end,
+  ucase           = function(...) return MacroCallFar( op.MCODE_F_UCASE     , ...) end,
+  waitkey         = function(...) return MacroCallFar( op.MCODE_F_WAITKEY   , ...) end,
+  xlat            = function(...) return MacroCallFar( op.MCODE_F_XLAT      , ...) end,
 }
 
 mf.iif = function(Expr, res1, res2)
@@ -96,25 +97,25 @@ mf.GetMacroCopy = utils.GetMacroCopy
 --------------------------------------------------------------------------------
 
 Object = {
-  CheckHotkey = function(...) return MacroCallFar(0x80C19, ...) end,
-  GetHotkey   = function(...) return MacroCallFar(0x80C1A, ...) end,
+  CheckHotkey = function(...) return MacroCallFar(op.MCODE_F_MENU_CHECKHOTKEY, ...) end,
+  GetHotkey   = function(...) return MacroCallFar(op.MCODE_F_MENU_GETHOTKEY, ...) end,
 }
 
 SetProperties(Object, {
-  Bof        = function() return MacroCallFar(0x80413) end,
-  CurPos     = function() return MacroCallFar(0x80827) end,
-  Empty      = function() return MacroCallFar(0x80415) end,
-  Eof        = function() return MacroCallFar(0x80414) end,
-  Height     = function() return MacroCallFar(0x80829) end,
-  ItemCount  = function() return MacroCallFar(0x80826) end,
-  Selected   = function() return MacroCallFar(0x80416) end,
-  Title      = function() return MacroCallFar(0x80828) end,
-  Width      = function() return MacroCallFar(0x8082A) end,
+  Bof        = function() return MacroCallFar(op.MCODE_C_BOF       ) end,
+  CurPos     = function() return MacroCallFar(op.MCODE_V_CURPOS    ) end,
+  Empty      = function() return MacroCallFar(op.MCODE_C_EMPTY     ) end,
+  Eof        = function() return MacroCallFar(op.MCODE_C_EOF       ) end,
+  Height     = function() return MacroCallFar(op.MCODE_V_HEIGHT    ) end,
+  ItemCount  = function() return MacroCallFar(op.MCODE_V_ITEMCOUNT ) end,
+  Selected   = function() return MacroCallFar(op.MCODE_C_SELECTED  ) end,
+  Title      = function() return MacroCallFar(op.MCODE_V_TITLE     ) end,
+  Width      = function() return MacroCallFar(op.MCODE_V_WIDTH     ) end,
 })
 --------------------------------------------------------------------------------
 
 local prop_Area = {
-  Current    = function() return utils.GetTrueAreaName(MacroCallFar(0x80805)) end,
+  Current    = function() return utils.GetTrueAreaName(MacroCallFar(op.MCODE_V_MACRO_AREA)) end,
   Other      = function() return MacroCallFar(0)==0  end,
   Shell      = function() return MacroCallFar(0)==1  end,
   Viewer     = function() return MacroCallFar(0)==2  end,
@@ -130,171 +131,168 @@ local prop_Area = {
   Tree       = function() return MacroCallFar(0)==12 end,
   FindFolder = function() return MacroCallFar(0)==13 end,
   UserMenu   = function() return MacroCallFar(0)==14 end,
-  ShellAutoCompletion = function()  return MacroCallFar(0)==15 end,
-  DialogAutoCompletion = function() return MacroCallFar(0)==16 end,
-  Grabber    = function() return MacroCallFar(0)==17 end,
-  Desktop    = function() return MacroCallFar(0)==18 end,
+  AutoCompletion = function()  return MacroCallFar(0)==15 end,
 }
 
 local prop_APanel = {
-  Bof         = function() return MacroCallFar(0x80418) end,
-  ColumnCount = function() return MacroCallFar(0x8081E) end,
-  CurPos      = function() return MacroCallFar(0x80816) end,
-  Current     = function() return MacroCallFar(0x80806) end,
-  DriveType   = function() return MacroCallFar(0x8081A) end,
-  Empty       = function() return MacroCallFar(0x8041C) end,
-  Eof         = function() return MacroCallFar(0x8041A) end,
-  FilePanel   = function() return MacroCallFar(0x80426) end,
-  Filter      = function() return MacroCallFar(0x8042E) end,
-  Folder      = function() return MacroCallFar(0x80428) end,
-  Format      = function() return MacroCallFar(0x80824) end,
-  Height      = function() return MacroCallFar(0x8081C) end,
-  HostFile    = function() return MacroCallFar(0x80820) end,
-  ItemCount   = function() return MacroCallFar(0x80814) end,
-  Left        = function() return MacroCallFar(0x8042A) end,
-  LFN         = function() return MacroCallFar(0x8042C) end,
-  OPIFlags    = function() return MacroCallFar(0x80818) end,
-  Path        = function() return MacroCallFar(0x8080A) end,
-  Path0       = function() return MacroCallFar(0x8080C) end,
-  Plugin      = function() return MacroCallFar(0x80424) end,
-  Prefix      = function() return MacroCallFar(0x80822) end,
-  Root        = function() return MacroCallFar(0x80420) end,
-  SelCount    = function() return MacroCallFar(0x80808) end,
-  Selected    = function() return MacroCallFar(0x8041E) end,
-  Type        = function() return MacroCallFar(0x80812) end,
-  UNCPath     = function() return MacroCallFar(0x8080E) end,
-  Visible     = function() return MacroCallFar(0x80422) end,
-  Width       = function() return MacroCallFar(0x80810) end,
+  Bof         = function() return MacroCallFar(op.MCODE_C_APANEL_BOF         ) end,
+  ColumnCount = function() return MacroCallFar(op.MCODE_V_APANEL_COLUMNCOUNT ) end,
+  CurPos      = function() return MacroCallFar(op.MCODE_V_APANEL_CURPOS      ) end,
+  Current     = function() return MacroCallFar(op.MCODE_V_APANEL_CURRENT     ) end,
+  DriveType   = function() return MacroCallFar(op.MCODE_V_APANEL_DRIVETYPE   ) end,
+  Empty       = function() return MacroCallFar(op.MCODE_C_APANEL_ISEMPTY     ) end,
+  Eof         = function() return MacroCallFar(op.MCODE_C_APANEL_EOF         ) end,
+  FilePanel   = function() return MacroCallFar(op.MCODE_C_APANEL_FILEPANEL   ) end,
+  Filter      = function() return MacroCallFar(op.MCODE_C_APANEL_FILTER      ) end,
+  Folder      = function() return MacroCallFar(op.MCODE_C_APANEL_FOLDER      ) end,
+--Format      = function() return MacroCallFar(op.MCODE_V_APANEL_) end,
+  Height      = function() return MacroCallFar(op.MCODE_V_APANEL_HEIGHT      ) end,
+  HostFile    = function() return MacroCallFar(op.MCODE_V_APANEL_HOSTFILE    ) end,
+  ItemCount   = function() return MacroCallFar(op.MCODE_V_APANEL_ITEMCOUNT   ) end,
+  Left        = function() return MacroCallFar(op.MCODE_C_APANEL_LEFT        ) end,
+  LFN         = function() return MacroCallFar(op.MCODE_C_APANEL_LFN         ) end,
+  OPIFlags    = function() return MacroCallFar(op.MCODE_V_APANEL_OPIFLAGS    ) end,
+  Path        = function() return MacroCallFar(op.MCODE_V_APANEL_PATH        ) end,
+  Path0       = function() return MacroCallFar(op.MCODE_V_APANEL_PATH0       ) end,
+  Plugin      = function() return MacroCallFar(op.MCODE_C_APANEL_PLUGIN      ) end,
+  Prefix      = function() return MacroCallFar(op.MCODE_V_APANEL_PREFIX      ) end,
+  Root        = function() return MacroCallFar(op.MCODE_C_APANEL_ROOT        ) end,
+  SelCount    = function() return MacroCallFar(op.MCODE_V_APANEL_SELCOUNT    ) end,
+  Selected    = function() return MacroCallFar(op.MCODE_C_APANEL_SELECTED    ) end,
+  Type        = function() return MacroCallFar(op.MCODE_V_APANEL_TYPE        ) end,
+  UNCPath     = function() return MacroCallFar(op.MCODE_V_APANEL_UNCPATH     ) end,
+  Visible     = function() return MacroCallFar(op.MCODE_C_APANEL_VISIBLE     ) end,
+  Width       = function() return MacroCallFar(op.MCODE_V_APANEL_WIDTH       ) end,
 }
 
 local prop_PPanel = {
-  Bof         = function() return MacroCallFar(0x80419) end,
-  ColumnCount = function() return MacroCallFar(0x8081F) end,
-  CurPos      = function() return MacroCallFar(0x80817) end,
-  Current     = function() return MacroCallFar(0x80807) end,
-  DriveType   = function() return MacroCallFar(0x8081B) end,
-  Empty       = function() return MacroCallFar(0x8041D) end,
-  Eof         = function() return MacroCallFar(0x8041B) end,
-  FilePanel   = function() return MacroCallFar(0x80427) end,
-  Filter      = function() return MacroCallFar(0x8042F) end,
-  Folder      = function() return MacroCallFar(0x80429) end,
-  Format      = function() return MacroCallFar(0x80825) end,
-  Height      = function() return MacroCallFar(0x8081D) end,
-  HostFile    = function() return MacroCallFar(0x80821) end,
-  ItemCount   = function() return MacroCallFar(0x80815) end,
-  Left        = function() return MacroCallFar(0x8042B) end,
-  LFN         = function() return MacroCallFar(0x8042D) end,
-  OPIFlags    = function() return MacroCallFar(0x80819) end,
-  Path        = function() return MacroCallFar(0x8080B) end,
-  Path0       = function() return MacroCallFar(0x8080D) end,
-  Plugin      = function() return MacroCallFar(0x80425) end,
-  Prefix      = function() return MacroCallFar(0x80823) end,
-  Root        = function() return MacroCallFar(0x80421) end,
-  SelCount    = function() return MacroCallFar(0x80809) end,
-  Selected    = function() return MacroCallFar(0x8041F) end,
-  Type        = function() return MacroCallFar(0x80813) end,
-  UNCPath     = function() return MacroCallFar(0x8080F) end,
-  Visible     = function() return MacroCallFar(0x80423) end,
-  Width       = function() return MacroCallFar(0x80811) end,
+  Bof         = function() return MacroCallFar(op.MCODE_C_PPANEL_BOF         ) end,
+  ColumnCount = function() return MacroCallFar(op.MCODE_V_PPANEL_COLUMNCOUNT ) end,
+  CurPos      = function() return MacroCallFar(op.MCODE_V_PPANEL_CURPOS      ) end,
+  Current     = function() return MacroCallFar(op.MCODE_V_PPANEL_CURRENT     ) end,
+  DriveType   = function() return MacroCallFar(op.MCODE_V_PPANEL_DRIVETYPE   ) end,
+  Empty       = function() return MacroCallFar(op.MCODE_C_PPANEL_ISEMPTY     ) end,
+  Eof         = function() return MacroCallFar(op.MCODE_C_PPANEL_EOF         ) end,
+  FilePanel   = function() return MacroCallFar(op.MCODE_C_PPANEL_FILEPANEL   ) end,
+  Filter      = function() return MacroCallFar(op.MCODE_C_PPANEL_FILTER      ) end,
+  Folder      = function() return MacroCallFar(op.MCODE_C_PPANEL_FOLDER      ) end,
+--Format      = function() return MacroCallFar(op.MCODE_V_PPANEL_) end,
+  Height      = function() return MacroCallFar(op.MCODE_V_PPANEL_HEIGHT      ) end,
+  HostFile    = function() return MacroCallFar(op.MCODE_V_PPANEL_HOSTFILE    ) end,
+  ItemCount   = function() return MacroCallFar(op.MCODE_V_PPANEL_ITEMCOUNT   ) end,
+  Left        = function() return MacroCallFar(op.MCODE_C_PPANEL_LEFT        ) end,
+  LFN         = function() return MacroCallFar(op.MCODE_C_PPANEL_LFN         ) end,
+  OPIFlags    = function() return MacroCallFar(op.MCODE_V_PPANEL_OPIFLAGS    ) end,
+  Path        = function() return MacroCallFar(op.MCODE_V_PPANEL_PATH        ) end,
+  Path0       = function() return MacroCallFar(op.MCODE_V_PPANEL_PATH0       ) end,
+  Plugin      = function() return MacroCallFar(op.MCODE_C_PPANEL_PLUGIN      ) end,
+  Prefix      = function() return MacroCallFar(op.MCODE_V_PPANEL_PREFIX      ) end,
+  Root        = function() return MacroCallFar(op.MCODE_C_PPANEL_ROOT        ) end,
+  SelCount    = function() return MacroCallFar(op.MCODE_V_PPANEL_SELCOUNT    ) end,
+  Selected    = function() return MacroCallFar(op.MCODE_C_PPANEL_SELECTED    ) end,
+  Type        = function() return MacroCallFar(op.MCODE_V_PPANEL_TYPE        ) end,
+  UNCPath     = function() return MacroCallFar(op.MCODE_V_PPANEL_UNCPATH     ) end,
+  Visible     = function() return MacroCallFar(op.MCODE_C_PPANEL_VISIBLE     ) end,
+  Width       = function() return MacroCallFar(op.MCODE_V_PPANEL_WIDTH       ) end,
 }
 
 local prop_CmdLine = {
-  Bof       = function() return MacroCallFar(0x80430) end,
-  Empty     = function() return MacroCallFar(0x80432) end,
-  Eof       = function() return MacroCallFar(0x80431) end,
-  Selected  = function() return MacroCallFar(0x80433) end,
-  CurPos    = function() return MacroCallFar(0x8083C) end,
-  ItemCount = function() return MacroCallFar(0x8083B) end,
-  Value     = function() return MacroCallFar(0x8083D) end,
+  Bof       = function() return MacroCallFar(op.MCODE_C_CMDLINE_BOF       ) end,
+  Empty     = function() return MacroCallFar(op.MCODE_C_CMDLINE_EMPTY     ) end,
+  Eof       = function() return MacroCallFar(op.MCODE_C_CMDLINE_EOF       ) end,
+  Selected  = function() return MacroCallFar(op.MCODE_C_CMDLINE_SELECTED  ) end,
+  CurPos    = function() return MacroCallFar(op.MCODE_V_CMDLINE_CURPOS    ) end,
+  ItemCount = function() return MacroCallFar(op.MCODE_V_CMDLINE_ITEMCOUNT ) end,
+  Value     = function() return MacroCallFar(op.MCODE_V_CMDLINE_VALUE     ) end,
   Result    = function() return Shared.CmdLineResult end,
 }
 
 local prop_Drv = {
-  ShowMode = function() return MacroCallFar(0x8083F) end,
-  ShowPos  = function() return MacroCallFar(0x8083E) end,
+  ShowMode = function() return MacroCallFar(op.MCODE_V_DRVSHOWMODE ) end,
+  ShowPos  = function() return MacroCallFar(op.MCODE_V_DRVSHOWPOS  ) end,
 }
 
 local prop_Help = {
-  FileName = function() return MacroCallFar(0x80840) end,
-  SelTopic = function() return MacroCallFar(0x80842) end,
-  Topic    = function() return MacroCallFar(0x80841) end,
+  FileName = function() return MacroCallFar(op.MCODE_V_HELPFILENAME ) end,
+  SelTopic = function() return MacroCallFar(op.MCODE_V_HELPSELTOPIC ) end,
+  Topic    = function() return MacroCallFar(op.MCODE_V_HELPTOPIC    ) end,
 }
 
 local prop_Mouse = {
-  X          = function() return MacroCallFar(0x80434) end,
-  Y          = function() return MacroCallFar(0x80435) end,
-  Button     = function() return MacroCallFar(0x80436) end,
-  CtrlState  = function() return MacroCallFar(0x80437) end,
-  EventFlags = function() return MacroCallFar(0x80438) end,
-  LastCtrlState = function() return MacroCallFar(0x80439) end,
+  X             = function() return MacroCallFar(op.MCODE_C_MSX             ) end,
+  Y             = function() return MacroCallFar(op.MCODE_C_MSY             ) end,
+  Button        = function() return MacroCallFar(op.MCODE_C_MSBUTTON        ) end,
+  CtrlState     = function() return MacroCallFar(op.MCODE_C_MSCTRLSTATE     ) end,
+  EventFlags    = function() return MacroCallFar(op.MCODE_C_MSEVENTFLAGS    ) end,
+  LastCtrlState = function() return MacroCallFar(op.MCODE_C_MSLASTCTRLSTATE ) end,
 }
 
 local prop_Viewer = {
-  FileName = function() return MacroCallFar(0x80839) end,
-  State    = function() return MacroCallFar(0x8083A) end,
+  FileName = function() return MacroCallFar(op.MCODE_V_VIEWERFILENAME) end,
+  State    = function() return MacroCallFar(op.MCODE_V_VIEWERSTATE)    end,
 }
 --------------------------------------------------------------------------------
 
 Dlg = {
-  GetValue = function(...) return MacroCallFar(0x80C08, ...) end,
-  SetFocus = function(...) return MacroCallFar(0x80C57, ...) end,
+  GetValue = function(...) return MacroCallFar(op.MCODE_F_DLG_GETVALUE, ...) end,
+--SetFocus = function(...) return MacroCallFar(0x80C57, ...) end,
 }
 
 SetProperties(Dlg, {
-  CurPos     = function() return MacroCallFar(0x80835) end,
-  Id         = function() return MacroCallFar(0x80837) end,
-  Owner      = function() return MacroCallFar(0x80838) end,
-  ItemCount  = function() return MacroCallFar(0x80834) end,
-  ItemType   = function() return MacroCallFar(0x80833) end,
-  PrevPos    = function() return MacroCallFar(0x80836) end,
+  CurPos     = function() return MacroCallFar(op.MCODE_V_DLGCURPOS) end,
+  Id         = function() return MacroCallFar(op.MCODE_V_DLGINFOID) end,
+--Owner      = function() return MacroCallFar(0x80838) end,
+  ItemCount  = function() return MacroCallFar(op.MCODE_V_DLGITEMCOUNT) end,
+  ItemType   = function() return MacroCallFar(op.MCODE_V_DLGITEMTYPE) end,
+--PrevPos    = function() return MacroCallFar(0x80836) end,
 })
 --------------------------------------------------------------------------------
 
 Editor = {
-  DelLine  = function(...) return MacroCallFar(0x80C60, ...) end,
-  GetStr   = function(n)   return editor.GetString(nil,n,3) or "" end,
-  InsStr   = function(...) return MacroCallFar(0x80C62, ...) end,
-  Pos      = function(...) return MacroCallFar(0x80C0C, ...) end,
-  Sel      = function(...) return MacroCallFar(0x80C09, ...) end,
-  Set      = function(...) return MacroCallFar(0x80C0A, ...) end,
-  SetStr   = function(...) return MacroCallFar(0x80C63, ...) end,
-  SetTitle = function(...) return MacroCallFar(0x80C45, ...) end,
-  Undo     = function(...) return MacroCallFar(0x80C0B, ...) end,
+--DelLine  = function(...) return MacroCallFar(0x80C60, ...) end,
+  GetStr   = function(n)   return editor.GetString(n,2) or "" end,
+--InsStr   = function(...) return MacroCallFar(0x80C62, ...) end,
+  Pos      = function(...) return MacroCallFar(op.MCODE_F_EDITOR_POS, ...) end,
+  Sel      = function(...) return MacroCallFar(op.MCODE_F_EDITOR_SEL, ...) end,
+  Set      = function(...) return MacroCallFar(op.MCODE_F_EDITOR_SET, ...) end,
+--SetStr   = function(...) return MacroCallFar(0x80C63, ...) end,
+  SetTitle = function(...) return MacroCallFar(op.MCODE_F_EDITOR_SETTITLE, ...) end,
+  Undo     = function(...) return MacroCallFar(op.MCODE_F_EDITOR_UNDO, ...) end,
 }
 
 SetProperties(Editor, {
-  CurLine  = function() return MacroCallFar(0x8082D) end,
-  CurPos   = function() return MacroCallFar(0x8082E) end,
-  FileName = function() return MacroCallFar(0x8082B) end,
-  Lines    = function() return MacroCallFar(0x8082C) end,
-  RealPos  = function() return MacroCallFar(0x8082F) end,
-  SelValue = function() return MacroCallFar(0x80832) end,
-  State    = function() return MacroCallFar(0x80830) end,
-  Value    = function() return editor.GetString(nil,nil,3) or "" end,
+  CurLine  = function() return MacroCallFar(op.MCODE_V_EDITORCURLINE) end,
+  CurPos   = function() return MacroCallFar(op.MCODE_V_EDITORCURPOS) end,
+  FileName = function() return MacroCallFar(op.MCODE_V_EDITORFILENAME) end,
+  Lines    = function() return MacroCallFar(op.MCODE_V_EDITORLINES) end,
+  RealPos  = function() return MacroCallFar(op.MCODE_V_EDITORREALPOS) end,
+  SelValue = function() return MacroCallFar(op.MCODE_V_EDITORSELVALUE) end,
+  State    = function() return MacroCallFar(op.MCODE_V_EDITORSTATE) end,
+  Value    = function() return editor.GetString(nil,2) or "" end,
 })
 --------------------------------------------------------------------------------
 
 Menu = {
-  Filter     = function(...) return MacroCallFar(0x80C55, ...) end,
-  FilterStr  = function(...) return MacroCallFar(0x80C56, ...) end,
-  GetValue   = function(...) return MacroCallFar(0x80C46, ...) end,
-  ItemStatus = function(...) return MacroCallFar(0x80C47, ...) end,
-  Select     = function(...) return MacroCallFar(0x80C1B, ...) end,
-  Show       = function(...) return MacroCallFar(0x80C1C, ...) end,
+--Filter     = function(...) return MacroCallFar(0x80C55, ...) end,
+--FilterStr  = function(...) return MacroCallFar(0x80C56, ...) end,
+  GetValue   = function(...) return MacroCallFar(op.MCODE_F_MENU_GETVALUE, ...) end,
+  ItemStatus = function(...) return MacroCallFar(op.MCODE_F_MENU_ITEMSTATUS, ...) end,
+  Select     = function(...) return MacroCallFar(op.MCODE_F_MENU_SELECT, ...) end,
+--Show       = function(...) return MacroCallFar(0x80C1C, ...) end,
 }
 
 SetProperties(Menu, {
-  Id         = function() return MacroCallFar(0x80844) end,
-  Value      = function() return MacroCallFar(0x80843) end,
+--Id         = function() return MacroCallFar(0x80844) end,
+  Value      = function() return MacroCallFar(op.MCODE_V_MENU_VALUE) end,
 })
 --------------------------------------------------------------------------------
 
 Far = {
-  Cfg_Get        = function(...) return MacroCallFar(0x80C58, ...) end,
+--Cfg_Get        = function(...) return MacroCallFar(0x80C58, ...) end,
   DisableHistory = function(...) return Shared.keymacro.DisableHistory(...) end,
-  KbdLayout      = function(...) return MacroCallFar(0x80C49, ...) end,
-  KeyBar_Show    = function(...) return MacroCallFar(0x80C4B, ...) end,
-  Window_Scroll  = function(...) return MacroCallFar(0x80C4A, ...) end,
+  KbdLayout      = function(...) return MacroCallFar(op.MCODE_F_KBDLAYOUT, ...) end,
+--KeyBar_Show    = function(...) return MacroCallFar(0x80C4B, ...) end,
+  Window_Scroll  = function(...) return MacroCallFar(op.MCODE_F_WINDOW_SCROLL, ...) end,
 }
 
 function Far.GetConfig (keyname)
@@ -315,28 +313,28 @@ function Far.GetConfig (keyname)
 end
 
 SetProperties(Far, {
-  FullScreen     = function() return MacroCallFar(0x80411) end,
-  Height         = function() return MacroCallFar(0x80801) end,
-  IsUserAdmin    = function() return MacroCallFar(0x80412) end,
-  PID            = function() return MacroCallFar(0x80804) end,
-  Title          = function() return MacroCallFar(0x80802) end,
-  UpTime         = function() return MacroCallFar(0x80803) end,
-  Width          = function() return MacroCallFar(0x80800) end,
+  FullScreen     = function() return MacroCallFar(op.MCODE_C_FULLSCREENMODE) end,
+  Height         = function() return MacroCallFar(op.MCODE_V_FAR_HEIGHT) end,
+  IsUserAdmin    = function() return MacroCallFar(op.MCODE_C_ISUSERADMIN) end,
+  PID            = function() return MacroCallFar(op.MCODE_V_FAR_PID) end,
+  Title          = function() return MacroCallFar(op.MCODE_V_FAR_TITLE) end,
+  UpTime         = function() return MacroCallFar(op.MCODE_V_FAR_UPTIME) end,
+  Width          = function() return MacroCallFar(op.MCODE_V_FAR_WIDTH) end,
 })
 --------------------------------------------------------------------------------
 
 BM = {
-  Add   = function(...) return MacroCallFar(0x80C35, ...) end,
-  Back  = function(...) return MacroCallFar(0x80C3D, ...) end,
-  Clear = function(...) return MacroCallFar(0x80C36, ...) end,
-  Del   = function(...) return MacroCallFar(0x80C37, ...) end,
-  Get   = function(...) return MacroCallFar(0x80C38, ...) end,
-  Goto  = function(...) return MacroCallFar(0x80C39, ...) end,
-  Next  = function(...) return MacroCallFar(0x80C3A, ...) end,
-  Pop   = function(...) return MacroCallFar(0x80C3B, ...) end,
-  Prev  = function(...) return MacroCallFar(0x80C3C, ...) end,
-  Push  = function(...) return MacroCallFar(0x80C3E, ...) end,
-  Stat  = function(...) return MacroCallFar(0x80C3F, ...) end,
+  Add   = function(...) return MacroCallFar(op.MCODE_F_BM_ADD, ...) end,
+  Back  = function(...) return MacroCallFar(op.MCODE_F_BM_BACK, ...) end,
+  Clear = function(...) return MacroCallFar(op.MCODE_F_BM_CLEAR, ...) end,
+  Del   = function(...) return MacroCallFar(op.MCODE_F_BM_DEL, ...) end,
+  Get   = function(...) return MacroCallFar(op.MCODE_F_BM_GET, ...) end,
+  Goto  = function(...) return MacroCallFar(op.MCODE_F_BM_GOTO, ...) end,
+  Next  = function(...) return MacroCallFar(op.MCODE_F_BM_NEXT, ...) end,
+  Pop   = function(...) return MacroCallFar(op.MCODE_F_BM_POP, ...) end,
+  Prev  = function(...) return MacroCallFar(op.MCODE_F_BM_PREV, ...) end,
+  Push  = function(...) return MacroCallFar(op.MCODE_F_BM_PUSH, ...) end,
+  Stat  = function(...) return MacroCallFar(op.MCODE_F_BM_STAT, ...) end,
 }
 --------------------------------------------------------------------------------
 
@@ -346,9 +344,9 @@ Plugin = {
   Config  = function(...) return yieldcall(F.MPRT_PLUGINCONFIG,  ...) end,
   Menu    = function(...) return yieldcall(F.MPRT_PLUGINMENU,    ...) end,
 
-  Exist   = function(...) return MacroCallFar(0x80C54, ...) end,
-  Load    = function(...) return MacroCallFar(0x80C51, ...) end,
-  Unload  = function(...) return MacroCallFar(0x80C53, ...) end,
+--Exist   = function(...) return MacroCallFar(0x80C54, ...) end,
+--Load    = function(...) return MacroCallFar(0x80C51, ...) end,
+--Unload  = function(...) return MacroCallFar(0x80C53, ...) end,
 
   SyncCall = function(...)
     local v = Shared.keymacro.CallPlugin(Shared.pack(...), false)
@@ -381,21 +379,21 @@ local function SetPath(whatpanel,path,filename)
 end
 
 Panel = {
-  FAttr     = function(...) return MacroCallFar(0x80C22, ...) end,
-  FExist    = function(...) return MacroCallFar(0x80C24, ...) end,
+  FAttr     = function(...) return MacroCallFar(op.MCODE_F_PANEL_FATTR, ...) end,
+  FExist    = function(...) return MacroCallFar(op.MCODE_F_PANEL_FEXIST, ...) end,
   Item      = function(a,b,c)
-    local r = MacroCallFar(0x80C28,a,b,c)
+    local r = MacroCallFar(op.MCODE_F_PANELITEM,a,b,c)
     if c==8 and r==0 then r=false end -- 8:Selected; boolean property
     return r
   end,
-  Select    = function(...) return MacroCallFar(0x80C27, ...) end,
+  Select    = function(...) return MacroCallFar(op.MCODE_F_PANEL_SELECT, ...) end,
   SetPath   = function(...)
     local status,res=pcall(SetPath,...)
     if status then return res end
     return false
   end,
-  SetPos    = function(...) return MacroCallFar(0x80C25, ...) end,
-  SetPosIdx = function(...) return MacroCallFar(0x80C26, ...) end,
+  SetPos    = function(...) return MacroCallFar(op.MCODE_F_PANEL_SETPOS, ...) end,
+  SetPosIdx = function(...) return MacroCallFar(op.MCODE_F_PANEL_SETPOSIDX, ...) end,
 }
 --------------------------------------------------------------------------------
 

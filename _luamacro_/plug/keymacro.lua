@@ -1,5 +1,7 @@
 -- coding: utf-8
 
+local op = require "opcodes"
+
 local Shared = ...
 local Msg, ErrMsg = Shared.Msg, Shared.ErrMsg
 local MacroStep = Shared.MacroStep
@@ -24,14 +26,14 @@ local MFLAGS_ENABLEOUTPUT, MFLAGS_NOSENDKEYSTOPLUGINS, MFLAGS_POSTFROMPLUGIN =
       0x1, 0x2, 0x10000000
 
 local KEY_NONE = 0x30001
-local MCODE_F_PLUGIN_CALL = 0x80C4F
+local MCODE_F_PLUGIN_CALL = op.MCODE_F_PLUGIN_CALL
 
 local type, setmetatable = type, setmetatable
 local bit = bit or bit64
 local band, bor, bxor, lshift = bit.band, bit.bor, bit.bxor, bit.lshift
 --------------------------------------------------------------------------------
 
-local MCODE_F_KEYMACRO = 0x80C68
+local MCODE_F_KEYMACRO = op.MCODE_F_KEYMACRO
 local Import = {
   RestoreMacroChar        = function()  return MacroCallFar(MCODE_F_KEYMACRO, 1) end,
   ScrBufLock              = function()  return MacroCallFar(MCODE_F_KEYMACRO, 2) end,
