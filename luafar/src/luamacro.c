@@ -41,7 +41,7 @@ HANDLE Open_Luamacro (lua_State* L, int OpenFrom, INT_PTR Item)
 	struct OpenMacroPluginInfo* om_info = (struct OpenMacroPluginInfo*)Item;
 	int calltype = om_info->CallType;
 	size_t argc = om_info->Data ? om_info->Data->Count : 0; // store Data->Count: 'Data' will be invalid after FL_PushParams()
-  PSInfo *Info = GetPluginStartupInfo(L);
+	PSInfo *Info = GetPluginStartupInfo(L);
 
 //~	if (!IsEqualGUID(GetPluginData(L)->PluginId, LuamacroGuid))
 //~	{
@@ -189,7 +189,7 @@ int far_MacroCallFar(lua_State *L)
 	struct FarMacroCall fmc;
 	int idx, ret, pushed;
 	mcfc_data cbdata = { L, MAXRET, 0 };
-  PSInfo *Info = GetPluginStartupInfo(L);
+	PSInfo *Info = GetPluginStartupInfo(L);
 	struct MacroPrivateInfo *privateInfo = (struct MacroPrivateInfo*)Info->Private;
 	int opcode = (int)luaL_checkinteger(L, 1);
 	fmc.Count = lua_gettop(L) - 1;

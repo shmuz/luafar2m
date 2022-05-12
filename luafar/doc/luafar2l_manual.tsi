@@ -6873,6 +6873,118 @@ nm=bit
 </article>
 </node>
 <node>
+id=471
+lv=1
+dt=Text
+nm=bit64
+ctime=3507278228
+mtime=3861560909
+<article>
+#_<markdown>
+#_As Far 3.0 started to use 64-bit integer values ("flags") in its API, arose the need to represent and handle them from Lua. This is the role of **bit64** library.
+#_
+#_The library represents and accepts flags as either numbers or "64 bit integer" userdata. Values that fit in 53 bits can be represented in both ways. Greater values are always represented as userdata.
+#_
+#_Userdata values created by the library support the following operations (metamethods):<br>
+#_`+`, `-`, `*`, `/`, `%`, `==`, `<`, `<=`, unary minus, `tonumber`.
+#_
+#_`__tostring` metamethod of "64-bit type" userdata returns an acceptable string representation that when passed to [`new`][new] will produce a value equal to the original one.
+#_
+#_The library has the following functions:
+#_
+#_* *`bnot`*    - gets a flag, returns a flag
+#_* *`band`*    - gets multiple flags, returns a flag
+#_* *`bor`*     - gets multiple flags, returns a flag
+#_* *`bxor`*    - gets multiple flags, returns a flag
+#_* *`lshift`*  - gets a flag and an integer, returns a flag
+#_* *`rshift`*  - gets a flag and an integer, returns a flag
+#_* *`arshift`* - gets a flag and an integer, returns a flag
+#_* *`add`*     - gets multiple flags, returns a flag
+#_* *`mul`*     - gets multiple flags, returns a flag
+#_* *`sub`*     - gets 2 flags, returns a flag
+#_* *`div`*     - gets 2 flags, returns a flag
+#_* *`mod`*     - gets 2 flags, returns a flag
+#_
+#_The functions above always return a number if the result fits into 53 bits.
+#_
+#_* *`eq`*      - gets 2 flags, returns a boolean
+#_* *`lt`*      - gets 2 flags, returns a boolean
+#_* *`le`*      - gets 2 flags, returns a boolean
+#_
+#_The functions above are useful for comparisons where each operand may be either a "64 bit integer" type userdata or a number. They compare underlying 64-bit integers.
+#_
+#_* [*`new`*][new]   - gets a string, number or flag representation, returns a flag
+#_* [*`type`*][type] - gets a value, returns a string (or nil)
+#_
+#_[new]: 473.html
+#_[type]: 472.html
+#_
+#_
+</article>
+</node>
+<node>
+id=473
+lv=2
+dt=Text
+nm=bit64.new
+ctime=3553400683
+mtime=3554816005
+<article>
+#_result = bit64.new (arg)
+#_
+#_**Parameters:**
+#_  arg:     string, number or userdata
+#_
+#_**Returns:**
+#_  result:  userdata, or nil
+#_
+#_**Description:**
+#_
+#_This function creates a new "64-bit int" type userdata from the input value.
+#_
+#_If *arg* is a string, it must be an acceptable string representation of
+#_a 64-bit integer. The function returns *nil* if the input string can not
+#_be converted.
+#_
+#_The string representation of an integer acceptable by the function must
+#_have either the hexadecimal form
+#_  **-?0[xX][0-9A-Fa-f]{1,16}**, e.g. "0x56DF5"
+#_or the decimal form
+#_  **-?[0-9]+**, e.g. "-234567".
+#_
+#_If *arg* is a number, it must fit in 53 bits, otherwise nil is returned.
+#_
+#_If *arg* is a "64-bit int" type userdata then a new userdata with the same
+#_value is created and returned.
+#_
+#_
+</article>
+</node>
+<node>
+id=472
+lv=2
+dt=Text
+nm=bit64.type
+ctime=3553401501
+mtime=3554959390
+<article>
+#_result = bit64.type (val)
+#_
+#_**Parameters:**
+#_  val:    any type
+#_
+#_**Returns:**
+#_  result: string, or nil
+#_
+#_**Description:**
+#_
+#_The function returns string *"64 bit integer"* if argument *val*
+#_is a userdata of the type created by this library, otherwise nil
+#_is returned.
+#_
+</article>
+</node>
+<node>
 id=405
 lv=1
 dt=Text

@@ -30,7 +30,6 @@ mf = {
 --akey            = function(...) return MacroCallFar( op., ...) end,
   asc             = function(...) return MacroCallFar( op.MCODE_F_ASC       , ...) end,
   atoi            = function(...) return MacroCallFar( op.MCODE_F_ATOI      , ...) end,
-  beep            = function(...) return MacroCallFar( op.MCODE_F_BEEP      , ...) end,
   chr             = function(...) return MacroCallFar( op.MCODE_F_CHR       , ...) end,
   clip            = function(...) return MacroCallFar( op.MCODE_F_CLIP      , ...) end,
   date            = function(...) return MacroCallFar( op.MCODE_F_DATE      , ...) end,
@@ -288,7 +287,7 @@ SetProperties(Menu, {
 Far = {
 --Cfg_Get        = function(...) return MacroCallFar(0x80C58, ...) end,
   DisableHistory = function(...) return Shared.keymacro.DisableHistory(...) end,
-  KbdLayout      = function(...) return MacroCallFar(op.MCODE_F_KBDLAYOUT, ...) end,
+--KbdLayout      = function(...) return MacroCallFar(op.MCODE_F_KBDLAYOUT, ...) end,
 --KeyBar_Show    = function(...) return MacroCallFar(0x80C4B, ...) end,
   Window_Scroll  = function(...) return MacroCallFar(op.MCODE_F_WINDOW_SCROLL, ...) end,
 }

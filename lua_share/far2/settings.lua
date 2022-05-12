@@ -22,9 +22,9 @@ local function basicSerialize (o)
 end
 
 local function int64Serialize (o)
---~   if bit64.type(o) then
---~     return "bit64.new(\"" .. tostring(o) .. "\")"
---~   end
+  if bit64.type(o) then
+    return "bit64.new(\"" .. tostring(o) .. "\")"
+  end
 end
 
 local function AddToIndex (idx, t)
@@ -87,8 +87,7 @@ local function deserialize (str, isfile)
   end
   if chunk==nil then return nil,err end
 
-  --setfenv(chunk, { bit64={new=bit64.new}; setmetatable=setmetatable; })
-  setfenv(chunk, { setmetatable=setmetatable; })
+  setfenv(chunk, { bit64={new=bit64.new}; setmetatable=setmetatable; })
   local ok, result = pcall(chunk)
   if not ok then return nil,result end
 

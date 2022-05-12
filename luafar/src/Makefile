@@ -21,6 +21,7 @@ OBJ = \
   $(OUT)/reg.o         \
   $(OUT)/mytimer.o     \
   $(OUT)/luamacro.o    \
+  $(OUT)/bit64.o       \
   $(OUT)/lusercontrol.o
 
 ifneq ($(USE_LUAJIT),1)

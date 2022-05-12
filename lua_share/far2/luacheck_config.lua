@@ -16,6 +16,13 @@ local luafar = {
   };
 
   read_globals = {
+    ["bit64"] = {
+      fields = {
+         "add", "arshift", "band", "bnot", "bor", "bxor", "div", "eq", "le", "lshift",
+         "lt", "mod", "mul", "new", "rshift", "sub", "type",
+       };
+    };
+
     ["far"] = {
       fields = {
         "AdvControl", "CmpName", "Colors", "ConvertPath", "CopyToClipboard",

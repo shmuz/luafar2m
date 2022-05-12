@@ -44,6 +44,7 @@ void Log(const char* str)
 }
 
 extern int  luaopen_bit (lua_State *L);
+extern int  luaopen_bit64 (lua_State *L);
 extern int  luaopen_unicode (lua_State *L);
 extern int  luaopen_utf8 (lua_State *L);
 extern int  luaopen_timer (lua_State *L);
@@ -5695,7 +5696,7 @@ void LF_InitLuaState (lua_State *L, PSInfo *aInfo,
                       lua_CFunction aOpenLibs, const char* aEnvPrefix)
 {
   int idx;
-  lua_CFunction func_arr[] = { luaopen_far, luaopen_bit, luaopen_unicode, luaopen_utf8 };
+  lua_CFunction func_arr[] = { luaopen_far, luaopen_bit, luaopen_bit64, luaopen_unicode, luaopen_utf8 };
 
   // open Lua libraries
   luaL_openlibs(L);

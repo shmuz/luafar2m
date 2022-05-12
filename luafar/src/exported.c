@@ -14,6 +14,7 @@ extern int  ProcessDNResult (lua_State *L, int Msg, LONG_PTR Param2);
 extern BOOL GetFlagCombination (lua_State *L, int stack_pos, int *trg);
 extern int  GetFlagsFromTable(lua_State *L, int pos, const char* key);
 extern HANDLE Open_Luamacro (lua_State* L, int OpenFrom, INT_PTR Item);
+extern int  bit64_push(lua_State *L, INT64 v);
 
 void PackMacroValues(lua_State* L, size_t Count, const struct FarMacroValue* Values); // forward declaration
 
@@ -469,8 +470,7 @@ void PushFarMacroValue(lua_State* L, const struct FarMacroValue* val)
 	switch(val->Type)
 	{
 		case FMVT_INTEGER:
-			//bit64_push(L, val->Value.Integer);
-			lua_pushinteger(L, val->Value.Integer);
+			bit64_push(L, val->Value.Integer);
 			break;
 		case FMVT_DOUBLE:
 			lua_pushnumber(L, val->Value.Double);
