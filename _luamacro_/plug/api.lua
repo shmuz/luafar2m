@@ -38,7 +38,7 @@ mf = {
   fexist          = function(...) return MacroCallFar( op.MCODE_F_FEXIST    , ...) end,
   float           = function(...) return MacroCallFar( op.MCODE_F_FLOAT     , ...) end,
   flock           = function(...) return MacroCallFar( op.MCODE_F_FLOCK     , ...) end,
---fmatch          = function(...) return MacroCallFar( op.MCODE_F_, ...) end,
+  fmatch          = function(...) return MacroCallFar( op.MCODE_F_FMATCH    , ...) end,
   fsplit          = function(...) return MacroCallFar( op.MCODE_F_FSPLIT    , ...) end,
   index           = function(...) return MacroCallFar( op.MCODE_F_INDEX     , ...) end,
   int             = function(...) return MacroCallFar( op.MCODE_F_INT       , ...) end,
@@ -287,7 +287,7 @@ SetProperties(Menu, {
 Far = {
 --Cfg_Get        = function(...) return MacroCallFar(0x80C58, ...) end,
   DisableHistory = function(...) return Shared.keymacro.DisableHistory(...) end,
---KbdLayout      = function(...) return MacroCallFar(op.MCODE_F_KBDLAYOUT, ...) end,
+  KbdLayout      = function(...) return MacroCallFar(op.MCODE_F_KBDLAYOUT, ...) end,
 --KeyBar_Show    = function(...) return MacroCallFar(0x80C4B, ...) end,
   Window_Scroll  = function(...) return MacroCallFar(op.MCODE_F_WINDOW_SCROLL, ...) end,
 }
@@ -384,11 +384,12 @@ Panel = {
     return r
   end,
   Select    = function(...) return MacroCallFar(op.MCODE_F_PANEL_SELECT, ...) end,
-  SetPath   = function(...)
-    local status,res=pcall(SetPath,...)
-    if status then return res end
-    return false
-  end,
+  SetPath   = function(...) return MacroCallFar(op.MCODE_F_PANEL_SETPATH, ...) end,
+  --SetPath = function(...)
+  --  local status,res=pcall(SetPath,...)
+  --  if status then return res end
+  --  return false
+  --end,
   SetPos    = function(...) return MacroCallFar(op.MCODE_F_PANEL_SETPOS, ...) end,
   SetPosIdx = function(...) return MacroCallFar(op.MCODE_F_PANEL_SETPOSIDX, ...) end,
 }

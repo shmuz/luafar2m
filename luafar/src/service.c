@@ -19,30 +19,6 @@
 #  define LUADLL "liblua5.1.so"
 #endif
 
-void Log(const char* str)
-{
-  static int N = 0;
-  const char* home = getenv("HOME");
-  if (home) {
-    char* buf = (char*) malloc(strlen(home) + 64);
-    if (buf) {
-      strcpy(buf, home);
-      strcat(buf, "/luafar_log.txt");
-      FILE* fp = fopen(buf, "a");
-      if (fp) {
-        if (++N == 1) {
-          time_t rtime;
-          time (&rtime);
-          fprintf(fp, "\n%s------------------------------\n", ctime(&rtime));
-        }
-        fprintf(fp, "%d: %s\n", N, str);
-        fclose(fp);
-      }
-      free(buf);
-    }
-  }
-}
-
 extern int  luaopen_bit (lua_State *L);
 extern int  luaopen_bit64 (lua_State *L);
 extern int  luaopen_unicode (lua_State *L);

@@ -1,6 +1,30 @@
 #include "ustring.h"
 #include "util.h"
 
+void Log(const char* str)
+{
+  static int N = 0;
+  const char* home = getenv("HOME");
+  if (home) {
+    char* buf = (char*) malloc(strlen(home) + 64);
+    if (buf) {
+      strcpy(buf, home);
+      strcat(buf, "/luafar_log.txt");
+      FILE* fp = fopen(buf, "a");
+      if (fp) {
+        if (++N == 1) {
+          time_t rtime;
+          time (&rtime);
+          fprintf(fp, "\n%s------------------------------\n", ctime(&rtime));
+        }
+        fprintf(fp, "%d: %s\n", N, str);
+        fclose(fp);
+      }
+      free(buf);
+    }
+  }
+}
+
 // stack[-2] - table
 // stack[-1] - value
 int luaLF_SlotError (lua_State *L, int key, const char* expected_typename)
