@@ -20,6 +20,7 @@ typedef struct PluginStartupInfo PSInfo;
 typedef struct
 {
   PSInfo        *Info;
+  DWORD          PluginId;
   FARWINDOWPROC  DlgProc;
   lua_State     *MainLuaState;
   void          *dlopen_handle;

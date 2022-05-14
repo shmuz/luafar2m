@@ -50,12 +50,10 @@ static LONG_PTR WINAPI DlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2
   return LF_DlgProc(LS, hDlg, Msg, Param1, Param2);
 }
 
-#ifdef SYS_ID
 DWORD LUAPLUG GetGlobalInfoW()
 {
   return SYS_ID;
 }
-#endif
 
 void LUAPLUG SetStartupInfoW(const PSInfo *aInfo)
 {
@@ -64,6 +62,7 @@ void LUAPLUG SetStartupInfoW(const PSInfo *aInfo)
   Info.FSF = &FSF;
   PluginData.Info = &Info;
   PluginData.DlgProc = DlgProc;
+  PluginData.PluginId = SYS_ID;
 
   if (!LS && LF_LuaOpen(&PluginData, FUNC_OPENLIBS, ENV_PREFIX)) //includes opening "far" library
     LS = PluginData.MainLuaState;

@@ -41,12 +41,15 @@ local function DeleteTmpFile()
 end
 
 local function TestArea (area, msg)
+if not (Area[area]==true and Area.Current==area) then
+  far.Show(Area[area], Area.Current)
+end
   assert(Area[area]==true and Area.Current==area, msg or "assertion failed!")
 end
 
 function MT.test_areas()
-  Keys "AltIns"              TestArea "Grabber"    Keys "Esc"
-  Keys "F12 0"               TestArea "Desktop"    Keys "F12 1"
+--  Keys "AltIns"              TestArea "Grabber"    Keys "Esc"
+--  Keys "F12 0"               TestArea "Desktop"    Keys "F12 1"
   Keys "ShiftF4 CtrlY Enter" TestArea "Editor"     Keys "Esc"
   Keys "F7"                  TestArea "Dialog"     Keys "Esc"
   Keys "Alt?"                TestArea "Search"     Keys "Esc"
@@ -58,10 +61,10 @@ function MT.test_areas()
   Keys "F1"                  TestArea "Help"       Keys "Esc"
   Keys "CtrlL Tab"           TestArea "Info"       Keys "Tab CtrlL"
   Keys "CtrlQ Tab"           TestArea "QView"      Keys "Tab CtrlQ"
-  if Far.GetConfig("Panel.Tree.TurnOffCompletely") ~= true then
+--  if Far.GetConfig("Panel.Tree.TurnOffCompletely") ~= true then
     Keys "CtrlT Tab"         TestArea "Tree"       Keys "Tab CtrlT"
-    Keys "AltF10"            TestArea "FindFolder" Keys "Esc"
-  end
+    --Keys "AltF10"            TestArea "FindFolder" Keys "Esc"
+--  end
   Keys "F2"                  TestArea "UserMenu"   Keys "Esc"
 
   assert(Area.Current              =="Shell")
@@ -80,10 +83,11 @@ function MT.test_areas()
   assert(Area.Tree                 ==false)
   assert(Area.FindFolder           ==false)
   assert(Area.UserMenu             ==false)
-  assert(Area.ShellAutoCompletion  ==false)
-  assert(Area.DialogAutoCompletion ==false)
-  assert(Area.Grabber              ==false)
-  assert(Area.Desktop              ==false)
+  assert(Area.AutoCompletion       ==false)
+--assert(Area.ShellAutoCompletion  ==false)
+--assert(Area.DialogAutoCompletion ==false)
+--assert(Area.Grabber              ==false)
+--assert(Area.Desktop              ==false)
 end
 
 local function test_mf_akey()
@@ -259,10 +263,11 @@ local function test_mf_clip()
 end
 
 local function test_mf_env()
-  mf.env("Foo",1,"Bar")
-  assert(mf.env("Foo")=="Bar")
-  mf.env("Foo",1,"")
-  assert(mf.env("Foo")=="")
+  local name = "macrotest_lua"
+  win.SetEnv(name, "Bar")
+  assert(mf.env(name) == "Bar")
+  win.SetEnv(name, nil)
+  assert(mf.env(name) == "")
 end
 
 local function test_mf_fattr()
@@ -633,9 +638,9 @@ function MT.test_mf()
   test_mf_akey()
   test_mf_asc()
   test_mf_atoi()
-  test_mf_beep()
+--test_mf_beep()
   test_mf_chr()
-  test_mf_clip()
+--test_mf_clip()
   test_mf_date()
   test_mf_env()
   test_mf_eval()

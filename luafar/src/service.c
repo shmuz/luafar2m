@@ -38,6 +38,9 @@ extern void add_keys (lua_State *L);
 extern void PushPluginTable(lua_State* L, HANDLE hPlugin);
 extern int  far_MacroCallFar(lua_State *L);
 extern int  far_FarMacroCallToLua(lua_State *L);
+extern int  bit64_push(lua_State *L, INT64 v);
+extern int  bit64_getvalue(lua_State *L, int pos, INT64 *target);
+extern void PackMacroValues(lua_State* L, size_t Count, const struct FarMacroValue* Values);
 
 #ifndef ARRAYSIZE
 #  define ARRAYSIZE(buff) (sizeof(buff)/sizeof(buff[0]))
@@ -4402,7 +4405,7 @@ int DoAdvControl (lua_State *L, int Command, int Delta)
       return 1;
 
     //case ACTL_SYNCHRO:   //  not supported as it is used in far.Timer
-    //case ACTL_KEYMACRO:  //  not supported as it's replaced by 6 separate functions far.MacroXxx
+    //case ACTL_KEYMACRO:  //  not supported as it's replaced by separate functions far.MacroXxx
   }
 }
 
@@ -4953,55 +4956,159 @@ int far_BackgroundTask(lua_State *L)
   return 0;
 }
 
-int _MacroSimple(lua_State *L, int Command)
+void ConvertLuaValue (lua_State *L, int pos, struct FarMacroValue *target)
 {
-  PSInfo *Info = GetPluginStartupInfo(L);
-  struct ActlKeyMacro km;
-  memset(&km, 0, sizeof(km));
-  km.Command = Command;
-  lua_pushinteger(L, Info->AdvControl(Info->ModuleNumber, ACTL_KEYMACRO, &km));
+  INT64 val64;
+  int type = lua_type(L, pos);
+  pos = abs_index(L, pos);
+  target->Type = FMVT_UNKNOWN;
+
+  if(type == LUA_TNUMBER)
+  {
+    target->Type = FMVT_DOUBLE;
+    target->Value.Double = lua_tonumber(L, pos);
+  }
+  else if(type == LUA_TSTRING)
+  {
+    target->Type = FMVT_STRING;
+    target->Value.String = check_utf8_string(L, pos, NULL);
+  }
+  else if(type == LUA_TTABLE)
+  {
+    lua_rawgeti(L,pos,1);
+    if (lua_type(L,-1) == LUA_TSTRING)
+    {
+      target->Type = FMVT_BINARY;
+      target->Value.Binary.Data = (void*)lua_tolstring(L, -1, &target->Value.Binary.Size);
+    }
+    lua_pop(L,1);
+  }
+  else if(type == LUA_TBOOLEAN)
+  {
+    target->Type = FMVT_BOOLEAN;
+    target->Value.Boolean = lua_toboolean(L, pos);
+  }
+  else if(type == LUA_TNIL)
+  {
+    target->Type = FMVT_NIL;
+  }
+  else if(type == LUA_TLIGHTUSERDATA)
+  {
+    target->Type = FMVT_POINTER;
+    target->Value.Pointer = lua_touserdata(L, pos);
+  }
+  else if(bit64_getvalue(L, pos, &val64))
+  {
+    target->Type = FMVT_INTEGER;
+    target->Value.Integer = val64;
+  }
+}
+
+int far_MacroLoadAll(lua_State* L)
+{
+  TPluginData *pd = GetPluginData(L);
+  struct FarMacroLoad Data;
+  Data.StructSize = sizeof(Data);
+  Data.Path = opt_utf8_string(L, 1, NULL);
+  Data.Flags = OptFlags(L, 2, 0);
+  lua_pushboolean(L, pd->Info->MacroControl(pd->PluginId, MCTL_LOADALL, 0, &Data) != 0);
   return 1;
 }
 
-int far_MacroGetArea (lua_State *L) { return _MacroSimple(L, MCMD_GETAREA);  }
-int far_MacroGetState(lua_State *L) { return _MacroSimple(L, MCMD_GETSTATE); }
-int far_MacroLoadAll (lua_State *L) { return _MacroSimple(L, MCMD_LOADALL);  }
-int far_MacroSaveAll (lua_State *L) { return _MacroSimple(L, MCMD_SAVEALL);  }
-
-int far_MacroCheck(lua_State *L)
+int far_MacroSaveAll(lua_State* L)
 {
-  int Flags;
-  PSInfo *Info = GetPluginStartupInfo(L);
-  struct ActlKeyMacro km;
-  memset(&km, 0, sizeof(km));
-  km.Command = MCMD_CHECKMACRO;
-  km.Param.PlainText.SequenceText = check_utf8_string(L,1,NULL);
-  GetFlagCombination(L, 2, &Flags);
-  km.Param.PlainText.Flags = Flags;
-  Info->AdvControl(Info->ModuleNumber, ACTL_KEYMACRO, &km);
-  if (km.Param.MacroResult.ErrCode == MPEC_SUCCESS) {
-    lua_pushinteger(L, MPEC_SUCCESS);
-    return 1;
-  }
-  lua_pushinteger (L, km.Param.MacroResult.ErrCode);
-  lua_pushinteger (L, km.Param.MacroResult.ErrPos.X + 1);
-  lua_pushinteger (L, km.Param.MacroResult.ErrPos.Y + 1);
-  push_utf8_string(L, km.Param.MacroResult.ErrSrc, -1);
-  return 4;
+  TPluginData *pd = GetPluginData(L);
+  lua_pushboolean(L, pd->Info->MacroControl(pd->PluginId, MCTL_SAVEALL, 0, 0) != 0);
+  return 1;
 }
 
-int far_MacroPost(lua_State *L)
+int far_MacroGetState(lua_State* L)
 {
-  int Flags;
-  PSInfo *Info = GetPluginStartupInfo(L);
-  struct ActlKeyMacro km;
-  memset(&km, 0, sizeof(km));
-  km.Command = MCMD_POSTMACROSTRING;
-  km.Param.PlainText.SequenceText = check_utf8_string(L,1,NULL);
-  GetFlagCombination(L, 2, &Flags);
-  km.Param.PlainText.Flags = Flags;
-  km.Param.PlainText.AKey = luaL_optinteger(L,3,0);
-  lua_pushboolean(L, Info->AdvControl(Info->ModuleNumber, ACTL_KEYMACRO, &km));
+  TPluginData *pd = GetPluginData(L);
+  lua_pushinteger(L, pd->Info->MacroControl(pd->PluginId, MCTL_GETSTATE, 0, 0));
+  return 1;
+}
+
+int far_MacroGetArea(lua_State* L)
+{
+  TPluginData *pd = GetPluginData(L);
+  lua_pushinteger(L, pd->Info->MacroControl(pd->PluginId, MCTL_GETAREA, 0, 0));
+  return 1;
+}
+
+int MacroSendString(lua_State* L, int Param1)
+{
+  TPluginData *pd = GetPluginData(L);
+  struct MacroSendMacroText smt;
+  memset(&smt, 0, sizeof(smt));
+  smt.StructSize = sizeof(smt);
+  smt.SequenceText = check_utf8_string(L, 1, NULL);
+  smt.Flags = OptFlags(L, 2, 0);
+  if (Param1 == MSSC_POST)
+    smt.AKey = (DWORD)luaL_optinteger(L, 3, 0);
+
+  lua_pushboolean(L, pd->Info->MacroControl(pd->PluginId, MCTL_SENDSTRING, Param1, &smt) != 0);
+  return 1;
+}
+
+int far_MacroPost(lua_State* L)
+{
+  return MacroSendString(L, MSSC_POST);
+}
+
+int far_MacroCheck(lua_State* L)
+{
+  return MacroSendString(L, MSSC_CHECK);
+}
+
+int far_MacroGetLastError(lua_State* L)
+{
+  TPluginData *pd = GetPluginData(L);
+  intptr_t size = pd->Info->MacroControl(pd->PluginId, MCTL_GETLASTERROR, 0, NULL);
+
+  if(size)
+  {
+    struct MacroParseResult *mpr = (struct MacroParseResult*)lua_newuserdata(L, size);
+    mpr->StructSize = sizeof(*mpr);
+    pd->Info->MacroControl(pd->PluginId, MCTL_GETLASTERROR, size, mpr);
+    lua_createtable(L, 0, 4);
+    PutIntToTable(L, "ErrCode", mpr->ErrCode);
+    PutIntToTable(L, "ErrPosX", mpr->ErrPos.X);
+    PutIntToTable(L, "ErrPosY", mpr->ErrPos.Y);
+    PutWStrToTable(L, "ErrSrc", mpr->ErrSrc, -1);
+  }
+  else
+    lua_pushboolean(L, 0);
+
+  return 1;
+}
+
+int far_MacroExecute(lua_State* L)
+{
+  TPluginData *pd = GetPluginData(L);
+  int top = lua_gettop(L);
+
+  struct MacroExecuteString Data;
+  Data.StructSize = sizeof(Data);
+  Data.SequenceText = check_utf8_string(L, 1, NULL);
+  Data.Flags = OptFlags(L,2,0);
+  Data.InCount = 0;
+
+  if (top > 2)
+  {
+    size_t i;
+    Data.InCount = top-2;
+    Data.InValues = (struct FarMacroValue*)lua_newuserdata(L, Data.InCount*sizeof(struct FarMacroValue));
+    memset(Data.InValues, 0, Data.InCount*sizeof(struct FarMacroValue));
+    for (i=0; i<Data.InCount; i++)
+      ConvertLuaValue(L, (int)i+3, Data.InValues+i);
+  }
+
+  if (pd->Info->MacroControl(pd->PluginId, MCTL_EXECSTRING, 0, &Data))
+    PackMacroValues(L, Data.OutCount, Data.OutValues);
+  else
+    lua_pushnil(L);
+
   return 1;
 }
 
@@ -5469,7 +5576,9 @@ const luaL_Reg far_funcs[] = {
   {"LuafarVersion",       far_LuafarVersion},
   {"MakeMenuItems",       far_MakeMenuItems},
   {"Show",                far_Show},
+  {"MacroExecute",        far_MacroExecute},
   {"MacroGetArea",        far_MacroGetArea},
+  {"MacroGetLastError",   far_MacroGetLastError},
   {"MacroGetState",       far_MacroGetState},
   {"MacroLoadAll",        far_MacroLoadAll},
   {"MacroSaveAll",        far_MacroSaveAll},
@@ -5735,53 +5844,3 @@ int LF_LuaOpen (TPluginData* aPlugData, lua_CFunction aOpenLibs, const char* aEn
   dlclose(handle);
   return 0;
 }
-
-void ConvertLuaValue (lua_State *L, int pos, struct FarMacroValue *target)
-{
-  //~ INT64 val64;
-  int type = lua_type(L, pos);
-  pos = abs_index(L, pos);
-  target->Type = FMVT_UNKNOWN;
-
-  if(type == LUA_TNUMBER)
-  {
-    target->Type = FMVT_DOUBLE;
-    target->Value.Double = lua_tonumber(L, pos);
-  }
-  else if(type == LUA_TSTRING)
-  {
-    target->Type = FMVT_STRING;
-    target->Value.String = check_utf8_string(L, pos, NULL);
-  }
-  else if(type == LUA_TTABLE)
-  {
-    lua_rawgeti(L,pos,1);
-    if (lua_type(L,-1) == LUA_TSTRING)
-    {
-      target->Type = FMVT_BINARY;
-      target->Value.Binary.Data = (void*)lua_tolstring(L, -1, &target->Value.Binary.Size);
-    }
-    lua_pop(L,1);
-  }
-  else if(type == LUA_TBOOLEAN)
-  {
-    target->Type = FMVT_BOOLEAN;
-    target->Value.Boolean = lua_toboolean(L, pos);
-  }
-  else if(type == LUA_TNIL)
-  {
-    target->Type = FMVT_NIL;
-  }
-  else if(type == LUA_TLIGHTUSERDATA)
-  {
-    target->Type = FMVT_POINTER;
-    target->Value.Pointer = lua_touserdata(L, pos);
-  }
-  //###
-  //~ else if(bit64_getvalue(L, pos, &val64))
-  //~ {
-    //~ target->Type = FMVT_INTEGER;
-    //~ target->Value.Integer = val64;
-  //~ }
-}
-

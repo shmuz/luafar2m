@@ -4875,27 +4875,75 @@ lv=2
 dt=Text
 nm=far.MacroCheck
 ctime=3851440061
-mtime=3852803422
+mtime=3861727312
 <article>
-#_errCode, ... = far.MacroCheck(SequenceText, Flags)
+#_result = far.MacroCheck (SequenceText, Flags)
 #_
 #_**Parameters:**
 #_  SequenceText: string
-#_  Flags:        integer (defaults to 0)
+#_  Flags:        flags (defaults to 0)
 #_
 #_**Returns:**
-#_  If successful:
-#_    0:        integer
-#_  If failed:
-#_    errCode:  integer
-#_    errPosX:  integer
-#_    errPosY:  integer
-#_    errSrc:   string
+#_  result: boolean
 #_
 #_**Far API used:**
-#_  AdvControl, ACTL_KEYMACRO
+#_  MacroControl(MCTL_SENDSTRING, MSSC_CHECK)
 #_
 #_@@@
+#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
+#_{mctl_sendstring}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_SENDSTRING
+#_{mssc_check}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MSSC_CHECK
+#_
+#_
+</article>
+</node>
+<node>
+id=474
+lv=2
+dt=Text
+nm=far.MacroExecute
+ctime=3861727323
+mtime=3861727611
+<article>
+#_result = far.MacroExecute (SequenceText, Flags, ...)
+#_
+#_**Parameters:**
+#_  SequenceText: string
+#_  Flags:        flags (optional)
+#_  ...:          arguments for passing to script (optional)
+#_
+#_**Returns:**
+#_  result: table (array of elements returned by the script), or nil
+#_
+#_**Description:**
+#_  Execute a script in the context of LuaMacro plugin.
+#_
+#_**Notes:**
+#_  1. Arguments being passed to the script may be of the following Lua types:
+#_     string, boolean, number, nil, "int64", or "binary".
+#_
+#_  2. The returned table contains field "n" - number of elements in the array.
+#_     Use it instead of #result, since there can be elements with nil value.
+#_
+#_     To properly unpack the table, do:
+#_         unpack(result, 1, result.n)
+#_
+#_**Definitions:**
+#_  **"int64"**
+#_    Type of userdata, produced by `bit64` library.
+#_  **"binary"**
+#_    By convention, it is a string enclosed in a table as its first element.
+#_    The string is intended to be passed to and from without conversions UTF-8 <-> UTF-16LE.
+#_
+#_**Far API used:**
+#_  MacroControl(MCTL_EXECSTRING)
+#_
+#_@@@
+#_[bit64]: 471.html
+#_
+#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
+#_{mctl_execstring}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_EXECSTRING
+#_
 #_
 </article>
 </node>
@@ -4905,9 +4953,9 @@ lv=2
 dt=Text
 nm=far.MacroGetArea
 ctime=3851440090
-mtime=3851447886
+mtime=3861727600
 <article>
-#_result = far.MacroGetArea()
+#_result = far.MacroGetArea ()
 #_
 #_**Parameters:**
 #_  none
@@ -4916,9 +4964,42 @@ mtime=3851447886
 #_  result: integer
 #_
 #_**Far API used:**
-#_  AdvControl, ACTL_KEYMACRO
+#_  MacroControl(MCTL_GETAREA)
 #_
 #_@@@
+#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
+#_{mctl_getarea}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_GETAREA
+#_
+#_
+</article>
+</node>
+<node>
+id=475
+lv=2
+dt=Text
+nm=far.MacroGetLastError
+ctime=3861727416
+mtime=3861727592
+<article>
+#_result = far.MacroGetLastError()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  result:  table
+#_             ErrCode:  integer
+#_             ErrPosX:  integer
+#_             ErrPosY:  integer
+#_             ErrSrc:   string
+#_
+#_**Far API used:**
+#_  MacroControl(MCTL_GETLASTERROR)
+#_
+#_@@@
+#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
+#_{mctl_getlasterror}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_GETLASTERROR
+#_
 #_
 </article>
 </node>
@@ -4928,9 +5009,9 @@ lv=2
 dt=Text
 nm=far.MacroGetState
 ctime=3851440130
-mtime=3851447888
+mtime=3861727586
 <article>
-#_result = far.MacroGetState()
+#_result = far.MacroGetState ()
 #_
 #_**Parameters:**
 #_  none
@@ -4939,9 +5020,12 @@ mtime=3851447888
 #_  result: integer
 #_
 #_**Far API used:**
-#_  AdvControl, ACTL_KEYMACRO
+#_  MacroControl(MCTL_GETSTATE)
 #_
 #_@@@
+#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
+#_{mctl_getstate}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_GETSTATE
+#_
 #_
 </article>
 </node>
@@ -4951,20 +5035,24 @@ lv=2
 dt=Text
 nm=far.MacroLoadAll
 ctime=3851440174
-mtime=3851447920
+mtime=3861727579
 <article>
-#_result = far.MacroLoadAll()
+#_result = far.MacroLoadAll ([path [,flags]])
 #_
 #_**Parameters:**
-#_  none
+#_  path:   string, or nil
+#_  flags:  flags
 #_
 #_**Returns:**
-#_  result: integer
+#_  result: boolean
 #_
 #_**Far API used:**
-#_  AdvControl, ACTL_KEYMACRO
+#_  MacroControl(MCTL_LOADALL)
 #_
 #_@@@
+#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
+#_{mctl_loadall}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_LOADALL
+#_
 #_
 </article>
 </node>
@@ -4974,22 +5062,28 @@ lv=2
 dt=Text
 nm=far.MacroPost
 ctime=3851440284
-mtime=3851448068
+mtime=3861727571
 <article>
 #_result = far.MacroPost (SequenceText, Flags, AKey)
 #_
 #_**Parameters:**
 #_  SequenceText: string
 #_  Flags:        flags (defaults to 0)
-#_  AKey:         integer (defaults to 0)
+#_  AKey:         integer, or string (e.g. "CtrlShiftF12"); optional
 #_
 #_**Returns:**
 #_  result: boolean
 #_
 #_**Far API used:**
-#_  AdvControl, ACTL_KEYMACRO
+#_  MacroControl(MCTL_SENDSTRING, MSSC_POST)
 #_
 #_@@@
+#_[tInputRecord]: 187.html
+#_
+#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
+#_{mctl_sendstring}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_SENDSTRING
+#_{mssc_post}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MSSC_POST
+#_
 #_
 </article>
 </node>
@@ -4999,20 +5093,23 @@ lv=2
 dt=Text
 nm=far.MacroSaveAll
 ctime=3851440306
-mtime=3851447938
+mtime=3861727562
 <article>
-#_result = far.MacroSaveAll()
+#_result = far.MacroSaveAll ()
 #_
 #_**Parameters:**
 #_  none
 #_
 #_**Returns:**
-#_  result: integer
+#_  result: boolean
 #_
 #_**Far API used:**
-#_  AdvControl, ACTL_KEYMACRO
+#_  MacroControl(MCTL_SAVEALL)
 #_
 #_@@@
+#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
+#_{mctl_saveall}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_SAVEALL
+#_
 #_
 </article>
 </node>
