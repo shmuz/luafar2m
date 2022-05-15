@@ -55,9 +55,9 @@ local function GetAreaName(Mode)     return AllAreaNames[Mode] end
 local function GetAreaCode(Area)     return AllAreaNames[Area:lower()] end
 --------------------------------------------------------------------------------
 
-local MCODE_F_CHECKALL     = 0x80C64  --### FIXME
+local MCODE_F_CHECKALL     = op.MCODE_F_CHECKALL
 local MCODE_F_GETOPTIONS   = op.MCODE_F_GETOPTIONS
-local MCODE_F_MACROSETTINGS = 0x80C6A --### FIXME
+local MCODE_F_MACROSETTINGS = op.MCODE_F_MACROSETTINGS
 Shared.OnlyEditorViewerUsed = band(MacroCallFar(MCODE_F_GETOPTIONS),0x3) ~= 0
 
 local Areas

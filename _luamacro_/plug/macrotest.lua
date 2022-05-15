@@ -178,19 +178,19 @@ local function test_mf_eval()
   assert(eval("5+7",1,"moonscript")==0)
   assert(eval("5 7",1,"moonscript")==11)
 
-  -- test with Mode==2
-  local Id = assert(far.MacroAdd(nil,nil,"CtrlA",[[
-    local key = akey(1,0)
-    assert(key=="CtrlShiftF12" or key=="RCtrlShiftF12")
-    assert(akey(1,1)=="CtrlA")
-    foobar = (foobar or 0) + 1
-    return foobar,false,5,nil,"foo"
-  ]]))
-  for k=1,3 do
-    local ret1,a,b,c,d,e = eval("CtrlA",2)
-    assert(ret1==0 and a==k and b==false and c==5 and d==nil and e=="foo")
-  end
-  assert(far.MacroDelete(Id))
+--!  -- test with Mode==2
+--!  local Id = assert(far.MacroAdd(nil,nil,"CtrlA",[[
+--!    local key = akey(1,0)
+--!    assert(key=="CtrlShiftF12" or key=="RCtrlShiftF12")
+--!    assert(akey(1,1)=="CtrlA")
+--!    foobar = (foobar or 0) + 1
+--!    return foobar,false,5,nil,"foo"
+--!  ]]))
+--!  for k=1,3 do
+--!    local ret1,a,b,c,d,e = eval("CtrlA",2)
+--!    assert(ret1==0 and a==k and b==false and c==5 and d==nil and e=="foo")
+--!  end
+--!  assert(far.MacroDelete(Id))
 end
 
 local function test_mf_abs()
@@ -315,13 +315,13 @@ local function test_mf_fmatch()
 end
 
 local function test_mf_fsplit()
-  local path="C:\\Program Files\\Far\\Far.exe"
-  assert(mf.fsplit(path,0x01)=="C:")
-  assert(mf.fsplit(path,0x02)=="\\Program Files\\Far\\")
+  local path="C:/Program Files/Far/Far.exe"
+  assert(mf.fsplit(path,0x01)=="C:/")
+  assert(mf.fsplit(path,0x02)=="/Program Files/Far/")
   assert(mf.fsplit(path,0x04)=="Far")
   assert(mf.fsplit(path,0x08)==".exe")
 
-  assert(mf.fsplit(path,0x03)=="C:\\Program Files\\Far\\")
+  assert(mf.fsplit(path,0x03)=="C:/Program Files/Far/")
   assert(mf.fsplit(path,0x0C)=="Far.exe")
   assert(mf.fsplit(path,0x0F)==path)
 end

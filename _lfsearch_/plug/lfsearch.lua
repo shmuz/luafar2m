@@ -203,7 +203,7 @@ function export.GetPluginInfo()
   return {
     Flags = F.PF_EDITOR;
     PluginMenuStrings = { M.MMenuTitle };
-    SysId = 0x10001;
+    SysId = far.GetPluginId();
     CommandPrefix = "lfs";
   }
 end

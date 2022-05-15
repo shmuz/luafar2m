@@ -1,5 +1,5 @@
 return {
-  MCODE_F_NOFUNC=0x80C00; 
+  MCODE_F_NOFUNC=0x80C00; --
   MCODE_F_ABS=0x80C01; -- N=abs(N)
   MCODE_F_AKEY=0x80C02; -- V=akey(Mode[,Type])
   MCODE_F_ASC=0x80C03; -- N=asc(S)
@@ -31,7 +31,7 @@ return {
   MCODE_F_MENU_GETHOTKEY=0x80C1D; -- S=gethotkey([N])
   MCODE_F_MENU_SELECT=0x80C1E; -- N=Menu.Select(S[,N[,Dir]])
   MCODE_F_MIN=0x80C1F; -- N=min(N1,N2)
-  MCODE_F_MOD=0x80C20; -- N=mod(a,b) == a % b
+  MCODE_F_MOD=0x80C20; -- N=mod(a,b) == a %  b
   MCODE_F_MLOAD=0x80C21; -- B=mload(var)
   MCODE_F_MSAVE=0x80C22; -- B=msave(var)
   MCODE_F_MSGBOX=0x80C23; -- N=msgbox(["Title"[,"Text"[,flags]]])
@@ -76,8 +76,13 @@ return {
   MCODE_F_BEEP=0x80C4A; -- N=beep([N])
   MCODE_F_KBDLAYOUT=0x80C4B; -- N=kbdLayout([N])
   MCODE_F_WINDOW_SCROLL=0x80C4C; -- N=Window.Scroll(Lines[,Axis])
-  MCODE_F_GETOPTIONS=0x80C4D; -- N=GetOptions()
-  MCODE_F_KEYMACRO=0x80C4E; 
+  MCODE_F_CHECKALL=0x80C4D; -- B=CheckAll(Area,Flags[,Callback[,CallbackId]])
+  MCODE_F_GETOPTIONS=0x80C4E; -- N=GetOptions()
+  MCODE_F_USERMENU=0x80C4F; -- UserMenu([Param])
+  MCODE_F_SETCUSTOMSORTMODE=0x80C50; --
+  MCODE_F_KEYMACRO=0x80C51; --
+  MCODE_F_FAR_GETCONFIG=0x80C52; --
+  MCODE_F_MACROSETTINGS=0x80C53; --
   MCODE_C_AREA_OTHER=0x80400; -- Режим копирования текста с экрана, вертикальные меню
   MCODE_C_AREA_SHELL=0x80401; -- Файловые панели
   MCODE_C_AREA_VIEWER=0x80402; -- Внутренняя программа просмотра

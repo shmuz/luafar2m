@@ -511,17 +511,27 @@ void PushPanelItems(lua_State *L, HANDLE handle, const struct PluginPanelItem *P
 int far_PluginStartupInfo(lua_State *L)
 {
   const wchar_t *slash;
-  PSInfo *Info = GetPluginStartupInfo(L);
+  TPluginData *pd = GetPluginData(L);
   lua_createtable(L, 0, 3);
-  PutWStrToTable(L, "ModuleName", Info->ModuleName, -1);
+  PutWStrToTable(L, "ModuleName", pd->Info->ModuleName, -1);
 
-  slash = wcsrchr(Info->ModuleName, L'/');
+  slash = wcsrchr(pd->Info->ModuleName, L'/');
   if (slash)
-    PutWStrToTable(L, "ModuleDir", Info->ModuleName, slash + 1 - Info->ModuleName);
+    PutWStrToTable(L, "ModuleDir", pd->Info->ModuleName, slash + 1 - pd->Info->ModuleName);
 
-  lua_pushlightuserdata(L, (void*)Info->ModuleNumber);
+  lua_pushlightuserdata(L, (void*)pd->Info->ModuleNumber);
   lua_setfield(L, -2, "ModuleNumber");
-  PutWStrToTable(L, "RootKey", Info->RootKey, -1);
+
+  PutWStrToTable(L, "RootKey", pd->Info->RootKey, -1);
+
+  lua_pushinteger(L, pd->PluginId);
+  lua_setfield(L, -2, "PluginId");
+  return 1;
+}
+
+int far_GetPluginId(lua_State *L)
+{
+  lua_pushinteger(L, GetPluginData(L)->PluginId);
   return 1;
 }
 
@@ -5516,6 +5526,7 @@ const luaL_Reg win_funcs[] = {
 
 const luaL_Reg far_funcs[] = {
   {"PluginStartupInfo",   far_PluginStartupInfo},
+  {"GetPluginId",         far_GetPluginId},
 
   {"CmpName",             far_CmpName},
   {"DialogInit",          far_DialogInit},

@@ -135,7 +135,7 @@ lv=2
 dt=Text
 nm=Customizing the generic plugin
 ctime=3851409449
-mtime=3853672465
+mtime=3861767466
 <article>
 #_<markdown>
 #_
@@ -149,10 +149,12 @@ mtime=3853672465
 #_  `PLUGNAME = hello`<br>
 #_  will result in `hello.far-plug-wide` DLL.
 #_
+#_- **`SYS_ID`** - the plugin's identifier, a 32-bit unsigned integer.
+#_
 #_- **`FAR_EXPORTS`** - list of functions that should be exported by the plugin
 #_(in uppercase, whitespace-separated), e.g.:<br>
 #_  `FAR_EXPORTS = OPENPLUGIN EXITFAR`<br>
-#_(The functions *SetStartupInfoW*, *GetPluginInfoW* and *ProcessSynchroEventW*
+#_(The functions *SetStartupInfoW*, *GetGlobalInfoW*, *GetPluginInfoW* and *ProcessSynchroEventW*
 #_are always exported, so there's no need to include them in the list.)
 #_
 #_- **`MINFARVERSION`** - the minimum FAR version to be accepted by the plugin, e.g.:<br>
@@ -228,7 +230,7 @@ lv=2
 dt=Text
 nm=GetGlobalInfoW
 ctime=3861011876
-mtime=3861013036
+mtime=3861768160
 <article>
 #_SysId = GetGlobalInfoW ()
 #_
@@ -244,12 +246,12 @@ mtime=3861013036
 #_**Notes:**
 #_  1. This function is supported only with a modified Far2L version.
 #_  2. This function lives in C not in Lua.
-#_  3. This function is called by Far prior to SetStartupInfoW()
-#_     and fills the *Private* field of StartupInfo struct if SysId
-#_     identifies one of the "known" plugins.
-#_  4. During compilation of *luaplug.c*, if *SYS_ID* is defined
-#_     then this function will be exported and will return *SYS_ID*
-#_     when called.
+#_  3. If the generic LuaFAR plugin (*luaplug.c*) is used then *SYS_ID*
+#_     value must be defined as a compilation flag. The function will
+#_     return this value when called.
+#_  4. This function is called by Far prior to SetStartupInfoW()
+#_     and Far fills the *Private* field of StartupInfo struct if SysId
+#_     identifies one of the "known plugins".
 #_
 #_@@@
 #_
@@ -1024,7 +1026,7 @@ id=153
 lv=2
 dt=Text
 nm=far.AdvControl
-mtime=3861339699
+mtime=3861776976
 <article>
 #_Result = far.AdvControl (Command, Param [, Param2])
 #_
@@ -1079,7 +1081,7 @@ mtime=3861339699
 #_        Flags:   flags combination
 #_    Result:  boolean
 #_
-#_@ACTL_KEYMACRO: not supported, replaced by 6 separate MacroControl functions
+#_@ACTL_KEYMACRO: not supported, replaced by Macro Control functions
 #_
 #_@ACTL_SYNCHRO: not supported as it is used internally in far.Timer
 #_
@@ -4875,7 +4877,7 @@ lv=2
 dt=Text
 nm=far.MacroCheck
 ctime=3851440061
-mtime=3861727312
+mtime=3861762920
 <article>
 #_result = far.MacroCheck (SequenceText, Flags)
 #_
@@ -4890,10 +4892,11 @@ mtime=3861727312
 #_  MacroControl(MCTL_SENDSTRING, MSSC_CHECK)
 #_
 #_@@@
-#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
-#_{mctl_sendstring}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_SENDSTRING
-#_{mssc_check}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MSSC_CHECK
-#_
+#_<lua> Links = {
+#_MacroControl = "http://api.farmanager.com/ru/service_functions/macrocontrol.html";
+#_MCTL_SENDSTRING = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_SENDSTRING";
+#_MSSC_CHECK = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MSSC_CHECK";
+#_} </lua>
 #_
 </article>
 </node>
@@ -4903,7 +4906,7 @@ lv=2
 dt=Text
 nm=far.MacroExecute
 ctime=3861727323
-mtime=3861727611
+mtime=3861763155
 <article>
 #_result = far.MacroExecute (SequenceText, Flags, ...)
 #_
@@ -4939,11 +4942,11 @@ mtime=3861727611
 #_  MacroControl(MCTL_EXECSTRING)
 #_
 #_@@@
-#_[bit64]: 471.html
-#_
-#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
-#_{mctl_execstring}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_EXECSTRING
-#_
+#_<lua> Links = {
+#_  bit64 = "471.html";
+#_  MacroControl = "http://api.farmanager.com/ru/service_functions/macrocontrol.html";
+#_  MCTL_EXECSTRING = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_EXECSTRING";
+#_} </lua>
 #_
 </article>
 </node>
@@ -4953,7 +4956,7 @@ lv=2
 dt=Text
 nm=far.MacroGetArea
 ctime=3851440090
-mtime=3861727600
+mtime=3861763339
 <article>
 #_result = far.MacroGetArea ()
 #_
@@ -4967,9 +4970,10 @@ mtime=3861727600
 #_  MacroControl(MCTL_GETAREA)
 #_
 #_@@@
-#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
-#_{mctl_getarea}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_GETAREA
-#_
+#_<lua> Links = {
+#_MacroControl = "http://api.farmanager.com/ru/service_functions/macrocontrol.html";
+#_MCTL_GETAREA = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_GETAREA";
+#_} </lua>
 #_
 </article>
 </node>
@@ -4979,7 +4983,7 @@ lv=2
 dt=Text
 nm=far.MacroGetLastError
 ctime=3861727416
-mtime=3861727592
+mtime=3861763383
 <article>
 #_result = far.MacroGetLastError()
 #_
@@ -4997,9 +5001,10 @@ mtime=3861727592
 #_  MacroControl(MCTL_GETLASTERROR)
 #_
 #_@@@
-#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
-#_{mctl_getlasterror}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_GETLASTERROR
-#_
+#_<lua> Links = {
+#_MacroControl = "http://api.farmanager.com/ru/service_functions/macrocontrol.html";
+#_MCTL_GETLASTERROR = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_GETLASTERROR";
+#_} </lua>
 #_
 </article>
 </node>
@@ -5009,7 +5014,7 @@ lv=2
 dt=Text
 nm=far.MacroGetState
 ctime=3851440130
-mtime=3861727586
+mtime=3861763425
 <article>
 #_result = far.MacroGetState ()
 #_
@@ -5023,9 +5028,10 @@ mtime=3861727586
 #_  MacroControl(MCTL_GETSTATE)
 #_
 #_@@@
-#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
-#_{mctl_getstate}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_GETSTATE
-#_
+#_<lua> Links = {
+#_MacroControl = "http://api.farmanager.com/ru/service_functions/macrocontrol.html";
+#_MCTL_GETSTATE = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_GETSTATE";
+#_} </lua>
 #_
 </article>
 </node>
@@ -5035,7 +5041,7 @@ lv=2
 dt=Text
 nm=far.MacroLoadAll
 ctime=3851440174
-mtime=3861727579
+mtime=3861763454
 <article>
 #_result = far.MacroLoadAll ([path [,flags]])
 #_
@@ -5050,9 +5056,10 @@ mtime=3861727579
 #_  MacroControl(MCTL_LOADALL)
 #_
 #_@@@
-#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
-#_{mctl_loadall}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_LOADALL
-#_
+#_<lua> Links = {
+#_MacroControl = "http://api.farmanager.com/ru/service_functions/macrocontrol.html";
+#_MCTL_LOADALL = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_LOADALL";
+#_} </lua>
 #_
 </article>
 </node>
@@ -5062,7 +5069,7 @@ lv=2
 dt=Text
 nm=far.MacroPost
 ctime=3851440284
-mtime=3861727571
+mtime=3861763545
 <article>
 #_result = far.MacroPost (SequenceText, Flags, AKey)
 #_
@@ -5078,12 +5085,11 @@ mtime=3861727571
 #_  MacroControl(MCTL_SENDSTRING, MSSC_POST)
 #_
 #_@@@
-#_[tInputRecord]: 187.html
-#_
-#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
-#_{mctl_sendstring}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_SENDSTRING
-#_{mssc_post}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MSSC_POST
-#_
+#_<lua> Links = {
+#_MacroControl = "http://api.farmanager.com/ru/service_functions/macrocontrol.html";
+#_MCTL_SENDSTRING = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_SENDSTRING";
+#_MSSC_POST = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MSSC_POST";
+#_} </lua>
 #_
 </article>
 </node>
@@ -5093,7 +5099,7 @@ lv=2
 dt=Text
 nm=far.MacroSaveAll
 ctime=3851440306
-mtime=3861727562
+mtime=3861763723
 <article>
 #_result = far.MacroSaveAll ()
 #_
@@ -5107,9 +5113,10 @@ mtime=3861727562
 #_  MacroControl(MCTL_SAVEALL)
 #_
 #_@@@
-#_{macrocontrol}: http://api.farmanager.com/ru/service_functions/macrocontrol.html
-#_{mctl_saveall}: http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_SAVEALL
-#_
+#_<lua> Links = {
+#_MacroControl = "http://api.farmanager.com/ru/service_functions/macrocontrol.html";
+#_MCTL_SAVEALL = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_SAVEALL";
+#_} </lua>
 #_
 </article>
 </node>
@@ -6223,6 +6230,26 @@ nm=far.CPluginStartupInfo
 </article>
 </node>
 <node>
+id=476
+lv=2
+dt=Text
+nm=far.GetPluginId
+ctime=3861778095
+mtime=3861778166
+<article>
+#_PluginId = far.GetPluginId()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  PluginId: integer
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=461
 lv=2
 dt=Text
@@ -6343,7 +6370,7 @@ id=68
 lv=2
 dt=Text
 nm=far.PluginStartupInfo
-mtime=3853788622
+mtime=3861777461
 <article>
 #_Info = far.PluginStartupInfo ()
 #_
@@ -6357,6 +6384,7 @@ mtime=3853788622
 #_      ModuleDir:    string (has a slash at the end)
 #_      ModuleNumber: light userdata
 #_      RootKey:      string
+#_      PluginId:     number
 #_
 #_**Description:**
 #_  Returns a table containing the data elements of the

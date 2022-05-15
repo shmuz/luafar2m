@@ -2,9 +2,10 @@
 
 local Shared = ...
 local Msg, utils = Shared.Msg, Shared.utils
+local op = require "opcodes"
 
 local F = far.Flags
-local MCODE_F_CHECKALL     = 0x80C64
+local MCODE_F_CHECKALL = op.MCODE_F_CHECKALL
 local ceil, max = math.ceil, math.max
 local LStricmp = far.LStricmp -- consider win.CompareString ?
 local Title = "Macro Browser"
