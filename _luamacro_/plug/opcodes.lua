@@ -83,6 +83,8 @@ return {
   MCODE_F_KEYMACRO=0x80C51; --
   MCODE_F_FAR_GETCONFIG=0x80C52; --
   MCODE_F_MACROSETTINGS=0x80C53; --
+  MCODE_F_SIZE2STR=0x80C54;
+  MCODE_F_STRWRAP=0x80C55;
   MCODE_C_AREA_OTHER=0x80400; -- Режим копирования текста с экрана, вертикальные меню
   MCODE_C_AREA_SHELL=0x80401; -- Файловые панели
   MCODE_C_AREA_VIEWER=0x80402; -- Внутренняя программа просмотра

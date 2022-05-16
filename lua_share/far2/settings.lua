@@ -101,7 +101,13 @@ end
 local function mdelete (key, name)
   checkarg(key, 1, "string")
   checkarg(name, 2, "string")
-  return win.DeleteFile(get_work_dir(key).."/"..name:lower())
+  local dir = get_work_dir(key)
+  if name ~= "*" then
+    return win.DeleteFile(dir.."/"..name:lower())
+  else
+    far.RecursiveSearch(dir, "*", function(item, fullname) win.DeleteFile(fullname) end)
+    return win.RemoveDir(dir)
+  end
 end
 
 local function msave (key, name, value)

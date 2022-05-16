@@ -53,11 +53,10 @@ mf = {
   prompt          = function(...) return MacroCallFar( op.MCODE_F_PROMPT    , ...) end,
   replace         = function(...) return MacroCallFar( op.MCODE_F_REPLACE   , ...) end,
   rindex          = function(...) return MacroCallFar( op.MCODE_F_RINDEX    , ...) end,
---size2str        = function(...) return MacroCallFar( op.MCODE_F_, ...) end,
+  size2str        = function(...) return MacroCallFar( op.MCODE_F_SIZE2STR  , ...) end,
   sleep           = function(...) return MacroCallFar( op.MCODE_F_SLEEP     , ...) end,
   string          = function(...) return MacroCallFar( op.MCODE_F_STRING    , ...) end,
---strpad          = function(...) return MacroCallFar( op.MCODE_F_, ...) end,
---strwrap         = function(...) return MacroCallFar( op.MCODE_F_, ...) end,
+  strwrap         = function(...) return MacroCallFar( op.MCODE_F_STRWRAP   , ...) end,
   substr          = function(...) return MacroCallFar( op.MCODE_F_SUBSTR    , ...) end,
   testfolder      = function(...) return MacroCallFar( op.MCODE_F_TESTFOLDER, ...) end,
   trim            = function(...) return MacroCallFar( op.MCODE_F_TRIM      , ...) end,
@@ -68,6 +67,60 @@ mf = {
 
 mf.iif = function(Expr, res1, res2)
   if Expr and Expr~=0 and Expr~="" then return res1 else return res2 end
+end
+
+-- S=strpad(V,Size[,Fill[,Op]])
+mf.strpad = function(V, Size, Fill, Op)
+  local tp = type(V)
+  if tp == "number" then V=tostring(V)
+  elseif tp ~= "string" then V=""
+  end
+
+  Size = math.floor(tonumber(Size) or 0)
+  if Size < 0 then Size = 0 end
+
+  tp = type(Fill)
+  if tp == "number" then Fill=tostring(Fill)
+  elseif tp ~= "string" then Fill=" "
+  end
+
+  Op = tonumber(Op)
+  if not (Op==0 or Op==1 or Op==2) then Op=0 end
+
+  local strDest=V
+  local LengthFill = Fill:len()
+  if Size > 0 and LengthFill > 0 then
+    local LengthSrc = strDest:len()
+    local FineLength = Size-LengthSrc
+
+    if FineLength > 0 then
+      local NewFill = {}
+
+      for I=1, FineLength do
+        local pos = (I-1) % LengthFill + 1
+        NewFill[I] = Fill:sub(pos,pos)
+      end
+      NewFill = table.concat(NewFill)
+
+      local CntL, CntR = 0, 0
+      if Op == 0 then     -- right
+        CntR = FineLength
+      elseif Op == 1 then -- left
+        CntL = FineLength
+      elseif Op == 2 then -- center
+        if LengthSrc > 0 then
+          CntL = math.floor(FineLength / 2)
+          CntR = FineLength-CntL
+        else
+          CntL = FineLength
+        end
+      end
+
+      strDest = NewFill:sub(1,CntL)..strDest..NewFill:sub(1,CntR)
+    end
+  end
+
+  return strDest
 end
 
 mf.usermenu = function(mode, filename)

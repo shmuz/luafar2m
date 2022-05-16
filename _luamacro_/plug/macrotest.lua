@@ -52,7 +52,7 @@ function MT.test_areas()
 --  Keys "F12 0"               TestArea "Desktop"    Keys "F12 1"
   Keys "ShiftF4 CtrlY Enter" TestArea "Editor"     Keys "Esc"
   Keys "F7"                  TestArea "Dialog"     Keys "Esc"
-  Keys "Alt?"                TestArea "Search"     Keys "Esc"
+  Keys "AltA"                TestArea "Search"     Keys "Esc"
   Keys "AltF1"               TestArea "Disks"      Keys "Esc"
   Keys "AltF2"               TestArea "Disks"      Keys "Esc"
   Keys "F9"                  TestArea "MainMenu"   Keys "Esc"
@@ -522,7 +522,7 @@ end
 
 local function test_mf_testfolder()
   assert(mf.testfolder(".") > 0)
-  assert(mf.testfolder("C:\\") == 2)
+  assert(mf.testfolder("/") == 2)
   assert(mf.testfolder("@:\\") <= 0)
 end
 
@@ -610,7 +610,7 @@ local function test_mf_print()
   assert(Dlg.GetValue(-1,0) == str)
   Keys("Esc")
   -- test on editor
-  str = "abc ABC\r\nабв АБВ"
+  str = "abc ABC\nабв АБВ"
   Keys("ShiftF4")
   print(TmpFileName)
   Keys("Enter CtrlHome Enter Up")
@@ -695,7 +695,7 @@ function MT.test_CmdLine()
   assert(CmdLine.CurPos==8)
 
   Keys"SelWord"
-  assert(CmdLine.Selected)
+--! assert(CmdLine.Selected)--Far2L: if the cursor is immediately after the word - the word is not selected
 
   Keys"CtrlHome"
   assert(CmdLine.Bof==true)
