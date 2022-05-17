@@ -1026,7 +1026,7 @@ id=153
 lv=2
 dt=Text
 nm=far.AdvControl
-mtime=3861776976
+mtime=3861967852
 <article>
 #_Result = far.AdvControl (Command, Param [, Param2])
 #_
@@ -1039,7 +1039,10 @@ mtime=3861776976
 #_
 #_**Details:**
 #_
-#_@ACTL_GETFARHWND,
+#_@ACTL_GETFARHWND
+#_    Param:   none
+#_    Result:  light userdata
+#_
 #_@ACTL_GETCONFIRMATIONS,
 #_@ACTL_GETDESCSETTINGS,
 #_@ACTL_GETDIALOGSETTINGS,

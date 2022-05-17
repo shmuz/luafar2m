@@ -4237,6 +4237,9 @@ int DoAdvControl (lua_State *L, int Command, int Delta)
       return luaL_argerror(L, 1, "command not supported");
 
     case ACTL_GETFARHWND:
+      int1 = Info->AdvControl(Info->ModuleNumber, Command, NULL);
+      return lua_pushlightuserdata(L, (void*)int1), 1;
+
     case ACTL_GETCONFIRMATIONS:
     case ACTL_GETDESCSETTINGS:
     case ACTL_GETDIALOGSETTINGS:

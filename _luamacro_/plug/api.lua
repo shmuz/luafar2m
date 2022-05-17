@@ -285,7 +285,7 @@ local prop_Viewer = {
 
 Dlg = {
   GetValue = function(...) return MacroCallFar(op.MCODE_F_DLG_GETVALUE, ...) end,
---SetFocus = function(...) return MacroCallFar(0x80C57, ...) end,
+  SetFocus = function(...) return MacroCallFar(op.MCODE_F_DLG_SETFOCUS, ...) end,
 }
 
 SetProperties(Dlg, {
@@ -545,7 +545,7 @@ end
 --------------------------------------------------------------------------------
 
 _G.band, _G.bnot, _G.bor, _G.bxor, _G.lshift, _G.rshift =
-  bit.band, bit.bnot, bit.bor, bit.bxor, bit.lshift, bit.rshift
+  bit64.band, bit64.bnot, bit64.bor, bit64.bxor, bit64.lshift, bit64.rshift
 
 _G.eval, _G.msgbox, _G.prompt = mf.eval, mf.msgbox, mf.prompt
 
