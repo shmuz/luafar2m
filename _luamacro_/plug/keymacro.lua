@@ -405,7 +405,7 @@ end
 
 function KeyMacro.CallPlugin (Params, AsyncCall)
   local Result = false
-  if type(Params[1]) == "string" then
+  if type(Params[1]) == "number" then
     local EntryStackSize = #StateStack
 
     if AsyncCall then

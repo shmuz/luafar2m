@@ -427,12 +427,12 @@ local CanCreatePanel = {
   [F.OPEN_PLUGINSMENU]   = true;
 }
 
-function export.OpenPlugin (OpenFrom, guid, ...)
+function export.OpenPlugin (OpenFrom, Item, ...)
   if OpenFrom == F.OPEN_LUAMACRO then
-    return Open_LuaMacro(guid, ...)
+    return Open_LuaMacro(Item, ...)
 
   elseif OpenFrom == F.OPEN_COMMANDLINE then
-    local mod, obj = Open_CommandLine(guid)
+    local mod, obj = Open_CommandLine(Item)
     return mod and obj and PanelModuleExist(mod) and { module=mod; object=obj }
 
   elseif OpenFrom == F.OPEN_ANALYSE then
@@ -440,14 +440,14 @@ function export.OpenPlugin (OpenFrom, guid, ...)
     local mod = info.Handle.module
     if type(mod.Open) == "function" then
       info.Handle = info.Handle.object
-      local obj = mod.Open(OpenFrom, guid, info)
+      local obj = mod.Open(OpenFrom, Item, info)
       return obj and { module=mod; object=obj }
     end
 
   elseif OpenFrom == F.OPEN_FINDLIST then
     for _,mod in ipairs(utils.GetPanelModules()) do
       if type(mod.Open) == "function" then
-        local obj = mod.Open(OpenFrom, guid, ...)
+        local obj = mod.Open(OpenFrom, Item, ...)
         if obj then return { module=mod; object=obj } end
       end
     end
@@ -461,14 +461,14 @@ function export.OpenPlugin (OpenFrom, guid, ...)
         local mod = utils.GetPanelModules()[win.Uuid(mod_guid)]
         if mod and type(mod.Open) == "function" then
           info.ShortcutData = data
-          local obj = mod.Open(OpenFrom, guid, info)
+          local obj = mod.Open(OpenFrom, Item, info)
           return obj and { module=mod; object=obj }
         end
       end
     end
 
   elseif OpenFrom == F.OPEN_FROMMACRO then -- TODO: add panel modules support
-    local argtable =  ...
+    local argtable = Item
     if argtable[1]=="argtest" then -- argtest: return received arguments
       return unpack(argtable, 2, argtable.n)
     elseif argtable[1]=="macropost" then -- test Mantis # 2222
@@ -477,8 +477,8 @@ function export.OpenPlugin (OpenFrom, guid, ...)
 
   else
     local items = utils.GetMenuItems()
-    if items[guid] then
-      local mod, obj = items[guid].action(OpenFrom, ...)
+    if items[Item] then
+      local mod, obj = items[Item].action(OpenFrom, ...)
       if CanCreatePanel[OpenFrom] and mod and obj and PanelModuleExist(mod) then
         return { module=mod; object=obj }
       end

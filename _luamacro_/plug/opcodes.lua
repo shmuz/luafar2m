@@ -86,6 +86,7 @@ return {
   MCODE_F_SIZE2STR=0x80C54;
   MCODE_F_STRWRAP=0x80C55;
   MCODE_F_DLG_SETFOCUS=0x80C56;
+  MCODE_F_PLUGIN_CALL=0x80C57;
   MCODE_C_AREA_OTHER=0x80400; -- Режим копирования текста с экрана, вертикальные меню
   MCODE_C_AREA_SHELL=0x80401; -- Файловые панели
   MCODE_C_AREA_VIEWER=0x80402; -- Внутренняя программа просмотра

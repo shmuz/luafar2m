@@ -18,7 +18,8 @@ Macro {
 
 local MT = {} -- "macrotest", this module
 local F = far.Flags
-local luamacroId="4ebbefc8-2084-4b7f-94c0-692ce136894d" -- LuaMacro plugin GUID
+--local luamacroId="4ebbefc8-2084-4b7f-94c0-692ce136894d" -- LuaMacro plugin GUID
+local luamacroId=0x4EBBEFC8
 
 local function pack (...)
   return { n=select("#",...), ... }
@@ -1216,10 +1217,10 @@ function MT.test_Dlg()
 end
 
 function MT.test_Plugin()
-  assert(Plugin.Menu()==false)
-  assert(Plugin.Config()==false)
-  assert(Plugin.Command()==false)
-  assert(Plugin.Command(luamacroId)==true)
+--  assert(Plugin.Menu()==false)
+--  assert(Plugin.Config()==false)
+--  assert(Plugin.Command()==false)
+--  assert(Plugin.Command(luamacroId)==true)
 
   local function test (func, N) -- Plugin.Call, Plugin.SyncCall: test arguments and returns
     local i1 = bit64.new("0x8765876587658765")
@@ -1810,7 +1811,7 @@ function MT.test_all()
   MT.test_Plugin()
   MT.test_XPanel(APanel)
   MT.test_XPanel(PPanel)
--- MT.test_mantis_1722() -- needs to be fixed in Far2L
+ MT.test_mantis_1722() -- needs to be fixed in Far2L
   MT.test_luafar()
   MT.test_misc()
 end

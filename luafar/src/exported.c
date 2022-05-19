@@ -766,7 +766,7 @@ HANDLE LF_OpenPlugin (lua_State* L, int OpenFrom, INT_PTR Item)
     if (pcall_msg(L, 2, LUA_MULTRET) == 0)
     {
       HANDLE ret;
-      int narg = lua_gettop(L) - top + 4; // narg
+      int narg = lua_gettop(L) - top + 3; // narg
       if (narg > 0 && lua_istable(L, -narg))
       {
         lua_getfield(L, -narg, "type"); // narg+1
