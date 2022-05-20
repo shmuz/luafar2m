@@ -463,7 +463,7 @@ id=59
 lv=0
 dt=Text
 nm=Command line and macro calls
-mtime=3857977223
+mtime=3862201278
 <article>
 #_<markdown>
 #_
@@ -487,7 +487,7 @@ mtime=3857977223
 #_      lfe: calc 2+2
 #_
 #_####Example of macro call
-#_      CallPlugin(0x10000,"-a calc 2+2")
+#_      Plugin.Call(0x6F332978, "-a calc 2+2")
 #_
 </article>
 </node>
@@ -517,7 +517,7 @@ lv=1
 dt=Text
 nm=Other command line prefixes
 ctime=3857976423
-mtime=3857977960
+mtime=3862201183
 <article>
 #_The following command line prefixes provide some functionality
 #_of FarCmds plugin which is not currently available for Far2L.
@@ -529,12 +529,6 @@ mtime=3857977960
 #_**edit:** <file_path>
 #_
 #_**edit:** < <command>
-#_
-#_**macro:** load
-#_
-#_**macro:** save
-#_
-#_**macro:** post <sequence>
 #_
 #_**load:** <plugin_path>
 #_

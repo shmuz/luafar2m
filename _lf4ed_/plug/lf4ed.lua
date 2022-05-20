@@ -451,8 +451,8 @@ local function CommandSyntaxMessage()
 Syntax:
   lfe: [<options>] <command>|-r<filename> [<arguments>]
     or
-  CallPlugin(0x10000, [<options>] <command>|-r<filename>
-                                          [<arguments>])
+  Plugin.Call(0x6F332978, [<options>] <command>|-r<filename>
+                                              [<arguments>])
 Options:
   -a          asynchronous execution
   -e <str>    execute string <str>
@@ -598,17 +598,17 @@ end
 local function export_OpenPlugin (aFrom, aItem)
 
   -- Called from macro
-  if band(aFrom, F.OPEN_FROMMACRO) ~= 0 then
-    if band(aFrom, F.OPEN_FROMMACROSTRING) ~= 0 then
-      local map = {
-        [F.MACROAREA_SHELL]  = "panels",
-        [F.MACROAREA_EDITOR] = "editor",
-        [F.MACROAREA_VIEWER] = "viewer",
-        [F.MACROAREA_DIALOG] = "dialog",
-      }
-      local area = band(aFrom, F.OPEN_FROM_MASK)
+  if aFrom == F.OPEN_FROMMACRO then
+    local map = {
+      [F.MACROAREA_SHELL]  = "panels",
+      [F.MACROAREA_EDITOR] = "editor",
+      [F.MACROAREA_VIEWER] = "viewer",
+      [F.MACROAREA_DIALOG] = "dialog",
+    }
+    local area = map[far.MacroGetArea()]
+    if area then
       local args = SplitCommandLine(aItem)
-      ProcessCommand(args, map[area] or aFrom)
+      ProcessCommand(args, area)
     end
     return
   end
@@ -659,17 +659,6 @@ local function export_OpenPlugin (aFrom, aItem)
       else
         local flags = bor(F.VF_NONMODAL, F.VF_IMMEDIATERETURN, F.VF_ENABLE_F6)
         viewer.Viewer(args[1],nil,nil,nil,nil,nil,flags)
-      end
-    ----------------------------------------------------------------------------
-    elseif prefix == "macro" and args[1] then
-      local arg1 = args[1]:lower()
-      if     arg1 == "load" then
-        far.MacroLoadAll()
-      elseif arg1 == "save" then
-        far.MacroSaveAll()
-      elseif arg1 == "post" and args[2] then
-        local sequence = command:match("^%s*%w+%s+(.+)")
-        far.MacroPost(sequence)
       end
     ----------------------------------------------------------------------------
     elseif prefix == "load" and args[1] then
@@ -730,7 +719,7 @@ local function export_GetPluginInfo()
     Flags = flags,
     PluginMenuStrings = { M.MPluginName },
     PluginConfigStrings = { M.MPluginName },
-    CommandPrefix = "lfe:edit:view:macro:load:unload",
+    CommandPrefix = "lfe:edit:view:load:unload",
     SysId = far.GetPluginId(),
   }
 end
@@ -772,15 +761,15 @@ local function export_ProcessEditorInput (Rec)
   end
 end
 
-local function export_ProcessEditorEvent (Event, Param)
+local function export_ProcessEditorEvent (Id, Event, Param)
   for _,f in ipairs(_Plugin.EditorEventHandlers) do
-    f(Event, Param)
+    f(Id, Event, Param)
   end
 end
 
-local function export_ProcessViewerEvent (Event, Param)
+local function export_ProcessViewerEvent (Id, Event, Param)
   for _,f in ipairs(_Plugin.ViewerEventHandlers) do
-    f(Event, Param)
+    f(Id, Event, Param)
   end
 end
 

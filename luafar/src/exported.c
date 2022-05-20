@@ -1107,7 +1107,13 @@ int LF_ProcessEditorEvent (lua_State* L, int Event, void *Param)
 {
   int ret = 0;
   if (GetExportFunction(L, "ProcessEditorEvent"))  { //+1: Func
-    lua_pushinteger(L, Event);  //+2;
+    PSInfo *Info = GetPluginStartupInfo(L);
+    struct EditorInfo ei;
+    if (Info->EditorControl(ECTL_GETINFO, &ei))
+      lua_pushinteger(L, ei.EditorID);
+    else
+      lua_pushnil(L);
+    lua_pushinteger(L, Event);  //+3;
     switch(Event) {
       case EE_CLOSE:
       case EE_GOTFOCUS:
@@ -1123,7 +1129,7 @@ int LF_ProcessEditorEvent (lua_State* L, int Event, void *Param)
         lua_pushnil(L);
         break;
     }
-    if (pcall_msg(L, 2, 1) == 0) {    //+1
+    if (pcall_msg(L, 3, 1) == 0) {    //+1
       if (lua_isnumber(L,-1)) ret = lua_tointeger(L,-1);
       lua_pop(L,1);
     }
@@ -1135,6 +1141,13 @@ int LF_ProcessViewerEvent (lua_State* L, int Event, void* Param)
 {
   int ret = 0;
   if (GetExportFunction(L, "ProcessViewerEvent"))  { //+1: Func
+    PSInfo *Info = GetPluginStartupInfo(L);
+    struct ViewerInfo vi;
+    vi.StructSize = sizeof(vi);
+    if (Info->ViewerControl(VCTL_GETINFO, &vi))
+      lua_pushinteger(L, vi.ViewerID);
+    else
+      lua_pushnil(L);
     lua_pushinteger(L, Event);
     switch(Event) {
       case VE_GOTFOCUS:
@@ -1142,7 +1155,7 @@ int LF_ProcessViewerEvent (lua_State* L, int Event, void* Param)
       case VE_CLOSE:  lua_pushinteger(L, *(int*)Param); break;
       default:        lua_pushnil(L); break;
     }
-    if (pcall_msg(L, 2, 1) == 0) {      //+1
+    if (pcall_msg(L, 3, 1) == 0) {      //+1
       if (lua_isnumber(L,-1)) ret = lua_tointeger(L,-1);
       lua_pop(L,1);
     }

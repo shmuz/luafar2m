@@ -104,7 +104,8 @@ local function MakeMenuItems (aUserMenuFile)
 end
 
 
-local function OpenFromMacro (Op, Where, Cmd)
+local function OpenFromMacro (args)
+  local Op, Where, Cmd = unpack(args)
   if Op=="own" then
     local area = far.MacroGetArea()
     local data = History["main"]
@@ -144,20 +145,8 @@ function export.OpenPlugin (aFrom, aItem)
     return
   end
 
-  if bit.band(aFrom, F.OPEN_FROMMACRO) ~= 0 then
-    if bit.band(aFrom, F.OPEN_FROMMACROSTRING) ~= 0 then
-      local Op, Where, Cmd = aItem:match("^([%w_]+):([%w_]+):([%w_]+)")
-      if Op then
-        if Cmd=="search" or Cmd=="replace" or Cmd=="mreplace" then
-          far.Timer(50, function(h) -- operations with a dialog: avoid running from a macro
-              h:Close()
-              if OpenFromMacro(Op, Where, Cmd) then SaveSettings() end
-            end)
-        else -- no dialog: execute directly from macro
-          if OpenFromMacro(Op, Where, Cmd) then SaveSettings() end
-        end
-      end
-    end
+  if aFrom == F.OPEN_FROMMACRO then
+    if OpenFromMacro(aItem) then SaveSettings() end
     return
   end
 

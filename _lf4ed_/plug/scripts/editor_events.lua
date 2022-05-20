@@ -7,7 +7,7 @@ local filemask =
 local F = far.Flags
 local pn_flags = bit.bor(F.PN_CMPNAMELIST, F.PN_SKIPPATH)
 
-local function RemoveTrailingSpaces(Event, Param)
+local function RemoveTrailingSpaces(Id, Event, Param)
   if Event==F.EE_SAVE then
     local info = editor.GetInfo()
     if info and far.ProcessName(filemask, info.FileName, pn_flags) then

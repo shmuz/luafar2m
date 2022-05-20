@@ -440,7 +440,7 @@ function export.OpenPlugin (OpenFrom, Item, ...)
     local mod = info.Handle.module
     if type(mod.Open) == "function" then
       info.Handle = info.Handle.object
-      local obj = mod.Open(OpenFrom, Item, info)
+      local obj = mod.OpenPlugin(OpenFrom, Item, info)
       return obj and { module=mod; object=obj }
     end
 
@@ -473,6 +473,8 @@ function export.OpenPlugin (OpenFrom, Item, ...)
       return unpack(argtable, 2, argtable.n)
     elseif argtable[1]=="macropost" then -- test Mantis # 2222
       return far.MacroPost([[far.Message"macropost"]])
+    elseif argtable[1]=="browser" then
+      macrobrowser()
     end
 
   else
@@ -579,8 +581,8 @@ end
 
 function export.GetOpenPluginInfo (wrapped_obj, handle, ...)
   local mod, obj = wrapped_obj.module, wrapped_obj.object
-  if type(mod.GetOpenPanelInfo) == "function" then
-    local op_info = mod.GetOpenPanelInfo(obj, handle, ...)
+  if type(mod.GetOpenPluginInfo) == "function" then
+    local op_info = mod.GetOpenPluginInfo(obj, handle, ...)
     if type(op_info) == "table" then
       if type(op_info.ShortcutData) == "string"
          and type(mod.Info) == "table"
@@ -600,8 +602,8 @@ function export.MakeDirectory (wrapped_obj, ...)
   end
 end
 
-for _,name in ipairs {"ClosePanel","Compare","DeleteFiles","GetFiles","GetFindData",
-      "ProcessHostFile","ProcessPanelEvent","ProcessPanelInput","PutFiles","SetDirectory",
+for _,name in ipairs {"ClosePlugin","Compare","DeleteFiles","GetFiles","GetFindData",
+      "ProcessHostFile","ProcessEvent","ProcessKey","PutFiles","SetDirectory",
       "SetFindList"} do
   export[name] =
     function(wrapped_obj, ...)

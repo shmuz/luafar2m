@@ -25,8 +25,7 @@ AddToMenu "e", nil, "F5", ->
       if slab~="" or tail~="" then words[id]=OptCaseSensitive and slab..tail or (slab..tail)\lower!
   editor.Redraw!
 
-AddEvent "EditorEvent", (event,param) ->
-  id=editor.GetInfo().EditorID
+AddEvent "EditorEvent", (id, event,param) ->
   if event==F.EE_REDRAW
     if words[id]
       ei=editor.GetInfo id

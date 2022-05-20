@@ -845,12 +845,14 @@ id=110
 lv=2
 dt=Text
 nm=export.ProcessEditorEvent
+mtime=3862213220
 <article>
-#_result = export.ProcessEditorEvent (Event, Param)
+#_result = export.ProcessEditorEvent (EditorID, Event, Param)
 #_
 #_**Parameters:**
-#_  Event:  integer
-#_  Param:  integer, or nil
+#_  EditorID: integer
+#_  Event:    integer
+#_  Param:    integer, or nil
 #_
 #_**Returns:**
 #_  result: integer
@@ -918,12 +920,14 @@ id=127
 lv=2
 dt=Text
 nm=export.ProcessViewerEvent
+mtime=3862213275
 <article>
-#_result = export.ProcessViewerEvent (Event, Param)
+#_result = export.ProcessViewerEvent (ViewerID, Event, Param)
 #_
 #_**Parameters:**
-#_  Event:  integer
-#_  Param:  integer, or nil
+#_  ViewerID: integer
+#_  Event:    integer
+#_  Param:    integer, or nil
 #_
 #_**Returns:**
 #_  result: integer

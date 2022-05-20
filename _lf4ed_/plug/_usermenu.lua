@@ -15,4 +15,4 @@ AddToMenu ("e", nil, "Ctrl+5", 5)
 AddToMenu ("e", nil, "Ctrl+6", 6)
 AddToMenu ("e", ":sep:")
 
-AutoInstall("scripts")
+-- AutoInstall("scripts")

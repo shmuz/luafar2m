@@ -90,7 +90,7 @@ local function IsCtrlPgDn (key) return key=="CtrlPgDn" or key=="RCtrlPgDn" end
 
 local function ExecuteFromCmdLine(str, newwindow)
   panel.SetCmdLine(str)
-  far.MacroPost(newwindow and "ShiftEnter" or "Enter")
+  far.MacroPost(newwindow and "Keys('ShiftEnter')" or "Keys('Enter')")
 end
 
 local function GetTimeString (filetime)
@@ -557,22 +557,14 @@ local function export_Configure()
   end
 end
 
-local function OpenFromMacro (aItem)
-  local Op, Cmd = aItem:match("^([%w_]+):([%w_]+)")
-  if Op=="own" then
-    if     Cmd == "commands" then commands_history()
-    elseif Cmd == "view"     then view_history()
-    elseif Cmd == "folders"  then folders_history()
-    end
-  end
-end
-
 local function export_Open (From, Item)
-  if band(From, F.OPEN_FROMMACRO) ~= 0 then
-    if band(From, F.OPEN_FROMMACROSTRING) ~= 0 then
-      far.Timer(50, function(h) h:Close(); OpenFromMacro(Item); end) -- to avoid running from a macro
-      return
+  if From == F.OPEN_FROMMACRO then
+    if     Item[1] == "commands" then commands_history()
+    elseif Item[1] == "view"     then view_history()
+    elseif Item[1] == "folders"  then folders_history()
+    elseif Item[1] == "locate"   then LocateFile2()
     end
+    return
 
   elseif From == F.OPEN_COMMANDLINE then
     return
