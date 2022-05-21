@@ -49,11 +49,11 @@ end
 end
 
 function MT.test_areas()
---  Keys "AltIns"              TestArea "Grabber"    Keys "Esc"
---  Keys "F12 0"               TestArea "Desktop"    Keys "F12 1"
+  Keys "AltIns"              TestArea "Other"      Keys "Esc"    -- "Grabber" in Far3
+--Keys "F12 0"               TestArea "Desktop"    Keys "F12 1"  -- "Desktop" in Far3
   Keys "ShiftF4 CtrlY Enter" TestArea "Editor"     Keys "Esc"
   Keys "F7"                  TestArea "Dialog"     Keys "Esc"
-  Keys "AltA"                TestArea "Search"     Keys "Esc"
+  Keys "Alt/"                TestArea "Search"     Keys "Esc"
   Keys "AltF1"               TestArea "Disks"      Keys "Esc"
   Keys "AltF2"               TestArea "Disks"      Keys "Esc"
   Keys "F9"                  TestArea "MainMenu"   Keys "Esc"
@@ -62,10 +62,8 @@ function MT.test_areas()
   Keys "F1"                  TestArea "Help"       Keys "Esc"
   Keys "CtrlL Tab"           TestArea "Info"       Keys "Tab CtrlL"
   Keys "CtrlQ Tab"           TestArea "QView"      Keys "Tab CtrlQ"
---  if Far.GetConfig("Panel.Tree.TurnOffCompletely") ~= true then
-    Keys "CtrlT Tab"         TestArea "Tree"       Keys "Tab CtrlT"
-    --Keys "AltF10"            TestArea "FindFolder" Keys "Esc"
---  end
+  Keys "CtrlT Tab"           TestArea "Tree"       Keys "Tab CtrlT"
+--Keys "AltF10"              TestArea "FindFolder" Keys "Esc"    -- bugg in Far2L (OK in Far2)
   Keys "F2"                  TestArea "UserMenu"   Keys "Esc"
 
   assert(Area.Current              =="Shell")
@@ -179,19 +177,19 @@ local function test_mf_eval()
   assert(eval("5+7",1,"moonscript")==0)
   assert(eval("5 7",1,"moonscript")==11)
 
---!  -- test with Mode==2
---!  local Id = assert(far.MacroAdd(nil,nil,"CtrlA",[[
---!    local key = akey(1,0)
---!    assert(key=="CtrlShiftF12" or key=="RCtrlShiftF12")
---!    assert(akey(1,1)=="CtrlA")
---!    foobar = (foobar or 0) + 1
---!    return foobar,false,5,nil,"foo"
---!  ]]))
---!  for k=1,3 do
---!    local ret1,a,b,c,d,e = eval("CtrlA",2)
---!    assert(ret1==0 and a==k and b==false and c==5 and d==nil and e=="foo")
---!  end
---!  assert(far.MacroDelete(Id))
+  -- test with Mode==2
+  local Id = assert(far.MacroAdd(nil,nil,"CtrlA",[[
+    local key = akey(1,0)
+    assert(key=="CtrlShiftF12" or key=="RCtrlShiftF12")
+    assert(akey(1,1)=="CtrlA")
+    foobar = (foobar or 0) + 1
+    return foobar,false,5,nil,"foo"
+  ]]))
+  for k=1,3 do
+    local ret1,a,b,c,d,e = eval("CtrlA",2)
+    assert(ret1==0 and a==k and b==false and c==5 and d==nil and e=="foo")
+  end
+  assert(far.MacroDelete(Id))
 end
 
 local function test_mf_abs()

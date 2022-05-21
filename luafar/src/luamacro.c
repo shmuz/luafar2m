@@ -8,6 +8,8 @@ extern int pcall_msg(lua_State* L, int narg, int nret);
 extern void PushFarMacroValue(lua_State* L, const struct FarMacroValue* val);
 extern void ConvertLuaValue (lua_State *L, int pos, struct FarMacroValue *target);
 
+static const DWORD LuamacroId = 0x4EBBEFC8;
+
 static int FL_PushParams(lua_State* L, const struct FarMacroCall* Data)
 {
 	int ret = lua_checkstack(L, 2 + (int)Data->Count);
@@ -40,20 +42,20 @@ HANDLE Open_Luamacro (lua_State* L, int OpenFrom, INT_PTR Item)
 	struct OpenMacroPluginInfo* om_info = (struct OpenMacroPluginInfo*)Item;
 	int calltype = om_info->CallType;
 	size_t argc = om_info->Data ? om_info->Data->Count : 0; // store Data->Count: 'Data' will be invalid after FL_PushParams()
-	PSInfo *Info = GetPluginStartupInfo(L);
+	TPluginData *pd = GetPluginData(L);
 
-//~	if (!IsEqualGUID(GetPluginData(L)->PluginId, LuamacroGuid))
-//~	{
-//~		lua_pop(L, 1);
-//~		return NULL;
-//~	}
+	if (pd->PluginId != LuamacroId)                //+1 (function export.OpenPlugin)
+	{
+		lua_pop(L, 1);
+		return NULL;
+	}
 
 	lua_pushinteger(L, OpenFrom);                  //+2
 	lua_pushinteger(L, calltype);                  //+3
 	if (om_info->Data && !FL_PushParams(L, om_info->Data))
 	{
 		lua_pop(L, 3);
-		LF_Message(Info, L"too many values to place onto Lua stack", L"LuaMacro", L"OK", "wl", NULL);
+		LF_Message(pd->Info, L"too many values to place onto Lua stack", L"LuaMacro", L"OK", "wl", NULL);
 		return NULL;
 	}
 

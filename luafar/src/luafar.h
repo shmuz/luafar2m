@@ -27,6 +27,8 @@ typedef struct
   char           Reserved[64];
 } TPluginData;
 
+TPluginData* GetPluginData(lua_State* L);
+
 DLLFUNC int  LF_LuaOpen(TPluginData* aPlugData, lua_CFunction aOpenLibs, const char* aEnvPrefix);
 DLLFUNC void LF_InitLuaState(lua_State *L, PSInfo *Info, lua_CFunction aOpenLibs, const char* aEnvPrefix);
 DLLFUNC void LF_LuaClose(TPluginData* aPlugData);

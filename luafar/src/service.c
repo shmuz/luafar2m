@@ -48,6 +48,7 @@ extern void PackMacroValues(lua_State* L, size_t Count, const struct FarMacroVal
 
 const char FarFileFilterType[] = "FarFileFilter";
 const char FarDialogType[]     = "FarDialog";
+const char AddMacroDataType[]  = "FarAddMacroData";
 const char FAR_KEYINFO[]       = "far.info";
 const char FAR_VIRTUALKEYS[]   = "far.virtualkeys";
 const char FAR_DN_STORAGE[]    = "FAR_DN_STORAGE";
@@ -1850,7 +1851,7 @@ int panel_SetSortOrder(lua_State *L) {
 
 int panel_SetDirectoriesFirst(lua_State *L)
 {
-	return SetPanelBooleanProperty(L, FCTL_SETDIRECTORIESFIRST);
+  return SetPanelBooleanProperty(L, FCTL_SETDIRECTORIESFIRST);
 }
 
 int panel_UpdatePanel(lua_State *L) {
@@ -2113,7 +2114,7 @@ int far_SaveScreen (lua_State *L)
   int X2 = luaL_optinteger(L,3,-1);
   int Y2 = luaL_optinteger(L,4,-1);
   lua_pushlightuserdata(L, Info->SaveScreen(X1,Y1,X2,Y2));
-	return 1;
+  return 1;
 }
 
 int GetDialogItemType(lua_State* L, int key, int item)
@@ -2627,9 +2628,9 @@ int DoSendDlgMessage (lua_State *L, int Msg, int delta)
     }
 
     case DM_GETCONSTTEXTPTR: {
-			const wchar_t *ptr = (wchar_t*)Info->SendDlgMessage(hDlg, Msg, Param1, 0);
-			push_utf8_string(L, ptr ? ptr:L"", -1);
-			return 1;
+      const wchar_t *ptr = (wchar_t*)Info->SendDlgMessage(hDlg, Msg, Param1, 0);
+      push_utf8_string(L, ptr ? ptr:L"", -1);
+      return 1;
     }
 
     case DM_SETTEXT:
@@ -5096,6 +5097,102 @@ int far_MacroGetLastError(lua_State* L)
   return 1;
 }
 
+typedef struct
+{
+  lua_State *L;
+  int funcref;
+} MacroAddData;
+
+intptr_t WINAPI MacroAddCallback (void* Id, FARADDKEYMACROFLAGS Flags)
+{
+  lua_State *L;
+  int result = TRUE;
+  MacroAddData *data = (MacroAddData*)Id;
+  if ((L = data->L) == NULL)
+    return FALSE;
+
+  lua_rawgeti(L, LUA_REGISTRYINDEX, data->funcref);
+
+  if(lua_type(L,-1) == LUA_TFUNCTION)
+  {
+    lua_pushlightuserdata(L, Id);
+    lua_rawget(L, LUA_REGISTRYINDEX);
+    bit64_push(L, Flags);
+    result = !lua_pcall(L, 2, 1, 0) && lua_toboolean(L, -1);
+  }
+
+  lua_pop(L, 1);
+  return result;
+}
+
+static int far_MacroAdd(lua_State* L)
+{
+  TPluginData *pd = GetPluginData(L);
+  struct MacroAddMacro data;
+  memset(&data, 0, sizeof(data));
+  data.StructSize = sizeof(data);
+  data.Area = OptFlags(L, 1, MACROAREA_COMMON);
+  data.Flags = OptFlags(L, 2, 0);
+  data.AKey = check_utf8_string(L, 3, NULL);
+  data.SequenceText = check_utf8_string(L, 4, NULL);
+  data.Description = opt_utf8_string(L, 5, L"");
+  lua_settop(L, 7);
+  if (lua_toboolean(L, 6))
+  {
+    luaL_checktype(L, 6, LUA_TFUNCTION);
+    data.Callback = MacroAddCallback;
+  }
+  data.Id = lua_newuserdata(L, sizeof(MacroAddData));
+  data.Priority = luaL_optinteger(L, 7, 50);
+
+  if (pd->Info->MacroControl(pd->PluginId, MCTL_ADDMACRO, 0, &data))
+  {
+    MacroAddData* Id = (MacroAddData*)data.Id;
+    lua_isfunction(L, 6) ? lua_pushvalue(L, 6) : lua_pushboolean(L, 1);
+    Id->funcref = luaL_ref(L, LUA_REGISTRYINDEX);
+    Id->L = pd->MainLuaState;
+    luaL_getmetatable(L, AddMacroDataType);
+    lua_setmetatable(L, -2);
+    lua_pushlightuserdata(L, Id); // Place it in the registry to protect from gc. It should be collected only at lua_close().
+    lua_pushvalue(L, -2);
+    lua_rawset(L, LUA_REGISTRYINDEX);
+  }
+  else
+    lua_pushnil(L);
+
+  return 1;
+}
+
+static int far_MacroDelete(lua_State* L)
+{
+  TPluginData *pd = GetPluginData(L);
+  MacroAddData *Id;
+  int result = FALSE;
+
+  Id = (MacroAddData*)luaL_checkudata(L, 1, AddMacroDataType);
+  if (Id->L)
+  {
+    result = (int)pd->Info->MacroControl(pd->PluginId, MCTL_DELMACRO, 0, Id);
+    if(result)
+    {
+      luaL_unref(L, LUA_REGISTRYINDEX, Id->funcref);
+      Id->L = NULL;
+      lua_pushlightuserdata(L, Id);
+      lua_pushnil(L);
+      lua_rawset(L, LUA_REGISTRYINDEX);
+    }
+  }
+
+  lua_pushboolean(L, result);
+  return 1;
+}
+
+static int AddMacroData_gc(lua_State* L)
+{
+  far_MacroDelete(L);
+  return 0;
+}
+
 int far_MacroExecute(lua_State* L)
 {
   TPluginData *pd = GetPluginData(L);
@@ -5590,6 +5687,8 @@ const luaL_Reg far_funcs[] = {
   {"LuafarVersion",       far_LuafarVersion},
   {"MakeMenuItems",       far_MakeMenuItems},
   {"Show",                far_Show},
+  {"MacroAdd",            far_MacroAdd},
+  {"MacroDelete",         far_MacroDelete},
   {"MacroExecute",        far_MacroExecute},
   {"MacroGetArea",        far_MacroGetArea},
   {"MacroGetLastError",   far_MacroGetLastError},
@@ -5686,6 +5785,12 @@ int luaopen_far (lua_State *L)
   luaL_register(L, NULL, dialog_methods);
 
   (void) luaL_dostring(L, far_Dialog);
+
+  luaL_newmetatable(L, AddMacroDataType);
+  lua_pushcfunction(L, AddMacroData_gc);
+  lua_setfield(L, -2, "__gc");
+  lua_pop(L, 1);
+
   return 0;
 }
 

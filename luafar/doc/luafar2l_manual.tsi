@@ -4879,6 +4879,56 @@ mtime=3851439608
 </article>
 </node>
 <node>
+id=477
+lv=2
+dt=Text
+nm=far.MacroAdd
+ctime=3862320428
+mtime=3862320801
+<article>
+#_Id = far.MacroAdd (Area, Flags, AKey, SequenceText, Description, Callback, Priority)
+#_
+#_**Parameters:**
+#_  Area:         flags (defaults to MACROAREA_COMMON)
+#_  Flags:        flags (defaults to 0)
+#_  AKey:         string (e.g. "CtrlShiftF12")
+#_  SequenceText: string
+#_  Description:  string (defaults to "")
+#_  Callback:     function, or nil
+#_  Priority:     integer (defaults to 50)
+#_
+#_**Returns:**
+#_  Id:           userdata (success), or nil (failure)
+#_                  used in Callback and `far.MacroDelete`
+#_
+#_**Far API used:**
+#_  MacroControl(MCTL_ADDMACRO)
+#_
+#_**Example:**
+#_  local F = far.Flags
+#_
+#_  local function Callback (Id, Flags)
+#_    return some_condition and another_condition
+#_  end
+#_
+#_  local Id = far.MacroAdd(
+#_    F.MACROAREA_SHELL,
+#_    0,
+#_    "CtrlShiftF12",
+#_    'msgbox("test","test")',
+#_    "cool macro",
+#_    Callback)
+#_
+#_@@@
+#_<lua> Links = {
+#_  ["far.MacroDelete"]="478.html";
+#_  ["MacroControl"] = "http://api.farmanager.com/ru/service_functions/macrocontrol.html";
+#_  ["MCTL_ADDMACRO"] = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_ADDMACRO";
+#_} </lua>
+#_
+</article>
+</node>
+<node>
 id=429
 lv=2
 dt=Text
@@ -4903,6 +4953,34 @@ mtime=3861762920
 #_MacroControl = "http://api.farmanager.com/ru/service_functions/macrocontrol.html";
 #_MCTL_SENDSTRING = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_SENDSTRING";
 #_MSSC_CHECK = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MSSC_CHECK";
+#_} </lua>
+#_
+</article>
+</node>
+<node>
+id=478
+lv=2
+dt=Text
+nm=far.MacroDelete
+ctime=3862320437
+mtime=3862320979
+<article>
+#_result = far.MacroDelete (Id)
+#_
+#_**Parameters:**
+#_  Id:      userdata (value returned by `far.MacroAdd`)
+#_
+#_**Returns:**
+#_  result:  boolean
+#_
+#_**Far API used:**
+#_  MacroControl(MCTL_DELMACRO)
+#_
+#_@@@
+#_<lua> Links = {
+#_  ["far.MacroAdd"]="477.html";
+#_  ["MacroControl"] = "http://api.farmanager.com/ru/service_functions/macrocontrol.html";
+#_  ["MCTL_DELMACRO"] = "http://api.farmanager.com/ru/service_functions/macrocontrol.html#MCTL_DELMACRO";
 #_} </lua>
 #_
 </article>
