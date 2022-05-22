@@ -258,7 +258,7 @@ local function test_mf_clip()
   mf.clip(5,2); assert(mf.clip(0) == "bar")
 
   mf.clip(5,1) -- leave the OS clipboard active in the end
-  far.CopyToClipboard(oldval) -- restore
+  far.CopyToClipboard(oldval or "") -- restore
 end
 
 local function test_mf_env()
@@ -548,9 +548,8 @@ end
 
 local function test_mf_xlat()
   assert(type(mf.xlat("abc"))=="string")
-  -- commented out, as these tests won't work with any Windows configuration:
-  --assert(mf.xlat("ghzybr")=="пряник")
-  --assert(mf.xlat("сщьзгеук")=="computer")
+  assert(mf.xlat("ghzybr")=="пряник")
+  assert(mf.xlat("сщьзгеук")=="computer")
 end
 
 local function test_mf_beep()
@@ -627,7 +626,7 @@ local function test_mf_sleep()
   assert(type(mf.sleep) == "function")
 end
 
-local function test_mf_usermenu()
+local function _usermenu()
   assert(type(mf.usermenu) == "function")
 end
 
@@ -639,7 +638,7 @@ function MT.test_mf()
   test_mf_atoi()
 --test_mf_beep()
   test_mf_chr()
---test_mf_clip()
+  test_mf_clip()
   test_mf_date()
   test_mf_env()
   test_mf_eval()
@@ -678,7 +677,7 @@ function MT.test_mf()
   test_mf_testfolder()
   test_mf_trim()
   test_mf_ucase()
-  test_mf_usermenu()
+--test_mf_usermenu()
   test_mf_waitkey()
   test_mf_xlat()
 end
@@ -1215,10 +1214,13 @@ function MT.test_Dlg()
 end
 
 function MT.test_Plugin()
---  assert(Plugin.Menu()==false)
---  assert(Plugin.Config()==false)
---  assert(Plugin.Command()==false)
---  assert(Plugin.Command(luamacroId)==true)
+  assert(Plugin.Menu()==false)
+  assert(Plugin.Config()==false)
+  assert(Plugin.Command()==false)
+  assert(Plugin.Command(luamacroId)==true)
+
+  assert(Plugin.Exist(far.GetPluginId()) == true)
+  assert(Plugin.Exist(far.GetPluginId()+1) == false)
 
   local function test (func, N) -- Plugin.Call, Plugin.SyncCall: test arguments and returns
     local i1 = bit64.new("0x8765876587658765")
@@ -1789,7 +1791,7 @@ local function test_coroutine()
 end
 
 function MT.test_misc()
-  --test_coroutine()
+  test_coroutine()
 end
 
 function MT.test_all()
@@ -1809,7 +1811,7 @@ function MT.test_all()
   MT.test_Plugin()
   MT.test_XPanel(APanel)
   MT.test_XPanel(PPanel)
- MT.test_mantis_1722() -- needs to be fixed in Far2L
+-- MT.test_mantis_1722() -- needs to be fixed in Far2L
   MT.test_luafar()
   MT.test_misc()
 end

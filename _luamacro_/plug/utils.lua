@@ -4,6 +4,7 @@ local op = require "opcodes"
 
 local Shared = ...
 local Msg, ErrMsg, pack, ExpandEnv = Shared.Msg, Shared.ErrMsg, Shared.pack, Shared.ExpandEnv
+local MacroDirs = Shared.MacroDirs
 
 local F = far.Flags
 local type = type
@@ -143,35 +144,6 @@ local StringToFlags, FlagsToString do
     end
     return str
   end
-end
-
-local function ReadIniFile (filename)
-  local fp = io.open(filename)
-  if not fp then return nil end
-
-  local currsect = 1
-  local t = { [currsect]={} }
-  local numline = 0
-
-  if fp:read(3) ~= "\239\187\191" then fp:seek("set",0) end -- skip UTF-8 BOM
-  for line in fp:lines() do
-    numline = numline + 1
-    local sect = line:match("^%s*%[([^%]]+)%]%s*$")
-    if sect then
-      t[sect] = t[sect] or {}
-      currsect = sect
-    else
-      local id,val = line:match("^%s*(%w+)%s*=%s*(.-)%s*$")
-      if id then
-        t[currsect][id] = val
-      elseif not (line:match("^%s*;") or line:match("^%s*$")) then
-        fp:close()
-        return nil, (("%s:%d: invalid line in ini-file"):format(filename,numline))
-      end
-    end
-  end
-  fp:close()
-  return t
 end
 
 local function AddId (trg, src)
@@ -717,12 +689,11 @@ local function LoadMacros (unload, paths)
   if not unload then
     LoadCounter = LoadCounter + 1
     local DummyFunc = function() end
-    local DirMacros = win.GetEnv("HOME").."/.config/far2l/Macros/"
     if 0 == band(MacroCallFar(MCODE_F_GETOPTIONS),0x10) then -- not ReadOnlyConfig
       for _,v in ipairs {"scripts", "modules", "lib32", "lib64"} do
-        win.CreateDir(DirMacros..v)
+        win.CreateDir(MacroDirs.MainPath.."/"..v)
       end
-      win.CreateDir(win.GetEnv("HOME").."/.config/far2l/Menus")
+      --win.CreateDir(win.GetEnv("HOME").."/.config/far2l/Menus")
     end
 
     local moonscript = require "moonscript"
@@ -798,20 +769,7 @@ local function LoadMacros (unload, paths)
       end
     end
 
-    if paths then
-      paths = ExpandEnv(paths)
-    else
-      paths = DirMacros.."scripts"
-      local cfg, msg = ReadIniFile(far.PluginStartupInfo().ModuleDir.."luamacro.ini")
-      if cfg then
-        if cfg.General then
-          local p = cfg.General.MacroPath
-          if p then paths = ExpandEnv(p) end
-        end
-      else
-        if msg then ErrMsg(msg) end
-      end
-    end
+    paths = paths and ExpandEnv(paths) or MacroDirs.MainPath.."/scripts;"..MacroDirs.LoadPathList
 
     for p in paths:gmatch("[^;]+") do
       p = far.ConvertPath(p, F.CPM_FULL) -- needed for relative paths
@@ -825,7 +783,7 @@ local function LoadMacros (unload, paths)
       far.RecursiveSearch (p, "*.lua,*.moon", LoadRegularFile, bor(F.FRS_RECUR,F.FRS_SCANSYMLINK), macroinit)
     end
 
-    far.RecursiveSearch (DirMacros.."internal", "*.lua", LoadRecordedFile, 0)
+    far.RecursiveSearch (MacroDirs.MainPath.."/internal", "*.lua", LoadRecordedFile, 0)
 
     export.ExitFAR = Events.exitfar[1] and export_ExitFAR
     export.ProcessDialogEvent = Events.dialogevent[1] and export_ProcessDialogEvent
@@ -877,7 +835,7 @@ end
 local function WriteMacros()
   if 0 ~= band(MacroCallFar(MCODE_F_GETOPTIONS),0x10) then return end -- ReadOnlyConfig
 
-  local dir = win.GetEnv("HOME").."/.config/far2l/Macros/internal"
+  local dir = MacroDirs.MainPath.."/internal"
   if not win.CreateDir(dir, true) then return end
 
   for areaname,area in pairs(Areas) do

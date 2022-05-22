@@ -497,6 +497,54 @@ function export.Configure (guid)
   if items[guid] then items[guid].action() end
 end
 
+local function ReadIniFile (filename)
+  local fp = io.open(filename)
+  if not fp then return nil end
+
+  local currsect = 1
+  local t = { [currsect]={} }
+  local numline = 0
+
+  if fp:read(3) ~= "\239\187\191" then fp:seek("set",0) end -- skip UTF-8 BOM
+  for line in fp:lines() do
+    numline = numline + 1
+    local sect = line:match("^%s*%[([^%]]+)%]%s*$")
+    if sect then
+      t[sect] = t[sect] or {}
+      currsect = sect
+    else
+      local id,val = line:match("^%s*(%w+)%s*=%s*(.-)%s*$")
+      if id then
+        t[currsect][id] = val
+      elseif not (line:match("^%s*;") or line:match("^%s*$")) then
+        fp:close()
+        return nil, (("%s:%d: invalid line in ini-file"):format(filename,numline))
+      end
+    end
+  end
+  fp:close()
+  return t
+end
+
+local function GetMacroDirs()
+  local mainpath, loadpathlist
+  local cfg, msg = ReadIniFile(far.PluginStartupInfo().ModuleDir.."luamacro.ini")
+  if cfg then
+    local sect = cfg["General"]
+    if sect then
+      mainpath = sect["MainPath"]
+      loadpathlist = sect["LoadPathList"]
+    end
+  else
+    if msg then ErrMsg(msg) end
+  end
+
+  local dirs = {}
+  dirs.MainPath = ExpandEnv(mainpath or "%HOME%/.config/far2l/Macros")
+  dirs.LoadPathList = loadpathlist and ExpandEnv(loadpathlist)
+  return dirs
+end
+
 local function Init()
   Shared = {
     ErrMsg            = ErrMsg,
@@ -507,6 +555,7 @@ local function Init()
     loadmacro         = loadmacro,
     pack              = pack,
     yieldcall         = yieldcall,
+    MacroDirs         = GetMacroDirs(),
   }
   Shared.MacroCallFar, far.MacroCallFar = far.MacroCallFar, nil
   Shared.FarMacroCallToLua, far.FarMacroCallToLua = far.FarMacroCallToLua, nil
@@ -555,11 +604,11 @@ local function Init()
 
   utils.FixInitialModules()
   utils.InitMacroSystem()
-  local macros = win.GetEnv("HOME").."/.config/far2l/Macros/"
-  local modules = macros .. "modules/"
-  package.path = modules.."?.lua;"..modules.."?/init.lua;"..package.path
-  package.moonpath = modules.."?.moon;"..modules.."?/init.moon;"..package.moonpath
-  package.cpath = macros..(win.IsProcess64bit() and "lib64" or "lib32").."/?.so;"..package.cpath
+  local mainpath = Shared.MacroDirs.MainPath
+  local modules = mainpath .. "/modules"
+  package.path = ("%s/?.lua;%s/?/init.lua;%s"):format(modules, modules, package.path)
+  package.moonpath = ("%s/?.moon;%s/?/init.moon;%s"):format(modules, modules, package.moonpath)
+  package.cpath = mainpath..(win.IsProcess64bit() and "/lib64" or "/lib32").."/?.so;"..package.cpath
 
   if _G.IsLuaStateRecreated then
     _G.IsLuaStateRecreated = nil

@@ -123,6 +123,7 @@ mf.strpad = function(V, Size, Fill, Op)
   return strDest
 end
 
+if false then
 mf.usermenu = function(mode, filename)
   if Shared.OnlyEditorViewerUsed then return end -- mantis #2986 (crash)
   if mode and type(mode)~="number" then return end
@@ -143,6 +144,7 @@ mf.usermenu = function(mode, filename)
     else yieldcall(F.MPRT_USERMENU, filename)
     end
   end
+end
 end
 
 mf.GetMacroCopy = utils.GetMacroCopy
@@ -374,17 +376,17 @@ SetProperties(Far, {
 --------------------------------------------------------------------------------
 
 BM = {
-  Add   = function(...) return MacroCallFar(op.MCODE_F_BM_ADD, ...) end,
-  Back  = function(...) return MacroCallFar(op.MCODE_F_BM_BACK, ...) end,
+  Add   = function(...) return MacroCallFar(op.MCODE_F_BM_ADD,   ...) end,
+  Back  = function(...) return MacroCallFar(op.MCODE_F_BM_BACK,  ...) end,
   Clear = function(...) return MacroCallFar(op.MCODE_F_BM_CLEAR, ...) end,
-  Del   = function(...) return MacroCallFar(op.MCODE_F_BM_DEL, ...) end,
-  Get   = function(...) return MacroCallFar(op.MCODE_F_BM_GET, ...) end,
-  Goto  = function(...) return MacroCallFar(op.MCODE_F_BM_GOTO, ...) end,
-  Next  = function(...) return MacroCallFar(op.MCODE_F_BM_NEXT, ...) end,
-  Pop   = function(...) return MacroCallFar(op.MCODE_F_BM_POP, ...) end,
-  Prev  = function(...) return MacroCallFar(op.MCODE_F_BM_PREV, ...) end,
-  Push  = function(...) return MacroCallFar(op.MCODE_F_BM_PUSH, ...) end,
-  Stat  = function(...) return MacroCallFar(op.MCODE_F_BM_STAT, ...) end,
+  Del   = function(...) return MacroCallFar(op.MCODE_F_BM_DEL,   ...) end,
+  Get   = function(...) return MacroCallFar(op.MCODE_F_BM_GET,   ...) end,
+  Goto  = function(...) return MacroCallFar(op.MCODE_F_BM_GOTO,  ...) end,
+  Next  = function(...) return MacroCallFar(op.MCODE_F_BM_NEXT,  ...) end,
+  Pop   = function(...) return MacroCallFar(op.MCODE_F_BM_POP,   ...) end,
+  Prev  = function(...) return MacroCallFar(op.MCODE_F_BM_PREV,  ...) end,
+  Push  = function(...) return MacroCallFar(op.MCODE_F_BM_PUSH,  ...) end,
+  Stat  = function(...) return MacroCallFar(op.MCODE_F_BM_STAT,  ...) end,
 }
 --------------------------------------------------------------------------------
 
@@ -394,14 +396,18 @@ Plugin = {
   Config  = function(...) return yieldcall(F.MPRT_PLUGINCONFIG,  ...) end,
   Menu    = function(...) return yieldcall(F.MPRT_PLUGINMENU,    ...) end,
 
---Exist   = function(...) return MacroCallFar(0x80C54, ...) end,
---Load    = function(...) return MacroCallFar(0x80C51, ...) end,
---Unload  = function(...) return MacroCallFar(0x80C53, ...) end,
+  Exist = function(...) return MacroCallFar(op.MCODE_F_PLUGIN_EXIST, ...) end,
+
+  Load = function(DllPath, Force) -- 2-nd param and return are booleans
+    return (Force and far.ForcedLoadPlugin or far.LoadPlugin)(F.PLT_PATH, DllPath)
+  end,
+
+  Unload = function(DllPath) return far.UnloadPlugin(F.PLT_PATH, DllPath); end, -- returns a boolean
 
   SyncCall = function(...)
     local v = Shared.keymacro.CallPlugin(Shared.pack(...), false)
     if type(v)=="userdata" then return Shared.FarMacroCallToLua(v) else return v end
-  end
+  end,
 }
 --------------------------------------------------------------------------------
 
