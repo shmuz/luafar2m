@@ -18,7 +18,6 @@ Macro {
 
 local MT = {} -- "macrotest", this module
 local F = far.Flags
---local luamacroId="4ebbefc8-2084-4b7f-94c0-692ce136894d" -- LuaMacro plugin GUID
 local luamacroId=0x4EBBEFC8
 
 local function pack (...)
@@ -1345,7 +1344,7 @@ local function test_far_MacroGetState()
 end
 
 local function test_MacroControl()
---  test_far_MacroAdd()
+  test_far_MacroAdd()
   test_far_MacroCheck()
   test_far_MacroExecute()
   test_far_MacroGetArea()

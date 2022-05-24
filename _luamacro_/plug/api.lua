@@ -27,7 +27,7 @@ end
 -- "mf" ("macrofunctions") namespace
 mf = {
   abs             = function(...) return MacroCallFar( op.MCODE_F_ABS       , ...) end,
---akey            = function(...) return MacroCallFar( op., ...) end,
+--akey            -- implemented in keymacro.lua
   asc             = function(...) return MacroCallFar( op.MCODE_F_ASC       , ...) end,
   atoi            = function(...) return MacroCallFar( op.MCODE_F_ATOI      , ...) end,
   chr             = utf8.char,
@@ -302,13 +302,13 @@ SetProperties(Dlg, {
 --------------------------------------------------------------------------------
 
 Editor = {
---DelLine  = function(...) return MacroCallFar(0x80C60, ...) end,
+--DelLine  -- implemented below in this file
   GetStr   = function(n)   return editor.GetString(n,2) or "" end,
---InsStr   = function(...) return MacroCallFar(0x80C62, ...) end,
+--InsStr   -- implemented below in this file
   Pos      = function(...) return MacroCallFar(op.MCODE_F_EDITOR_POS, ...) end,
   Sel      = function(...) return MacroCallFar(op.MCODE_F_EDITOR_SEL, ...) end,
   Set      = function(...) return MacroCallFar(op.MCODE_F_EDITOR_SET, ...) end,
---SetStr   = function(...) return MacroCallFar(0x80C63, ...) end,
+--SetStr   -- implemented below in this file
   SetTitle = function(...) return MacroCallFar(op.MCODE_F_EDITOR_SETTITLE, ...) end,
   Undo     = function(...) return MacroCallFar(op.MCODE_F_EDITOR_UNDO, ...) end,
 }
@@ -323,6 +323,72 @@ SetProperties(Editor, {
   State    = function() return MacroCallFar(op.MCODE_V_EDITORSTATE) end,
   Value    = function() return editor.GetString(nil,2) or "" end,
 })
+
+Editor.DelLine = function(Line)
+  local ok
+  if far.MacroGetArea() == F.MACROAREA_EDITOR then
+    local info = editor.GetInfo()
+    if band(info.CurState, F.ECSTATE_LOCKED) == 0 then
+      Line = tonumber(Line)
+      if Line and Line < 1 then Line = nil end
+      if Line then
+        Line = math.floor(Line)
+        if Line <= info.TotalLines then
+          editor.SetPosition(Line)
+          ok = editor.DeleteString()
+          if info.CurLine > Line then info.CurLine = info.CurLine-1 end
+          editor.SetPosition(info) -- restore the position
+        end
+      else
+        ok = editor.DeleteString()
+      end
+    end
+  end
+  return ok and 1 or 0
+end
+
+Editor.InsStr = function(S, Line)
+  local ok
+  if far.MacroGetArea() == F.MACROAREA_EDITOR then
+    local info = editor.GetInfo()
+    if band(info.CurState, F.ECSTATE_LOCKED) == 0 then
+      Line = tonumber(Line)
+      if not Line or Line < 1 then Line = info.CurLine end
+      Line = math.floor(Line)
+      if Line <= info.TotalLines then
+        if type(S)=="number" then S = tostring(S) end
+        if type(S)~="string" then S = "" end
+        editor.SetPosition(Line, 1)
+        ok = editor.InsertString()
+        if S ~= "" then
+          editor.SetPosition(Line, 1)
+          editor.SetString(nil, S)
+        end
+        if info.CurLine > Line then info.CurLine = info.CurLine+1 end
+        editor.SetPosition(info) -- restore the position
+      end
+    end
+  end
+  return ok and 1 or 0
+end
+
+Editor.SetStr = function(S, Line)
+  local ok
+  if far.MacroGetArea() == F.MACROAREA_EDITOR then
+    local info = editor.GetInfo()
+    if band(info.CurState, F.ECSTATE_LOCKED) == 0 then
+      Line = tonumber(Line)
+      if not Line or Line < 1 then Line = info.CurLine end
+      Line = math.floor(Line)
+      if Line <= info.TotalLines then
+        if type(S)=="number" then S = tostring(S) end
+        if type(S)~="string" then S = "" end
+        ok = editor.SetString(Line, S)
+      end
+    end
+  end
+  return ok and 1 or 0
+end
 --------------------------------------------------------------------------------
 
 Menu = {
