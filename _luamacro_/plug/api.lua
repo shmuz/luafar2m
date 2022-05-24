@@ -3,7 +3,7 @@
 local Shared = ...
 local checkarg, utils, yieldcall = Shared.checkarg, Shared.utils, Shared.yieldcall
 local Sett = require "far2.settings"
-local op = require "opcodes"
+local op = Shared.OpCodes
 
 local MCODE_F_USERMENU = op.MCODE_F_USERMENU
 local MCODE_F_FAR_GETCONFIG = op.MCODE_F_FAR_GETCONFIG
@@ -148,6 +148,7 @@ end
 end
 
 mf.GetMacroCopy = utils.GetMacroCopy
+mf.EnumScripts = utils.EnumScripts
 --------------------------------------------------------------------------------
 
 Object = {

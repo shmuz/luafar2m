@@ -26,17 +26,28 @@
 "Makra"
 "Aktywne makra"
 "Uchwyt zdarzenia"
+"Menu pozycji lub wtyczek"
+"Aktywne pozycje menu wtyczek"
+"Przedrostki"
+"Moduły panelu"
+"Zawartość kolumn"
+"Tryby sortowania użytkownika"
 
 // macro browser messages
 "Nie podano nazwy pliku"
 "Brak pliku"
 
 // macro browser F3 titles
-"Makro"
+"Makra"
 "Uchwyt zdarzenia"
+"Pozycje menu wtyczek"
+"Przedrostek"
+"Moduł panelu"
+"Zawartość kolumn"
+"Tryb sortowania użytkownika"
 
 // custom panel sort
-"Sortowanie "
+"Sortowanie"
 "Sortowanie panelu"
 
 // command line

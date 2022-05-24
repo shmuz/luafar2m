@@ -1,8 +1,7 @@
 -- coding: utf-8
 
-local op = require "opcodes"
-
 local Shared = ...
+local op = Shared.OpCodes
 local Msg, ErrMsg = Shared.Msg, Shared.ErrMsg
 local MacroStep = Shared.MacroStep
 local pack, loadmacro, utils = Shared.pack, Shared.loadmacro, Shared.utils
@@ -26,7 +25,6 @@ local MFLAGS_ENABLEOUTPUT, MFLAGS_NOSENDKEYSTOPLUGINS, MFLAGS_POSTFROMPLUGIN =
       0x1, 0x2, 0x10000000
 
 local KEY_NONE = 0x30001
-local MCODE_F_PLUGIN_CALL = op.MCODE_F_PLUGIN_CALL
 
 local type, setmetatable = type, setmetatable
 local bit = bit or bit64
@@ -416,7 +414,7 @@ function KeyMacro.CallPlugin (Params, AsyncCall)
 
     local lockCount = Import.ScrBufGetLockCount()
     Import.ScrBufSetLockCount(0)
-    local ResultCallPlugin = MacroCallFar(MCODE_F_PLUGIN_CALL, AsyncCall, unpack(Params,1,Params.n))
+    local ResultCallPlugin = MacroCallFar(op.MCODE_F_PLUGIN_CALL, AsyncCall, unpack(Params,1,Params.n))
     Import.ScrBufSetLockCount(lockCount)
 
     local isSynchroCall = true

@@ -569,6 +569,8 @@ local function Init()
   Msg = RunPluginFile("lang.lua");
   Shared.Msg = Msg
 
+  Shared.OpCodes = RunPluginFile("opcodes.lua")
+
   utils = RunPluginFile("utils.lua", Shared)
   Shared.utils = utils
 
