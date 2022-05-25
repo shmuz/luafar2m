@@ -410,7 +410,7 @@ Far = {
 --Cfg_Get        = function(...) return MacroCallFar(0x80C58, ...) end,
   DisableHistory = function(...) return Shared.keymacro.DisableHistory(...) end,
   KbdLayout      = function(...) return MacroCallFar(op.MCODE_F_KBDLAYOUT, ...) end,
---KeyBar_Show    = function(...) return MacroCallFar(0x80C4B, ...) end,
+  KeyBar_Show    = function(...) return MacroCallFar(op.MCODE_F_KEYBAR_SHOW, ...) end,
   Window_Scroll  = function(...) return MacroCallFar(op.MCODE_F_WINDOW_SCROLL, ...) end,
 }
 

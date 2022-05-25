@@ -1037,7 +1037,7 @@ function MT.test_Far()
 --  assert(type(Far.Cfg_Get)=="function")   --NOT IMPLEMENTED IN FAR2
   assert(type(Far.DisableHistory)=="function")
   assert(type(Far.KbdLayout(0))=="number")
---  assert(type(Far.KeyBar_Show(0))=="number")   --NOT IMPLEMENTED IN FAR2
+  assert(type(Far.KeyBar_Show(0))=="number")
   assert(type(Far.Window_Scroll)=="function")
 
   -- test_Far_GetConfig()
