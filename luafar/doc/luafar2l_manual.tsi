@@ -1480,6 +1480,30 @@ nm=Dialog functions
 </article>
 </node>
 <node>
+id=479
+lv=2
+dt=Text
+nm=far.ColorDialog
+ctime=3862762502
+mtime=3862762644
+<article>
+#_OutColor = far.ColorDialog (InColor, Transparent)
+#_
+#_**Parameters:**
+#_  InColor:      integer (optional; default=0x0F)
+#_  Transparent:  boolean (optional; default=false)
+#_
+#_**Returns:**
+#_  OutColor:     integer, or nil
+#_
+#_**Far API used:**
+#_  ColorDialog
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=438
 lv=2
 dt=Text

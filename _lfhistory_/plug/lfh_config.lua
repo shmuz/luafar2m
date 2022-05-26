@@ -26,9 +26,9 @@ local function ConfigDialog (aData)
     { tp="chbox"; text=M.mAutoCenter; x1=35; name="bAutoCenter"; },
 
     { tp="sep";  text=M.mSepColors; centertext=1; ystep=3;                                          },
-    { tp="butt"; text=M.mBtnHighTextColor;    btnnoclose=1; name="btnHighTextColor";    disable=1;  },
+    { tp="butt"; text=M.mBtnHighTextColor;    btnnoclose=1; name="btnHighTextColor";                },
     { tp="text"; text=M.mTextSample; x1=offset; ystep=0;    name="labHighTextColor";    width=swid; },
-    { tp="butt"; text=M.mBtnSelHighTextColor; btnnoclose=1; name="btnSelHighTextColor"; disable=1;  },
+    { tp="butt"; text=M.mBtnSelHighTextColor; btnnoclose=1; name="btnSelHighTextColor";             },
     { tp="text"; text=M.mTextSample; x1=offset; ystep=0;    name="labSelHighTextColor"; width=swid; },
     { tp="sep"; },
 

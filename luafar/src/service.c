@@ -5229,6 +5229,18 @@ int far_Log(lua_State *L)
   return 0;
 }
 
+int far_ColorDialog(lua_State *L)
+{
+  PSInfo *info = GetPluginStartupInfo(L);
+  WORD Color = (WORD)luaL_optinteger(L,1,0x0F);
+  int Transparent = lua_toboolean(L,2);
+  if (info->ColorDialog(info->ModuleNumber, &Color, Transparent))
+    lua_pushinteger(L, Color);
+  else
+    lua_pushnil(L);
+  return 1;
+}
+
 int win_GetConsoleScreenBufferInfo (lua_State* L)
 {
   CONSOLE_SCREEN_BUFFER_INFO info;
@@ -5680,6 +5692,7 @@ const luaL_Reg far_funcs[] = {
   {"DispatchInterThreadCalls", far_DispatchInterThreadCalls},
   {"BackgroundTask",      far_BackgroundTask},
 
+  {"ColorDialog",         far_ColorDialog},
   {"CPluginStartupInfo",  far_CPluginStartupInfo},
   {"GetCurrentDirectory", far_GetCurrentDirectory},
   {"GetFileOwner",        far_GetFileOwner},
