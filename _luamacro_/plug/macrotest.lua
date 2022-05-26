@@ -1196,17 +1196,17 @@ function MT.test_Dlg()
   Keys"F7 a b c"
   assert(Area.Dialog)
   assert(Dlg.Id == "FAD00DBE-3FFF-4095-9232-E1CC70C67737")
---assert(Dlg.Owner == "00000000-0000-0000-0000-000000000000") --NOT IMPLEMENTED IN FAR2
+  assert(Dlg.Owner == 0)
   assert(Dlg.ItemCount > 6)
   assert(Dlg.ItemType == 4)
   assert(Dlg.CurPos == 3)
---  assert(Dlg.PrevPos == 0)  --NOT IMPLEMENTED IN FAR2
+  assert(Dlg.PrevPos == 0)
   Keys"Tab"
   local pos = Dlg.CurPos
   assert(Dlg.CurPos > 3)
---  assert(Dlg.PrevPos == 3)
+  assert(Dlg.PrevPos == 3)
   assert(pos == Dlg.SetFocus(3))
---  assert(pos == Dlg.PrevPos)
+  assert(pos == Dlg.PrevPos)
 
   assert(Dlg.GetValue(0,0) == Dlg.ItemCount)
   Keys"Esc"

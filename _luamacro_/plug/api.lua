@@ -292,12 +292,12 @@ Dlg = {
 }
 
 SetProperties(Dlg, {
-  CurPos     = function() return MacroCallFar(op.MCODE_V_DLGCURPOS) end,
-  Id         = function() return MacroCallFar(op.MCODE_V_DLGINFOID) end,
---Owner      = function() return MacroCallFar(0x80838) end,
+  CurPos     = function() return MacroCallFar(op.MCODE_V_DLGCURPOS)    end,
+  Id         = function() return MacroCallFar(op.MCODE_V_DLGINFOID)    end,
+  Owner      = function() return MacroCallFar(op.MCODE_V_DLGINFOOWNER) end,
   ItemCount  = function() return MacroCallFar(op.MCODE_V_DLGITEMCOUNT) end,
-  ItemType   = function() return MacroCallFar(op.MCODE_V_DLGITEMTYPE) end,
---PrevPos    = function() return MacroCallFar(0x80836) end,
+  ItemType   = function() return MacroCallFar(op.MCODE_V_DLGITEMTYPE)  end,
+  PrevPos    = function() return MacroCallFar(op.MCODE_V_DLGPREVPOS)   end,
 })
 --------------------------------------------------------------------------------
 

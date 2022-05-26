@@ -188,7 +188,8 @@ int far_MacroCallFar(lua_State *L)
 	enum { MAXARG=32, MAXRET=32 };
 	struct FarMacroValue args[MAXARG];
 	struct FarMacroCall fmc;
-	int idx, ret, pushed;
+	int idx, pushed;
+	INT64 ret;
 	mcfc_data cbdata = { L, MAXRET, 0 };
 	PSInfo *Info = GetPluginStartupInfo(L);
 	struct MacroPrivateInfo *privateInfo = (struct MacroPrivateInfo*)Info->Private;
@@ -214,7 +215,7 @@ int far_MacroCallFar(lua_State *L)
 	}
 
 	lua_checkstack(L, MAXRET);
-	ret = (int) privateInfo->CallFar(opcode, &fmc);
+	ret = privateInfo->CallFar(opcode, &fmc);
 	pushed = MAXRET - cbdata.ret_avail;
 	if (fmc.Values != args)
 		free(fmc.Values);
