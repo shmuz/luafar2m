@@ -68,6 +68,7 @@ Macro {
 Macro {
   description="Quick folder view: turn off";
   area="Shell"; key=Key_off;
+  condition=function() return Qmode end;
   action=function()
     Qmode = false
     Keys(akey(1))

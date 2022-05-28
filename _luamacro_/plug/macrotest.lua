@@ -62,7 +62,7 @@ function MT.test_areas()
   Keys "CtrlL Tab"           TestArea "Info"       Keys "Tab CtrlL"
   Keys "CtrlQ Tab"           TestArea "QView"      Keys "Tab CtrlQ"
   Keys "CtrlT Tab"           TestArea "Tree"       Keys "Tab CtrlT"
---Keys "AltF10"              TestArea "FindFolder" Keys "Esc"    -- bugg in Far2L (OK in Far2)
+  Keys "AltF10"              TestArea "FindFolder" Keys "Esc"
   Keys "F2"                  TestArea "UserMenu"   Keys "Esc"
 
   assert(Area.Current              =="Shell")
@@ -1523,7 +1523,7 @@ local function test_AdvControl_Window()
   num = far.AdvControl("ACTL_GETWINDOWCOUNT")
   assert(num == 1) -- no "desktop" in Far2
   mf.acall(far.Show); mf.acall(far.Show)
---  assert(far.AdvControl("ACTL_GETWINDOWTYPE").Type == F.WTYPE_VMENU)
+--  assert(far.AdvControl("ACTL_GETSHORTWINDOWINFO").Type == F.WTYPE_VMENU)
 --  assert(num+2 == far.AdvControl("ACTL_GETWINDOWCOUNT")) -- menus don't count as windows?
   Keys("Esc Esc")
   assert(num == far.AdvControl("ACTL_GETWINDOWCOUNT"))
@@ -1556,31 +1556,24 @@ local function test_AdvControl_Window()
 end
 
 local function test_AdvControl_Colors()
-  local t = assert(far.AdvControl("ACTL_GETARRAYCOLOR"))
-  assert(#t == 147)
-  for n=1,#t do
-    local color = assert(far.AdvControl("ACTL_GETCOLOR", n-1))
-    --assert(color.Flags and color.ForegroundColor and color.BackgroundColor)
-    --for k,v in pairs(color) do
-    --  assert(t[n][k] == v)
-    --end
+  local allcolors = assert(far.AdvControl("ACTL_GETARRAYCOLOR"))
+  assert(#allcolors == 147)
+  for i,color in ipairs(allcolors) do
+    assert(far.AdvControl("ACTL_GETCOLOR", i-1) == color)
   end
-  assert(not far.AdvControl("ACTL_GETCOLOR", #t))
+  assert(not far.AdvControl("ACTL_GETCOLOR", #allcolors))
   assert(not far.AdvControl("ACTL_GETCOLOR", -1))
 
   -- change the colors
-  local arr, elem = {StartIndex=0; Flags=0}, {Flags=100; ForegroundColor=101; BackgroundColor=102}
-  for n=1,#t do arr[n]=elem end
-  assert(far.AdvControl("ACTL_SETARRAYCOLOR", nil, arr))
-  for n=1,#t do
-    local color = assert(far.AdvControl("ACTL_GETCOLOR", n-1))
-    for k,v in pairs(elem) do
-      assert(color[k] == v)
-    end
+  local arr, elem = {StartIndex=0; Flags=0}, 123
+  for n=1,#allcolors do arr[n]=elem end
+  assert(far.AdvControl("ACTL_SETARRAYCOLOR", arr))
+  for n=1,#allcolors do
+    assert(elem == far.AdvControl("ACTL_GETCOLOR", n-1))
   end
 
   -- restore the colors
-  assert(far.AdvControl("ACTL_SETARRAYCOLOR", nil, t))
+  assert(far.AdvControl("ACTL_SETARRAYCOLOR", allcolors))
 end
 
 local function test_AdvControl_Synchro()
@@ -1611,23 +1604,23 @@ local function test_AdvControl_Misc()
   t = far.AdvControl("ACTL_GETFARRECT")
   assert(t.Left>=0 and t.Top>=0 and t.Right>t.Left and t.Bottom>t.Top)
 
-  assert(false == far.AdvControl("ACTL_SETCURSORPOS", {X=-1,Y=0}))
+  assert(true == far.AdvControl("ACTL_SETCURSORPOS", {X=-1,Y=0}))
   for k=0,2 do
     assert(true == far.AdvControl("ACTL_SETCURSORPOS", {X=k,Y=k+1}))
     t = assert(far.AdvControl("ACTL_GETCURSORPOS"))
     assert(t.X==k and t.Y==k+1)
   end
 
-  assert(true == mf.acall(far.AdvControl, "ACTL_WAITKEY", nil, "F1"))
-  Keys("F1")
+  assert(true == mf.acall(far.AdvControl, "ACTL_WAITKEY", "KEY_F4"))
+  Keys("F4")
   assert(true == mf.acall(far.AdvControl, "ACTL_WAITKEY"))
   Keys("F2")
 end
 
 local function test_AdvControl()
-  test_AdvControl_Window()
+--test_AdvControl_Window()
   test_AdvControl_Colors()
-  test_AdvControl_Synchro()
+--test_AdvControl_Synchro()
   test_AdvControl_Misc()
 end
 
@@ -1764,7 +1757,7 @@ function MT.test_luafar()
   test_utf8_sub()
   test_utf8_lower_upper()
 
---  test_AdvControl()
+  test_AdvControl()
   test_far_GetMsg()
   test_FarStandardFunctions()
   test_issue_3129()

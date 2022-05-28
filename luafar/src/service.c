@@ -4261,11 +4261,12 @@ int DoAdvControl (lua_State *L, int Command, int Delta)
 
     case ACTL_GETCOLOR:
       int1 = check_env_flag(L, pos2);
-      lua_pushinteger(L, Info->AdvControl(Info->ModuleNumber, Command, (void*)int1));
+      int1 = Info->AdvControl(Info->ModuleNumber, Command, (void*)int1);
+      int1 >= 0 ? lua_pushinteger(L, int1) : lua_pushnil(L);
       return 1;
 
     case ACTL_WAITKEY:
-      int1 = opt_env_flag(L, pos2, 0);
+      int1 = opt_env_flag(L, pos2, -1);
       if (int1 < -1) //this prevents program freeze
         int1 = -1;
       lua_pushinteger(L, Info->AdvControl(Info->ModuleNumber, Command, (void*)int1));

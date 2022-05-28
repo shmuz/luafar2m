@@ -27,6 +27,12 @@ Macro {
 Macro {
   description="Folders shortcuts";
   area="Shell"; key="RCtrl9";
-  flags="EnableOutput"; -- there's a BUGGIE causing this work as "DisableOutput"
   action=function() Keys "F9 Home 2*Right Enter End 4*Up Enter" end;
 }
+
+Macro {
+  description="Plugins configuration menu";
+  area="Shell"; key="ShiftF11";
+  action=function() Keys "AltShiftF9" end;
+}
+

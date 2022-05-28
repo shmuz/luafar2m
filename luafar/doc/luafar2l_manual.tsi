@@ -1030,7 +1030,7 @@ id=153
 lv=2
 dt=Text
 nm=far.AdvControl
-mtime=3861967852
+mtime=3862853420
 <article>
 #_Result = far.AdvControl (Command, Param [, Param2])
 #_
@@ -1067,7 +1067,7 @@ mtime=3861967852
 #_
 #_@ACTL_GETCOLOR:
 #_    Param:   flag
-#_    Result:  integer
+#_    Result:  integer or nil
 #_
 #_@ACTL_SETCURRENTWINDOW:
 #_    Param:   integer (1-based)
