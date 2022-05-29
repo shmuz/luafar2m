@@ -33,7 +33,7 @@ mf = {
   chr             = utf8.char,
   clip            = function(...) return MacroCallFar( op.MCODE_F_CLIP      , ...) end,
   date            = function(...) return MacroCallFar( op.MCODE_F_DATE      , ...) end,
-  env             = function(...) return MacroCallFar( op.MCODE_F_ENVIRON   , ...) end,
+--env             -- implemented in this file
   fattr           = function(...) return MacroCallFar( op.MCODE_F_FATTR     , ...) end,
   fexist          = function(...) return MacroCallFar( op.MCODE_F_FEXIST    , ...) end,
   float           = function(...) return MacroCallFar( op.MCODE_F_FLOAT     , ...) end,
@@ -64,6 +64,14 @@ mf = {
   waitkey         = function(...) return MacroCallFar( op.MCODE_F_WAITKEY   , ...) end,
   xlat            = function(...) return MacroCallFar( op.MCODE_F_XLAT      , ...) end,
 }
+
+mf.env = function(Name, Mode, Value)
+  local oldvalue = win.GetEnv(Name)
+  if Mode and Mode ~= 0 then
+    win.SetEnv(Name, Value)
+  end
+  return oldvalue or ""
+end
 
 mf.iif = function(Expr, res1, res2)
   if Expr and Expr~=0 and Expr~="" then return res1 else return res2 end
@@ -407,7 +415,7 @@ SetProperties(Menu, {
 --------------------------------------------------------------------------------
 
 Far = {
---Cfg_Get        = function(...) return MacroCallFar(0x80C58, ...) end,
+  Cfg_Get        = function(...) return MacroCallFar(op.MCODE_F_FAR_CFG_GET, ...) end,
   DisableHistory = function(...) return Shared.keymacro.DisableHistory(...) end,
   KbdLayout      = function(...) return MacroCallFar(op.MCODE_F_KBDLAYOUT, ...) end,
   KeyBar_Show    = function(...) return MacroCallFar(op.MCODE_F_KEYBAR_SHOW, ...) end,

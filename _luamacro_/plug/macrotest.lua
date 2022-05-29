@@ -82,10 +82,6 @@ function MT.test_areas()
   assert(Area.FindFolder           ==false)
   assert(Area.UserMenu             ==false)
   assert(Area.AutoCompletion       ==false)
---assert(Area.ShellAutoCompletion  ==false)
---assert(Area.DialogAutoCompletion ==false)
---assert(Area.Grabber              ==false)
---assert(Area.Desktop              ==false)
 end
 
 local function test_mf_akey()
@@ -261,11 +257,10 @@ local function test_mf_clip()
 end
 
 local function test_mf_env()
-  local name = "macrotest_lua"
-  win.SetEnv(name, "Bar")
-  assert(mf.env(name) == "Bar")
-  win.SetEnv(name, nil)
-  assert(mf.env(name) == "")
+  mf.env("Foo",1,"Bar")
+  assert(mf.env("Foo")=="Bar")
+  mf.env("Foo",1,"")
+  assert(mf.env("Foo")=="")
 end
 
 local function test_mf_fattr()
@@ -625,7 +620,7 @@ local function test_mf_sleep()
   assert(type(mf.sleep) == "function")
 end
 
-local function _usermenu()
+local function test_mf_usermenu()
   assert(type(mf.usermenu) == "function")
 end
 
@@ -1034,7 +1029,7 @@ function MT.test_Far()
   temp = Far.UpTime - temp
   assert(temp > 40 and temp < 80)
 
---  assert(type(Far.Cfg_Get)=="function")   --NOT IMPLEMENTED IN FAR2
+  assert(type(Far.Cfg_Get)=="function")
   assert(type(Far.DisableHistory)=="function")
   assert(type(Far.KbdLayout(0))=="number")
   assert(type(Far.KeyBar_Show(0))=="number")
@@ -1201,6 +1196,7 @@ function MT.test_Dlg()
   assert(Dlg.ItemType == 4)
   assert(Dlg.CurPos == 3)
   assert(Dlg.PrevPos == 0)
+
   Keys"Tab"
   local pos = Dlg.CurPos
   assert(Dlg.CurPos > 3)

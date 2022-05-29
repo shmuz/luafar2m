@@ -4216,8 +4216,7 @@ int win_SetEnv (lua_State *L)
 {
   const char* name = luaL_checkstring(L, 1);
   const char* value = luaL_optstring(L, 2, NULL);
-  int overwrite = lua_toboolean(L, 3);
-  int res = value ? setenv(name, value, overwrite) : unsetenv(name);
+  int res = value ? setenv(name, value, 1) : unsetenv(name);
   lua_pushboolean (L, res == 0);
   return 1;
 }

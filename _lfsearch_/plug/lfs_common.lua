@@ -372,31 +372,29 @@ end
 function SRFrame:InsertInDialog (aReplace)
   local insert = table.insert
   local Items = self.Items
-  local s1, s2 = M.MDlgSearchPat, M.MDlgReplacePat
-  local x = aReplace and math.max(M.MDlgSearchPat:len(), M.MDlgReplacePat:len())
-            or M.MDlgSearchPat:len()
-  insert(Items, { tp="text"; text=s1; })
-  insert(Items, { tp="edit"; name="sSearchPat"; y1=""; x1=5+x, hist="SearchText"; })
+  local md = 38 -- "middle"
+  insert(Items, { tp="text"; text=M.MDlgSearchPat; })
+  insert(Items, { tp="edit"; name="sSearchPat"; hist="SearchText"; })
   ------------------------------------------------------------------------------
   if aReplace then
-    insert(Items, { tp="text";  text=s2; ystep=2; })
-    insert(Items, { tp="edit";  name="sReplacePat"; y1=""; x1=5+x, hist="ReplaceText"; })
-    insert(Items, { tp="chbox"; name="bRepIsFunc";       x1=7, text=M.MDlgRepIsFunc; })
-    insert(Items, { tp="chbox"; name="bDelEmptyLine";    x1=38, y1=""; text=M.MDlgDelEmptyLine; })
-    insert(Items, { tp="chbox"; name="bConfirmReplace";  x1=7, text=M.MDlgConfirmReplace; })
-    insert(Items, { tp="chbox"; name="bDelNonMatchLine"; x1=38, y1=""; text=M.MDlgDelNonMatchLine; })
+    insert(Items, { tp="text";  text=M.MDlgReplacePat; })
+    insert(Items, { tp="edit";  name="sReplacePat";      hist="ReplaceText"; })
+    insert(Items, { tp="chbox"; name="bRepIsFunc";       x1=7,         text=M.MDlgRepIsFunc; })
+    insert(Items, { tp="chbox"; name="bDelEmptyLine";    x1=md, y1=""; text=M.MDlgDelEmptyLine; })
+    insert(Items, { tp="chbox"; name="bConfirmReplace";  x1=7,         text=M.MDlgConfirmReplace; })
+    insert(Items, { tp="chbox"; name="bDelNonMatchLine"; x1=md, y1=""; text=M.MDlgDelNonMatchLine; })
   end
   ------------------------------------------------------------------------------
   insert(Items, { tp="sep"; })
   ------------------------------------------------------------------------------
-  insert(Items, { tp="chbox"; name="bCaseSens";              text=M.MDlgCaseSens; })
-  insert(Items, { tp="chbox"; name="bRegExpr"; y1=""; x1=26; text=M.MDlgRegExpr;  })
-  insert(Items, { tp="text";                   y1=""; x1=50; text=M.MDlgRegexLib; })
-  insert(Items, { tp="combobox"; name="cmbRegexLib";  x1=51; x2=63; dropdownlist=1; noauto=1;
+  insert(Items, { tp="chbox"; name="bRegExpr";                         text=M.MDlgRegExpr;  })
+  insert(Items, { tp="text";                         y1=""; x1=md;     text=M.MDlgRegexLib; })
+  insert(Items, { tp="combobox"; name="cmbRegexLib"; y1=""; x1=51; x2=64; dropdownlist=1; noauto=1;
            list = { {Text="Far regex"}, {Text="Lua regex"}, {Text="Oniguruma"}, {Text="PCRE"} };  })
   ------------------------------------------------------------------------------
-  insert(Items, { tp="chbox"; name="bWholeWords";      y1=""; text=M.MDlgWholeWords; })
-  insert(Items, { tp="chbox"; name="bExtended"; x1=26; y1=""; text=M.MDlgExtended; })
+  insert(Items, { tp="chbox"; name="bCaseSens";                        text=M.MDlgCaseSens; })
+  insert(Items, { tp="chbox"; name="bExtended"; x1=md; y1="";          text=M.MDlgExtended; })
+  insert(Items, { tp="chbox"; name="bWholeWords";                      text=M.MDlgWholeWords; })
 end
 
 function SRFrame:CheckRegexInit (hDlg)
