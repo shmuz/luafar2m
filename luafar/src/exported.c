@@ -656,7 +656,7 @@ static void WINAPI FillFarMacroCall_Callback (void *CallbackData, struct FarMacr
 		if (v->Type == FMVT_STRING)
 			free((void*)v->Value.String);
 		else if (v->Type == FMVT_BINARY && v->Value.Binary.Size)
-			free(v->Value.Binary.Data);
+			free((void*)v->Value.Binary.Data);
 	}
 	free(CallbackData);
 }
@@ -790,7 +790,7 @@ HANDLE LF_OpenPlugin (lua_State* L, int OpenFrom, INT_PTR Item)
             return fmc;
           }
           lua_pop(L,narg+1); // +0
-          return NULL;
+          return INVALID_HANDLE_VALUE;
         }
         lua_pop(L,1); // narg
       }
@@ -803,12 +803,7 @@ HANDLE LF_OpenPlugin (lua_State* L, int OpenFrom, INT_PTR Item)
   {
     if (pcall_msg(L, 2, 1) == 0)
     {
-      if (lua_type(L,-1) == LUA_TNUMBER && lua_tointeger(L,-1) == 0)
-      {
-        lua_pop(L,1);
-        return (HANDLE) 0; // unload plugin
-      }
-      else if (lua_toboolean(L, -1))   //+1: Obj
+      if (lua_toboolean(L, -1))        //+1: Obj
         return RegisterObject(L);      //+0
 
       lua_pop(L,1);

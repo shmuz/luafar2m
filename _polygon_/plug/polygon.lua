@@ -3,7 +3,7 @@
 -- luacheck: globals  AppIdToSkip  package  require  polygon_ResetSort
 
 AppIdToSkip = AppIdToSkip or {} -- must be global to withstand script reloads
-local band, bor, rshift = bit.band, bit.bor, bit.rshift
+local band, bor, rshift = bit64.band, bit64.bor, bit64.rshift
 local Guid_ConfirmClose = win.Uuid("27224BE2-EEF4-4240-808F-38095BCEF7B2")
 
 -- File <fname> can turn the plugin into debug mode.
@@ -51,7 +51,7 @@ local function First_load_actions()
     local pluginDir = far.PluginStartupInfo().ModuleDir
     ReadIniFile(pluginDir.."polygon.ini")
 
-    -- Provide priority access to lsqlite3.so residing in the plugin's folder
+    -- Provide priority access to lsqlite3 DLL residing in the plugin's folder
     -- (needed for deployment of the plugin)
     package.cpath = pluginDir.."?.so;"..package.cpath
     require "lsqlite3"
@@ -71,7 +71,7 @@ local utils     = require "modules.utils"
 local plugdebug = require "far2.plugdebug"
 
 local F = far.Flags
-local PluginGuid = win.Uuid("D4BC5EA7-8229-4FFE-AAC1-5A4F51A0986A")
+local PluginGuid = "D4BC5EA7-8229-4FFE-AAC1-5A4F51A0986A"
 local ErrMsg, Norm = utils.ErrMsg, utils.Norm
 
 
@@ -125,7 +125,7 @@ local function LoadUserModules(object, aLoadCommon, aLoadIndividual)
 
   -- Load modules specified in the database itself in a special table
   if aLoadIndividual then
-    local tablename = Norm("modules-"..win.Uuid(PluginGuid):lower())
+    local tablename = Norm("modules-"..PluginGuid:lower())
     local table_exists = false
     local query = "SELECT name FROM sqlite_master WHERE type='table' AND LOWER(name)="..tablename
     object._db:exec(query, function() table_exists=true end)
@@ -193,6 +193,7 @@ function export.GetPluginInfo()
     info.Flags = bor(info.Flags, F.PF_DISABLEPANELS)
   end
 
+  info.SysId = far.GetPluginId()
   return info
 end
 
@@ -205,7 +206,7 @@ local function MatchExcludeMasks(filename)
 end
 
 
-local function CreatePanel(FileName, Opt)
+local function CreatePanel(FileName, Opt, OpenFrom)
   Opt = Opt or get_plugin_data()
   local object = mypanel.open(FileName,
                  Opt[config.EXTENSIONS],
@@ -215,26 +216,28 @@ local function CreatePanel(FileName, Opt)
     object.LoadedModules = LoadUserModules(object,
                  Opt[config.COMMON_USER_MODULES],
                  Opt[config.INDIVID_USER_MODULES])
---~     if OpenFrom == F.OPEN_FROMMACRO then
---~       return { type="panel", [1]=object }
---~     else
---~       return object
---~     end
-    return object
+    if OpenFrom == F.OPEN_FROMMACRO then
+      return { type="panel", [1]=object }
+    else
+      return object
+    end
   end
 end
 
 
-function export.OpenFilePlugin(FileName, Buffer, OpMode)
-  -- far.Show(OpMode)
-  if
+local function Analyse(FileName, Buffer, OpMode)
+  return
     band(OpMode,F.OPM_TOPLEVEL) == 0 -- not supposed to process ShiftF1/F2/F3
     and FileName
     and FileName ~= ""
     and dbx.format_supported(Buffer, #Buffer)
     and not AppIdToSkip[string.sub(Buffer,69,72)]
     and not MatchExcludeMasks(FileName)
-  then
+end
+
+
+function export.OpenFilePlugin(FileName, Buffer, OpMode)
+  if Analyse(FileName, Buffer, OpMode) then
     return CreatePanel(FileName)
   end
 end
@@ -346,16 +349,16 @@ function export.OpenPlugin(OpenFrom, Item)
     FileName = OpenFromPluginsMenu()
   elseif OpenFrom == F.OPEN_COMMANDLINE then
     FileName, Opt = OpenFromCommandLine(Item)
---~   elseif OpenFrom == F.OPEN_FROMMACRO then
---~     if Item[1] == "open" then
---~       FileName, Opt = OpenFromMacro(Item)
---~     else
---~       return OpenFromMacro(Item)
---~     end
+  elseif OpenFrom == F.OPEN_FROMMACRO then
+    if Item[1] == "open" then
+      FileName, Opt = OpenFromMacro(Item)
+    else
+      return OpenFromMacro(Item)
+    end
   end
 
   if FileName then
-    return CreatePanel(FileName, Opt)
+    return CreatePanel(FileName, Opt, OpenFrom)
   end
 end
 

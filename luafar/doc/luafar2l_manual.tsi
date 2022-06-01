@@ -7239,6 +7239,31 @@ mtime=3851399749
 </article>
 </node>
 <node>
+id=480
+lv=3
+dt=Text
+nm=win.CopyFile
+ctime=3863280268
+mtime=3863280841
+<article>
+#_result = win.CopyFile (source, target [, fail_if_exists])
+#_
+#_**Parameters:**
+#_  source:         string
+#_  target:         string
+#_  fail_if_exists: boolean (defaults to false)
+#_
+#_**Returns:**
+#_  result:         true (or: nil, errormessage)
+#_
+#_**Notes:**
+#_  1. The function is implemented using *fopen*, *fread*, *fwrite*, *fclose*.
+#_  2. The function does not copy the attributes and times of the source file.
+#_  3. If *source* and *target* point to the same file then this file may be destroyed.
+#_
+</article>
+</node>
+<node>
 id=372
 lv=3
 dt=Text

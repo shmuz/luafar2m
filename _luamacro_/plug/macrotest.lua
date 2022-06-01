@@ -41,15 +41,12 @@ local function DeleteTmpFile()
 end
 
 local function TestArea (area, msg)
-if not (Area[area]==true and Area.Current==area) then
-  far.Show(Area[area], Area.Current)
-end
   assert(Area[area]==true and Area.Current==area, msg or "assertion failed!")
 end
 
 function MT.test_areas()
-  Keys "AltIns"              TestArea "Other"      Keys "Esc"    -- "Grabber" in Far3
---Keys "F12 0"               TestArea "Desktop"    Keys "F12 1"  -- "Desktop" in Far3
+  Keys "AltIns"              TestArea "Other"      Keys "Esc"
+  Keys "F12 0"               TestArea "Shell"
   Keys "ShiftF4 CtrlY Enter" TestArea "Editor"     Keys "Esc"
   Keys "F7"                  TestArea "Dialog"     Keys "Esc"
   Keys "Alt/"                TestArea "Search"     Keys "Esc"
@@ -687,7 +684,7 @@ function MT.test_CmdLine()
   assert(CmdLine.CurPos==8)
 
   Keys"SelWord"
---! assert(CmdLine.Selected)--Far2L: if the cursor is immediately after the word - the word is not selected
+  assert(CmdLine.Selected)
 
   Keys"CtrlHome"
   assert(CmdLine.Bof==true)
@@ -1028,8 +1025,7 @@ function MT.test_Far()
   mf.sleep(50)
   temp = Far.UpTime - temp
   assert(temp > 40 and temp < 80)
-
-  assert(type(Far.Cfg_Get)=="function")
+  assert(type(Far.Cfg_Get("Editor","defaultcodepage"))=="number")
   assert(type(Far.DisableHistory)=="function")
   assert(type(Far.KbdLayout(0))=="number")
   assert(type(Far.KeyBar_Show(0))=="number")
@@ -1122,7 +1118,6 @@ function MT.test_XPanel(pan) -- (@pan: either APanel or PPanel)
   assert(type(pan.HostFile)    == "string")
   assert(type(pan.ItemCount)   == "number")
   assert(type(pan.Left)        == "boolean")
---assert(type(pan.LFN)         == "boolean") -- no "long file names" in Linux
   assert(type(pan.OPIFlags)    == "number")
   assert(type(pan.Path)        == "string")
   assert(type(pan.Path0)       == "string")
@@ -1164,11 +1159,8 @@ local function test_Panel_Item()
     assert(IsNumOrInt(Panel.Item(pt,0,17)))
     assert(type(Panel.Item(pt,0,18)) =="number")
     assert(IsNumOrInt(Panel.Item(pt,0,19)))
--- These tests need to be checked individually
-    -- assert(type(Panel.Item(pt,0,20)) =="string")
-    -- assert(IsNumOrInt(Panel.Item(pt,0,21)))
-    -- assert(not pcall(Panel.Item,pt,0,22))
-    -- assert(type(Panel.Item(pt,0,23)) =="number")
+    assert(type(Panel.Item(pt,0,20)) =="string")
+    assert(IsNumOrInt(Panel.Item(pt,0,21)))
   end
 end
 

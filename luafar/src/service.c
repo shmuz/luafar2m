@@ -5262,21 +5262,64 @@ int win_GetConsoleScreenBufferInfo (lua_State* L)
   return 1;
 }
 
-#if 0
 int win_CopyFile (lua_State *L)
 {
-  const wchar_t* src = check_utf8_string(L, 1, NULL);
-  const wchar_t* trg = check_utf8_string(L, 2, NULL);
+  FILE *inp, *out;
+  int err;
+  char buf[0x2000]; // 8 KiB
+  const char* src = luaL_checkstring(L, 1);
+  const char* trg = luaL_checkstring(L, 2);
 
-  BOOL fail_if_exists = FALSE; // default = overwrite the target
-  if(lua_gettop(L) > 2)
-    fail_if_exists = lua_toboolean(L,3);
+  // a primitive (not sufficient) check but better than nothing
+  if (!strcmp(src, trg)) {
+    lua_pushnil(L);
+    lua_pushstring(L, "input and output files are the same");
+    return 2;
+  }
 
-  if (CopyFileW(src, trg, fail_if_exists))
-    return lua_pushboolean(L, 1), 1;
-  return SysErrorReturn(L);
+  if(lua_gettop(L) > 2) {
+    int fail_if_exists = lua_toboolean(L,3);
+    if (fail_if_exists && (out=fopen(trg,"r"))) {
+      fclose(out);
+      lua_pushnil(L);
+      lua_pushstring(L, "output file already exists");
+      return 2;
+    }
+  }
+
+  if (!(inp = fopen(src, "rb"))) {
+    lua_pushnil(L);
+    lua_pushstring(L, "cannot open input file");
+    return 2;
+  }
+
+  if (!(out = fopen(trg, "wb"))) {
+    fclose(inp);
+    lua_pushnil(L);
+    lua_pushstring(L, "cannot open output file");
+    return 2;
+  }
+
+  while(1) {
+    size_t rd, wr;
+    rd = fread(buf, 1, sizeof(buf), inp);
+    if (rd && (wr = fwrite(buf, 1, rd, out)) < rd)
+      break;
+    if (rd < sizeof(buf))
+      break;
+  }
+
+  err = ferror(inp) || ferror(out);
+  fclose(out);
+  fclose(inp);
+  if (!err) {
+    lua_pushboolean(L,1);
+    return 1;
+  }
+  lua_pushnil(L);
+  lua_pushstring(L, "some error occured");
+  return 2;
 }
-#endif
 
 int win_MoveFile (lua_State *L)
 {
@@ -5587,7 +5630,7 @@ const luaL_Reg panel_funcs[] =
 
 const luaL_Reg win_funcs[] = {
   {"GetConsoleScreenBufferInfo", win_GetConsoleScreenBufferInfo},
-//$  {"CopyFile",                win_CopyFile},
+  {"CopyFile",                   win_CopyFile},
   {"DeleteFile",                 win_DeleteFile},
   {"MoveFile",                   win_MoveFile},
   {"RenameFile",                 win_MoveFile}, // alias
