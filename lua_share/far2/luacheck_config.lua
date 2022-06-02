@@ -352,13 +352,12 @@ local luafar = {
 
     ["actl"] = {
       fields = {
-        "Commit", "EjectMedia", "GetArrayColor", "GetColor", "GetConfirmations",
-        "GetCursorPos", "GetDescSettings", "GetDialogSettings", "GetFarHwnd", "GetFarRect",
-        "GetFarVersion", "GetInterfaceSettings", "GetPanelSettings", "GetPluginMaxReadData", "GetShortWindowInfo",
+        "Commit", "EjectMedia", "GetArrayColor", "GetColor", "GetConfirmations", "GetCursorPos",
+        "GetDescSettings", "GetDialogSettings", "GetFarHwnd", "GetFarRect", "GetFarVersion",
+        "GetInterfaceSettings", "GetPanelSettings", "GetPluginMaxReadData", "GetShortWindowInfo",
         "GetSystemSettings", "GetSysWordDiv", "GetWindowCount", "GetWindowInfo", "KeyMacro",
-        "PostKeySequence", "ProgressNotify", "Quit", "RedrawAll", "SetArrayColor",
-        "SetCurrentWindow", "SetCursorPos", "SetProgressState", "SetProgressValue", "Synchro",
-        "WaitKey",
+        "ProgressNotify", "Quit", "RedrawAll", "SetArrayColor", "SetCurrentWindow", "SetCursorPos",
+        "SetProgressState", "SetProgressValue", "Synchro","WaitKey",
       };
     };
 
