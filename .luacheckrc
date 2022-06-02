@@ -2,13 +2,11 @@
 
 if (...)=="far" then -- running from Far environment
   luafar = true
-  lf4ed = true
 
 else
   local cfg = require "far2.luacheck_config"
   stds.luafar = cfg.luafar
-  stds.lf4ed = cfg.lf4ed
-  std = "max+luafar+lf4ed"
+  std = "max+luafar"
 
 end
 

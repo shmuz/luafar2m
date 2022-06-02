@@ -34,11 +34,14 @@ local out = io.open(OutputFile, "w")
 
 out:write(Header)
 for line in fp:lines() do
-  local name, comment = rex.match(line, [[^\s+(MCODE_\w+)(?:\s*=\w+)?\s*,\s*(//.*)?]])
+  local name, comment = rex.match(line, [[^\s+(MCODE_\w+)(?:\s*=\w+)?\s*,\s*(//.*\S)?]])
   if name then
-    comment = comment or ""
-    comment = '"' .. comment:gsub("^//%s*", ""):gsub('"', '\\"') .. '"'
-    local s=('\tfprintf(fp, "  %s=0x%%X; -- %%s\\n", %s, %s);'):format(name,name,comment)
+    if comment then
+      comment = '"' .. comment:gsub("^//%s*", " -- "):gsub('"', '\\"') .. '"'
+    else
+      comment = '""'
+    end
+    local s=('\tfprintf(fp, "  %s=0x%%X;%%s\\n", %s, %s);'):format(name,name,comment)
     out:write(s, "\n")
   end
 end

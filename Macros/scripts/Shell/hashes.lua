@@ -154,11 +154,7 @@ local function Work()
   end
 end
 
-if Macro then
-  Macro {
-    description="Calculate MD5 or SHA1 hash for selected files";
-    area="Shell"; key="CtrlAltH"; action=Work;
-  }
-else
-  AddCommand("hashes", Work)
-end
+Macro {
+  description="Calculate MD5 or SHA1 hash for selected files";
+  area="Shell"; key="CtrlAltH"; action=Work;
+}

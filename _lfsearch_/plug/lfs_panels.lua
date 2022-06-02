@@ -11,11 +11,6 @@ local Excl_Key = "sExcludeDirs"
 local F = far.Flags
 local dirsep = package.config:sub(1,1)
 
-local TmpPanelRegKey = "Plugins\\TmpPanel"
-local TmpPanelRegVars = {
-  Full=true, ColT=true, ColW=true, StatT=true, StatW=true, Contens=true,
-  Mode=true, NewP=true, Prefix=true,
-}
 local TmpPanelDefaults = {
   ColT  = "NR,S",
   ColW  = "0,8",
@@ -217,8 +212,7 @@ local function PanelDialog (aData, aReplace, aHelpTopic)
   ------------------------------------------------------------------------------
   insert(Items, { tp="dbox"; text=M.MTitlePanels; })
   insert(Items, { tp="text"; text=M.MFileMask; })
-  insert(Items, { tp="edit"; name="sFileMask"; hist="Masks"; uselasthistory=1; y1=""; x1=5+M.MFileMask:len(); })
-  insert(Items, { tp="text"; text=" "; }) -- blank line
+  insert(Items, { tp="edit"; name="sFileMask"; hist="Masks"; uselasthistory=1; })
   ------------------------------------------------------------------------------
   Frame:InsertInDialog(aReplace)
   ------------------------------------------------------------------------------
@@ -332,36 +326,6 @@ local function PanelDialog (aData, aReplace, aHelpTopic)
   local out = sd.Run(Items)
   if not out then return "cancel" end
   return aReplace and "replace" or "search", Frame.close_params
-end
-
-local function GetTmpPanelSettings()
-  local t = {}
-  for k in pairs(TmpPanelRegVars) do t[k] = win.GetRegKey("HKCU", TmpPanelRegKey, k) end
-  return t
-end
-
-local function ChangeTmpPanelSettings (aHistory)
-  local data = field(aHistory, "TmpPanel")
-  for k,v in pairs(data) do
-    if TmpPanelRegVars[k] then
-      local typ = type(v)
-      if typ ~= "string" then
-        typ, v = "dword", (v==true) and 1 or (v==false) and 0 or v
-      end
-      win.SetRegKey("HKCU", TmpPanelRegKey, k, typ, v)
-    end
-  end
-  win.SetRegKey("HKCU", TmpPanelRegKey, "Contens", "dword", 0) -- Copy folder contents
-  win.SetRegKey("HKCU", TmpPanelRegKey, "Mode", "dword", 1) -- Replace files with file list
-  win.SetRegKey("HKCU", TmpPanelRegKey, "NewP", "dword", 1) -- New panel for search results
-  return data
-end
-
-local function RestoreTmpPanelSettings (data)
-  for k,v in pairs(data) do
-    local typ = type(v) == "number" and "dword" or "string"
-    win.SetRegKey("HKCU", TmpPanelRegKey, k, typ, v)
-  end
 end
 
 local function MakeItemList (panelInfo, area)
@@ -574,9 +538,8 @@ local function SearchFromPanel (aData)
     end
     fpOut:close()
     -- run temporary panel from the command line
-    local tp_settings = GetTmpPanelSettings()
-    local prefix = tp_settings.Prefix or "tmp"
---~ local usercfg = ChangeTmpPanelSettings(aHistory)
+    ---- local tp_settings = GetTmpPanelSettings()
+    local prefix = --[[tp_settings.Prefix or]] "tmp"
     local cmd = ("%s: -menu %s"):format(prefix, fname)
     panel.SetCmdLine (cmd)
     PressEnter()
@@ -584,7 +547,6 @@ local function SearchFromPanel (aData)
       function(h)
         h:Close()
         win.DeleteFile(fname)
----     RestoreTmpPanelSettings(tp_settings)
       end)
   else
     actl.RedrawAll()

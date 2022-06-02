@@ -48,14 +48,15 @@ local function GetOptions()
       if f then
         local env = {}
         setfenv(f, env)("far") -- the argument tells the config. file it is run from Far environment
-        if env.luafar or env.lf4ed then
+        if env.luafar or env.lf4ed or env.luamacro then
           local cfg = require "far2.luacheck_config"
           local luafar = env.luafar and cfg.luafar
           local lf4 = env.lf4ed and cfg.lf4ed
+          local luamacro = env.luamacro and cfg.luamacro
           for _,field in ipairs {"globals","read_globals"} do
-            options[field] = merge_field(field, luafar, lf4)
+            options[field] = merge_field(field, luafar, lf4, luamacro)
           end
-          env.luafar, env.lf4ed = nil, nil
+          env.luafar, env.lf4ed, env.luamacro = nil, nil, nil
         end
         for k,v in pairs(env) do options[k]=v; end
         break

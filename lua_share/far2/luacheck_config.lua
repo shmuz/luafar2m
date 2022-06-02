@@ -410,12 +410,12 @@ local luafar = {
 
     ["win"] = {
       fields = {
-        "Clock", "CompareString", "CopyFile", "CreateDir", "DeleteFile", "DeleteRegKey", "EnumSystemCodePages",
+        "Clock", "CompareString", "CopyFile", "CreateDir", "DeleteFile", "EnumSystemCodePages",
         "ExtractKey", "FileTimeToLocalFileTime", "FileTimeToSystemTime", "GetACP",
         "GetConsoleScreenBufferInfo", "GetCPInfo", "GetCurrentDir", "GetDriveType", "GetEnv",
-        "GetFileAttr", "GetFileInfo", "GetOEMCP", "GetRegKey", "GetSystemTimeAsFileTime",
-        "GetVirtualKeys", "IsProcess64bit", "MoveFile", "MultiByteToWideChar", "OemToUtf8", "RemoveDir",
-        "RenameFile", "SetCurrentDir", "SetEnv", "SetFileAttr", "SetRegKey", "Sleep",
+        "GetFileAttr", "GetFileInfo", "GetOEMCP", "GetSystemTimeAsFileTime",
+        "GetVirtualKeys", "IsProcess64bit", "MoveFile", "MultiByteToWideChar", "OemToUtf8",
+        "RemoveDir", "RenameFile", "SetCurrentDir", "SetEnv", "SetFileAttr", "Sleep",
         "SystemTimeToFileTime", "Utf16ToUtf8", "Utf8ToOem", "Utf8ToUtf16", "Uuid", "wcscmp",
       };
     };
@@ -440,7 +440,137 @@ local lf4ed = {
   };
 }
 
+local luamacro = {
+  read_globals = {
+    "Keys", "akey", "band", "bnot", "bor", "bxor", "eval", "exit", "lshift", "mmode", "msgbox",
+    "print", "prompt", "rshift",
+    "Macro",  "Event",  "MenuItem",  "CommandLine",  "PanelModule",  "ContentColumns",
+    "NoMacro","NoEvent","NoMenuItem","NoCommandLine","NoPanelModule","NoContentColumns",
+    "_filename",
+
+    ["APanel"] = {
+      fields = {
+        "Bof", "ColumnCount", "CurPos", "Current", "DriveType", "Empty", "Eof", "FilePanel",
+        "Filter", "Folder", "Format", "Height", "HostFile", "ItemCount", "LFN", "Left", "OPIFlags",
+        "Path", "Path0", "Plugin", "Prefix", "Root", "SelCount", "Selected", "Type", "UNCPath",
+        "Visible", "Width",
+      };
+    };
+
+    ["Area"] = {
+      fields = {
+        "Current", "Desktop", "Dialog", "DialogAutoCompletion", "Disks", "Editor", "FindFolder",
+        "Grabber", "Help", "Info", "MainMenu", "Menu", "Other", "QView", "Search", "Shell",
+        "ShellAutoCompletion", "Tree", "UserMenu", "Viewer",
+      };
+    };
+
+    ["BM"] = {
+      fields = {
+        "Add", "Back", "Clear", "Del", "Get", "Goto", "Next", "Pop", "Prev", "Push", "Stat",
+      };
+    };
+
+    ["CmdLine"] = {
+      fields = {
+        "Bof", "CurPos", "Empty", "Eof", "ItemCount", "Result", "Selected", "Value",
+      };
+    };
+
+    ["Dlg"] = {
+      fields = {
+        "CurPos", "GetValue", "Id", "ItemCount", "ItemType", "Owner", "PrevPos", "SetFocus",
+      };
+    };
+
+    ["Drv"] = {
+      fields = {
+        "ShowMode", "ShowPos",
+      };
+    };
+
+    ["Editor"] = {
+      fields = {
+        "CurLine", "CurPos", "DelLine", "FileName", "GetStr", "InsStr", "Lines", "Pos", "RealPos",
+        "Sel", "SelValue", "Set", "SetStr", "SetTitle", "State", "Undo", "Value",
+      };
+    };
+
+    ["Far"] = {
+      fields = {
+        "Cfg_Get", "DisableHistory", "FullScreen", "GetConfig", "Height", "IsUserAdmin",
+        "KbdLayout", "KeyBar_Show", "PID", "Title", "UpTime", "Width", "Window_Scroll",
+      };
+    };
+
+    ["Help"] = {
+      fields = {
+        "FileName", "SelTopic", "Topic",
+      };
+    };
+
+    ["Menu"] = {
+      fields = {
+        "Filter", "FilterStr", "GetValue", "Id", "ItemStatus", "Select", "Show", "Value",
+      };
+    };
+
+    ["Mouse"] = {
+      fields = {
+        "Button", "CtrlState", "EventFlags", "LastCtrlState", "X", "Y",
+      };
+    };
+
+    ["Object"] = {
+      fields = {
+        "Bof", "CheckHotkey", "CurPos", "Empty", "Eof", "GetHotkey", "Height", "ItemCount",
+        "Selected", "Title", "Width",
+      };
+    };
+
+    ["PPanel"] = {
+      fields = {
+        "Bof", "ColumnCount", "CurPos", "Current", "DriveType", "Empty", "Eof", "FilePanel",
+        "Filter", "Folder", "Format", "Height", "HostFile", "ItemCount", "LFN", "Left", "OPIFlags",
+        "Path", "Path0", "Plugin", "Prefix", "Root", "SelCount", "Selected", "Type", "UNCPath",
+        "Visible", "Width",
+      };
+    };
+
+    ["Panel"] = {
+      fields = {
+        "CustomSortMenu", "FAttr", "FExist", "Item", "LoadCustomSortMode", "Select",
+        "SetCustomSortMode", "SetPath", "SetPos", "SetPosIdx",
+      };
+    };
+
+    ["Plugin"] = {
+      fields = {
+        "Call", "Command", "Config", "Exist", "Load", "Menu", "SyncCall", "Unload",
+      };
+    };
+
+    ["Viewer"] = {
+      fields = {
+        "FileName", "State",
+      };
+    };
+
+    ["mf"] = {
+      fields = {
+        "AddExitHandler", "GetMacroCopy", "Keys", "abs", "acall", "akey", "asc", "atoi", "beep",
+        "chr", "clip", "date", "deserialize", "env", "eval", "exit", "fattr", "fexist", "float",
+        "flock", "fmatch", "fsplit", "iif", "index", "int", "itoa", "key", "lcase", "len", "max",
+        "mdelete", "min", "mload", "mmode", "mod", "msave", "msgbox", "postmacro", "print",
+        "printconsole", "prompt", "replace", "rindex", "serialize", "size2str", "sleep", "string",
+        "strpad", "strwrap", "substr", "testfolder", "trim", "ucase", "usermenu", "waitkey", "xlat",
+      };
+    };
+  };
+}
+
 return {
   luafar = luafar;
   lf4ed = lf4ed;
+  luamacro = luamacro;
 }
