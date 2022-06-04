@@ -1,3 +1,5 @@
+local F = far.Flags
+
 Macro {
   description="Use CtrlS for saving files instead of F2";
   area="Editor"; key="CtrlS";
@@ -9,6 +11,23 @@ Macro {
   area="Editor"; key="CtrlF11";
   action=function()
     print('"'..win.Uuid(win.Uuid()):upper()..'"')
+  end;
+}
+
+Macro {
+  description="Save and run script from editor";
+  area="Editor"; key="CtrlF12";
+  action=function()
+    for k=1,2 do
+      local info=editor.GetInfo()
+      if bit64.band(info.CurState, F.ECSTATE_SAVED)~=0 then
+        local Flags = info.FileName:sub(-5):lower()==".moon" and "KMFLAGS_MOONSCRIPT"
+          or "KMFLAGS_LUA"
+        far.MacroPost('@"' .. info.FileName .. '"', Flags)
+        break
+      end
+      if k==1 then editor.SaveFile(); end
+    end
   end;
 }
 
@@ -47,3 +66,10 @@ int main(int argc, const char* argv[])
 ]]
   end;
 }
+
+Macro {
+  description="Goto in the editor";
+  area="Editor"; key="CtrlG";
+  action=function() Keys("AltF8") end;
+}
+

@@ -55,7 +55,7 @@ typedef unsigned __int64 QWORD;
 typedef unsigned long ULONG, *PULONG;
 typedef unsigned short USHORT, *PUSHORT;
 typedef unsigned char UCHAR, *PUCHAR;
-typedef unsigned long DWORD, *PDWORD, *LPDWORD;
+typedef unsigned int DWORD, *PDWORD, *LPDWORD;
 typedef int BOOL, *PBOOL, *LPBOOL;
 typedef unsigned char BYTE, *PBYTE, *LPBYTE;
 typedef unsigned short WORD, *PWORD, *LPWORD;
@@ -303,7 +303,7 @@ enum {
   NORM_IGNOREWIDTH    = 0x20000,
 };
 
-int CompareStringW (/*LCID*/ DWORD Locale, DWORD dwCmpFlags, const wchar_t* lpString1, int cchCount1,
+int WINPORT_CompareString (/*LCID*/ DWORD Locale, DWORD dwCmpFlags, const wchar_t* lpString1, int cchCount1,
                     const wchar_t* lpString2, int cchCount2);
 //------------------------------------------------------------------------------
 

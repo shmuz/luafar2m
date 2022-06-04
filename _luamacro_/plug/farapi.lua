@@ -6,6 +6,8 @@ ffi.cdef [[
   Plugin API for Far Manager 3.0 build 3674
 */
 
+#pragma pack(2)
+
 enum {
   FARMANAGERVERSION_MAJOR =    3,
   FARMANAGERVERSION_MINOR =    0,
@@ -648,27 +650,24 @@ struct FarGetPluginPanelItem
 
 struct SortingPanelItem
 {
-	FILETIME CreationTime;
-	FILETIME LastAccessTime;
-	FILETIME LastWriteTime;
-	FILETIME ChangeTime;
-	unsigned __int64 FileSize;
-	unsigned __int64 AllocationSize;
-	const wchar_t *FileName;
-	const wchar_t *AlternateFileName;
-	const wchar_t *Description;
-	const wchar_t *Owner;
-	const wchar_t * const *CustomColumnData;
-	size_t CustomColumnNumber;
-	PLUGINPANELITEMFLAGS Flags;
-	struct UserDataItem UserData;
-	uintptr_t FileAttributes;
-	uintptr_t NumberOfLinks;
-	uintptr_t CRC32;
-	intptr_t Position;
-	intptr_t SortGroup;
-	uintptr_t NumberOfStreams;
-	unsigned __int64 StreamsSize;
+	FILETIME             CreationTime;
+	FILETIME             LastAccessTime;
+	FILETIME             LastWriteTime;
+	FILETIME             ChangeTime;
+	uint64_t             FileSize;
+	uint64_t             AllocationSize;
+	const wchar_t*       FileName;
+	const wchar_t*       Description;
+	const wchar_t*       Owner;
+	const wchar_t*       const *CustomColumnData;
+	int                  CustomColumnNumber;
+	DWORD                Flags;
+	DWORD_PTR            UserData;
+	DWORD                FileAttributes;
+	DWORD                NumberOfLinks;
+	DWORD                CRC32;
+	int                  Position;
+	int                  SortGroup;
 };
 
 typedef unsigned __int64 PANELINFOFLAGS;
@@ -1667,16 +1666,16 @@ enum FAR_REGEXP_CONTROL_COMMANDS
 
 struct RegExpMatch
 {
-	intptr_t start,end;
+	int start,end;
 };
 
 struct RegExpSearch
 {
 	const wchar_t* Text;
-	intptr_t Position;
-	intptr_t Length;
+	int Position;
+	int Length;
 	struct RegExpMatch* Match;
-	intptr_t Count;
+	int Count;
 	void* Reserved;
 };
 
@@ -1852,11 +1851,10 @@ typedef intptr_t (__stdcall *FARAPIFILEFILTERCONTROL)(
     void* Param2
 );
 
-typedef intptr_t (__stdcall *FARAPIREGEXPCONTROL)(
+typedef int (__stdcall *FARAPIREGEXPCONTROL)(
     HANDLE hHandle,
-    enum FAR_REGEXP_CONTROL_COMMANDS Command,
-    intptr_t Param1,
-    void* Param2
+    int Command,
+    LONG_PTR Param
 );
 
 typedef intptr_t (__stdcall *FARAPISETTINGSCONTROL)(

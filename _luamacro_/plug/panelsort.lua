@@ -2,12 +2,13 @@
 
 local Shared = ...
 local Msg = Shared.Msg
+local op = Shared.OpCodes
 local ffi = require "ffi"
 local C = ffi.C
 local F = far.Flags
 local PPIF_SELECTED = F.PPIF_SELECTED
 local FILE_ATTRIBUTE_DIRECTORY = 0x00000010
-local MCODE_F_SETCUSTOMSORTMODE = 0x80C67
+local MCODE_F_SETCUSTOMSORTMODE = op.MCODE_F_SETCUSTOMSORTMODE
 local band, bor = bit.band, bit.bor -- 32 bits, be careful
 local tonumber = tonumber
 
@@ -187,9 +188,9 @@ ffi.cdef[[
   typedef struct
   {
     unsigned int               *Positions;
-    void                       *Items;
+    const void * const         *Items;
     size_t                      ItemsCount;
-    void                      (*FileListToPluginItem)(const void*, int, struct SortingPanelItem*);
+    void                      (*FileListToPluginItem)(const void* const*, int, struct SortingPanelItem*);
     int                         SortGroups;
     int                         SelectedFirst;
     int                         DirectoriesFirst;
@@ -272,12 +273,6 @@ local function SortPanelItems (params)
     if IsTwoDots(pi1.FileName) then
       if not IsTwoDots(pi2.FileName) then return true end
 
-      if Empty(pi1.AlternateFileName) or IsTwoDots(pi1.AlternateFileName) then
-        if not (Empty(pi2.AlternateFileName) or IsTwoDots(pi2.AlternateFileName)) then return true end
-      else
-        if Empty(pi2.AlternateFileName) or IsTwoDots(pi2.AlternateFileName) then return false end
-      end
-
     elseif IsTwoDots(pi2.FileName) then
       return false
     end
@@ -303,8 +298,8 @@ local function SortPanelItems (params)
       return r < 0
     else
       if SortEqualsByName then
-        return 1 == C.CompareStringW(C.LOCALE_USER_DEFAULT, bor(C.NORM_IGNORECASE,C.SORT_STRINGSORT),
-                                     pi1.FileName, -1, pi2.FileName, -1)
+        return 1 == C.WINPORT_CompareString(C.LOCALE_USER_DEFAULT, bor(C.NORM_IGNORECASE,C.SORT_STRINGSORT),
+                                            pi1.FileName, -1, pi2.FileName, -1)
       end
     end
     return false

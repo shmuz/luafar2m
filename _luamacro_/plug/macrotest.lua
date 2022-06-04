@@ -1791,7 +1791,7 @@ function MT.test_all()
   MT.test_Plugin()
   MT.test_XPanel(APanel)
   MT.test_XPanel(PPanel)
--- MT.test_mantis_1722() -- needs to be fixed in Far2L
+  MT.test_mantis_1722()
   MT.test_luafar()
   MT.test_misc()
 end
