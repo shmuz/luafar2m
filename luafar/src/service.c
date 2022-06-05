@@ -4819,7 +4819,7 @@ intptr_t WINAPI MacroAddCallback (void* Id, FARADDKEYMACROFLAGS Flags)
   {
     lua_pushlightuserdata(L, Id);
     lua_rawget(L, LUA_REGISTRYINDEX);
-    bit64_push(L, Flags);
+    lua_pushnumber(L, Flags);
     result = !lua_pcall(L, 2, 1, 0) && lua_toboolean(L, -1);
   }
 
