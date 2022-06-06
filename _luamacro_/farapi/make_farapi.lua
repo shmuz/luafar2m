@@ -1,4 +1,4 @@
--- This files converts farplug-wide.h into farapi.lua
+-- This script converts farplug-wide.h into farapi.lua
 -- BEWARE: quick-and-dirty processing
 
 local rex = require "rex_pcre"

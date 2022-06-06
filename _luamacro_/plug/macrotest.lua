@@ -1164,6 +1164,18 @@ local function test_Panel_Item()
   end
 end
 
+local function test_Panel_SetPath()
+  local pdir = "/bin"
+  local adir = "/usr/bin"
+  local afile = "ldd"
+  Panel.SetPath(1,pdir)
+  Panel.SetPath(0,adir,afile)
+  assert(pdir == panel.GetPanelDirectory(0))
+  assert(adir == panel.GetPanelDirectory(1))
+  assert(panel.GetCurrentPanelItem(1).FileName == afile)
+  actl.Commit()
+end
+
 function MT.test_Panel()
   test_Panel_Item()
 
@@ -1174,7 +1186,7 @@ function MT.test_Panel()
   assert(Panel.FExist(1,":")==0)
 
   assert(type(Panel.Select)    == "function")
-  assert(type(Panel.SetPath)   == "function")
+  test_Panel_SetPath()
   assert(type(Panel.SetPos)    == "function")
   assert(type(Panel.SetPosIdx) == "function")
 end

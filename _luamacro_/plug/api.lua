@@ -486,29 +486,6 @@ Plugin = {
 }
 --------------------------------------------------------------------------------
 
-local function SetPath(whatpanel,path,filename)
-  local function IsAbsolutePath(path) return path:lower()==far.ConvertPath(path):lower() end
-  whatpanel=(whatpanel==0 or not whatpanel) and 1 or 0
-  local current=panel.GetPanelDirectory(nil,whatpanel) or {}
-  current.Name=path
-  local result=panel.SetPanelDirectory(nil,whatpanel,IsAbsolutePath(path) and path or current)
-  if result and type(filename)=='string' then
-    local info=panel.GetPanelInfo(nil,whatpanel)
-    if info then
-      filename=filename:lower()
-      for ii=1,info.ItemsNumber do
-        local item=panel.GetPanelItem(nil,whatpanel,ii)
-        if not item then break end
-        if filename==item.FileName:lower() then
-          panel.RedrawPanel(nil,whatpanel,{TopPanelItem=1,CurrentItem=ii})
-          break
-        end
-      end
-    end
-  end
-  return result
-end
-
 Panel = {
   FAttr     = function(...) return MacroCallFar(op.MCODE_F_PANEL_FATTR, ...) end,
   FExist    = function(...) return MacroCallFar(op.MCODE_F_PANEL_FEXIST, ...) end,
@@ -519,11 +496,6 @@ Panel = {
   end,
   Select    = function(...) return MacroCallFar(op.MCODE_F_PANEL_SELECT, ...) end,
   SetPath   = function(...) return MacroCallFar(op.MCODE_F_PANEL_SETPATH, ...) end,
-  --SetPath = function(...)
-  --  local status,res=pcall(SetPath,...)
-  --  if status then return res end
-  --  return false
-  --end,
   SetPos    = function(...) return MacroCallFar(op.MCODE_F_PANEL_SETPOS, ...) end,
   SetPosIdx = function(...) return MacroCallFar(op.MCODE_F_PANEL_SETPOSIDX, ...) end,
 }
