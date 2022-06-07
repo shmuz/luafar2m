@@ -875,10 +875,10 @@ int PushBookmarks(lua_State *L, int count, int command)
       for (i=0; i < count; i++) {
         lua_pushinteger(L, i+1);
         lua_createtable(L, 0, 4);
-        PutIntToTable (L, "Line", ebm.Line[i]);
-        PutIntToTable (L, "Cursor", ebm.Cursor[i]);
-        PutIntToTable (L, "ScreenLine", ebm.ScreenLine[i]);
-        PutIntToTable (L, "LeftPos", ebm.LeftPos[i]);
+        PutIntToTable (L, "Line", ebm.Line[i] + 1);
+        PutIntToTable (L, "Cursor", ebm.Cursor[i] + 1);
+        PutIntToTable (L, "ScreenLine", ebm.ScreenLine[i] + 1);
+        PutIntToTable (L, "LeftPos", ebm.LeftPos[i] + 1);
         lua_rawset(L, -3);
       }
       return 1;
@@ -920,7 +920,7 @@ int editor_ClearStackBookmarks(lua_State *L)
 int editor_DeleteStackBookmark(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
-  INT_PTR num = luaL_optinteger(L, 1, -1);
+  INT_PTR num = luaL_optinteger(L, 1, 0) - 1;
   lua_pushboolean(L, Info->EditorControl(ECTL_DELETESTACKBOOKMARK, (void*)num));
   return 1;
 }
