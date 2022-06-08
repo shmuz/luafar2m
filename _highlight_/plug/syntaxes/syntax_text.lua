@@ -30,7 +30,7 @@
 
 Class {
   name = "My editor";
-  filemask = "*.txt;readme";
+  filemask = "*.txt,readme";
   syntax = syntax_text;
   fastlines = 0;
   firstline = "text";

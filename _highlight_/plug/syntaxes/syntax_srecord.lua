@@ -23,7 +23,7 @@
 
 Class {
   name = "Motorola S-record file";
-  filemask = "*.s19;*.s28;*.s37";
+  filemask = "*.s19,*.s28,*.s37";
   syntax = syntax_srec;
   fastlines = 0;
 }

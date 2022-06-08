@@ -269,18 +269,6 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
       end
     end
 
-    if need_paint and extrapattern then
-      local start = 1
-      while true do
-        local from, to = extrapattern:findW(str, start)
-        if not from then break end
-        start = to>=from and to+1 or from+1
-        if to >= from then
-          editor.AddColor(y, from, to, acFlags, extracolor, Priority+2, Owner)
-        end
-      end
-    end
-
     local left = 1
     while true do
       if current == nil then -- outside long string or long comment
@@ -353,6 +341,20 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
 
       end
     end
+
+    -- highlight extra pattern matches at the very end because color priorities in Far2 do not exist
+    if need_paint and extrapattern then
+      local start = 1
+      while true do
+        local from, to = extrapattern:findW(str, start)
+        if not from then break end
+        start = to>=from and to+1 or from+1
+        if to >= from then
+          editor.AddColor(y, from, to, acFlags, extracolor, Priority+2, Owner)
+        end
+      end
+    end
+
   end
 end
 
@@ -618,16 +620,16 @@ local function HighlightExtra()
     --hDlg:Enable(Pos.bExtended, bRegex)
   end
 
-  function Items.closeaction(hDlg, param1, state)
+  function Items.closeaction(hDlg, param1, data)
     if param1 == Pos.btReset then
       SetExtraPattern(editor.GetInfo().EditorID, nil)
     elseif param1 == Pos.btOk then
-      local sSearchPat = state.sSearchPat
+      local sSearchPat = data.sSearchPat
       local flags, syn = "", nil
-      if not state.bCaseSens then flags = flags.."i" end
-      if state.bExtended     then flags = flags.."x" end
-      if not state.bRegExpr  then syn = "ASIS" end
-      if state.bWholeWords then
+      if not data.bCaseSens then flags = flags.."i" end
+      if data.bExtended     then flags = flags.."x" end
+      if not data.bRegExpr  then syn = "ASIS" end
+      if data.bWholeWords then
         syn = nil
         local sNeedEscape = "[~!@#$%%^&*()%-+[%]{}\\|:;'\",<.>/?]"
         sSearchPat = "\\b" .. sSearchPat:gsub(sNeedEscape, "\\%1") .. "\\b"
@@ -635,7 +637,7 @@ local function HighlightExtra()
       local ok, r = pcall(rex.new, sSearchPat, flags, syn)
       if ok then
         SetExtraPattern(editor.GetInfo().EditorID, r)
-        for k,v in pairs(state) do Extra[k]=v end
+        for k,v in pairs(data) do Extra[k]=v end
         state.extracolor = extracolor
         Extra.Color = extracolor
         Sett.msave(SETTINGS_KEY, SETTINGS_NAME, Hist)
