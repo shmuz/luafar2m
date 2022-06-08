@@ -35,6 +35,7 @@ DLLFUNC void push_utf8_string (lua_State* L, const wchar_t* str, int numchars);
 wchar_t* utf8_to_utf16 (lua_State *L, int pos, int* pTrgSize);
 wchar_t* oem_to_utf16 (lua_State *L, int pos, int* pTrgSize);
 void push_oem_string (lua_State* L, const wchar_t* str, int numchars);
+void push_utf16_string(lua_State* L, const wchar_t* str, int numchars);
 
 int ustring_EnumSystemCodePages (lua_State *L);
 int ustring_GetACP (lua_State* L);

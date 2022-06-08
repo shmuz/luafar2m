@@ -609,8 +609,7 @@ int editor_GetInfo(lua_State *L)
  * i,i+1,i+2,...) то перед каждым ECTL_* надо делать ECTL_SETPOSITION а
  * сами ECTL_* вызывать с -1.
  */
-BOOL FastGetString (PSInfo *Info, struct EditorGetString *egs,
-  int string_num)
+BOOL FastGetString(int string_num, struct EditorGetString *egs, PSInfo *Info)
 {
   struct EditorSetPosition esp;
   esp.CurLine   = string_num;
@@ -619,51 +618,88 @@ BOOL FastGetString (PSInfo *Info, struct EditorGetString *egs,
   esp.TopScreenLine = -1;
   esp.LeftPos   = -1;
   esp.Overtype  = -1;
+
   if(!Info->EditorControl(ECTL_SETPOSITION, &esp))
     return FALSE;
 
   egs->StringNumber = string_num;
-  return Info->EditorControl(ECTL_GETSTRING, egs);
+  return Info->EditorControl(ECTL_GETSTRING, egs) != 0;
 }
 
-// LineInfo = EditorGetString (line_num, [fast])
-//   line_num:  number of line in the Editor, 0-based; a number
-//   fast:      0 = normal;
-//              1 = much faster, but changes current position;
-//              2 = the fastest: as 1 but returns StringText only;
-//   LineInfo:  a table
-int editor_GetString(lua_State *L)
+// EditorGetString (EditorId, line_num, [mode])
+//
+//   line_num:  number of line in the Editor, a 1-based integer.
+//
+//   mode:      0 = returns: table LineInfo;        changes current position: no
+//              1 = returns: table LineInfo;        changes current position: yes
+//              2 = returns: StringText,StringEOL;  changes current position: yes
+//              3 = returns: StringText,StringEOL;  changes current position: no
+//
+//   return:    either table LineInfo or StringText,StringEOL - depending on `mode` argument.
+//
+static int _EditorGetString(lua_State *L, int is_wide)
 {
-  PSInfo *Info = GetPluginStartupInfo(L);
-  int line_num = luaL_optinteger(L, 1, 0) - 1;
-  int fast     = luaL_optinteger(L, 2, 0);
-  BOOL res;
+  PSInfo *Info = GetPluginData(L)->Info;
+  intptr_t line_num = luaL_optinteger(L, 1, 0) - 1;
+  intptr_t mode = luaL_optinteger(L, 2, 0);
+  BOOL res = 0;
   struct EditorGetString egs;
 
-  if (fast == 1 || fast == 2)
-    res = FastGetString(Info, &egs, line_num);
-  else {
+  if(mode == 0 || mode == 3)
+  {
     egs.StringNumber = line_num;
-    res = Info->EditorControl(ECTL_GETSTRING, &egs);
+    res = Info->EditorControl(ECTL_GETSTRING, &egs) != 0;
   }
-  if (res) {
-    if (fast == 2)
-      push_utf8_string (L, egs.StringText, egs.StringLength);
-    else {
-      lua_createtable(L, 0, 6);
-      PutNumToTable  (L, "StringNumber", egs.StringNumber+1);
-      PutWStrToTable (L, "StringText",   egs.StringText, egs.StringLength);
-      PutWStrToTable (L, "StringEOL",    egs.StringEOL, -1);
-      PutNumToTable  (L, "StringLength", egs.StringLength);
-      PutNumToTable  (L, "SelStart",     egs.SelStart+1);
-      PutNumToTable  (L, "SelEnd",       egs.SelEnd);
-    }
-  }
-  else
-    lua_pushnil(L);
+  else if(mode == 1 || mode == 2)
+    res = FastGetString(line_num, &egs, Info);
 
-  return 1;
+  if(res)
+  {
+    if(mode == 2 || mode == 3)
+    {
+      if(is_wide)
+      {
+        push_utf16_string(L, egs.StringText, egs.StringLength);
+        push_utf16_string(L, egs.StringEOL, -1);
+      }
+      else
+      {
+        push_utf8_string(L, egs.StringText, egs.StringLength);
+        push_utf8_string(L, egs.StringEOL, -1);
+      }
+
+      return 2;
+    }
+    else
+    {
+      lua_createtable(L, 0, 6);
+      PutNumToTable(L, "StringNumber", (double)egs.StringNumber+1);
+      PutNumToTable(L, "StringLength", (double)egs.StringLength);
+      PutNumToTable(L, "SelStart", (double)egs.SelStart+1);
+      PutNumToTable(L, "SelEnd", (double)egs.SelEnd);
+
+      if(is_wide)
+      {
+        push_utf16_string(L, egs.StringText, egs.StringLength);
+        lua_setfield(L, -2, "StringText");
+        push_utf16_string(L, egs.StringEOL, -1);
+        lua_setfield(L, -2, "StringEOL");
+      }
+      else
+      {
+        PutWStrToTable(L, "StringText",  egs.StringText, egs.StringLength);
+        PutWStrToTable(L, "StringEOL",   egs.StringEOL, -1);
+      }
+    }
+
+    return 1;
+  }
+
+  return lua_pushnil(L), 1;
 }
+
+static int editor_GetString(lua_State *L) { return _EditorGetString(L, 0); }
+static int editor_GetStringW(lua_State *L) { return _EditorGetString(L, 1); }
 
 int editor_SetString(lua_State *L)
 {
@@ -1001,7 +1037,7 @@ int editor_GetSelection(lua_State *L)
   struct EditorSetPosition esp;
   Info->EditorControl(ECTL_GETINFO, &EI);
 
-  if(EI.BlockType == BTYPE_NONE || !FastGetString(Info, &egs, EI.BlockStartLine))
+  if(EI.BlockType == BTYPE_NONE || !FastGetString(EI.BlockStartLine, &egs, Info))
     return lua_pushnil(L), 1;
 
   lua_createtable(L, 0, 5);
@@ -1015,7 +1051,7 @@ int editor_GetSelection(lua_State *L)
 
   for(to = from+h; to < EI.TotalLines; to = from + (h*=2))
   {
-    if(!FastGetString(Info, &egs, to))
+    if(!FastGetString(to, &egs, Info))
       return lua_pushnil(L), 1;
 
     if(egs.SelStart < 0)
@@ -1030,7 +1066,7 @@ int editor_GetSelection(lua_State *L)
   {
     int curr = (from + to + 1) / 2;
 
-    if(!FastGetString(Info, &egs, curr))
+    if(!FastGetString(curr, &egs, Info))
       return lua_pushnil(L), 1;
 
     if(egs.SelStart < 0)
@@ -1046,7 +1082,7 @@ int editor_GetSelection(lua_State *L)
     }
   }
 
-  if(!FastGetString(Info, &egs, from))
+  if(!FastGetString(from, &egs, Info))
     return lua_pushnil(L), 1;
 
   PutIntToTable(L, "EndLine", from+1);
@@ -1096,11 +1132,12 @@ int editor_AddColor(lua_State *L)
 {
   PSInfo *Info = GetPluginStartupInfo(L);
   struct EditorColor ec;
+  int Flags;
   ec.StringNumber = luaL_optinteger  (L, 1, 0) - 1;
   ec.StartPos     = luaL_checkinteger(L, 2) - 1;
   ec.EndPos       = luaL_checkinteger(L, 3) - 1;
-  ec.Color        = luaL_checkinteger(L, 4) & 0x0000FFFF;
-  ec.Color       |= CheckFlags       (L, 5) & 0xFFFF0000;
+  Flags           = CheckFlags       (L, 4);
+  ec.Color        = (luaL_checkinteger(L, 5) & 0xFFFF) | (Flags & 0xFFFF0000);
   ec.ColorItem    = 0;
   lua_pushboolean(L, Info->EditorControl(ECTL_ADDCOLOR, &ec));
   return 1;
@@ -5267,6 +5304,7 @@ const luaL_Reg editor_funcs[] =
   {"GetSelection",        editor_GetSelection},
   {"GetStackBookmarks",   editor_GetStackBookmarks},
   {"GetString",           editor_GetString},
+  {"GetStringW",          editor_GetStringW},
   {"InsertString",        editor_InsertString},
   {"InsertText",          editor_InsertText},
   {"NextStackBookmark",   editor_NextStackBookmark},

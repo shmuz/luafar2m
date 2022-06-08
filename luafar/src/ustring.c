@@ -220,6 +220,13 @@ void push_oem_string (lua_State* L, const wchar_t* str, int numchars)
   push_multibyte_string(L, CP_OEMCP, str, numchars);
 }
 
+void push_utf16_string(lua_State* L, const wchar_t* str, int numchars)
+{
+	if(numchars < 0)
+		numchars = wcslen(str);
+	lua_pushlstring(L, (const char*)str, numchars*sizeof(wchar_t));
+}
+
 int ustring_MultiByteToWideChar (lua_State *L)
 {
   wchar_t* Trg;

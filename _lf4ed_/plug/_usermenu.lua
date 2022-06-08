@@ -14,5 +14,6 @@ AddToMenu ("e", nil, "Ctrl+4", 4)
 AddToMenu ("e", nil, "Ctrl+5", 5)
 AddToMenu ("e", nil, "Ctrl+6", 6)
 AddToMenu ("e", ":sep:")
+AddUserFile("scripts/test_sortlines.lua")
 
 -- AutoInstall("scripts")

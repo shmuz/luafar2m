@@ -2679,16 +2679,16 @@ id=22
 lv=2
 dt=Text
 nm=editor.AddColor
-mtime=3859993738
+mtime=3863841114
 <article>
-#_result = editor.AddColor (StringNumber, StartPos, EndPos, Color [, Flags])
+#_result = editor.AddColor (StringNumber, StartPos, EndPos, Flags, Color)
 #_
 #_**Parameters:**
 #_  StringNumber: integer, or nil
 #_  StartPos:     integer (1-based)
 #_  EndPos:       integer (1-based)
-#_  Color:        integer
 #_  Flags:        flags combination
+#_  Color:        integer
 #_
 #_**Returns:**
 #_  result: boolean
@@ -3088,21 +3088,21 @@ id=31
 lv=2
 dt=Text
 nm=editor.GetString
-mtime=3851868912
+mtime=3863840796
 <article>
 #_**Note:**
-#_--This function is an extension over its prototype in Far API.
-#_--There are concerns with regards to its API.
+#_  This function is an extension over its prototype in Far API.
 #_
 #_LineInfo = editor.GetString (StringNumber, Mode)
+#_    or
+#_StringText, StringEOL = editor.GetString (StringNumber, Mode)
 #_
 #_**Parameters:**
-#_  StringNumber: integer, 0-based
-#_  Mode:         integer (0=normal; 1=fast; 2=fastest)
+#_  StringNumber: integer, 1-based (default=0)
+#_  Mode:         integer (0,1,2,3; default=0)
 #_
 #_**Returns:**
-#_  LineInfo: table (mode<2), or string (mode==2), or nil
-#_    (if mode==2, only StringText is returned)
+#_  LineInfo: table (Mode<2), or 2 strings (Mode>=2), or nil
 #_    fields of LineInfo:
 #_      StringNumber: integer, 1-based
 #_      StringText:   string
@@ -3111,15 +3111,35 @@ mtime=3851868912
 #_      SelStart:     integer, 1-based
 #_      SelEnd:       integer, 1-based
 #_
-#_**Note:**
-#_  Modes 1 ("fast") and 2 ("fastest") have a side effect: the
-#_  current line position in the Editor is set to *StringNumber*.
+#_**Description:**
+#_  The function's behavior depends on its *Mode* argument:
+#_  Mode:  0 = returns: table LineInfo;        changes current position: no
+#_         1 = returns: table LineInfo;        changes current position: yes
+#_         2 = returns: StringText,StringEOL;  changes current position: yes
+#_         3 = returns: StringText,StringEOL;  changes current position: no
+#_
+#_  Modes 1 and 2 have a side effect: the current line position in the Editor
+#_  is set to *StringNumber*.
 #_
 #_**Far API used:**
 #_  EditorControl, ECTL_GETINFO, ECTL_SETPOSITION, ECTL_GETSTRING
 #_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=481
+lv=2
+dt=Text
+nm=editor.GetStringW
+ctime=3863801209
+mtime=3863801320
+<article>
+#_Same as editor.GetString but *StringText* and *StringEOL* are encoded in UTF-16LE.
 #_
 #_@@@
+#_<lua>Links = { ["editor.GetString"]="31.html" }</lua>
 #_
 </article>
 </node>

@@ -25,7 +25,7 @@ local luafar = {
 
     ["far"] = {
       fields = {
-        "AdvControl", "CmpName", "Colors", "ConvertPath", "CopyToClipboard",
+        "AdvControl", "CmpName", "ColorDialog", "Colors", "ConvertPath", "CopyToClipboard",
         "CPluginStartupInfo", "CreateFileFilter", "CreateUserControl", "DefDlgProc", "Dialog",
         "DialogFree", "DialogInit", "DialogRun", "Execute", "ExecuteLibrary", "FarMacroCallToLua",
         "Flags", "ForcedLoadPlugin", "GetCurrentDirectory", "GetDirList",
@@ -386,7 +386,7 @@ local luafar = {
         "AddColor", "AddStackBookmark", "ClearStackBookmarks", "DeleteBlock",
         "DeleteChar", "DeleteStackBookmark", "DeleteString", "Editor", "ExpandTabs",
         "GetBookmarks", "GetColor", "GetFileName", "GetInfo", "GetSelection",
-        "GetStackBookmarks", "GetString", "InsertString", "InsertText",
+        "GetStackBookmarks", "GetString", "GetStringW", "InsertString", "InsertText",
         "NextStackBookmark", "PrevStackBookmark", "ProcessInput", "ProcessKey", "Quit",
         "ReadInput", "RealToTab", "Redraw", "SaveFile", "Select", "SetKeyBar", "SetParam",
         "SetPosition", "SetString", "SetTitle", "TabToReal", "TurnOffMarkingBlock",
