@@ -435,13 +435,13 @@ end
 local function MakeMainMenu(aFrom)
   local properties = {
     Flags = F.FMENU_WRAPMODE, Title = M.MPluginName,
-    HelpTopic = "Contents", Bottom = "ctrl+sh+f9 (settings)", }
+    HelpTopic = "Contents", Bottom = "alt+sh+f9 (settings)", }
   --------
   local items = {}
   if aFrom == "editor" then AddMenuItems(EditorMenuItems, items) end
   AddMenuItems(_Plugin.UserItems[aFrom], items)
   --------
-  local keys = {{ BreakKey="CS+F9", action=Configure },}
+  local keys = {{ BreakKey="AS+F9", action=Configure },}
   return properties, items, keys
 end
 

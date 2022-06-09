@@ -478,7 +478,8 @@ local function ShowSettings()
         hDlg:SetText(Pos.edBench, "")
         local t1 = win.Clock()
         for k=1,math.huge do
-          editor.Redraw()
+          --editor.Redraw() --> this works from a dialog in Far3 but not in Far2L
+          actl.RedrawAll()
           local t2 = win.Clock()
           if t2-t1 > 1 then
             t1=(t2-t1)*1000/k; break

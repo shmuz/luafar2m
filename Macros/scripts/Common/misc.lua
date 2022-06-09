@@ -12,7 +12,7 @@ Macro {
 
 Macro {
   description="Macro Browser";
-  area="Common"; key="CtrlShiftF1";
+  area="Common"; key="AltShiftF1";
   action=function() Plugin.Call(0x4EBBEFC8, "browser") end;
 }
 

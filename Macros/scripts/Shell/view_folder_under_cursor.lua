@@ -3,7 +3,7 @@
 -- https://forum.farmanager.com/viewtopic.php?t=12619
 
 -- Settings -------------------------------------------------------
-local Key_manual   = "AltF3"
+local Key_manual   = "AltShiftF3"
 local Key_toggle   = "CtrlShiftQ"
 local Key_navigate = "Down Up PgDn PgUp Left Right Home End Enter"
 local Key_off      = "Tab"
