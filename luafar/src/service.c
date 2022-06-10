@@ -3723,19 +3723,6 @@ int far_ProcessName (lua_State *L)
     else
       lua_pushboolean(L, result);
   }
-  else if (flags & PN_CMPNAMELIST) {
-    //extend FAR API to support exclusion masks
-    wchar_t* pipe = wcschr(param1, L'|');
-    if (pipe) {
-      int r1, r2;
-      *pipe = 0;
-      r1 = (pipe == param1) || FSF->ProcessName(param1, param2, 0, flags);
-      r2 = FSF->ProcessName(pipe+1, param2, 0, flags);
-      lua_pushboolean(L, r1 && !r2);
-    }
-    else
-      lua_pushboolean(L, FSF->ProcessName(param1, param2, 0, flags));
-  }
   else
     lua_pushboolean(L, FSF->ProcessName(param1, param2, 0, flags));
 
