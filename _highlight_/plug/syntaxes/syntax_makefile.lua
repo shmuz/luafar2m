@@ -27,6 +27,6 @@
 
 Class {
   name = "Make file";
-  filemask = "/makefile([._\\-].+)?$/i,*.mak";
+  filemask = "Makefile*;*.mak";
   syntax = syntax_makefile;
 }

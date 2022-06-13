@@ -389,7 +389,8 @@ function SRFrame:InsertInDialog (aReplace)
   ------------------------------------------------------------------------------
   insert(Items, { tp="chbox"; name="bRegExpr";                         text=M.MDlgRegExpr;  })
   insert(Items, { tp="text";                         y1=""; x1=md;     text=M.MDlgRegexLib; })
-  insert(Items, { tp="combobox"; name="cmbRegexLib"; y1=""; x1=51; x2=64; dropdownlist=1; noauto=1;
+  local x1 = md + M.MDlgRegexLib:len()
+  insert(Items, { tp="combobox"; name="cmbRegexLib"; y1=""; x1=x1; width=14; dropdownlist=1; noauto=1;
            list = { {Text="Far regex"}, {Text="Lua regex"}, {Text="Oniguruma"}, {Text="PCRE"} };  })
   ------------------------------------------------------------------------------
   insert(Items, { tp="chbox"; name="bCaseSens";                        text=M.MDlgCaseSens; })

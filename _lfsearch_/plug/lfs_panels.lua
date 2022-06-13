@@ -448,8 +448,8 @@ local function SearchFromPanel (aData)
     nShow = nShow + 1
     if nShow % 32 == 0 then ShowProgress(fullname) end
     ---------------------------------------------------------------------------
-    local mask_ok = far.ProcessName(mask_incl, fdata.FileName, F.PN_CMPNAMELIST+F.PN_SKIPPATH) and
-      not (mask_excl and far.ProcessName(mask_excl, fdata.FileName, F.PN_CMPNAMELIST+F.PN_SKIPPATH))
+    local mask_ok = far.ProcessName(F.PN_CMPNAMELIST, mask_incl, fdata.FileName, F.PN_SKIPPATH) and
+      not (mask_excl and far.ProcessName(F.PN_CMPNAMELIST, mask_excl, fdata.FileName, F.PN_SKIPPATH))
     ---------------------------------------------------------------------------
     if fdata.FileAttributes:find("d") then
       if mask_ok and aData.bSearchFolders and aData.sSearchPat == "" then
@@ -457,7 +457,7 @@ local function SearchFromPanel (aData)
         tOut[cnt] = fullname
       end
       ---------------------------------------------------------------------------
-      if mask_dirs and far.ProcessName(mask_dirs, fullname, F.PN_CMPNAMELIST+F.PN_SKIPPATH) then
+      if mask_dirs and far.ProcessName(F.PN_CMPNAMELIST, mask_dirs, fullname, F.PN_SKIPPATH) then
         return
       end
       ---------------------------------------------------------------------------

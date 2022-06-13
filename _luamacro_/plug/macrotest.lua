@@ -1165,14 +1165,21 @@ local function test_Panel_Item()
 end
 
 local function test_Panel_SetPath()
+  -- store
+  local adir_old = panel.GetPanelDirectory(1)
+  local pdir_old = panel.GetPanelDirectory(0)
+  --test
   local pdir = "/bin"
   local adir = "/usr/bin"
   local afile = "ldd"
-  Panel.SetPath(1,pdir)
-  Panel.SetPath(0,adir,afile)
+  Panel.SetPath(1, pdir)
+  Panel.SetPath(0, adir, afile)
   assert(pdir == panel.GetPanelDirectory(0))
   assert(adir == panel.GetPanelDirectory(1))
   assert(panel.GetCurrentPanelItem(1).FileName == afile)
+  -- restore
+  Panel.SetPath(1, pdir_old)
+  Panel.SetPath(0, adir_old)
   actl.Commit()
 end
 

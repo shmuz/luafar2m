@@ -3706,25 +3706,30 @@ int far_LStrnicmp (lua_State *L)
 
 int far_ProcessName (lua_State *L)
 {
-  wchar_t* param1 = check_utf8_string(L, 1, NULL);
-  wchar_t* param2 = check_utf8_string(L, 2, NULL);
-  int flags = CheckFlags(L, 3);
+  int Op = CheckFlags(L,1);
+  const wchar_t* Mask = check_utf8_string(L,2,NULL);
+  const wchar_t* Name = check_utf8_string(L,3,NULL);
+  int Flags = OptFlags(L,4,0);
   struct FarStandardFunctions* FSF = GetFSF(L);
 
-  if (flags & PN_GENERATENAME) {
+  if(Op == PN_CMPNAME || Op == PN_CMPNAMELIST || Op == PN_CHECKMASK) {
+    int result = FSF->ProcessName(Mask, (wchar_t*)Name, 0, Op|Flags);
+    lua_pushboolean(L, result);
+  }
+  else if (Op == PN_GENERATENAME) {
     const int BUFSIZE = 1024;
     wchar_t* buf = (wchar_t*)lua_newuserdata(L, BUFSIZE * sizeof(wchar_t));
-    wcsncpy(buf, param2, BUFSIZE-1);
+    wcsncpy(buf, Name, BUFSIZE-1);
     buf[BUFSIZE-1] = 0;
 
-    int result = FSF->ProcessName(param1, buf, BUFSIZE, flags);
+    int result = FSF->ProcessName(Mask, buf, BUFSIZE, Flags);
     if (result)
       push_utf8_string(L, buf, -1);
     else
       lua_pushboolean(L, result);
   }
   else
-    lua_pushboolean(L, FSF->ProcessName(param1, param2, 0, flags));
+    luaL_argerror(L, 1, "command not supported");
 
   return 1;
 }

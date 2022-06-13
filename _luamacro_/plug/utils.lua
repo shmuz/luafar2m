@@ -81,7 +81,7 @@ local function FixInitialModules()
 end
 
 local function CheckFileName (mask, name)
-  return far.ProcessName(mask, name, bor(F.PN_SKIPPATH,F.PN_CMPNAMELIST))
+  return far.ProcessName(F.PN_CMPNAMELIST, mask, name, F.PN_SKIPPATH)
 end
 
 local StringToFlags, FlagsToString do

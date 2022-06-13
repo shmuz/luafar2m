@@ -5,12 +5,11 @@ local filemask =
   : gsub("%s*(%S+)%s*", "*.%1,") .. "changelog,makefile,readme"
 
 local F = far.Flags
-local pn_flags = bit.bor(F.PN_CMPNAMELIST, F.PN_SKIPPATH)
 
 local function RemoveTrailingSpaces(Id, Event, Param)
   if Event==F.EE_SAVE then
     local info = editor.GetInfo()
-    if info and far.ProcessName(filemask, info.FileName, pn_flags) then
+    if info and far.ProcessName(F.PN_CMPNAMELIST, filemask, info.FileName, F.PN_SKIPPATH) then
       for k=1,info.TotalLines do
         local ln = editor.GetString(k,1)
         local from = ln.StringText:find("%s+$")
