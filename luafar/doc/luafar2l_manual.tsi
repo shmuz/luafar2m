@@ -9423,12 +9423,11 @@ id=129
 lv=2
 dt=Text
 nm=LF_LuaOpen
-mtime=3852182656
+mtime=3864472807
 <article>
 #_<markdown>
 #_    lua_State* LF_LuaOpen (PluginStartupInfo *Info, 
-#_                           lua_CFunction OpenLibs,
-#_                           const wchar_t* EnvVarPrefix)
+#_                           lua_CFunction OpenLibs)
 #_
 #_#### Parameters:
 #_      Info:         Pointer to a static struct that must be already
@@ -9436,9 +9435,6 @@ mtime=3852182656
 #_
 #_      OpenLibs:     Pointer to a function that can open additional
 #_                    libraries. (NULL is allowed.)
-#_
-#_      EnvVarPrefix: Prefix for names of environment variables to be
-#_                    processed. (NULL is allowed.)
 #_
 #_#### Returns:
 #_      Pointer to a newly created lua_State that already has some
@@ -9524,13 +9520,12 @@ lv=2
 dt=Text
 nm=LF_InitLuaState
 ctime=3497514263
-mtime=3852182668
+mtime=3864472984
 <article>
 #_<markdown>
 #_    void LF_InitLuaState (lua_State* L,
 #_                          PluginStartupInfo *Info, 
-#_                          lua_CFunction OpenLibs,
-#_                          const wchar_t* EnvVarPrefix)
+#_                          lua_CFunction OpenLibs)
 #_
 #_#### Parameters:
 #_      L:            Lua state.
@@ -9541,9 +9536,6 @@ mtime=3852182668
 #_      OpenLibs:     Pointer to a function that can open additional
 #_                    libraries. (NULL is allowed.)
 #_
-#_      EnvVarPrefix: Prefix for names of environment variables to be
-#_                    processed. (NULL is allowed.)
-#_
 #_#### Description:
 #_
 #_The function performs the following actions, in this order
@@ -9552,13 +9544,7 @@ mtime=3852182668
 #_1. Open the standard Lua libraries, `far`, `bit` and `utf8`
 #_   libraries.
 #_1. Call `OpenLibs` function.
-#_1. Process `LUAFAR_PATH` the same way the standard Lua
-#_   interpreter does with `LUA_PATH`.
 #_1. Prepend `<plugin directory>\?.lua;` to `package.path`.
-#_1. Process `LUAFAR_CPATH` the same way the standard Lua
-#_   interpreter does with `LUA_CPATH`.
-#_1. Process `LUAFAR_INIT` the same way the standard Lua
-#_   interpreter does with `LUA_INIT`.
 #_
 #_@@@
 #_

@@ -5640,63 +5640,7 @@ BOOL LF_RunDefaultScript(lua_State* L)
   return (status == 0);
 }
 
-void ProcessEnvVars (lua_State *L, const char* aEnvPrefix, PSInfo *aInfo)
-{
-  char bufName[256];
-  const char* val;
-
-  strcpy(bufName, aEnvPrefix);
-  strcat(bufName, "_PATH");
-  val = getenv(bufName);
-  if (val) {
-    lua_getglobal(L, "package");
-    lua_pushstring(L, val);
-    lua_setfield(L, -2, "path");
-    lua_pop(L,1);
-  }
-
-  // prepend <plugin directory>\?.lua; to package.path
-  const wchar_t* p = aInfo->ModuleName;
-  lua_getglobal(L, "package");  //+1
-  push_utf8_string(L, p, wcsrchr(p, L'/') + 1 - p); //+2
-  lua_pushliteral(L, "?.lua;"); //+3
-  lua_getfield(L, -3, "path");  //+4
-  lua_concat(L, 3);             //+2
-  lua_setfield(L, -2, "path");  //+1
-  lua_pop(L, 1);
-
-  strcpy(bufName, aEnvPrefix);
-  strcat(bufName, "_CPATH");
-  val = getenv(bufName);
-  if (val) {
-    lua_getglobal(L, "package");
-    lua_pushstring(L, val);
-    lua_setfield(L, -2, "cpath");
-    lua_pop(L,1);
-  }
-
-  strcpy(bufName, aEnvPrefix);
-  strcat(bufName, "_INIT");
-  val = getenv(bufName);
-  if (val) {
-    int status;
-    if (*val == '@') {
-      status = luaL_loadfile(L, val+1) || lua_pcall(L,0,0,0);
-    }
-    else {
-      lua_pushstring(L, val);
-      status = luaL_loadstring(L, lua_tostring(L,-1)) || lua_pcall(L,0,0,0);
-      lua_remove(L, status ? -2 : -1);
-    }
-    if (status) {
-      LF_Error (L, check_utf8_string(L, -1, NULL));
-      lua_pop(L,1);
-    }
-  }
-}
-
-void LF_InitLuaState (lua_State *L, PSInfo *aInfo,
-                      lua_CFunction aOpenLibs, const char* aEnvPrefix)
+void LF_InitLuaState (lua_State *L, PSInfo *aInfo, lua_CFunction aOpenLibs)
 {
   int idx;
   lua_CFunction func_arr[] = { luaopen_far, luaopen_bit, luaopen_bit64, luaopen_unicode, luaopen_utf8 };
@@ -5718,8 +5662,6 @@ void LF_InitLuaState (lua_State *L, PSInfo *aInfo,
   lua_setfield(L, -2, "__index");
   lua_pop(L, 2);
 
-  //ProcessEnvVars(L, aEnvPrefix, aInfo);
-
   // Run "_plug_init.lua" residing in the plugin's directory (if any).
   // Absence of that file is not error.
   int top = lua_gettop(L);
@@ -5737,7 +5679,7 @@ void LF_InitLuaState (lua_State *L, PSInfo *aInfo,
 }
 
 // Initialize the interpreter
-int LF_LuaOpen (TPluginData* aPlugData, lua_CFunction aOpenLibs, const char* aEnvPrefix)
+int LF_LuaOpen (TPluginData* aPlugData, lua_CFunction aOpenLibs)
 {
   void *handle;
   lua_State *L;
@@ -5756,7 +5698,7 @@ int LF_LuaOpen (TPluginData* aPlugData, lua_CFunction aOpenLibs, const char* aEn
     aPlugData->dlopen_handle = handle;
     lua_pushlightuserdata(L, aPlugData);
     lua_setfield(L, LUA_REGISTRYINDEX, FAR_KEYINFO);
-    LF_InitLuaState(L, aPlugData->Info, aOpenLibs, aEnvPrefix);
+    LF_InitLuaState(L, aPlugData->Info, aOpenLibs);
     return 1;
   }
   dlclose(handle);

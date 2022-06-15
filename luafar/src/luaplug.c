@@ -18,14 +18,6 @@ extern int FUNC_OPENLIBS (lua_State*);
 #define FUNC_OPENLIBS NULL
 #endif
 
-#ifndef ENV_PREFIX
-# ifdef _WIN64
-#  define ENV_PREFIX "LUAFAR64"
-# else
-#  define ENV_PREFIX "LUAFAR"
-# endif
-#endif
-
 PSInfo Info;
 struct FarStandardFunctions FSF;
 lua_State* LS;
@@ -40,7 +32,7 @@ lua_State* GetLuaState()
 
 int LUAPLUG luaopen_luaplug (lua_State *L)
 {
-  LF_InitLuaState(L, &Info, FUNC_OPENLIBS, ENV_PREFIX);
+  LF_InitLuaState(L, &Info, FUNC_OPENLIBS);
   return 0;
 }
 //---------------------------------------------------------------------------
@@ -64,7 +56,7 @@ void LUAPLUG SetStartupInfoW(const PSInfo *aInfo)
   PluginData.DlgProc = DlgProc;
   PluginData.PluginId = SYS_ID;
 
-  if (!LS && LF_LuaOpen(&PluginData, FUNC_OPENLIBS, ENV_PREFIX)) //includes opening "far" library
+  if (!LS && LF_LuaOpen(&PluginData, FUNC_OPENLIBS)) //includes opening "far" library
     LS = PluginData.MainLuaState;
 
   if (LS && !LF_RunDefaultScript(LS))  {
