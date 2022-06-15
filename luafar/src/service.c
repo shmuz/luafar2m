@@ -5667,7 +5667,7 @@ void LF_InitLuaState (lua_State *L, PSInfo *aInfo, lua_CFunction aOpenLibs)
   int top = lua_gettop(L);
   const wchar_t* p = aInfo->ModuleName;
   push_utf8_string(L, p, wcsrchr(p, L'/') + 1 - p);   //+1
-  lua_pushliteral(L, "_plug_init.lua");               //+2
+  lua_pushliteral(L, "../../_plug_init.lua");         //+2
   lua_concat(L, 2);                                   //+1
   FILE *fp = fopen(lua_tostring(L,-1), "r");
   if (fp) {
