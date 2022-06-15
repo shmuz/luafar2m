@@ -3,6 +3,8 @@
 -- The module's exported functions (serialize, deserialize, mdelete, mload, msave)
 -- are described in macroapi_manual.<lang>.chm.
 
+local work_dir
+
 local function checkarg (arg, argnum, reftype)
   if type(arg) ~= reftype then
     error(("arg. #%d: %s expected, got %s"):format(argnum, reftype, type(arg)), 3)
@@ -95,7 +97,8 @@ local function deserialize (str, isfile)
 end
 
 local function get_work_dir(key)
-  return assert(os.getenv("HOME")).."/.config/far2l/plugins/luafar/"..key:lower()
+  work_dir = work_dir or far.GetConfigDir().."/plugins/luafar/"
+  return work_dir..key:lower().."/"
 end
 
 local function mdelete (key, name)
@@ -103,7 +106,7 @@ local function mdelete (key, name)
   checkarg(name, 2, "string")
   local dir = get_work_dir(key)
   if name ~= "*" then
-    return win.DeleteFile(dir.."/"..name:lower())
+    return win.DeleteFile(dir..name:lower())
   else
     far.RecursiveSearch(dir, "*", function(item, fullname) win.DeleteFile(fullname) end)
     return win.RemoveDir(dir)
@@ -117,7 +120,7 @@ local function msave (key, name, value)
   if str then
     local dir = get_work_dir(key)
     if win.CreateDir(dir, true) then
-      local fp = io.open(dir.."/"..name:lower(), "w")
+      local fp = io.open(dir..name:lower(), "w")
       if fp then
         fp:write(str)
         fp:close()
@@ -131,7 +134,7 @@ end
 local function mload (key, name)
   checkarg(key, 1, "string")
   checkarg(name, 2, "string")
-  return deserialize(get_work_dir(key).."/"..name:lower(), true)
+  return deserialize(get_work_dir(key)..name:lower(), true)
 end
 
 local function field(t, ...)

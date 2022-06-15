@@ -4972,6 +4972,23 @@ int far_ColorDialog(lua_State *L)
   return 1;
 }
 
+int far_GetConfigDir(lua_State *L)
+{
+  const char* dir = getenv("FARSETTINGS");
+  if (dir) {
+    lua_pushstring(L, dir);
+    lua_pushstring(L, "/.config");
+  }
+  else {
+    dir = getenv("HOME");
+    if (!dir) luaL_error(L, "$HOME not found");
+    lua_pushstring(L, dir);
+    lua_pushstring(L, "/.config/far2l");
+  }
+  lua_concat(L,2);
+  return 1;
+}
+
 int win_GetConsoleScreenBufferInfo (lua_State* L)
 {
   CONSOLE_SCREEN_BUFFER_INFO info;
@@ -5479,6 +5496,7 @@ const luaL_Reg far_funcs[] = {
   {"MacroCheck",          far_MacroCheck},
   {"MacroPost",           far_MacroPost},
   {"Log",                 far_Log},
+  {"GetConfigDir",        far_GetConfigDir},
 
   {NULL, NULL}
 };

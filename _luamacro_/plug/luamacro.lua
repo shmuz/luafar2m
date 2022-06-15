@@ -540,8 +540,8 @@ local function GetMacroDirs()
   end
 
   local dirs = {}
-  dirs.MainPath = ExpandEnv(mainpath or "%HOME%/.config/far2l/Macros")
-  dirs.LoadPathList = loadpathlist and ExpandEnv(loadpathlist)
+  dirs.MainPath = mainpath and ExpandEnv(mainpath) or far.GetConfigDir().."/Macros"
+  dirs.LoadPathList = loadpathlist and ExpandEnv(loadpathlist) or ""
   return dirs
 end
 

@@ -194,6 +194,9 @@ local function generateFPT (NodeIterator, ProjectName, fp_template, out_dir)
   local ProjectHeaderReady
   local nodeLevel = -1
   for node, _ in NodeIterator do
+    if node.datatype ~= "text" then
+      error(node.name .. ": article must be pure text type")
+    end
     local filename = ("%d.html"):format(node.id)
     local fCurrent = assert( io.open(path_join(out_dir,filename), "wt") )
     local article = process_article(node.article)

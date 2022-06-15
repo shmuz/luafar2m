@@ -46,6 +46,7 @@ end
 
 function export.GetPluginInfo()
   local Info = Env:GetPluginInfo()
+  Info.SysId = far.GetPluginId()
   --Info.Flags.preload = true
   return Info
 end

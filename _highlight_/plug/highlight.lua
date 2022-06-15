@@ -464,14 +464,14 @@ local function ShowSettings()
         if state then
           RereadEditFields(hDlg)
           state.On = not state.On
-          editor.Redraw()
+          actl.RedrawAll()
         end
       elseif Param1 == Pos.cbFastCur then
         if state then
           CheckEnableFastLines(hDlg)
           state.bFastMode = not state.bFastMode
           RereadEditFields(hDlg)
-          editor.Redraw()
+          actl.RedrawAll()
         end
       elseif Param1 == Pos.btBench then
         RereadEditFields(hDlg)
@@ -513,6 +513,7 @@ do
     Flags = bor(F.PF_EDITOR, F.PF_DISABLEPANELS),
     PluginMenuGuids = win.Uuid("BE07BD22-B463-4C8E-8BA2-2DA1497C9086"),
     PluginMenuStrings = { AppTitle },
+    SysId = far.GetPluginId(),
   }
   function export.GetPluginInfo() return info end
 end

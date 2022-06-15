@@ -5927,25 +5927,22 @@ id=190
 lv=2
 dt=Text
 nm=far.ProcessName
-mtime=3855250653
+mtime=3864298184
 <article>
-#_result = far.ProcessName (Param1, Param2, Flags)
+#_Result = far.ProcessName (Op, Mask, Name, Flags)
 #_
 #_**Parameters:**
-#_  Param1: string
-#_  Param2: string
-#_  Flags : flags combination
+#_  Op:    flag (either of PN_CMPNAME, PN_CMPNAMELIST, PN_GENERATENAME, PN_CHECKMASK)
+#_  Mask:  string
+#_  Name:  string (ignored when Op==PN_CHECKMASK)
+#_  Flags: flags (0 or PN_SKIPPATH; default=0)
 #_
 #_**Returns:**
-#_  result: boolean, or string.
-#_          String can be returned if Flags==PN_GENERATENAME
-#_
-#_**Note:**
-#_  If *Flags* contain *PN_CMPNAMELIST* then exclusion masks
-#_  are supported (it is an extension to Far API).
+#_  Result: boolean, or string.
+#_          String is returned on success if Op==PN_GENERATENAME
 #_
 #_**Far API used:**
-#_  FSF.ProcessName
+#_  ProcessName
 #_
 #_@@@
 #_
@@ -6355,6 +6352,30 @@ nm=far.CPluginStartupInfo
 #_{
 #_  return lua_pushlightuserdata(L, (void*)GetPluginStartupInfo(L)), 1;
 #_}
+#_
+</article>
+</node>
+<node>
+id=482
+lv=2
+dt=Text
+nm=far.GetConfigDir
+ctime=3864462591
+mtime=3864466073
+<article>
+#_Dir = far.GetConfigDir()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  Dir: string
+#_
+#_**Description:**
+#_  Unless Far Manager was launched with "-u" switch this function returns
+#_  "~/.config/far2l".
+#_
+#_@@@
 #_
 </article>
 </node>

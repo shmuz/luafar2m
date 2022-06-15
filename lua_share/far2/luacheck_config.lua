@@ -28,7 +28,7 @@ local luafar = {
         "AdvControl", "CmpName", "ColorDialog", "Colors", "ConvertPath", "CopyToClipboard",
         "CPluginStartupInfo", "CreateFileFilter", "CreateUserControl", "DefDlgProc", "Dialog",
         "DialogFree", "DialogInit", "DialogRun", "Execute", "ExecuteLibrary", "FarMacroCallToLua",
-        "Flags", "ForcedLoadPlugin", "GetCurrentDirectory", "GetDirList",
+        "Flags", "ForcedLoadPlugin", "GetConfigDir", "GetCurrentDirectory", "GetDirList",
         "GetFileOwner", "GetMsg", "GetNumberOfLinks", "GetPathRoot", "GetPluginId", "GetPluginDirList",
         "GetReparsePointInfo", "Guids", "InputBox", "InputRecordToKey", "InputRecordToName",
         "Keys", "KeyToName", "LIsAlpha", "LIsAlphanum", "LIsLower", "LIsUpper",
