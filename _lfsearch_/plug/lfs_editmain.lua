@@ -46,7 +46,7 @@ local function EditorDialog (aData, aReplace, aScriptCall)
   }
   local Frame = Common.CreateSRFrame(Items, aData, true)
   ------------------------------------------------------------------------------
-  Frame:InsertInDialog(aReplace)
+  Frame:InsertInDialog(false, aReplace and "replace" or "search")
   insert(Items, { tp="sep"; })
   ------------------------------------------------------------------------------
   insert(Items, { tp="text";  text=M.MDlgScope; })
@@ -142,7 +142,7 @@ local function EditorAction (aOp, aData, aScriptCall)
     bWithDialog = true
     bReplace = (aOp == "test:replace")
     sOperation = aOp:sub(6) -- skip "test:"
-    tParams = assert(Common.ProcessDialogData (aData, bReplace))
+    tParams = assert(Common.ProcessDialogData (aData, bReplace, true))
 
   else
     if aOp == "search" or aOp == "replace" then
@@ -165,7 +165,7 @@ local function EditorAction (aOp, aData, aScriptCall)
         if searchtext then aData.sSearchPat = searchtext end
       end
       sOperation = bReplace and "replace" or "search"
-      tParams = assert(Common.ProcessDialogData (aData, bReplace))
+      tParams = assert(Common.ProcessDialogData (aData, bReplace, true))
       tParams.bSearchBack = (aOp == "repeat_rev")
 
     elseif aOp == "searchword" or aOp == "searchword_rev" then
@@ -184,7 +184,7 @@ local function EditorAction (aOp, aData, aScriptCall)
       bWithDialog = true
       bReplace = false
       sOperation = "searchword"
-      tParams = assert(Common.ProcessDialogData (aData, false))
+      tParams = assert(Common.ProcessDialogData (aData, false, true))
 
     end
   end

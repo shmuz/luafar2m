@@ -72,12 +72,10 @@ local function TestEditorAction(aLibs)
   local function test_Switches(lib)
     SetEditorText("line1\rline2\rline3\rline4\r")
     local dt = { CurLine=2, CurPos=2 }
-    local lua0, lua1
-    if lib == "lua" then lua0, lua1 = 0, 1 else lua0, lua1 = 1, 0 end
 
-    for k1=lua1,1 do dt.bCaseSens   = (k1==1)
+    for k1=0,1    do dt.bCaseSens   = (k1==1)
     for k2=0,1    do dt.bRegExpr    = (k2==1)
-    for k3=0,lua0 do dt.bWholeWords = (k3==1)
+    for k3=0,1    do dt.bWholeWords = (k3==1)
     for k4=0,1    do dt.bExtended   = (k4==1)
     for k5=0,1    do dt.bSearchBack = (k5==1)
     for k6=0,1    do dt.sOrigin     = (k6==1 and "scope" or nil)
@@ -285,9 +283,7 @@ local function TestEditorAction(aLibs)
     AssertEditorText("3ihgfedcba9ihgfedcba27ihgfedcba")
     --------
     dt.sSearchPat = ".+"
-    dt.sReplacePat = lib=="lua" and
-      [[return T[0] .. '--' .. rex.match(T[0], '%d%d')]] or
-      [[return T[0] .. '--' .. rex.match(T[0], '\\d\\d')]]
+    dt.sReplacePat = [[return T[0] .. '--' .. rex.match(T[0], '\\d\\d')]]
     RunEditorAction(lib, "test:replace", dt, 1, 1)
     AssertEditorText("3ihgfedcba9ihgfedcba27ihgfedcba--27")
     --------
@@ -303,7 +299,7 @@ local function TestEditorAction(aLibs)
     -------- test 1-st return == true
     dt = { bRepIsFunc=true, bRegExpr=true, fUserChoiceFunc=fReturnAll,
            sReplacePat=[[return R==2 or "string"]], }
-    dt.sSearchPat = (lib=="lua") and "%D+" or "\\D+"
+    dt.sSearchPat = "\\D+"
     SetEditorText("line1\rline2\rline3\r")
     RunEditorAction(lib, "test:replace", dt, 3, 3)
     AssertEditorText("string1\rstring3\r")
@@ -389,7 +385,7 @@ local function TestEditorAction(aLibs)
 
   local function test_Encodings(lib)
     local dt = { bRegExpr=true, fUserChoiceFunc=fReturnAll }
-    dt.sSearchPat = (lib == "lua") and "%w+" or "\\w+"
+    dt.sSearchPat = "\\w+"
     --------
     SetEditorText(russian_alphabet_utf8)
     dt.sReplacePat = ""
@@ -413,7 +409,7 @@ local function TestEditorAction(aLibs)
   local function test_bug_20090208(lib)
     local dt = { bRegExpr=true, sReplacePat="\n$0",
                  sScope="block", fUserChoiceFunc=fReturnAll }
-    dt.sSearchPat = (lib == "lua") and "%w+" or "\\w+"
+    dt.sSearchPat = "\\w+"
     SetEditorText(("my table\r"):rep(5))
     editor.Select("BTYPE_STREAM",2,1,-1,2)
     RunEditorAction(lib, "test:replace", dt, 4, 4)
@@ -423,7 +419,7 @@ local function TestEditorAction(aLibs)
   local function test_EmptyMatch(lib)
     local dt = { bRegExpr=true, sSearchPat=".*?", sReplacePat="-",
                  fUserChoiceFunc = fReturnAll }
-    dt.sSearchPat = (lib == "lua") and ".-" or ".*?"
+    dt.sSearchPat = ".*?"
     SetEditorText(("line1\rline2\r"))
     RunEditorAction(lib, "test:replace", dt, 13, 13)
     AssertEditorText("-l-i-n-e-1-\r-l-i-n-e-2-\r-")
@@ -684,14 +680,12 @@ local function TestMReplaceEditorAction(aLibs)
   if type(aLibs) ~= "table" then aLibs = { "far" } end
   OpenHelperEditor()
   for _,lib in ipairs(aLibs) do
-    if lib ~= "lua" then
-      test_Switches     (lib)
-      test_Replace      (lib)
-      test_Encodings    (lib)
-      test_bug_20090208 (lib)
-      test_bug_20100802 (lib)
-      test_EmptyMatch   (lib)
-    end
+    test_Switches     (lib)
+    test_Replace      (lib)
+    test_Encodings    (lib)
+    test_bug_20090208 (lib)
+    test_bug_20100802 (lib)
+    test_EmptyMatch   (lib)
   end
   CloseHelperEditor()
   lfsearch.EditorAction("test:search", {})  -- reset history

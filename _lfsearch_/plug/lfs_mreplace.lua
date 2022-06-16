@@ -80,7 +80,7 @@ local function ReplaceDialog (Data)
     local tmpData = {}
     sd.SaveData(tOut, tmpData)
     tmpData.sRegexLib = RegexLibs[tOut.cmbRegexLib]
-    if Common.ProcessDialogData(tmpData, true) then
+    if Common.ProcessDialogData(tmpData, true, true) then
       Data.sRegexLib = tmpData.sRegexLib
       hDlg:AddHistory(Pos.sSearchPat, tmpData.sSearchPat)
       hDlg:AddHistory(Pos.sReplacePat, tmpData.sReplacePat)
@@ -124,7 +124,7 @@ local function EditorAction (op, data)
   end
 
   local bSelection = editorInfo.BlockType~=F.BTYPE_NONE
-  local tParams = Common.ProcessDialogData(data, op=="replace")
+  local tParams = Common.ProcessDialogData(data, op=="replace", true)
   if not tParams then
     far.Message("invalid input data"); return
   end

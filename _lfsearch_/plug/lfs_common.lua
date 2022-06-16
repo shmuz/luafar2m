@@ -143,37 +143,6 @@ local function CreateUfindMethod (tb_methods)
 end
 
 
-local function CreateUfindMethod_Lua (tb_methods)
-  if tb_methods.ufind == nil then
-    local find = tb_methods.find
-    tb_methods.ufind = function(r, s, init)
-      local t = { find(r, s, init) }
-      if t[1] ~= nil then
-        return t
-      end
-    end
-  end
-end
-
-
-local lua_methods = {
-  find = function(self, s, init)
-    -- string.find treats ^ irrespectively of `init'; let's correct that.
-    if self.pat:find("^%^") and not self.plain and init then
-      if (init > 1) or (init < 0 and init > -s:len()) then return nil end
-    end
-    return s:find(self.pat, init) -- , self.plain)
-  end,
-  gsub = function(self, s, r) return s:gsub(self.pat, r) end
-}
-local lua_functions = setmetatable({
-    new = function (pat, plain)
-      local p = { pat=pat, plain=plain }
-      return setmetatable(p, {__index = lua_methods})
-    end
-  }, {__index = utf8})
-
-
 local function GetRegexLib (engine_name)
   local base, deriv = nil, {}
   -----------------------------------------------------------------------------
@@ -188,10 +157,6 @@ local function GetRegexLib (engine_name)
         if t[1] ~= nil then return t end
       end
     end
-  -----------------------------------------------------------------------------
-  elseif engine_name == "lua" then
-    base = lua_functions
-    CreateUfindMethod_Lua(lua_methods)
   -----------------------------------------------------------------------------
   elseif engine_name == "pcre" then
     base = require "rex_pcre"
@@ -242,33 +207,90 @@ local function GetWordUnderCursor (select)
   end
 end
 
--- DON'T use loadstring here, that would be a security hole
--- (and just incorrect solution).
-local map_unescape = {
-  a='\a', b='\b', f='\f', n='\n', r='\r', t='\t',
-  v='\v', ['\\']='\\', ['\"']='\"', ['\'']='\''
-}
-local function unescape (str)
-  str = regex.gsub (str, [[\\(\d\d?\d?)|\\(.?)]],
-    function (c1, c2)
-      if c2 then return map_unescape[c2] or c2 end
-      c1 = tonumber (c1)
-      assert (c1 < 256, "escape sequence too large")
-      return string.char(c1)
-    end)
-  return str
+
+local function EscapeSearchPattern(pat)
+  pat = string.gsub(pat, "[~!@#$%%^&*()%-+[%]{}\\|:;'\",<.>/?]", "\\%1")
+  return pat
 end
 
 
-local function ProcessDialogData (aData, bReplace)
+local function GetCFlags (aData, bInEditor)
+  local cflags = aData.bCaseSens and "" or "i"
+  if aData.bRegExpr then
+    if aData.bExtended then cflags = cflags.."x" end
+    if aData.bFileAsLine then cflags = cflags.."s" end
+    if not bInEditor or aData.bMultiLine then cflags = cflags.."m" end
+  end
+  return cflags
+end
+
+
+local function ProcessSinglePattern (rex, aPattern, aData)
+  aPattern = aPattern or ""
+  local SearchPat = aPattern
+  if not aData.bRegExpr then
+    SearchPat = EscapeSearchPattern(SearchPat)
+    if aData.bWholeWords then
+      if rex.find(aPattern, "^\\w") then SearchPat = "\\b"..SearchPat end
+      if rex.find(aPattern, "\\w$") then SearchPat = SearchPat.."\\b" end
+    end
+  end
+  return SearchPat
+end
+
+
+-- There are 2 sequence types recognized:
+-- (1) starts with non-space && non-quote, ends before a space
+-- (2) enclosed in quotes, may contain inside pairs of quotes, ends before a space
+local OnePattern = [[
+  ([+\-] | (?! [+\-]))
+  (?:
+    ([^\s"]\S*) |
+    "((?:[^"] | "")+)" (?=\s|$)
+  ) |
+  (\S)
+]]
+
+local function ProcessMultiPatterns (aData, rex)
+  local subject = aData.sSearchPat or ""
+  local cflags = GetCFlags(aData, false)
+  local Plus, Minus, Usual = {}, {}, {}
+  local PlusGuard = {}
+  local NumPatterns = 0
+  for sign, nonQ, Q, tail in regex.gmatch(subject, OnePattern, "x") do
+    if tail then error("invalid multi-pattern") end
+    local pat = nonQ or Q:gsub([[""]], [["]])
+    pat = ProcessSinglePattern(rex, pat, aData)
+    if sign == "+" then
+      if not PlusGuard[pat] then
+        Plus[ rex.new(pat, cflags) ] = true
+        PlusGuard[pat] = true
+      end
+    elseif sign == "-" then
+      Minus[#Minus+1] = "(?:"..pat..")"
+    else
+      Usual[#Usual+1] = "(?:"..pat..")"
+    end
+    NumPatterns = NumPatterns + 1
+  end
+  Minus = Minus[1] and table.concat(Minus, "|")
+  Usual = Usual[1] and table.concat(Usual, "|")
+  Minus = Minus and rex.new(Minus, cflags)
+  Usual = Usual and rex.new(Usual, cflags)
+  return { Plus=Plus, Minus=Minus, Usual=Usual, NumPatterns=NumPatterns }
+end
+
+
+local function ProcessDialogData (aData, bReplace, bInEditor, bUseMultiPatterns, bSkip)
   local params = {}
   params.bFileAsLine = aData.bFileAsLine
+  params.bInverseSearch = aData.bInverseSearch
   params.bConfirmReplace = aData.bConfirmReplace
   params.bSearchBack = aData.bSearchBack
   params.bDelEmptyLine = aData.bDelEmptyLine
   params.bDelNonMatchLine = aData.bDelNonMatchLine
   params.sOrigin = aData.sOrigin
-  params.sSearchPat = aData.sSearchPat
+  params.sSearchPat = aData.sSearchPat or ""
   params.FileFilter = aData.bUseFileFilter and aData.FileFilter
   ---------------------------------------------------------------------------
   params.Envir = setmetatable({}, {__index=_G})
@@ -277,49 +299,40 @@ local function ProcessDialogData (aData, bReplace)
     return setfenv(f, params.Envir)()
   end
   ---------------------------------------------------------------------------
-  local bRegexLua = (aData.sRegexLib == "lua")
-  local rex
-  local ok, ret = pcall(GetRegexLib, aData.sRegexLib or "far")
-  if ok then rex, params.Envir.rex = ret, ret
-  else ErrorMsg(ret); return
+  local libname = aData.sRegexLib or "far"
+  local ok, rex = pcall(GetRegexLib, libname)
+  if not ok then
+    ErrorMsg(rex, "Error loading '"..libname.."'")
+    return
   end
+  params.Envir.rex = rex
 
-  local SearchPat = aData.sSearchPat or ""
-  local cflags
-  if aData.bRegExpr then
-    if bRegexLua then
-      if aData.bExtended then
-        SearchPat = SearchPat:gsub("(%%?)(.)",
-          function(a,b) if a=="" and b:find("^%s") then return "" end
-          end)
-      end
-      ok, ret = pcall(unescape, SearchPat)
-      if ok then
-        SearchPat = ret
-        ok, ret = pcall(("").match, "", SearchPat) -- syntax check
-      end
-      if not ok then ErrorMsg(ret) return end
-    else
-      cflags = aData.bCaseSens and "" or "i"
-      if aData.bExtended   then cflags = cflags.."x" end
-      if aData.bMultiLine  then cflags = cflags.."m" end
-      if aData.bFileAsLine then cflags = cflags.."s" end
+  if bUseMultiPatterns and aData.bMultiPatterns then
+    local ok, ret = pcall(ProcessMultiPatterns, aData, rex)
+    if ok then params.tMultiPatterns, params.Regex = ret, rex.new(".")
+    else ErrorMsg(ret, M.MSearchPattern..": "..M.MSyntaxError); return nil,"sSearchPat"
     end
   else
-    local sNeedEscape = "[~!@#$%%^&*()%-+[%]{}\\|:;'\",<.>/?]"
-    if bRegexLua then
-      cflags = true
-      SearchPat = SearchPat:gsub(sNeedEscape, "%%%1")
-    else
-      cflags = aData.bCaseSens and "" or "i"
-      SearchPat = SearchPat:gsub(sNeedEscape, "\\%1")
-      if aData.bWholeWords then SearchPat = "\\b"..SearchPat.."\\b" end
+    local SearchPat = ProcessSinglePattern(rex, aData.sSearchPat, aData)
+    local cflags = GetCFlags(aData, bInEditor)
+    if libname=="far" then cflags = cflags.."o"; end -- optimize
+    local ok, ret = pcall(rex.new, SearchPat, cflags)
+    if not ok then
+      ErrorMsg(ret, M.MSearchPattern..": "..M.MSyntaxError)
+      return nil,"sSearchPat"
     end
-  end
-
-  ok, ret = pcall(rex.new, SearchPat, cflags)
-  if ok then params.Regex = ret
-  else ErrorMsg(ret, M.MSearchPattern..": "..M.MSyntaxError); return
+    if bSkip then
+      local SkipPat = ProcessSinglePattern(rex, aData.sSkipPat, aData)
+      ok, ret = pcall(rex.new, SkipPat, cflags)
+      if not ok then
+        ErrorMsg(ret, M.MSkipPattern..": "..M.MSyntaxError)
+        return nil,"sSkipPat"
+        end
+      local Pat = "("..SkipPat..")" .. "|" .. "(?:"..SearchPat..")" -- SkipPat has priority over SearchPat
+      ret = assert(rex.new(Pat, cflags), "invalid combined reqular expression")
+      params.bSkip = true
+    end
+    params.Regex = ret
   end
   ---------------------------------------------------------------------------
   if bReplace then
@@ -361,7 +374,7 @@ local function ProcessDialogData (aData, bReplace)
 end
 
 local SRFrame = {}
-SRFrame.Libs = {"far", "lua", "oniguruma", "pcre"}
+SRFrame.Libs = {"far", "oniguruma", "pcre"}
 local SRFrameMeta = {__index = SRFrame}
 
 local function CreateSRFrame (Items, aData, bInEditor)
@@ -369,14 +382,14 @@ local function CreateSRFrame (Items, aData, bInEditor)
   return setmetatable(self, SRFrameMeta)
 end
 
-function SRFrame:InsertInDialog (aReplace)
+function SRFrame:InsertInDialog (aPanelsDialog, aOp)
   local insert = table.insert
   local Items = self.Items
-  local md = 38 -- "middle"
+  local md = 40 -- "middle"
   insert(Items, { tp="text"; text=M.MDlgSearchPat; })
   insert(Items, { tp="edit"; name="sSearchPat"; hist="SearchText"; })
   ------------------------------------------------------------------------------
-  if aReplace then
+  if aOp == "replace" then
     insert(Items, { tp="text";  text=M.MDlgReplacePat; })
     insert(Items, { tp="edit";  name="sReplacePat";      hist="ReplaceText"; })
     insert(Items, { tp="chbox"; name="bRepIsFunc";       x1=7,         text=M.MDlgRepIsFunc; })
@@ -391,57 +404,43 @@ function SRFrame:InsertInDialog (aReplace)
   insert(Items, { tp="text";                         y1=""; x1=md;     text=M.MDlgRegexLib; })
   local x1 = md + M.MDlgRegexLib:len()
   insert(Items, { tp="combobox"; name="cmbRegexLib"; y1=""; x1=x1; width=14; dropdownlist=1; noauto=1;
-           list = { {Text="Far regex"}, {Text="Lua regex"}, {Text="Oniguruma"}, {Text="PCRE"} };  })
+           list = { {Text="Far regex"}, {Text="Oniguruma"}, {Text="PCRE"} };  })
   ------------------------------------------------------------------------------
   insert(Items, { tp="chbox"; name="bCaseSens";                        text=M.MDlgCaseSens; })
   insert(Items, { tp="chbox"; name="bExtended"; x1=md; y1="";          text=M.MDlgExtended; })
   insert(Items, { tp="chbox"; name="bWholeWords";                      text=M.MDlgWholeWords; })
-end
-
-function SRFrame:CheckRegexInit (hDlg)
-  local Data = self.Data
-  local Pos = self.Pos or sd.Indexes(self.Items)
-  self.Pos = Pos
-  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
-  local lib = self:GetLibName(hDlg)
-  local bLua = (lib == "lua")
-  self.PrevLib = lib
-  hDlg:SetCheck (Pos.bWholeWords, not (bRegex or bLua) and Data.bWholeWords)
-  hDlg:Enable   (Pos.bWholeWords, not (bRegex or bLua))
-  hDlg:SetCheck (Pos.bExtended, bRegex and Data.bExtended)
-  hDlg:Enable   (Pos.bExtended, bRegex)
-  hDlg:SetCheck (Pos.bCaseSens, bLua or Data.bCaseSens)
-  hDlg:Enable   (Pos.bCaseSens, not bLua)
-end
-
-function SRFrame:CheckRegexEnab (hDlg)
-  local Pos = self.Pos or sd.Indexes(self.Items)
-  self.Pos = Pos
-  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
-  if self:GetLibName(hDlg) ~= "lua" then
-    if bRegex then hDlg:SetCheck(Pos.bWholeWords, 0) end
-    hDlg:Enable(Pos.bWholeWords, not bRegex)
+  ------------------------------------------------------------------------------
+  if aPanelsDialog and aOp=="search" then
+    insert(Items, { tp="chbox"; name="bFileAsLine";    x1=md; y1="";   text=M.MDlgFileAsLine;    })
+    insert(Items, { tp="chbox"; name="bMultiPatterns";                 text=M.MDlgMultiPatterns; })
+    insert(Items, { tp="chbox"; name="bInverseSearch"; x1=md; y1="";   text=M.MDlgInverseSearch; })
   end
-  if not bRegex then hDlg:SetCheck(Pos.bExtended, 0) end
+end
+
+function SRFrame:CheckRegexInit (hDlg, Data)
+  local Pos = self.Pos or sd.Indexes(self.Items)
+  self.Pos = Pos
+  hDlg:SetCheck (Pos.bWholeWords, Data.bWholeWords)
+  hDlg:SetCheck (Pos.bExtended,   Data.bExtended)
+  hDlg:SetCheck (Pos.bCaseSens,   Data.bCaseSens)
+  self:CheckRegexChange(hDlg)
+end
+
+function SRFrame:CheckRegexChange (hDlg)
+  local Pos = self.Pos or sd.Indexes(self.Items)
+  self.Pos = Pos
+  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
+
+  if bRegex then hDlg:SetCheck(Pos.bWholeWords, false) end
+  hDlg:Enable(Pos.bWholeWords, not bRegex)
+
+  if not bRegex then hDlg:SetCheck(Pos.bExtended, false) end
   hDlg:Enable(Pos.bExtended, bRegex)
-end
 
-function SRFrame:CheckRegexLib (hDlg)
-  local Pos = self.Pos or sd.Indexes(self.Items)
-  self.Pos = Pos
-  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
-  local lib = self:GetLibName(hDlg)
-  local bPrevLua = (self.PrevLib == "lua")
-  local bLua = (lib == "lua")
-  if bLua ~= bPrevLua then
-    if not bRegex then
-      if bLua then hDlg:SetCheck(Pos.bWholeWords, 0) end
-      hDlg:Enable(Pos.bWholeWords, not bLua)
-    end
-    if bLua then hDlg:SetCheck(Pos.bCaseSens, 1) end
-    hDlg:Enable(Pos.bCaseSens, not bLua)
+  if Pos.bFileAsLine then
+    if not bRegex then hDlg:SetCheck(Pos.bFileAsLine, false) end
+    hDlg:Enable(Pos.bFileAsLine, bRegex)
   end
-  self.PrevLib = lib
 end
 
 function SRFrame:CheckAdvancedEnab (hDlg)
@@ -520,17 +519,17 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
       hDlg:SetCheck(Pos[name], true)
       self:CheckAdvancedEnab(hDlg)
     end
-    self:CheckRegexInit(hDlg)
+    self:CheckRegexInit(hDlg, self.Data)
   ----------------------------------------------------------------------------
   elseif msg == F.DN_BTNCLICK then
     if param1==Pos.bRegExpr then
-      self:CheckRegexEnab(hDlg)
+      self:CheckRegexChange(hDlg)
     elseif bInEditor and param1==Pos.bAdvanced then
       self:CheckAdvancedEnab(hDlg)
     end
   ----------------------------------------------------------------------------
   elseif msg == F.DN_EDITCHANGE then
-    if param1 == Pos.cmbRegexLib then self:CheckRegexLib(hDlg) end
+    if param1 == Pos.cmbRegexLib then self:CheckRegexChange(hDlg) end
   ----------------------------------------------------------------------------
   elseif msg == F.DN_CLOSE then
     if (param1 == Pos.btnOk) or bInEditor and
@@ -541,6 +540,9 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
       Data.bRegExpr    = hDlg:GetCheck(Pos.bRegExpr)
       Data.bWholeWords = hDlg:GetCheck(Pos.bWholeWords)
       Data.bExtended   = hDlg:GetCheck(Pos.bExtended)
+      if Pos.bFileAsLine    then Data.bFileAsLine    = hDlg:GetCheck(Pos.bFileAsLine)    end
+      if Pos.bMultiPatterns then Data.bMultiPatterns = hDlg:GetCheck(Pos.bMultiPatterns) end
+      if Pos.bInverseSearch then Data.bInverseSearch = hDlg:GetCheck(Pos.bInverseSearch) end
       ------------------------------------------------------------------------
       if bInEditor then
         if Data.sSearchPat == "" then
@@ -573,7 +575,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
       end
       Data.sRegexLib = lib
       ------------------------------------------------------------------------
-      self.close_params = ProcessDialogData(Data, bReplace)
+      self.close_params = ProcessDialogData(Data, bReplace, bInEditor, Pos.bMultiPatterns and Data.bMultiPatterns)
       if not self.close_params then
         return KEEP_DIALOG_OPEN
       end

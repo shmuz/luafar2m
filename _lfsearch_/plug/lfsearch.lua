@@ -127,7 +127,7 @@ local function OpenFromMacro (args)
          area==F.MACROAREA_QVIEWPANEL or area==F.MACROAREA_INFOPANEL
       then
         if Cmd=="search" then
-          return Panels.SearchFromPanel(data) and true
+          return Panels.SearchFromPanel(data, true) and true
         end
       end
     end
@@ -181,7 +181,7 @@ function export.OpenPlugin (aFrom, aItem)
 
   elseif aFrom == F.OPEN_PLUGINSMENU then
     local data = History["main"]
-    if Panels.SearchFromPanel(data) then
+    if Panels.SearchFromPanel(data, true) then
       SaveSettings()
     end
   end
@@ -223,5 +223,5 @@ end
 
 
 function lfsearch.SearchFromPanel (data)
-  return Panels.SearchFromPanel(data)
+  return Panels.SearchFromPanel(data, true)
 end

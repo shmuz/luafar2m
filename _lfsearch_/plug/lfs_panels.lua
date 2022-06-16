@@ -26,6 +26,7 @@ local KEY_SPACE   = F.KEY_SPACE
 
 -- search area
 local saFromCurrFolder, saOnlyCurrFolder, saSelectedItems, saRootFolder, saPathFolders = 1,2,3,4,5
+local saCOUNT = 5
 
 local function ConfigDialog (aHistory)
   local aData = field(aHistory, "TmpPanel")
@@ -200,13 +201,14 @@ end
 
 local searchGuid  = "3CD8A0BB-8583-4769-BBBC-5B6667D13EF9"
 local replaceGuid = "F7118D4A-FBC3-482E-A462-0167DF7CC346"
+local grepGuid    = "74D7F486-487D-40D0-9B25-B2BB06171D86"
 
-local function PanelDialog (aData, aReplace, aHelpTopic)
+local function PanelDialog  (aOp, aData, aScriptCall)
   local insert = table.insert
   local Items = {
     width = 76;
-    help = aHelpTopic;
-    guid = aReplace and replaceGuid or searchGuid;
+    help = "OperInPanels";
+    guid = aOp=="search" and searchGuid or aOp=="replace" and replaceGuid or grepGuid;
   }
   local Frame = Common.CreateSRFrame(Items, aData, false)
   ------------------------------------------------------------------------------
@@ -214,7 +216,7 @@ local function PanelDialog (aData, aReplace, aHelpTopic)
   insert(Items, { tp="text"; text=M.MFileMask; })
   insert(Items, { tp="edit"; name="sFileMask"; hist="Masks"; uselasthistory=1; })
   ------------------------------------------------------------------------------
-  Frame:InsertInDialog(aReplace)
+  Frame:InsertInDialog(true, aOp)
   ------------------------------------------------------------------------------
   local X2 = 40 + M.MDlgUseFileFilter:gsub("&",""):len() + 5
   insert(Items, { tp="sep"; })
@@ -323,9 +325,7 @@ local function PanelDialog (aData, aReplace, aHelpTopic)
   end
   sd.LoadData(aData, Items)
   Frame:OnDataLoaded(aData, false)
-  local out = sd.Run(Items)
-  if not out then return "cancel" end
-  return aReplace and "replace" or "search", Frame.close_params
+  return sd.Run(Items) and Frame.close_params
 end
 
 local function MakeItemList (panelInfo, area)
@@ -378,9 +378,15 @@ local function PressEnter()
   end
 end
 
-local function SearchFromPanel (aData)
-  local sOperation, tParams = PanelDialog(aData, false, "OperInPanels")
-  if sOperation == "cancel" then return end
+local function SearchFromPanel (aData, aWithDialog, aScriptCall)
+  local tParams
+  if aWithDialog then
+    tParams = PanelDialog("search", aData, aScriptCall)
+  else
+    tParams = Common.ProcessDialogData(aData, false, false, true)
+  end
+  if not tParams then return end
+  ----------------------------------------------------------------------------
 
   -- take care of the future "repeat" operations in the Editor
   aData.sLastOp = "search"
@@ -406,7 +412,7 @@ local function SearchFromPanel (aData)
   ----------------------------------------------------------------------------
   local panelInfo = panel.GetPanelInfo(1)
   local area = aData.iSearchArea or 1
-  if area < 1 or area > 7 then area = 1 end
+  if area < 1 or area > saCOUNT then area = 1 end
   local bRecurse, bSymLinks
   local itemList, flags = MakeItemList(panelInfo, area)
   if aData.bSearchSymLinks then
@@ -551,7 +557,7 @@ local function SearchFromPanel (aData)
   else
     actl.RedrawAll()
     if userbreak or 1==far.Message(M.MNoFilesFound,M.MMenuTitle,M.MButtonsNewSearch) then
-      return SearchFromPanel(aData)
+      return SearchFromPanel(aData, true)
     end
   end
   return true
