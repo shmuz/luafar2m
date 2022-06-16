@@ -214,8 +214,8 @@ local function export_ProcessEditorInput (Rec)
   return EV_Handler(Events.editorinput, editor.GetFileName(nil), Rec)
 end
 
-local function export_ProcessConsoleInput (Rec, Flags)
-  return EV_Handler(Events.consoleinput, nil, Rec, Flags)
+local function export_ProcessConsoleInput (Rec)
+  return EV_Handler(Events.consoleinput, nil, Rec)
 end
 
 local function export_GetContentFields (colnames)

@@ -309,3 +309,11 @@ void LUAPLUG FreeCustomDataW(wchar_t *CustomData)
 }
 #endif
 //---------------------------------------------------------------------------
+
+#if defined(EXPORT_PROCESSCONSOLEINPUT) || defined(EXPORT_ALL)
+int LUAPLUG ProcessConsoleInputW(INPUT_RECORD *Rec)
+{
+  return LS ? LF_ProcessConsoleInput(LS, Rec) : 0;
+}
+#endif
+//---------------------------------------------------------------------------

@@ -8,9 +8,9 @@ local luafar = {
         "ClosePlugin", "Compare", "Configure", "DeleteFiles", "ExitFAR", "GetCustomData",
         "GetFiles", "GetFindData", "GetOpenPluginInfo", "GetPluginInfo",
         "GetVirtualFindData", "MakeDirectory", "OnError", "OpenFilePlugin", "OpenPlugin",
-        "ProcessDialogEvent", "ProcessEditorEvent", "ProcessEditorInput", "ProcessEvent",
-        "ProcessHostFile", "ProcessKey", "ProcessViewerEvent", "PutFiles", "SetDirectory",
-        "SetFindList",
+        "ProcessConsoleInput", "ProcessDialogEvent", "ProcessEditorEvent",
+        "ProcessEditorInput", "ProcessEvent", "ProcessHostFile", "ProcessKey",
+        "ProcessViewerEvent", "PutFiles", "SetDirectory", "SetFindList",
       };
     };
   };

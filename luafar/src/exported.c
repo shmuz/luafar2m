@@ -15,6 +15,7 @@ extern int  GetFlagsFromTable(lua_State *L, int pos, const char* key);
 extern HANDLE Open_Luamacro (lua_State* L, int OpenFrom, INT_PTR Item);
 extern int  bit64_push(lua_State *L, INT64 v);
 extern int  bit64_getvalue(lua_State *L, int pos, INT64 *target);
+extern void FillInputRecord(lua_State *L, int pos, INPUT_RECORD *ir);
 
 void PackMacroValues(lua_State* L, size_t Count, const struct FarMacroValue* Values); // forward declaration
 
@@ -1063,10 +1064,8 @@ void LF_GetPluginInfo(lua_State* L, struct PluginInfo *aPI)
   *aPI = *PI;
 }
 
-int LF_ProcessEditorInput (lua_State* L, const INPUT_RECORD *Rec)
+void PushInputRecord (lua_State* L, const INPUT_RECORD *Rec)
 {
-  if (!GetExportFunction(L, "ProcessEditorInput"))   //+1: Func
-    return 0;
   lua_newtable(L);                   //+2: Func,Tbl
   PutNumToTable(L, "EventType", Rec->EventType);
   if (Rec->EventType==KEY_EVENT || Rec->EventType==FARMACRO_KEY_EVENT) {
@@ -1090,6 +1089,13 @@ int LF_ProcessEditorInput (lua_State* L, const INPUT_RECORD *Rec)
   else if (Rec->EventType == FOCUS_EVENT) {
     PutBoolToTable(L, "SetFocus", Rec->Event.FocusEvent.bSetFocus);
   }
+}
+
+int LF_ProcessEditorInput (lua_State* L, const INPUT_RECORD *Rec)
+{
+  if (!GetExportFunction(L, "ProcessEditorInput"))   //+1: Func
+    return 0;
+  PushInputRecord(L, Rec);
   int ret = pcall_msg(L, 1, 1);      //+1: Res
   if (ret == 0) {
     ret = lua_toboolean(L,-1);
@@ -1264,3 +1270,29 @@ void  LF_FreeCustomData(lua_State* L, wchar_t *CustomData)
   if (CustomData) free(CustomData);
 }
 
+int LF_ProcessConsoleInput(lua_State* L, INPUT_RECORD *Rec)
+{
+  int ret = 0;
+
+  if(GetExportFunction(L, "ProcessConsoleInput"))    //+1: Func
+  {
+    PushInputRecord(L, Rec);                         //+2
+
+    if(pcall_msg(L, 1, 1) == 0)                      //+1: Res
+    {
+      if(lua_type(L,-1) == LUA_TNUMBER && lua_tonumber(L,-1) == 0)
+        ret = 0;
+      else if(lua_type(L,-1) == LUA_TTABLE)
+      {
+        FillInputRecord(L, -1, Rec);
+        ret = 2;
+      }
+      else
+        ret = lua_toboolean(L,-1);
+
+      lua_pop(L,1);
+    }
+  }
+
+  return ret;
+}
