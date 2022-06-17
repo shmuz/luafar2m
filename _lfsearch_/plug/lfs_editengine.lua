@@ -495,17 +495,17 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
             sRepFinal = true
           end
           if sRepFinal then
-            --=================================================================
+            -------------------------------------------------------------------
             local function Replace()
+              local sLastRep
               local bTraceSelection = tBlockInfo
                 and (tBlockInfo.BlockType == F.BTYPE_STREAM)
                 and (tBlockInfo.EndLine == y) and (tBlockInfo.EndPos ~= -1)
-              local sLastRep
-              local nAdded, nDeleted = 0, 0
+              local nAddedLines, nDeletedLines = 0, 0
 
               if sRepFinal == true then
                 bLineDeleted = true
-                nDeleted = 1
+                nDeletedLines = 1
                 editor.DeleteString()
               else
                 local sStartLine
@@ -514,7 +514,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
                   sLastRep = txt
                   sHead = sHead .. txt
                   if nl == "" then break end
-                  if nAdded == 0 then
+                  if nAddedLines == 0 then
                     sStartLine = sHead
                     sHead = part1 .. sHead
                     part1 = ""
@@ -523,19 +523,19 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
                   editor.SetPosition(nil, sHead:len()+1)
                   editor.InsertString()
                   sHead = ""
-                  nAdded = nAdded + 1
+                  nAddedLines = nAddedLines + 1
                 end
 
                 set_sLine(sHead .. sLine:sub(to+1))
                 local line = part1 .. sLine .. part3
-                bLineDeleted = aParams.bDelEmptyLine and line == ""
-                nDeleted = bLineDeleted and 1 or 0
+                bLineDeleted = aParams.bDelEmptyLine and nAddedLines==0 and line == ""
+                nDeletedLines = bLineDeleted and 1 or 0
                 if bLineDeleted then editor.DeleteString()
                 else EditorSetCurString(line)
                 end
 
                 if bForward then
-                  y = y + nAdded
+                  y = y + nAddedLines
                   x = sHead:len() + 1
                 else
                   if sStartLine then set_sLine(sStartLine) end
@@ -545,7 +545,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
               end
 
               if tBlockInfo then
-                tBlockInfo.EndLine = tBlockInfo.EndLine + nAdded - nDeleted
+                tBlockInfo.EndLine = tBlockInfo.EndLine + nAddedLines - nDeletedLines
                 if bTraceSelection then
                   if bLineDeleted then
                     tBlockInfo.EndPos = -1
@@ -554,7 +554,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
                   end
                 end
               else
-                tInfo.TotalLines = tInfo.TotalLines + nAdded - nDeleted
+                tInfo.TotalLines = tInfo.TotalLines + nAddedLines - nDeletedLines
               end
 
               if sChoice == "yes" then
@@ -567,7 +567,7 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
               nReps = nReps + 1
               return bLineDeleted
             end
-            --=================================================================
+            -------------------------------------------------------------------
             if sChoice == "all" then
               if Replace() then break end
               editor.SetPosition(y, x)

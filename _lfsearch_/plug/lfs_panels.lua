@@ -397,6 +397,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   local W2 = WID - W1 - 3
   local TITLE = M.MTitleSearching
   local Regex = tParams.Regex
+  local Find = Regex.find
   local BLOCKLEN, OVERLAP = 32*1024, -1024
   ----------------------------------------------------------------------------
   local codePages
@@ -428,6 +429,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
       userbreak = true; return true
     end
   end
+
   local function ConfirmEsc2()
     local r = far.Message(M.MConfirmCancel, M.MInterrupted, M.MButtonsCancelOnFile, "w")
     if r==1 then userbreak = true end
@@ -435,7 +437,6 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   end
   local tOut, cnt, nShow = {}, 0, 0
   far.Message((" "):rep(WID).."\n"..M.MFilesFound.."0", TITLE, "")
-  --===========================================================================
 
   local function ShowProgress(fullname)
     local len = fullname:len()
@@ -443,7 +444,6 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
               fullname:sub(1,W1).. "..." .. fullname:sub(-W2)
     far.Message(s.."\n"..M.MFilesFound..cnt, TITLE, "")
   end
-  --===========================================================================
 
   local function ProcessFile(fdata, fullname, file_filter, mask_incl, mask_excl, mask_dirs)
     ---------------------------------------------------------------------------
@@ -477,40 +477,73 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     ---------------------------------------------------------------------------
     if not mask_ok then return end
     ---------------------------------------------------------------------------
-    local found = aData.sSearchPat == ""
-    if not found then
-      local fp = io.open(fullname, "rb")
-      if fp then
-        ShowProgress(fullname)
-        local str = ""
-        repeat
-          if win.ExtractKey() == "ESCAPE" and ConfirmEsc2() then
-            fp:close(); return userbreak
-          end
-          if #str == BLOCKLEN then fp:seek("cur", OVERLAP) end
-          str = fp:read(BLOCKLEN)
-          if not str then break end
-          for _, cp in ipairs(codePages) do
-            local s
-            if cp == 1200 or cp == 65001 then s = str
-            elseif cp == 1201 then s = string.gsub(str, "(.)(.)", "%2%1")
-            else s = win.MultiByteToWideChar(str, cp)--, cp==65000 and "" or "e")
-            end
-            if s and cp ~= 65001 then s = win.Utf16ToUtf8(s) end
-            if s then
-              local ok, start = pcall(Regex.find, Regex, s)
-              if ok and start then found = true break end
-            end
-          end
-        until found
-        fp:close()
-      end
+    if aData.sSearchPat == "" then
+      cnt = cnt+1
+      tOut[cnt] = fullname
+      return
     end
     ---------------------------------------------------------------------------
-    if found then cnt = cnt+1; tOut[cnt] = fullname; end
+    local fp = io.open(fullname, "rb")
+    if not fp then return end
     ---------------------------------------------------------------------------
+    local found, stop
+    local tPlus, uMinus, uUsual
+    if tParams.tMultiPatterns then
+      local t = tParams.tMultiPatterns
+      uMinus, uUsual = t.Minus, t.Usual -- copy; do not modify the original table fields!
+      tPlus = {}; for k,v in pairs(t.Plus) do tPlus[k]=v end -- copy; do not use the original table directly!
+    end
+
+    ShowProgress(fullname)
+    local str = ""
+    repeat
+      if win.ExtractKey() == "ESCAPE" and ConfirmEsc2() then
+        fp:close(); return userbreak
+      end
+      if #str == BLOCKLEN then fp:seek("cur", OVERLAP) end
+      str = fp:read(BLOCKLEN)
+      if not str then break end
+      for _, cp in ipairs(codePages) do
+        local s
+        if cp == 1200 or cp == 65001 then s = str
+        elseif cp == 1201 then s = string.gsub(str, "(.)(.)", "%2%1")
+        else s = win.MultiByteToWideChar(str, cp)--, cp==65000 and "" or "e")
+        end
+        if s and cp ~= 65001 then s = win.Utf16ToUtf8(s) end
+        if s then
+          ---- local ok, start = pcall(Find, Regex, s)
+          ---- if ok and start then found = true break end
+          if tPlus == nil then
+            local ok, start = pcall(Find, Regex, s)
+            if ok and start then found = true; break; end
+          else
+            if uMinus and Find(uMinus, s) then
+              stop=true; break
+            end
+            for pattern in pairs(tPlus) do
+              if Find(pattern, s) then tPlus[pattern]=nil end
+            end
+            if uUsual and Find(uUsual, s) then
+              uUsual = nil
+            end
+            if not (next(tPlus) or uMinus or uUsual) then
+              found=true; break
+            end
+          end
+        end
+      end
+    until found or stop
+
+    if tPlus then
+      found = found or not (stop or next(tPlus) or uUsual)
+    end
+    if not found ~= not tParams.bInverseSearch then
+      cnt = cnt+1
+      tOut[cnt] = fullname
+    end
+
+    fp:close()
   end
-  --===========================================================================
 
   local FileFilter = tParams.FileFilter
   if FileFilter then FileFilter:StartingToFilter() end
