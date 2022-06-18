@@ -52,6 +52,8 @@ local Editors    = require "lfs_editors"
 local M          = require "lfs_message"
 local MReplace   = require "lfs_mreplace"
 local Panels     = require "lfs_panels"
+local _          = require "lfs_common"
+local _          = require "lfs_editengine"
 
 local History      = _Plugin.History
 local ModuleDir    = _Plugin.ModuleDir
@@ -202,12 +204,15 @@ lfsearch.MReplaceEditorAction = MReplace.EditorAction
 lfsearch.MReplaceDialog = MReplace.ReplaceWithDialog
 
 
-function lfsearch.EditorAction (aOp, aData)
+function lfsearch.EditorAction (aOp, aData, aSaveData)
   assert(type(aOp)=="string", "arg #1: string expected")
   assert(type(aData)=="table", "arg #2: table expected")
-  local newdata = {}
-  for k,v in pairs(aData) do newdata[k] = v end
-  return EditorAction(aOp, newdata, true)
+  local newdata = {}; for k,v in pairs(aData) do newdata[k] = v end
+  local nFound, nReps = EditMain.EditorAction(aOp, newdata, true)
+  if aSaveData and nFound then
+    _Plugin.History.main = newdata
+  end
+  return nFound, nReps
 end
 
 

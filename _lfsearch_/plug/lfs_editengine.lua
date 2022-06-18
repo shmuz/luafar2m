@@ -1,14 +1,77 @@
 -- lfs_editengine.lua
+-- luacheck: globals _Plugin
 
-local M             = require "lfs_message"
-local Common        = require "lfs_common"
+local M          = require "lfs_message"
+local Common     = require "lfs_common"
+local Editors    = require "lfs_editors"
+
 local CustomMessage = require "far2.message"
-local CustomMenu    = require "far2.custommenu"
+local CustomMenu = require "far2.custommenu"
+
 local F = far.Flags
-local EditorGetString = editor.GetString
-local EditorSetString = editor.SetString
-local _lastclock
-local floor, ceil, min = math.floor, math.ceil, math.min
+local floor, ceil, min, max = math.floor, math.ceil, math.min, math.max
+local lenW = win.lenW
+local Utf16 = win.Utf8ToUtf16
+
+
+-- This function is that long because FAR API does not supply needed
+-- information directly.
+local function GetSelectionInfo (EditorId)
+  local GetString = editor.GetString
+
+  local Info = editor.GetInfo(EditorId)
+  if Info.BlockType == F.BTYPE_NONE then return end
+
+  local egs = GetString(Info.BlockStartLine, 1)
+  if not egs then return end
+
+  local out = {
+    BlockType = Info.BlockType;
+    StartLine = Info.BlockStartLine;
+    StartPos = egs.SelStart;
+  }
+  if Info.BlockType == F.BTYPE_COLUMN then
+    out.TabStartPos = editor.RealToTab(Info.BlockStartLine, egs.SelStart)
+    out.TabEndPos = editor.RealToTab(Info.BlockStartLine, egs.SelEnd)
+  end
+
+  -- binary search for a non-block line
+  local h = 100 -- arbitrary small number
+  local from = Info.BlockStartLine
+  local to = from + h
+  while to <= Info.TotalLines do
+    egs = GetString(to, 1)
+    if not egs then return end
+    if egs.SelStart < 1 or egs.SelEnd == 0 then break end
+    h = h * 2
+    to = from + h
+  end
+  if to > Info.TotalLines then to = Info.TotalLines end
+
+  -- binary search for the last block line
+  while from ~= to do
+    local curr = floor((from + to + 1) / 2)
+    egs = GetString(curr, 1)
+    if not egs then return end
+    if egs.SelStart < 1 or egs.SelEnd == 0 then
+      if curr == to then break end
+      to = curr   -- curr was not selected
+    else
+      from = curr -- curr was selected
+    end
+  end
+
+  egs = GetString(from, 1)
+  if not egs then return end
+
+  out.EndLine = from
+  out.EndPos = egs.SelEnd
+
+  -- restore current position, since FastGetString() changed it
+  editor.SetPosition(Info)
+  return out
+end
+
 
 -- All arguments must be in UTF-8.
 local function GetReplaceChoice (aTitle, s_found, s_rep)
@@ -44,18 +107,12 @@ local function EditorSelect (b)
 end
 
 
-local function CheckUserBreak (aTitle)
-  return (win.ExtractKey() == "ESCAPE") and
-    1 == far.Message(M.MUsrBrkPrompt, aTitle, ";YesNo", "w")
-end
-
-
 -- This function replaces the old 9-line function.
 -- The reason for applying a new, much more complicated algorithm is that
 -- the old algorithm has unacceptably poor performance on long subjects.
-local function find_back (s, regex, init)
-  local out = regex:ufind(s, 1)
-  if out == nil or out[2]>=init then return nil end
+local function find_back (patt, ufind_method, s, init)
+  local outFrom, outTo, out = ufind_method(patt, s, 1)
+  if outFrom == nil or outTo >= init then return nil end
 
   local BEST = 1
   local stage = 1
@@ -63,15 +120,16 @@ local function find_back (s, regex, init)
   local start = ceil((MIN+MAX)/2)
 
   while true do
-    local res = regex:ufind(s, start)
-    if res and res[2]>=init then res=nil end
+    local resFrom, resTo, res = ufind_method(patt, s, start)
+    if resFrom and resTo >= init then res=nil end
     local ok = false
     ---------------------------------------------------------------------------
-    if stage == 1 then -- maximize out[2]
+    if stage == 1 then -- maximize outTo
       if res then
-        if res[2] > out[2] then
+        if resTo > outTo then
           BEST, out, ok = start, res, true
-        elseif res[2] == out[2] then
+          outFrom, outTo = resFrom, resTo
+        elseif resTo == outTo then
           ok = true
         end
       end
@@ -87,11 +145,12 @@ local function find_back (s, regex, init)
         start = floor((MIN+MAX)/2)
       end
     ---------------------------------------------------------------------------
-    else -- minimize out[1]
-      if res and res[2] >= out[2] then
-        if res[1] < out[1] then
+    else -- minimize outFrom
+      if res and resTo >= outTo then
+        if resFrom < outFrom then
           out, ok = res, true
-        elseif res[1] == out[1] then
+          outFrom, outTo = resFrom, resTo
+        elseif resFrom == outFrom then
           ok = true
         end
       end
@@ -107,57 +166,114 @@ local function find_back (s, regex, init)
     end
     ---------------------------------------------------------------------------
   end
-  return out
+  return outFrom, outTo, out
 end
 
 
--- Note: argument 'row' can be nil (using current line)
+--- ScrollToPosition -----------------------------------------------------------
+-- @param row         (number of) line to show in the screen center (nil means using current line)
+-- @param pos         cursor position in the current line
+-- @param from        start position of selection
+-- @param to          end position of selection
+-- @param scroll      extra number of lines to scroll; "none"=no scroll; "lazy"=only if necessary;
+--------------------------------------------------------------------------------
 local function ScrollToPosition (row, pos, from, to, scroll)
-  local editInfo = editor.GetInfo()
-  local LeftPos = editInfo.LeftPos
+  local Info = editor.GetInfo()
+  local LeftPos = 1
   -- left-most (or right-most) char is not visible
-  if (from <= LeftPos) or (to > LeftPos + editInfo.WindowSizeX) then
-    if to - from + 1 >= editInfo.WindowSizeX then
-      LeftPos = from - 1
+  if to > Info.WindowSizeX then
+    local SelLen = to - from + 1
+    if SelLen >= Info.WindowSizeX then
+      LeftPos = from
     else
-      LeftPos = floor((to + from - 1 - editInfo.WindowSizeX) / 2)
-      if LeftPos < 0 then LeftPos = 0 end
+      LeftPos = from - floor( 3*(Info.WindowSizeX - SelLen) / 4 )
+      if LeftPos < 1 then LeftPos = 1 end
     end
   end
-  -----------------------------------------------------------------------------
-  local top
-  local halfscreen = editInfo.WindowSizeY / 2
-  scroll = scroll or 0
-  row = row or editInfo.CurLine
-  if row < halfscreen - scroll then
-    top = 1
-  elseif row > halfscreen + scroll then
-    top = row - floor(halfscreen + scroll - 0.5)
-  else
-    top = row - floor(halfscreen - scroll - 0.5)
+
+  row = row or Info.CurLine
+  local TopScreenLine = nil
+  if (scroll == "+lazy") or (scroll == "-lazy") then
+    if row < Info.TopScreenLine or row >= Info.TopScreenLine + Info.WindowSizeY then
+      scroll = floor(Info.WindowSizeY * (scroll=="+lazy" and 0.25 or 0.75))
+      TopScreenLine = max(1, row - scroll)
+    end
+  elseif scroll ~= "none" then
+    scroll = (scroll or 0) + floor(Info.WindowSizeY / 2)
+    TopScreenLine = max(1, row - scroll)
   end
-  -----------------------------------------------------------------------------
-  editor.SetPosition { TopScreenLine=top, CurLine=row, LeftPos=LeftPos, CurPos=pos }
+
+  editor.SetPosition({
+    CurLine = row,
+    TopScreenLine = TopScreenLine,
+    LeftPos = LeftPos,
+    CurPos = pos,
+  })
 end
 
 
-local function SelectItemInEditor(item)
-  local fr, to = item.fr-item.offset, item.to-item.offset
-  ScrollToPosition(item.lineno, to+1, fr, to)
-  editor.Select("BTYPE_STREAM", nil, fr, to-fr+1, 1)
-  actl.RedrawAll() -- editor.Redraw doesn't work from the dialog
+local function SelectItemInEditor (item)
+  local offset = item.seloffset - item.offset
+  local fr, to = item.fr + offset, item.to + offset
+  ScrollToPosition(item.lineno, to+1, fr, to, -10)
+  editor.Select("BTYPE_STREAM", item.lineno, fr, to<=fr and 1 or to-fr+1, 1)
+  editor.Redraw()
+end
+
+
+local Timing = {}
+local TimingMeta = {__index=Timing}
+local function NewTiming()
+  local curr = os.clock()
+  local self = {
+    lastclock   = curr,
+    tStart      = curr,
+    last_update = 0,
+    nOp         = 0,
+    nOpMax      = 5,
+  }
+  return setmetatable(self, TimingMeta)
+end
+
+function Timing:SetLastClock() self.lastclock = os.clock() end
+function Timing:SetStartTime(offset) self.tStart = os.clock() - (offset or 0) end
+function Timing:GetElapsedTime() return os.clock() - self.tStart end
+
+function Timing:Step (dlgTitle, fUpdateInfo, arg1, arg2)
+  self.nOp = self.nOp + 1
+  if self.nOp < self.nOpMax then return end -- don't use "==" here (int vs floating point)
+  -------------------------------------------------
+  self.nOp = 0
+  local currclock = os.clock()
+  local tm = currclock - self.lastclock
+  if tm == 0 then tm = 0.01 end
+  self.nOpMax = self.nOpMax * 0.5 / tm
+  if self.nOpMax > 100 then self.nOpMax = 100 end
+  self.lastclock = currclock
+  -------------------------------------------------
+  if currclock - self.last_update >= 0.5 then
+    if fUpdateInfo then fUpdateInfo(arg1, arg2) end
+    if win.ExtractKey()=="ESCAPE" and 1==far.Message(M.MUsrBrkPrompt, dlgTitle, M.MBtnYesNo, "w") then
+      return true
+    end
+    self.last_update = currclock
+    self.tStart = self.tStart + os.clock() - currclock
+  end
 end
 
 
 local function ShowAll_ChangeState (hDlg, item, force_dock)
+  SelectItemInEditor(item)
+
   local EI = editor.GetInfo()
-  local rect = hDlg:GetDlgRect()
+  local rect = hDlg:send("DM_GETDLGRECT")
   local scrline = item.lineno - EI.TopScreenLine + 1
   if force_dock or (scrline >= rect.Top and scrline <= rect.Bottom) then
     local X = force_dock and (EI.WindowSizeX - (rect.Right - rect.Left + 1)) or rect.Left
     local Y = scrline <= EI.WindowSizeY/2 and EI.WindowSizeY - (rect.Bottom - rect.Top) or 1
-    hDlg:MoveDialog(1, {X=X, Y=Y})
+    hDlg:send("DM_MOVEDIALOG", 1, {X=X, Y=Y})
   end
+
   -- This additional editor.Redraw() is a workaround due to a bug in FAR
   -- that makes selection invisible in modal editors.
   editor.Redraw()
@@ -169,15 +285,19 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
 
   local Info = editor.GetInfo()
 
+  local timing = NewTiming()
   local maxno = #tostring(items.maxline)
   local fmt = ("%%%dd%s %%s"):format(maxno, ("").char(9474))
   for _, item in ipairs(items) do
+    if timing:Step(M.MTitleSearch) then
+      return
+    end
     local s = item.text:gsub("%z", " ") -- replace null bytes with spaces
     local n = maxno + 2
     item.offset, item.fr, item.to = n, item.fr+n, item.to+n
     item.text = fmt:format(item.lineno, s)
   end
-  local bottom = #items..M.MLinesFound.." [F6,F7,F8,Ctrl-C]"
+  local bottom = #items..M.MMatchesFound.." [F6,F7,F8,Ctrl-C]"
 
   local list = CustomMenu.NewList({
       hmax = floor(Info.WindowSizeY * 0.5) - 4,
@@ -191,16 +311,17 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
     }, items)
 
   function list:onlistchange (hDlg, key, item)
-    SelectItemInEditor(item)
     ShowAll_ChangeState(hDlg, item, false)
   end
+
+  -- local rep_html = {["<"]="&lt;"; [">"]="&gt;"; ["&"]="&amp;"; ["\""]="&quot;"}
+  -- local function html(s) return (s:gsub("[<>&\"]", rep_html)) end
 
   local newsearch = false
   function list:keyfunction (hDlg, key, item)
     if regex.match(key, "^R?Ctrl(?:Up|Down|Home|End|Num[1278])$") then
-      editor.ProcessKey(far.NameToKey(key))
-      actl.RedrawAll()
-      hDlg:Redraw()
+      editor.ProcessInput(far.NameToInputRecord(key))
+      hDlg:send("DM_REDRAW")
       return "done"
     elseif key=="CtrlNum0" or key=="RCtrlNum0" then
       self:onlistchange(hDlg, key, item)
@@ -208,6 +329,22 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
     elseif key=="F8" then
       newsearch = true
       return "break"
+    -- elseif key=="F2" then
+    --   local fname = Info.FileName:match(".+\\").."tmp.tmp.html"
+    --   local fp = io.open(fname, "w")
+    --   if fp then
+    --     fp:write("\239\187\191") -- UTF-8 BOM
+    --     fp:write("<pre><code>\n")
+    --     fp:write("*** ", html(Info.FileName), " ***\n")
+    --     fp:write("*** ", html(title), " ***\n")
+    --     for i,v in ipairs(items) do
+    --       local s1, s2, s3 = v.text:sub(1,v.fr-1), v.text:sub(v.fr,v.to), v.text:sub(v.to+1)
+    --       fp:write(html(s1).."<b>"..html(s2).."</b>"..html(s3), "\n")
+    --     end
+    --     fp:write("</code></pre>\n")
+    --     fp:close()
+    --     win.ShellExecute(nil, "open", fname)
+    --   end
     end
   end
 
@@ -217,7 +354,6 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
     ShowAll_ChangeState(hDlg, self.items[1], true)
   end
 
-  SelectItemInEditor(list.items[1])
   local item = CustomMenu.Menu(
     {
       DialogId  = win.Uuid("D0596479-B9AB-4C0E-A28B-D009C000C63C"),
@@ -239,41 +375,64 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
   return newsearch
 end
 
-
-local function EditorSetCurString (text)
-  if not EditorSetString(nil, text) then error("EditorSetString failed") end
+local function GetInvariantTable (tRegex)
+  local is_wide = tRegex.ufindW and true
+  return {
+    EditorGetString = is_wide and editor.GetStringW  or editor.GetString,
+    EditorSetString = is_wide and editor.SetStringW  or editor.SetString,
+    empty           = is_wide and win.Utf8ToUtf16""  or "",
+    find            = is_wide and regex.findW        or regex.find,
+    gmatch          = is_wide and regex.gmatchW      or regex.gmatch,
+    len             = is_wide and win.lenW or ("").len,
+    sub             = is_wide and win.subW or ("").sub,
+    U8              = is_wide and win.Utf16ToUtf8    or function(s) return s end,
+  }
 end
 
+local function make_update_info (aScriptCall)
+  return aScriptCall and function() end
+    or function(nFound, y) editor.SetTitle(M.MCurrentlyFound .. nFound) end
+end
 
--- @aOp: "search", "replace", "count", "showall", "searchword"
-local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
+local function NeedWrapTheSearch (bForward, timing)
+  local elapsed = timing:GetElapsedTime()
+  local res = far.Message(bForward and M.MWrapAtBeginning or M.MWrapAtEnd, M.MMenuTitle, ";YesNo")
+  timing:SetStartTime(elapsed)
+  return res == 1
+end
+
+local function DoSearch (
+    sOperation,       -- [in]     "search", "count", "showall", "searchword"
+    bFirstSearch,     -- [in]     whether this is first or repeated search
+    bScriptCall,      -- [in]     whether this call is from a script
+    tRepeat,          -- [in/out] data saved from previous operation / for next repeat operation
+    tRegex,           -- [in]     contains methods: ufindW, gsubW and/or ufind, gsub
+    bScopeIsBlock,    -- [in]     boolean
+    bOriginIsScope,   -- [in]     boolean
+    bWrapAround,      -- [in]     wrap search around the scope
+    bSearchBack,      -- [in]     search in reverse direction
+    fFilter,          -- [in]     either function or nil
+    sSearchPat        -- [in]     search pattern (for display purpose only)
+  )
+
+  local update_info = make_update_info(bScriptCall)
+  local timing = NewTiming()
+  bWrapAround = (not bScopeIsBlock) and (not bOriginIsScope) and bWrapAround
+
+  local is_wide = tRegex.ufindW and true
+  local TT = GetInvariantTable(tRegex)
+  local ufind_method = tRegex.ufindW or tRegex.far_tfind or Editors.WrapTfindMethod(tRegex.ufind)
   -----------------------------------------------------------------------------
-  local bSearchBack      = aParams.bSearchBack
-  local bForward         = not aParams.bSearchBack
-  local bAllowEmpty      = aWithDialog
-  local fFilter, Regex   = aParams.FilterFunc, aParams.Regex
-  local fChoice          = aChoiceFunc or GetReplaceChoice
-  local bFastCount       = (aOp == "count") and bForward
-  local sTitle           = (aOp == "replace") and M.MTitleReplace or M.MTitleSearch
-  local fReplace         = (aOp == "replace") and Common.GetReplaceFunction(aParams.ReplacePat)
-  local bDelNonMatchLine = (aOp == "replace") and aWithDialog and aParams.bDelNonMatchLine
-  local tItems           = (aOp == "showall") and {}
-  local tRepeat          = _Plugin.Repeat
+  local sTitle = M.MTitleSearch
+  local bForward = not bSearchBack
+  local bAllowEmpty = bFirstSearch
+  local tItems = (sOperation=="showall") and {maxline=1}
 
-  local sChoice, bEurBegin
-  if aWithDialog and not aParams.bConfirmReplace then
-    sChoice, bEurBegin = "all", true
-    editor.UndoRedo("EUR_BEGIN") -- for undoing the bulk replacement in a single step
-  end
-
-  local nFound, nReps, nLine = 0, 0, 0
+  local sChoice = bFirstSearch and "all" or "initial"
+  local nFound, nLine = 0, 0
   local tInfo, tStartPos = editor.GetInfo(), editor.GetInfo()
-  local nOp, nOpMax, last_update = 0, 5, 0
 
-  local tBlockInfo
-  if aParams.sScope == "block" then
-    tBlockInfo = assert(editor.GetSelection(), "no selection")
-  end
+  local tBlockInfo = bScopeIsBlock and assert(GetSelectionInfo() or nil, "no selection")
 
   local fLineInScope
   if tBlockInfo then
@@ -288,62 +447,57 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
 
   -- sLine must be set/modified only via set_sLine, in order to cache its length.
   -- This gives a very noticeable performance gain on long lines.
-  local sLine, sLineLen
-  local function set_sLine(s) sLine, sLineLen = s, s:len(); end
+  local sLine, sLineEol, sLineLen, sLineU8
+  local function set_sLine (s, eol)
+    sLine, sLineEol, sLineLen, sLineU8 = s, eol, TT.len(s), nil
+  end
+  local get_sLineU8 = is_wide and
+    function() sLineU8 = sLineU8 or win.Utf16ToUtf8(sLine); return sLineU8; end or
+    function() return sLine; end
 
-  local x, y, egs, part1, part3
+  local x, y, egs, part1
+
   local function SetStartBlockParam (y)
-    if aOp == "replace" then
-      if tBlockInfo then EditorSelect(tBlockInfo)
-      else editor.Select("BTYPE_NONE")
-      end
-    end
-    egs = EditorGetString(y, 1)
-    part1 = egs.StringText:sub(1, egs.SelStart-1)
+    egs = TT.EditorGetString(y, 0)
+    part1 = TT.sub(egs.StringText, 1, egs.SelStart-1)
     if egs.SelEnd == -1 then
-      set_sLine(egs.StringText:sub(egs.SelStart))
-      part3 = ""
+      set_sLine(TT.sub(egs.StringText, egs.SelStart))
     else
-      set_sLine(egs.StringText:sub(egs.SelStart, egs.SelEnd))
-      part3 = egs.StringText:sub(egs.SelEnd+1)
+      set_sLine(TT.sub(egs.StringText, egs.SelStart, egs.SelEnd))
     end
   end
 
-  if aWithDialog and aParams.sOrigin == "scope" then
+  if bFirstSearch and bOriginIsScope then
     if tBlockInfo then
       y = bForward and tBlockInfo.StartLine or tBlockInfo.EndLine
       SetStartBlockParam(y)
       x = bForward and 1 or sLineLen+1
     else
       y = bForward and 1 or tInfo.TotalLines
-      set_sLine(EditorGetString(y, 2))
+      set_sLine(TT.EditorGetString(y, 3))
       x = bForward and 1 or sLineLen+1
-      part1, part3 = "", ""
+      part1 = TT.empty
     end
   else -- "cursor"
     if tBlockInfo then
-      if tInfo.CurLine < tBlockInfo.StartLine then
-        y = tBlockInfo.StartLine
+      if tInfo.CurLine < tBlockInfo.StartLine or tInfo.CurLine > tBlockInfo.EndLine then
+        y = bForward and tBlockInfo.StartLine or tBlockInfo.EndLine
         SetStartBlockParam(y)
-        x = bForward and 1 or sLineLen
-      elseif tInfo.CurLine > tBlockInfo.EndLine then
-        y = tBlockInfo.EndLine
-        SetStartBlockParam(y)
-        x = bForward and 1 or sLineLen
+        x = bForward and 1 or sLineLen+1
       else
         y = tInfo.CurLine
         SetStartBlockParam(y)
         x = tInfo.CurPos <= egs.SelStart and 1
-            or min(egs.SelEnd==-1 and sLineLen or egs.SelEnd,
-                   tInfo.CurPos - egs.SelStart, sLineLen)
+            or min(egs.SelEnd==-1 and sLineLen+1 or egs.SelEnd+1,
+                   tInfo.CurPos - egs.SelStart + 1, sLineLen+1)
       end
     else
       y = tInfo.CurLine
-      set_sLine(EditorGetString(y, 2))
+      set_sLine(TT.EditorGetString(y, 3))
 
-      if aOp == "searchword" then
+      if sOperation == "searchword" then
         x = min(bForward and tInfo.CurPos+1 or tInfo.CurPos, sLineLen+1)
-      elseif not aScriptCall and
+      elseif not bScriptCall and
          tRepeat.bSearchBack ~= bSearchBack and
          tRepeat.FileName == tInfo.FileName and
          tRepeat.y == tInfo.CurLine and
@@ -354,114 +508,107 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
         x = min(tInfo.CurPos, sLineLen+1)
       end
 
-      part1, part3 = "", ""
+      part1 = TT.empty
     end
   end
   tRepeat.bSearchBack = bSearchBack
   tRepeat.FileName = tInfo.FileName
   -----------------------------------------------------------------------------
-  local function update_y (bLineDeleted)
-    y = bForward and y+(bLineDeleted and 0 or 1) or y-1
+  local function update_y()
+    y = bForward and y+1 or y-1
     if fLineInScope(y) then
       if tBlockInfo then
         SetStartBlockParam(y)
       else
-        set_sLine(EditorGetString(y, 2))
+        set_sLine(TT.EditorGetString(y, 3))
       end
       x = bForward and 1 or sLineLen+1
       bAllowEmpty = true
     end
   end
   -----------------------------------------------------------------------------
-  local update_x = bForward
-    and function(fr, to, delta) x = to + (delta or 1) end
-    or function(fr, to) x = fr end
-  -----------------------------------------------------------------------------
-  local function update_info()
-    editor.SetTitle("found: " .. nFound)
-  end
-  local function check_and_update()
-    local currclock = os.clock()
-    local tm = currclock - _lastclock
-    if tm == 0 then tm = 0.01 end
-    nOpMax = nOpMax * 0.5 / tm
-    if nOpMax > 100 then nOpMax = 100 end
-    _lastclock = currclock
-    -------------------------------------------------
-    if currclock - last_update >= 0.5 then
-      update_info()
-      if CheckUserBreak(sTitle) then return true end
-      last_update = currclock
-    end
-  end
-  -----------------------------------------------------------------------------
   local function ShowFound (x, fr, to, scroll)
-    local p1 = part1:len()
+    local p1 = part1:len() -- lenW(is_wide and part1 or Utf16(part1))
     ScrollToPosition (y, p1+x, fr, to, scroll)
-    if aOp=="replace" or _Plugin.History["config"].bSelectFound then
-      editor.Select("BTYPE_STREAM", y, p1+fr, to-fr+1, 1)
+    if _Plugin.History.config.bSelectFound then
+      editor.Select("BTYPE_STREAM", y, p1+fr, to<=fr and 1 or to-fr+1, 1)
     end
     editor.Redraw()
     tStartPos = editor.GetInfo()
   end
-  -----------------------------------------------------------------------------
-  _lastclock = os.clock()
+  -------------------------------------------------------------------
+
+  timing:SetLastClock()
   --===========================================================================
   -- ITERATE ON LINES
   --===========================================================================
-  while sChoice ~= "cancel" and sChoice ~= "broken" and fLineInScope(y) do
-    nLine = nLine + 1
-    local bLineDeleted
-    ---------------------------------------------------------------------------
-    if not (fFilter and fFilter(sLine, nLine)) then
-      -------------------------------------------------------------------------
-      -- iterate on current line
-      -------------------------------------------------------------------------
-      local bLineHasMatch
-      while bForward and x <= sLineLen+1 or not bForward and x >= 1 do
-        nOp = nOp + 1
-        if nOp >= nOpMax then -- don't use "==" here (int vs floating point)
-          nOp = 0
-          if check_and_update() then sChoice = "broken"; break; end
-        end
-        -----------------------------------------------------------------------
-        if bFastCount then
-          local _, n = Regex:gsub(sLine:sub(x), "")
-          nFound = nFound + n
+  local bFinish, bLastLine
+  local PosFromEnd = sLineLen - tInfo.CurPos
+  for pass = 1, bWrapAround and 2 or 1 do
+    if bFinish or sChoice == "broken" then
+      break
+    end
+    if pass == 2 then
+      if type(bWrapAround)=="number" then
+        update_info(nFound)
+        if not NeedWrapTheSearch(bForward, timing) then
+          sChoice = "cancel"
           break
         end
-        -----------------------------------------------------------------------
-        local collect, fr, to
-        if bForward then
-          collect = Regex:ufind(sLine, x)
-        else
-          collect = find_back(sLine, Regex, x)
-        end
-        -----------------------------------------------------------------------
-        if collect then
-          fr, to = collect[1], collect[2]
-          bLineHasMatch = true
-        elseif bDelNonMatchLine and not bLineHasMatch then
-          fr, to = 1, sLineLen
-        else
-          break
-        end
-        -----------------------------------------------------------------------
-        if collect then
-          if fr==x and to+1==x and not bAllowEmpty then
-            if bForward then
-              if x > sLineLen then break end
-              x = x + 1
-              collect = Regex:ufind(sLine, x)
-            else
-              if x == 1 then break end
-              x = x - 1
-              collect = find_back(sLine, Regex, x)
-            end
-            if not collect then break end
-            fr, to = collect[1], collect[2]
+      end
+      if bForward then
+        fLineInScope = function(y) bLastLine=(y==tInfo.CurLine); return y <= tInfo.CurLine; end
+        y = 0
+      else
+        fLineInScope = function(y) bLastLine=(y==tInfo.CurLine); return y >= tInfo.CurLine; end
+        y = tInfo.TotalLines + 1
+      end
+      update_y()
+    end
+    while fLineInScope(y) and not (bFinish or sChoice == "broken") do
+      nLine = nLine + 1
+      if not (fFilter and fFilter(get_sLineU8(), nLine)) then
+        -------------------------------------------------------------------------
+        -- iterate on current line
+        -------------------------------------------------------------------------
+        while bForward and x <= sLineLen+1 or not bForward and x >= 1 do
+          if timing:Step(sTitle, update_info, nFound, y) then
+            sChoice = "broken"; break
           end
           -----------------------------------------------------------------------
+          local collect, fr, to
+          if bForward then fr, to, collect = ufind_method(tRegex, sLine, x)
+          else fr, to, collect = find_back(tRegex, ufind_method, sLine, x)
+          end
+          if not fr then
+            if bLastLine then bFinish=true; end
+            break
+          end
+
+          if bLastLine then
+            if bForward then
+              if fr >= tInfo.CurPos then bFinish=true; break end
+            else
+              if to < (sLineLen - PosFromEnd) then bFinish=true; break end
+            end
+          end
+
+          if fr==x and to+1==x and not bAllowEmpty then
+            collect = nil
+            if bForward then
+              if x <= sLineLen then
+                x = x + 1
+                fr, to, collect = ufind_method(tRegex, sLine, x)
+              end
+            else
+              if x > 1 then
+                x = x - 1
+                fr, to, collect = find_back(tRegex, ufind_method, sLine, x)
+              end
+            end
+            if not collect then break end
+          end
+
           nFound = nFound + 1
           bAllowEmpty = false
           x = bForward and to+1 or fr
@@ -469,160 +616,578 @@ local function DoAction (aOp, aParams, aWithDialog, aChoiceFunc, aScriptCall)
           tRepeat.x, tRepeat.y = x, y
           tRepeat.from, tRepeat.to = fr, to
           -----------------------------------------------------------------------
-          if aOp == "search" or aOp == "searchword" then
-            update_x(fr, to)
-            local X = aOp=="searchword" and bForward and x>1 and x-1 or x
-            ShowFound(X, fr, to)
-            return 1, 0
+          if sOperation=="search" or sOperation=="searchword" then
+            local X = sOperation=="searchword" and bForward and x>1 and x-1 or x
+            ShowFound(X, fr, to, bForward and "+lazy" or "-lazy")
+            return 1, 0, sChoice, timing:GetElapsedTime()
           -----------------------------------------------------------------------
-          elseif aOp == "count" then
-            update_x(fr, to)
+          elseif sOperation=="showall" then
+            local seloffset = tBlockInfo and egs.SelStart>0 and egs.SelStart-1 or 0
+            table.insert(tItems, {lineno=y, text=get_sLineU8(), fr=fr, to=to, seloffset=seloffset})
+            if tItems.maxline < y then tItems.maxline = y; end
           -----------------------------------------------------------------------
-          elseif aOp == "showall" then
-            update_x(fr, to)
-            if #tItems == 0 or y ~= tItems[#tItems].lineno then
-              table.insert(tItems, {lineno=y, text=sLine, fr=fr, to=to})
-            end
-          end
-        end
-        -----------------------------------------------------------------------
-        if aOp == "replace" then
-          local sRepFinal
-          if collect then
-            collect[2] = sLine:sub(fr, to)
-            sRepFinal = fReplace(collect, nFound, nReps, y)
-          else
-            sRepFinal = true
-          end
-          if sRepFinal then
-            -------------------------------------------------------------------
-            local function Replace()
-              local sLastRep
-              local bTraceSelection = tBlockInfo
-                and (tBlockInfo.BlockType == F.BTYPE_STREAM)
-                and (tBlockInfo.EndLine == y) and (tBlockInfo.EndPos ~= -1)
-              local nAddedLines, nDeletedLines = 0, 0
-
-              if sRepFinal == true then
-                bLineDeleted = true
-                nDeletedLines = 1
-                editor.DeleteString()
-              else
-                local sStartLine
-                local sHead = sLine:sub(1, fr-1)
-                for txt, nl in sRepFinal:gmatch("([^\r\n]*)(\r?\n?)") do
-                  sLastRep = txt
-                  sHead = sHead .. txt
-                  if nl == "" then break end
-                  if nAddedLines == 0 then
-                    sStartLine = sHead
-                    sHead = part1 .. sHead
-                    part1 = ""
-                  end
-                  EditorSetCurString(sHead)
-                  editor.SetPosition(nil, sHead:len()+1)
-                  editor.InsertString()
-                  sHead = ""
-                  nAddedLines = nAddedLines + 1
-                end
-
-                set_sLine(sHead .. sLine:sub(to+1))
-                local line = part1 .. sLine .. part3
-                bLineDeleted = aParams.bDelEmptyLine and nAddedLines==0 and line == ""
-                nDeletedLines = bLineDeleted and 1 or 0
-                if bLineDeleted then editor.DeleteString()
-                else EditorSetCurString(line)
-                end
-
-                if bForward then
-                  y = y + nAddedLines
-                  x = sHead:len() + 1
-                else
-                  if sStartLine then set_sLine(sStartLine) end
-                  x = fr
-                  editor.SetPosition(y, x)
-                end
-              end
-
-              if tBlockInfo then
-                tBlockInfo.EndLine = tBlockInfo.EndLine + nAddedLines - nDeletedLines
-                if bTraceSelection then
-                  if bLineDeleted then
-                    tBlockInfo.EndPos = -1
-                  elseif sLastRep then
-                    tBlockInfo.EndPos = tBlockInfo.EndPos + sLastRep:len() - (to-fr+1)
-                  end
-                end
-              else
-                tInfo.TotalLines = tInfo.TotalLines + nAddedLines - nDeletedLines
-              end
-
-              if sChoice == "yes" then
-                editor.Redraw()
-              end
-              if sChoice ~= "all" and tBlockInfo then
-                EditorSelect(tBlockInfo)
-              end
-              tStartPos = editor.GetInfo() -- save position
-              nReps = nReps + 1
-              return bLineDeleted
-            end
-            -------------------------------------------------------------------
-            if sChoice == "all" then
-              if Replace() then break end
-              editor.SetPosition(y, x)
-              tStartPos = editor.GetInfo()
-            else
-              ShowFound(x, fr, to, 14/2 + 2)
-              sChoice = fChoice(sTitle, sLine:sub(fr, to), sRepFinal)
-              if sChoice == "all" then
-                editor.UndoRedo("EUR_BEGIN") -- for undoing the bulk replacement in a single step
-                bEurBegin = true
-              end
-              -----------------------------------------------------------------
-              if sChoice == "yes" or sChoice == "all" then
-                if Replace() then break end
-                if sChoice == "yes" then ShowFound(x, fr, to) end
-              -----------------------------------------------------------------
-              elseif sChoice == "no" then
-                if collect then update_x(fr, to)
-                else break
-                end
-              -----------------------------------------------------------------
-              elseif sChoice == "cancel" then
-                break
-              -----------------------------------------------------------------
-              end
-            end
-          else -- (if not sRepFinal)
-            update_x(fr, to)
-          end
-        -----------------------------------------------------------------------
-        end
-      end -- Current Line loop
-    end -- Line Filter check
-    update_y(bLineDeleted)
-  end
+          end -- elseif sOperation=="showall" then
+        end -- Current Line loop
+      end -- Line Filter check
+      update_y()
+    end -- Iteration on lines
+  end -- for pass = 1, bWrapAround and 2 or 1 do
   --===========================================================================
   editor.SetPosition(tStartPos)
   if tBlockInfo then
     EditorSelect(tBlockInfo)
   end
-  editor.Redraw()
-  update_info()
-  if aOp == "showall" then
-    local newsearch = ShowCollectedLines(
-        tItems,
-        ("%s [%s]"):format(M.MSearchResults, aParams.sSearchPat),
-        bForward,
-        tBlockInfo)
-    if newsearch then sChoice = "newsearch" end
-  elseif aOp == "replace" and bEurBegin then
-    editor.UndoRedo("EUR_END")
+  local elapsedTime = timing:GetElapsedTime()
+  if nFound > 0 then
+    editor.Redraw()
+    update_info(nFound, nil)
+    if sOperation=="showall" then
+      local newsearch = ShowCollectedLines(
+          tItems,
+          ("%s [%s]"):format(M.MSearchResults, sSearchPat),
+          bForward,
+          tBlockInfo)
+      if newsearch then sChoice = "newsearch" end
+    end
   end
-  return nFound, nReps, sChoice
+  return nFound, 0, sChoice, elapsedTime
+end
+
+local function DoReplace (
+    bFirstSearch,     -- [in]     whether this is first or repeated search
+    bScriptCall,      -- [in]     whether this call is from a script
+    tRepeat,          -- [in/out] data saved from previous operation / for next repeat operation
+    tRegex,           -- [in]     contains methods: ufindW, gsubW and/or ufind, gsub
+    bScopeIsBlock,    -- [in]     boolean
+    bOriginIsScope,   -- [in]     boolean
+    bWrapAround,      -- [in]     wrap search around the scope
+    bSearchBack,      -- [in]     search in reverse direction
+    fFilter,          -- [in]     either function or nil
+    sSearchPat,       -- [in]     search pattern (for display purpose only)
+    xReplacePat,      -- [in]     either of: string, function, compiled replace expression
+    bConfirmReplace,  -- [in]     confirm replace
+    bDelEmptyLine,    -- [in]     delete empty line (if it is empty after the replace operation)
+    bDelNonMatchLine, -- [in]     delete line where no match was found
+    fReplaceChoice    -- [in]     either function or nil
+  )
+
+  local update_info = make_update_info(bScriptCall)
+  local timing = NewTiming()
+  bWrapAround = (not bScopeIsBlock) and (not bOriginIsScope) and bWrapAround
+
+  bDelNonMatchLine = bDelNonMatchLine and bFirstSearch
+  local is_wide = tRegex.ufindW and true
+  local TT = GetInvariantTable(tRegex)
+  local ufind_method = tRegex.ufindW or tRegex.far_tfind or Editors.WrapTfindMethod(tRegex.ufind)
+  local EditorSetCurString = function(text, eol)
+    if not TT.EditorSetString(nil, text, eol) then error("EditorSetString failed") end
+  end
+  -----------------------------------------------------------------------------
+  local sTitle = M.MTitleReplace
+  local bForward = not bSearchBack
+  local bAllowEmpty = bFirstSearch
+  fReplaceChoice = fReplaceChoice or GetReplaceChoice
+  local fReplace = Common.GetReplaceFunction(xReplacePat, is_wide)
+
+  local sChoice = bFirstSearch and not bConfirmReplace and "all" or "initial"
+  local nFound, nReps, nLine = 0, 0, 0
+  local tInfo, tStartPos = editor.GetInfo(), editor.GetInfo()
+  local acc, acc_started
+  local Need_EUR_END
+
+  local tBlockInfo = bScopeIsBlock and assert(GetSelectionInfo() or nil, "no selection")
+
+  local fLineInScope
+  if tBlockInfo then
+    fLineInScope = bForward
+      and function(y) return y <= tBlockInfo.EndLine end
+      or function(y) return y >= tBlockInfo.StartLine end
+  else
+    fLineInScope = bForward
+      and function(y) return y <= tInfo.TotalLines end
+      or function(y) return y >= 1 end
+  end
+
+  -- sLine must be set/modified only via set_sLine, in order to cache its length.
+  -- This gives a very noticeable performance gain on long lines.
+  local sLine, sLineEol, sLineLen
+  local function set_sLine (s, eol)
+    sLine, sLineEol, sLineLen = s, eol, TT.len(s)
+  end
+
+  local x, y, egs, part1, part3, x1, x2, y1, y2
+
+  local function SetStartBlockParam (y)
+    egs = TT.EditorGetString(y, 0)
+    part1 = TT.sub(egs.StringText, 1, egs.SelStart-1)
+    if egs.SelEnd == -1 then
+      set_sLine(TT.sub(egs.StringText, egs.SelStart))
+      part3 = TT.empty
+    else
+      set_sLine(TT.sub(egs.StringText, egs.SelStart, egs.SelEnd))
+      part3 = TT.sub(egs.StringText, egs.SelEnd+1)
+    end
+  end
+
+  if bFirstSearch and bOriginIsScope then
+    if tBlockInfo then
+      y = bForward and tBlockInfo.StartLine or tBlockInfo.EndLine
+      SetStartBlockParam(y)
+      x = bForward and 1 or sLineLen+1
+    else
+      y = bForward and 1 or tInfo.TotalLines
+      set_sLine(TT.EditorGetString(y, 3))
+      x = bForward and 1 or sLineLen+1
+      part1, part3 = TT.empty, TT.empty
+    end
+  else -- "cursor"
+    if tBlockInfo then
+      if tInfo.CurLine < tBlockInfo.StartLine or tInfo.CurLine > tBlockInfo.EndLine then
+        y = bForward and tBlockInfo.StartLine or tBlockInfo.EndLine
+        SetStartBlockParam(y)
+        x = bForward and 1 or sLineLen+1
+      else
+        y = tInfo.CurLine
+        SetStartBlockParam(y)
+        x = tInfo.CurPos <= egs.SelStart and 1
+            or min(egs.SelEnd==-1 and sLineLen+1 or egs.SelEnd+1,
+                   tInfo.CurPos - egs.SelStart + 1, sLineLen+1)
+      end
+    else
+      y = tInfo.CurLine
+      set_sLine(TT.EditorGetString(y, 3))
+
+      if not bScriptCall and
+         tRepeat.bSearchBack ~= bSearchBack and
+         tRepeat.FileName == tInfo.FileName and
+         tRepeat.y == tInfo.CurLine and
+         tRepeat.x == tInfo.CurPos
+      then
+        x = bSearchBack and tRepeat.from or tRepeat.to+1
+      else
+        x = min(tInfo.CurPos, sLineLen+1)
+      end
+
+      part1, part3 = TT.empty, TT.empty
+    end
+  end
+  tRepeat.bSearchBack = bSearchBack
+  tRepeat.FileName = tInfo.FileName
+  -----------------------------------------------------------------------------
+  local function update_y (lineWasDeleted)
+    y = bForward and y+(lineWasDeleted and 0 or 1) or y-1
+    if fLineInScope(y) then
+      if tBlockInfo then
+        SetStartBlockParam(y)
+      else
+        set_sLine(TT.EditorGetString(y, 3))
+      end
+      x = bForward and 1 or sLineLen+1
+      bAllowEmpty = true
+    end
+  end
+  -----------------------------------------------------------------------------
+  local function ShowFound (x, fr, to, scroll)
+    local p1 = part1:len() -- lenW(is_wide and part1 or Utf16(part1))
+    ScrollToPosition (y, p1+x, fr, to, scroll)
+    editor.Select("BTYPE_STREAM", y, p1+fr, to<=fr and 1 or to-fr+1, 1)
+    editor.Redraw()
+    tStartPos = editor.GetInfo()
+  end
+  -------------------------------------------------------------------
+  local function Replace (fr, to, sRep)
+    local sLastRep
+    local bTraceSelection = tBlockInfo
+        and (tBlockInfo.BlockType == F.BTYPE_STREAM)
+        and (tBlockInfo.EndLine == y) and (tBlockInfo.EndPos ~= -1)
+    local nAddedLines, nDeletedLines = 0, 0
+    local before, after = TT.sub(sLine, 1, fr-1), TT.sub(sLine, to+1)
+    -----------------------------------------------------------------
+    editor.SetPosition(y)
+    for txt, nl in TT.gmatch(sRep, "([^\r\n]*)(\r?\n?)") do
+        if nAddedLines == 0 then
+            local sStartLine = before..txt
+            if nl == TT.empty then
+                set_sLine(sStartLine..after, sLineEol)
+                local line = part1..sLine..part3
+                if line==TT.empty and bDelEmptyLine then
+                    editor.DeleteString()
+                    nDeletedLines = nDeletedLines + 1
+                else
+                    EditorSetCurString(line, sLineEol)
+                    x = bForward and TT.len(sStartLine)+1 or fr
+                    x1, x2, y1, y2 = fr, fr-1+TT.len(txt), y, y
+                end
+                sLastRep = txt
+                break
+            else
+                local line = part1..sStartLine
+                if line==TT.empty and bDelEmptyLine then
+                    EditorSetCurString(TT.empty, nl)
+                    nDeletedLines = nDeletedLines + 1
+                    x1, y1 = 1, y
+                else
+                    EditorSetCurString(line, nl)
+                    editor.SetPosition(nil, TT.len(line)+1)
+                    editor.InsertString()
+                    if not bForward then set_sLine(sStartLine) end
+                    x1, y1 = fr, y
+                end
+                nAddedLines = 1
+            end
+        else
+            if nl == TT.empty then
+                local sLine1 = txt..after
+                if bForward then
+                    set_sLine(sLine1)
+                    x = TT.len(txt)+1
+                end
+                EditorSetCurString(sLine1..part3)--, stringEOL)
+                sLastRep = txt
+                x2, y2 = TT.len(txt)-1, y + nAddedLines - nDeletedLines
+                break
+            else
+                EditorSetCurString(txt, nl)
+                editor.SetPosition(nil, TT.len(txt)+1)
+                editor.InsertString()
+                nAddedLines = nAddedLines + 1
+            end
+        end
+    end
+
+    if y < tInfo.CurLine then
+      tInfo.CurLine = tInfo.CurLine + nAddedLines - nDeletedLines
+    end
+
+    if bForward then
+        y = y + nAddedLines
+    else
+        x = fr
+    end
+
+    if tBlockInfo then
+        tBlockInfo.EndLine = tBlockInfo.EndLine + nAddedLines - nDeletedLines
+        if bTraceSelection and nDeletedLines>0 then
+          tBlockInfo.EndPos = -1
+        end
+    else
+        tInfo.TotalLines = tInfo.TotalLines + nAddedLines - nDeletedLines
+    end
+
+    if sChoice == "yes" then editor.Redraw() end
+    tStartPos = editor.GetInfo() -- save position (time consuming)
+
+    return (nDeletedLines > 0)
+  end
+  -------------------------------------------------------------------
+  local function DeleteLine()
+    acc, acc_started = nil, nil
+
+    local bTraceSelection = tBlockInfo
+      and (tBlockInfo.BlockType == F.BTYPE_STREAM)
+      and (tBlockInfo.EndLine == y) and (tBlockInfo.EndPos ~= -1)
+
+    editor.SetPosition(y)
+    editor.DeleteString()
+
+    if not bForward then
+      x = 1
+      editor.SetPosition(y, x)
+    end
+
+    if tBlockInfo then
+      tBlockInfo.EndLine = tBlockInfo.EndLine - 1
+      if bTraceSelection then
+        tBlockInfo.EndPos = -1
+      end
+    else
+      tInfo.TotalLines = tInfo.TotalLines - 1
+      if y < tInfo.CurLine then tInfo.CurLine = tInfo.CurLine - 1; end
+    end
+
+    if sChoice == "yes" then editor.Redraw() end
+    tStartPos = editor.GetInfo() -- save position (time consuming)
+
+    return true
+  end
+  -------------------------------------------------------------------
+
+  local function ProcessReplaceQuery (fr, to, sRepFinal)
+    local EI = editor.GetInfo()
+    local s_found = TT.U8(TT.sub(sLine, fr, to))
+    local s_rep = sRepFinal==true or TT.U8(sRepFinal)
+
+    local dlgHeight
+    if s_rep == true then
+      dlgHeight = 8
+    else
+      local _,n = regex.gsub(s_rep, "\r\n|\r|\n", "")
+      dlgHeight = min(10 + n, EI.WindowSizeY)
+    end
+
+    local scroll = floor( -(EI.WindowSizeY+dlgHeight)/4 + 0.5 )
+    if y - scroll > EI.TotalLines - EI.WindowSizeY/2 then
+      scroll = -scroll
+    end
+    ShowFound(x, fr, to, scroll)
+    update_info(nFound, y)
+
+    sChoice = fReplaceChoice(sTitle, s_found, s_rep)
+    if sChoice == "all" then
+      timing:SetLastClock()
+      timing:SetStartTime()
+      do editor.UndoRedo("EUR_BEGIN"); Need_EUR_END = true; end
+      if tBlockInfo then EditorSelect(tBlockInfo) end
+    elseif sChoice == "yes" then
+      timing:SetStartTime()
+    end
+  end
+  -------------------------------------------------------------------
+
+  timing:SetLastClock()
+  if sChoice=="all" then
+    editor.UndoRedo("EUR_BEGIN")
+    Need_EUR_END = true
+  end
+  --===========================================================================
+  -- ITERATE ON LINES
+  --===========================================================================
+  local bFinish, bLastLine
+  local PosFromEnd = sLineLen - tInfo.CurPos
+  for pass = 1, bWrapAround and 2 or 1 do
+    if bFinish or sChoice=="cancel" or sChoice=="broken" then
+      break
+    end
+    if pass == 2 then
+      if type(bWrapAround)=="number" then
+        update_info(nFound)
+        if not NeedWrapTheSearch(bForward, timing) then
+          sChoice = "cancel"
+          break
+        end
+      end
+      if bForward then
+        fLineInScope = function(y) bLastLine=(y==tInfo.CurLine); return y <= tInfo.CurLine; end
+        y = 0
+      else
+        fLineInScope = function(y) bLastLine=(y==tInfo.CurLine); return y >= tInfo.CurLine; end
+        y = tInfo.TotalLines + 1
+      end
+      update_y()
+    end
+    while fLineInScope(y) and not (bFinish or sChoice=="cancel" or sChoice=="broken") do
+      nLine = nLine + 1
+      local bLineDeleted
+      if not (fFilter and fFilter(TT.U8(sLine), nLine)) then
+        -------------------------------------------------------------------------
+        -- iterate on current line
+        -------------------------------------------------------------------------
+        local bLineHasMatch
+        while bForward and x <= sLineLen+1 or not bForward and x >= 1 do
+          if timing:Step(sTitle, update_info, nFound, y) then
+            sChoice = "broken"; break
+          end
+          -----------------------------------------------------------------------
+          local collect, fr, to
+          if bForward then fr, to, collect = ufind_method(tRegex, sLine, x)
+          else fr, to, collect = find_back(tRegex, ufind_method, sLine, x)
+          end
+
+          if not fr then
+            if bDelNonMatchLine and (not bLineHasMatch) then
+              if sChoice ~= "all" then
+                ProcessReplaceQuery(1, sLineLen, true)
+              end
+              if sChoice=="yes" or sChoice=="all" then
+                bLineDeleted = DeleteLine()
+                nReps = nReps + 1
+              end
+            end
+            if pass==2 and y==tInfo.CurLine then bFinish=true; end
+            break
+          end
+
+          if bLastLine then
+            if bForward then
+              if fr >= tInfo.CurPos then bFinish=true; break end
+            else
+              if to < (sLineLen - PosFromEnd) then bFinish=true; break end
+            end
+          end
+
+          bLineHasMatch = true
+          if fr==x and to+1==x and not bAllowEmpty then
+            collect = nil
+            if bForward then
+              if x <= sLineLen then
+                x = x + 1
+                fr, to, collect = ufind_method(tRegex, sLine, x)
+              end
+            else
+              if x > 1 then
+                x = x - 1
+                fr, to, collect = find_back(tRegex, ufind_method, sLine, x)
+              end
+            end
+            if not collect then break end
+          end
+
+          nFound = nFound + 1
+          bAllowEmpty = false
+          x = bForward and to+1 or fr
+
+          tRepeat.x, tRepeat.y = x, y
+          tRepeat.from, tRepeat.to = fr, to
+          -----------------------------------------------------------------------
+          collect[0] = TT.sub(sLine, fr, to)
+          local sRepFinal, ret2 = fReplace(collect, nFound, nReps, y)
+          if ret2 and sChoice == "all" then bFinish = true end
+          if sRepFinal then
+            if sChoice ~= "all" then
+              ProcessReplaceQuery(fr, to, sRepFinal)
+            end
+            if sChoice == "all" then
+              if sRepFinal == true then
+                bLineDeleted = DeleteLine()
+                nReps = nReps + 1
+                break
+              end
+              if acc_started then
+                if bForward then
+                  acc[#acc+1] = TT.sub(sLine,acc.to+1,fr-1)
+                  acc[#acc+1] = sRepFinal
+                  acc.to = to
+                else
+                  acc[#acc+1] = TT.sub(sLine,to+1,acc.from-1)
+                  acc[#acc+1] = sRepFinal
+                  acc.from = fr
+                end
+              else
+                if bForward then
+                  acc = { part1, TT.sub(sLine,1,fr-1), sRepFinal, to=to }
+                else
+                  acc = { part3, TT.sub(sLine,to+1), sRepFinal, from=fr }
+                end
+                acc_started = true
+              end
+              nReps = nReps + 1
+            elseif sChoice == "yes" then
+              if sRepFinal == true then
+                bLineDeleted = DeleteLine()
+              else
+                bLineDeleted = Replace(fr, to, sRepFinal)
+              end
+              timing:SetStartTime()
+              nReps = nReps + 1
+              if tBlockInfo then EditorSelect(tBlockInfo) end
+              if bLineDeleted then break end
+              ShowFound(x, fr, to, "none")--THIS SETS CORRECT CURSOR POSITION AFTER FINAL REPLACE IS DONE
+              if tBlockInfo then EditorSelect(tBlockInfo) end -- need this because ShowFound() resets selection
+            -----------------------------------------------------------------
+            elseif sChoice == "no" then
+              timing:SetStartTime()
+              if tBlockInfo then EditorSelect(tBlockInfo) end
+            -----------------------------------------------------------------
+            elseif sChoice == "cancel" then
+              break
+            -----------------------------------------------------------------
+            end
+          end -- if sRepFinal
+          if bFinish then break end
+          -----------------------------------------------------------------------
+        end -- Current Line loop
+
+        if acc_started then
+          acc_started = nil
+
+          if bForward then
+            acc[#acc+1] = TT.sub(sLine, acc.to+1)
+            acc[#acc+1] = part3
+          else
+            acc[#acc+1] = TT.sub(sLine, 1, acc.from-1)
+            acc[#acc+1] = part1
+
+            local N = #acc
+            for i=1, N/2 do
+              local j = N - i + 1
+              acc[i], acc[j] = acc[j], acc[i]
+            end
+          end
+
+          part1, part3 = TT.empty, TT.empty
+          bLineDeleted = Replace(1, sLineLen, table.concat(acc))
+        end
+      end -- Line Filter check
+      update_y(bLineDeleted)
+    end -- Iteration on lines
+  end -- for pass = 1, bWrapAround and 2 or 1 do
+  --===========================================================================
+  editor.SetPosition(tStartPos)
+  if nReps==0 and tBlockInfo then -- it works incorrectly anyway
+    EditorSelect(tBlockInfo)
+  else
+    local bSelectFound = _Plugin.History.config.bSelectFound
+    if sChoice=="yes" then
+      if bSelectFound and x2 then
+        if not is_wide then
+          -- Convert byte-wise offsets to character-wise ones
+          local str1 = editor.GetString(y1, 2)
+          local str2 = (y2 == y1) and str1 or editor.GetString(y2, 2)
+          x1, x2 = TT.sub(str1,1,x1):len(), TT.sub(str2,1,x2):len()
+        end
+        editor.Select("BTYPE_STREAM", y1, x1, x2-x1+1, y2-y1+1)
+      else
+        editor.Select("BTYPE_NONE")
+      end
+
+    elseif acc then
+      local indexLS = bForward and #acc-2 or 3
+      local lastSubst = acc[indexLS]
+      local fr, to = TT.find(lastSubst, "[\r\n][^\r\n]*$")
+      if fr then -- the last substitution was multi-line
+        editor.Select("BTYPE_NONE")
+        editor.SetPosition(nil, bForward and to-fr+1 or TT.len(acc[1])+TT.len(acc[2]))
+      else -- the last substitution was single-line
+        if lastSubst ~= TT.empty then
+          -- Convert byte-wise offsets to character-wise ones if needed
+          local len = is_wide and lenW or ("").len
+          local width = len(lastSubst)
+          local x1 = 1
+          for i=1,indexLS-1 do x1 = x1 + len(acc[i]) end
+          if bSelectFound then
+            editor.Select("BTYPE_STREAM", y1, x1, width, 1)
+          else
+            editor.Select("BTYPE_NONE")
+          end
+          editor.SetPosition(nil, bForward and x1+width or x1)
+        else
+          editor.Select("BTYPE_NONE")
+        end
+      end
+
+    else
+      editor.Select("BTYPE_NONE")
+    end
+  end
+  local elapsedTime = timing:GetElapsedTime()
+  if nFound > 0 then
+    editor.Redraw()
+    update_info(nFound, nil)
+  end
+  if Need_EUR_END then editor.UndoRedo("EUR_END") end
+  return nFound, nReps, sChoice, elapsedTime
+end
+
+local function DoAction (
+    sOperation,       -- "search", "replace", "count", "showall", "searchword"
+    ...)
+  if sOperation == "replace" then
+    return DoReplace(...)
+  else
+    return DoSearch(sOperation, ...)
+  end
 end
 
 return {
-  DoAction = DoAction;
+  DoAction = DoAction,
 }

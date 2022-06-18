@@ -166,10 +166,6 @@ local function GetReplaceFunction (aReplacePat, is_wide)
   end
   ---------------------------------------------------------------------------
   return function(collect, nFound, nReps)
-    collect[0] = collect[2]
-    table.remove(collect,2)
-    table.remove(collect,1)
-
     local rep, stack = empty, {}
     local case, instant_case
     for i,v in ipairs(aReplacePat) do

@@ -5,6 +5,7 @@ local M          = require "lfs_message"
 local EditEngine = require "lfs_editengine"
 local Editors    = require "lfs_editors"
 local sd         = require "far2.simpledialog"
+local CustomMessage = require "far2.message"
 
 local F = far.Flags
 local FormatInt = Common.FormatInt
@@ -55,9 +56,10 @@ local function EditorDialog (aData, aReplace, aScriptCall)
   insert(Items, { tp="text";                        text=M.MDlgOrigin; ystep=-2; x1=26; })
   insert(Items, { tp="rbutt"; name="rOriginCursor"; text=M.MDlgOrigCursor; x1=27; group=1; noauto=1; })
   insert(Items, { tp="rbutt"; name="rOriginScope";  text=M.MDlgOrigScope;  x1=27; noauto=1; })
-  insert(Items, { tp="chbox"; name="bSearchBack";   text=M.MDlgReverseSearch; ystep=-2; x1=50; })
+  insert(Items, { tp="chbox"; name="bWrapAround";   text=M.MDlgWrapAround; ystep=-2; x1=50; })
+  insert(Items, { tp="chbox"; name="bSearchBack";   text=M.MDlgReverseSearch;        x1=50; })
   ------------------------------------------------------------------------------
-  insert(Items, { tp="sep"; ystep=3; })
+  insert(Items, { tp="sep"; ystep=2; })
   ------------------------------------------------------------------------------
   insert(Items, { tp="chbox"; name="bAdvanced";            text=M.MDlgAdvanced; })
   insert(Items, { tp="text";  name="labFilterFunc"; x1=39; text=M.MDlgFilterFunc; y1=""; })
@@ -76,22 +78,28 @@ local function EditorDialog (aData, aReplace, aScriptCall)
     insert(Items, { tp="butt"; name="btnCount"; centergroup=1; text=M.MDlgBtnCount; })
     insert(Items, { tp="butt"; name="btnShowAll"; centergroup=1; text=M.MDlgBtnShowAll; })
   end
-  insert(Items, { tp="butt"; name="btnConfig"; centergroup=1; text=M.MDlgBtnConfig; })
+  insert(Items, { tp="butt"; name="btnConfig"; centergroup=1; text=M.MDlgBtnConfig; btnnoclose=1; })
   ----------------------------------------------------------------------------
+  local Pos,Elem = sd.Indexes(Items)
+
   function Items.proc (hDlg, msg, param1, param2)
-    return Frame:DlgProc(hDlg, msg, param1, param2)
+    if msg==F.DN_BTNCLICK and param1==Pos.btnConfig then
+      hDlg:ShowDialog(0)
+      Common.EditorConfigDialog()
+      hDlg:ShowDialog(1)
+    else
+      return Frame:DlgProc(hDlg, msg, param1, param2)
+    end
   end
   ----------------------------------------------------------------------------
   sd.LoadData(aData, Items)
-  Frame.Pos, Frame.Elem = sd.Indexes(Items)
-  local pp = Frame.Pos
+  Frame.Pos, Frame.Elem = Pos, Elem
   Frame:OnDataLoaded(aData, aScriptCall)
   local out, pos = sd.Run(Items)
   if not out then return "cancel" end
-  return pos==pp.btnOk      and (aReplace and "replace" or "search") or
-         pos==pp.btnConfig  and "config" or
-         pos==pp.btnCount   and "count"  or
-         pos==pp.btnShowAll and "showall",
+  return pos==Pos.btnOk      and (aReplace and "replace" or "search") or
+         pos==Pos.btnCount   and "count"  or
+         pos==Pos.btnShowAll and "showall",
          Frame.close_params
 end
 
@@ -133,101 +141,131 @@ local function EditorAction (aOp, aData, aScriptCall)
     return
   end
 
-  local bWithDialog, sOperation, tParams
+  local bFirstSearch, sOperation, tParams
   aData.sSearchPat = aData.sSearchPat or ""
   aData.sReplacePat = aData.sReplacePat or ""
   local bTest = aOp:find("^test:")
 
   if bTest then
-    bWithDialog = true
+    bFirstSearch = true
     bReplace = (aOp == "test:replace")
     sOperation = aOp:sub(6) -- skip "test:"
     tParams = assert(Common.ProcessDialogData (aData, bReplace, true))
 
-  else
-    if aOp == "search" or aOp == "replace" then
-      bWithDialog = true
-      bReplace = (aOp == "replace")
-      while true do
-        sOperation, tParams = EditorDialog(aData, bReplace, aScriptCall)
-        if sOperation ~= "config" then break end
-        Common.EditorConfigDialog()
-      end
-      if sOperation == "cancel" then
-        return
-      end
+  elseif aOp == "search" or aOp == "replace" then
+    bFirstSearch = true
+    bReplace = (aOp == "replace")
+    sOperation, tParams = EditorDialog(aData, bReplace, aScriptCall)
+    if sOperation == "cancel" then return nil end
+    -- sOperation : either of "search", "count", "showall", "replace"
 
-    elseif aOp == "repeat" or aOp == "repeat_rev" then
-      bReplace = (State.sLastOp == "replace")
+  elseif aOp == "repeat" or aOp == "repeat_rev" then
+    bReplace = (State.sLastOp == "replace")
       local searchtext = Common.GetDialogHistory("SearchText")
-      if searchtext ~= aData.sSearchPat then
-        bReplace = false
-        if searchtext then aData.sSearchPat = searchtext end
-      end
-      sOperation = bReplace and "replace" or "search"
-      tParams = assert(Common.ProcessDialogData (aData, bReplace, true))
-      tParams.bSearchBack = (aOp == "repeat_rev")
-
-    elseif aOp == "searchword" or aOp == "searchword_rev" then
-      local searchtext = Common.GetWordUnderCursor(_Plugin.History["config"].bSelectFound)
-      if not searchtext then return end
-      aData = {
-        bAdvanced = false;
-        bCaseSens = false;
-        bRegExpr = false;
-        bSearchBack = (aOp == "searchword_rev");
-        bWholeWords = true;
-        sOrigin = "cursor";
-        sScope = "global";
-        sSearchPat = searchtext;
-      }
-      bWithDialog = true
+    if searchtext ~= aData.sSearchPat then
       bReplace = false
-      sOperation = "searchword"
-      tParams = assert(Common.ProcessDialogData (aData, false, true))
-
+      aData.bSearchBack = false
+      if searchtext then aData.sSearchPat = searchtext end
     end
+    sOperation = bReplace and "replace" or "search"
+    tParams = Common.ProcessDialogData (aData, bReplace, true)
+    if not tParams then return nil end
+
+  elseif aOp == "searchword" or aOp == "searchword_rev" then
+      local searchtext = Common.GetWordUnderCursor(_Plugin.History["config"].bSelectFound)
+    if not searchtext then return end
+    aData = {
+      bAdvanced = false;
+      bCaseSens = false;
+      bRegExpr = false;
+      bSearchBack = (aOp == "searchword_rev");
+      bWholeWords = true;
+      sOrigin = "cursor";
+      sScope = "global";
+      sSearchPat = searchtext;
+    }
+    bFirstSearch = true
+    bReplace = false
+    sOperation = "searchword"
+    tParams = assert(Common.ProcessDialogData (aData, false, true))
+
   end
 
   State.sLastOp = bReplace and "replace" or "search"
-  tParams.sScope = bWithDialog and aData.sScope or "global"
+  tParams.sScope = bFirstSearch and aData.sScope or "global"
+  if aOp=="repeat_rev" then tParams.bSearchBack = not tParams.bSearchBack end
   ---------------------------------------------------------------------------
-  if aData.bAdvanced then tParams.InitFunc() end
-  local nFound, nReps, sChoice = EditEngine.DoAction(
-      sOperation,
-      tParams,
-      bWithDialog,
-      aData.fUserChoiceFunc,
-      aScriptCall)
-  if aData.bAdvanced then tParams.FinalFunc() end
-  ---------------------------------------------------------------------------
-  if sChoice == "newsearch" then
-    editor.SetTitle("")
-    return EditorAction(aOp, aData, aScriptCall)
-  end
-  ---------------------------------------------------------------------------
-  if not (bTest or sChoice == "broken") then
-    if nFound == 0 then
-      if sOperation ~= "searchword" then
-        ErrorMsg (M.MNotFound .. aData.sSearchPat .. "\"", M.MMenuTitle)
+
+  local function Work()
+    if aData.bAdvanced then tParams.InitFunc() end
+    local nFound, nReps, sChoice, nElapsed = EditEngine.DoAction(
+        sOperation,
+        bFirstSearch,
+        aScriptCall,
+        _Plugin.Repeat,
+        tParams.Regex,
+        tParams.sScope=="block",
+        tParams.sOrigin=="scope",
+        tParams.bWrapAround,
+        tParams.bSearchBack,
+        tParams.FilterFunc,
+        tParams.sSearchPat,
+        tParams.ReplacePat,
+        tParams.bConfirmReplace,
+        tParams.bDelEmptyLine,
+        tParams.bDelNonMatchLine,
+        aData.fUserChoiceFunc)
+    if aData.bAdvanced then tParams.FinalFunc() end
+    ---------------------------------------------------------------------------
+    if not aScriptCall then
+      local function GetTitle()
+        if _Plugin.History.config.bShowSpentTime then
+          return ("%s [ %s s ]"):format(M.MMenuTitle, Common.FormatTime(nElapsed))
+        else
+          return M.MMenuTitle
+        end
       end
-    else
-      if sOperation == "count" then
-        far.Message (M.MTotalFound .. FormatInt(nFound), M.MMenuTitle)
-      else
-        if bReplace and nReps > 0 and sChoice ~= "cancel" then
-          far.Message (M.MTotalReplaced .. FormatInt(nReps), M.MMenuTitle)
+      if not bTest and sOperation ~= "searchword" and sChoice ~= "broken" and sChoice ~= "cancel" then
+        if nFound == 0 and nReps == 0 then
+          ErrorMsg (M.MNotFound .. aData.sSearchPat .. "\"", GetTitle())
+        elseif sOperation == "count" then
+          far.Message (M.MTotalFound .. FormatInt(nFound), GetTitle())
+        elseif bReplace and (sChoice=="initial" or sChoice=="all") then
+          CustomMessage.TableBox( {
+            { M.MTotalFound,    FormatInt(nFound) },
+            { M.MTotalReplaced, FormatInt(nReps) },
+          },
+          GetTitle(), nil, "T")
         end
       end
     end
+    return nFound, nReps, sChoice, nElapsed
   end
-  ---------------------------------------------------------------------------
-  editor.SetTitle("")
-  return nFound, nReps, sChoice
+
+  local ok, nFound, nReps, sChoice, nElapsed = xpcall(Work, debug.traceback)
+  if ok then
+    if not aScriptCall then
+      editor.SetTitle("")
+    end
+    if sChoice == "newsearch" then
+      return EditorAction(aOp, aData, aScriptCall)
+    else
+      local checked = tParams.bHighlight
+      if checked or not Editors.IsHighlightGrep() then
+        Editors.SetHighlightPattern(tParams.Regex)
+        Editors.ActivateHighlight(checked)
+      end
+      return nFound, nReps, sChoice, nElapsed
+    end
+  end
+  if not aScriptCall then
+    ErrorMsg(nFound,nil,nil,"wl")
+    editor.SetTitle("")
+  end
 end
 
---[[-------------------------------------------------------------------------]]
+
 return {
-  EditorAction = EditorAction;
-  UnlockEditor = UnlockEditor;
+  EditorAction = EditorAction,
+  UnlockEditor = UnlockEditor,
 }

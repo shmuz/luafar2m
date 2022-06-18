@@ -1,9 +1,12 @@
 -- lfs_common.lua
+-- luacheck: globals _Plugin
 
 local M      = require "lfs_message"
 local RepLib = require "lfs_replib"
 local sd     = require "far2.simpledialog"
 
+local bor = bit64.bor
+local Utf8, Utf16 = win.Utf16ToUtf8, win.Utf8ToUtf16
 local F = far.Flags
 local KEEP_DIALOG_OPEN = 0
 
@@ -31,9 +34,8 @@ local function MakeGsub (mode)
     local len_limit = 1 + len(aSubj)
 
     while x <= len_limit do
-      local collect = ufind_method(aRegex, aSubj, x)
-      if not collect then break end
-      local from, to = collect[1], collect[2]
+      local from, to, collect = ufind_method(aRegex, aSubj, x)
+      if not from then break end
 
       if to == last_to then
         -- skip empty match adjacent to previous match
@@ -42,7 +44,7 @@ local function MakeGsub (mode)
       else
         last_to = to
         tOut[#tOut+1] = sub(aSubj, x, from-1)
-        collect[2] = sub(aSubj, from, to)
+        collect[0] = sub(aSubj, from, to)
         nFound = nFound + 1
 
         local sRepFinal, ret2 = aRepFunc(collect, ...)
@@ -73,7 +75,7 @@ local hst_map = { ["\\"]="\\"; n="\n"; r="\r"; t="\t"; }
 
 local function GetDialogHistory (name)
   local value
-  local fname = os.getenv("HOME").."/.config/far2l/history/dialogs.hst"
+  local fname = far.GetConfigDir().."/history/dialogs.hst"
   local fp = io.open(fname)
   if fp then
     local head = ("[SavedDialogHistory/%s]"):format(name)
@@ -128,65 +130,84 @@ local function EditorConfigDialog()
   end
 end
 
-local function CreateUfindMethod (tb_methods)
-  if tb_methods.ufind == nil then
-    tb_methods.ufind = function(r, s, init)
-      init = init and s:offset(init)
-      local fr,to,t = r:tfind(s, init)
-      if fr ~= nil then
-        table.insert(t, 1, fr)
-        table.insert(t, 2, to)
-        return t
-      end
-    end
-  end
-end
 
+--------------------------------------------------------------------------------
+-- @param lib_name
+--    Either of ("far", "pcre", "pcre2", "oniguruma").
+-- @return
+--    A table that "mirrors" the specified library's table (via
+--    metatable.__index) and that may have its own version of function "new".
 
-local function GetRegexLib (engine_name)
+--    This function also inserts some methods into the existing methods table
+--    of the compiled regex for the specified library.
+--    Inserted are methods "ufind" and/or "ufindW", "gsub" and/or "gsubW".
+--------------------------------------------------------------------------------
+local function GetRegexLib (lib_name)
   local base, deriv = nil, {}
   -----------------------------------------------------------------------------
-  if engine_name == "far" then
+  if lib_name == "far" then
     base = regex
-    deriv.new = regex.new
     local tb_methods = getmetatable(regex.new(".")).__index
-    if tb_methods.ufind == nil then
-      local find = tb_methods.find
-      tb_methods.ufind = function(r, s, init)
-        local t = { find(r, s, init) }
-        if t[1] ~= nil then return t end
+    tb_methods.far_tfind = function(rr,subj,init)
+      local t = { rr:find(subj,init) }
+      local fr,to = t[1],t[2]
+      if fr then
+        table.remove(t,1)
+        table.remove(t,1)
+        return fr,to,t
       end
+      return nil
     end
+    tb_methods.capturecount = function(r) return r:bracketscount() - 1 end
   -----------------------------------------------------------------------------
-  elseif engine_name == "pcre" then
-    base = require "rex_pcre"
-    local CFlags = 0x800 -- PCRE_UTF8
+  elseif lib_name == "pcre" then
+    base = require("rex_pcre")
+    local ff = base.flags()
+    local CFlags = bor(ff.NEWLINE_ANYCRLF, ff.UTF8)
     local v1, v2 = base.version():match("(%d+)%.(%d+)")
     v1, v2 = tonumber(v1), tonumber(v2)
-    if v1 > 8 or (v1 == 8 and v2 >= 10) then
-      CFlags = bit.bor(CFlags, 0x20000000) -- PCRE_UCP
+    if 1000*v1 + v2 >= 8010 then
+      CFlags = bor(CFlags, ff.UCP)
     end
-    local TF = { i=1, m=2, s=4, x=8, U=0x200, X=0x40 }
+    local TF = { i=ff.CASELESS, m=ff.MULTILINE, s=ff.DOTALL, x=ff.EXTENDED, U=ff.UNGREEDY, X=ff.EXTRA }
     deriv.new = function (pat, cf)
       local cflags = CFlags
       if cf then
-        for c in cf:gmatch(".") do cflags = bit.bor(cflags, TF[c] or 0) end
+        for c in cf:gmatch(".") do cflags = bor(cflags, TF[c] or 0) end
       end
       return base.new (pat, cflags)
     end
     local tb_methods = getmetatable(base.new(".")).__index
-    CreateUfindMethod(tb_methods)
-    tb_methods.gsub = function(regex, subj, rep) return base.gsub(subj, regex, rep) end
+    tb_methods.ufind = tb_methods.tfind
+    tb_methods.gsub = function(patt, subj, rep) return base.gsub(subj, patt, rep) end
+    tb_methods.capturecount = function(patt) return patt:fullinfo().CAPTURECOUNT end
   -----------------------------------------------------------------------------
-  elseif engine_name == "oniguruma" then
-    base = require "rex_onig"
+  elseif lib_name == "pcre2" then
+    base = require("rex_pcre2")
+    local ff = base.flags()
+    local CFlags = bor(ff.NEWLINE_ANYCRLF, ff.UTF, ff.UCP)
+    local TF = { i=ff.CASELESS, m=ff.MULTILINE, s=ff.DOTALL, x=ff.EXTENDED, U=ff.UNGREEDY }
+    deriv.new = function (pat, cf)
+      local cflags = CFlags
+      if cf then
+        for c in cf:gmatch(".") do cflags = bor(cflags, TF[c] or 0) end
+      end
+      return base.new (pat, cflags)
+    end
+    local tb_methods = getmetatable(base.new(".")).__index
+    tb_methods.ufind = tb_methods.tfind
+    tb_methods.gsub = function(patt, subj, rep) return base.gsub(subj, patt, rep) end
+    tb_methods.capturecount = function(patt) return patt:patterninfo().CAPTURECOUNT end
+  -----------------------------------------------------------------------------
+  elseif lib_name == "oniguruma" then
+    base = require("rex_onig")
     deriv.new = function (pat, cf) return base.new (pat, cf, "UTF8", "PERL_NG") end
     local tb_methods = getmetatable(base.new(".")).__index
-    CreateUfindMethod(tb_methods)
-    tb_methods.gsub = function(regex, subj, rep) return base.gsub(subj, regex, rep) end
+    tb_methods.ufind = tb_methods.tfind
+    -- tb_methods.capturecount = tb_methods.capturecount -- this method is already available
   -----------------------------------------------------------------------------
   else
-    error "argument #1 invalid or missing"
+    error "unsupported name of regexp library"
   end
   return setmetatable(deriv, {__index=base})
 end
@@ -286,6 +307,7 @@ local function ProcessDialogData (aData, bReplace, bInEditor, bUseMultiPatterns,
   params.bFileAsLine = aData.bFileAsLine
   params.bInverseSearch = aData.bInverseSearch
   params.bConfirmReplace = aData.bConfirmReplace
+  params.bWrapAround = aData.bWrapAround
   params.bSearchBack = aData.bSearchBack
   params.bDelEmptyLine = aData.bDelEmptyLine
   params.bDelNonMatchLine = aData.bDelNonMatchLine
@@ -455,6 +477,15 @@ function SRFrame:CheckAdvancedEnab (hDlg)
   hDlg:Enable(Pos.sFinalFunc   , bEnab)
 end
 
+function SRFrame:CheckWrapAround (hDlg)
+  local Pos = self.Pos or sd.Indexes(self.Items)
+  self.Pos = Pos
+  if self.bInEditor and Pos.bWrapAround then
+    local bEnab = hDlg:GetCheck(Pos.rScopeGlobal) and hDlg:GetCheck(Pos.rOriginCursor)
+    hDlg:Enable(Pos.bWrapAround, bEnab)
+  end
+end
+
 function SRFrame:OnDataLoaded (aData, aScriptCall)
   local Pos = self.Pos or sd.Indexes(self.Items)
   self.Pos = Pos
@@ -524,8 +555,13 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
   elseif msg == F.DN_BTNCLICK then
     if param1==Pos.bRegExpr then
       self:CheckRegexChange(hDlg)
-    elseif bInEditor and param1==Pos.bAdvanced then
-      self:CheckAdvancedEnab(hDlg)
+    else
+      if bInEditor then
+        self:CheckWrapAround(hDlg)
+      end
+      if param1==Pos.bAdvanced then
+        self:CheckAdvancedEnab(hDlg)
+      end
     end
   ----------------------------------------------------------------------------
   elseif msg == F.DN_EDITCHANGE then
@@ -549,6 +585,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
           ErrorMsg(M.MSearchFieldEmpty)
           return KEEP_DIALOG_OPEN
         end
+        Data.bWrapAround = hDlg:GetCheck(Pos.bWrapAround)
         Data.bSearchBack = hDlg:GetCheck(Pos.bSearchBack)
 
         Data.sScope  = hDlg:GetCheck(Pos.rScopeGlobal)  and "global" or "block"
@@ -584,28 +621,40 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
 end
 
 
-local function GetReplaceFunction (aReplacePat)
+local function GetReplaceFunction (aReplacePat, is_wide)
+  local fSame = function(s) return s end
+  local U8 = is_wide and Utf8 or fSame
+  local U16 = is_wide and Utf16 or fSame
+
   if type(aReplacePat) == "function" then
-    return function(collect,nMatch,nReps,nLine)
-      --local T = { [0]=collect[2], unpack(collect, 3) }
-
-      collect[0] = collect[2]
-      table.remove(collect, 2)
-      table.remove(collect, 1)
-
-      local R1,R2 = aReplacePat(collect, nMatch, nReps+1, nLine)
-      if type(R1)=="number" then R1=tostring(R1) end
-      return R1, R2
-    end
+    return is_wide and
+      function(collect,nMatch,nReps,nLine) -- this implementation is inefficient as it works in UTF-8 !
+        local ccopy = {}
+        for k,v in pairs(collect) do
+          local key = type(k)=="number" and k or U8(k)
+          ccopy[key] = v and U8(v)
+        end
+        local R1,R2 = aReplacePat(ccopy,nMatch,nReps+1,nLine)
+        local tp1 = type(R1)
+        if     tp1 == "string" then R1 = U16(R1)
+        elseif tp1 == "number" then R1 = U16(tostring(R1))
+        end
+        return R1, R2
+      end or
+      function(collect,nMatch,nReps,nLine)
+        local R1,R2 = aReplacePat(collect,nMatch,nReps+1,nLine)
+        if type(R1)=="number" then R1=tostring(R1) end
+        return R1, R2
+      end
 
   elseif type(aReplacePat) == "string" then
-    return function() return aReplacePat end
+    return function() return U16(aReplacePat) end
 
   elseif type(aReplacePat) == "table" then
-    return RepLib.GetReplaceFunction(aReplacePat)
+    return RepLib.GetReplaceFunction(aReplacePat, is_wide)
 
   else
-    error("invalid type of replace pattern")
+    error("invalid type of replace pattern", 2)
   end
 end
 
