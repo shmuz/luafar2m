@@ -6192,6 +6192,36 @@ mtime=3490797724
 </article>
 </node>
 <node>
+id=483
+lv=2
+dt=Text
+nm=regex.tfind
+ctime=3864718897
+mtime=3864719352
+<article>
+#_from, to, tbl = regex.tfind (subj, pattern, [init], [cflags])
+#_
+#_**Parameters:**
+#_  subj    :  string
+#_  pattern :  string
+#_  init    :  integer (default=1; can be negative)
+#_  cflags  :  string (any combination of 'i','m','o','s' and 'x')
+#_
+#_**Returns on success:**
+#_  from    : integer
+#_  to      : integer
+#_  tbl     : table (array of captures);
+#_            (there can be *false* in place of captures not participated in the match)
+#_
+#_**Returns on failure:**
+#_  nil
+#_
+#_**Far API used:**
+#_  RegExpControl
+#_
+</article>
+</node>
+<node>
 id=266
 lv=2
 dt=Text
@@ -6318,6 +6348,34 @@ nm=method match
 #_**Far API used:**
 #_  RegExpControl
 #_
+#_
+</article>
+</node>
+<node>
+id=484
+lv=3
+dt=Text
+nm=method tfind
+ctime=3864719159
+mtime=3864719274
+<article>
+#_from, to, tbl = regex_object:tfind (subj, [init])
+#_
+#_**Parameters:**
+#_  subj    :  string
+#_  init    :  integer (default=1; can be negative)
+#_
+#_**Returns on success:**
+#_  from    : integer
+#_  to      : integer
+#_  tbl     : table (array of captures);
+#_            (there can be *false* in place of captures not participated in the match)
+#_
+#_**Returns on failure:**
+#_  nil
+#_
+#_**Far API used:**
+#_  RegExpControl
 #_
 </article>
 </node>

@@ -396,7 +396,7 @@ local luafar = {
 
     ["regex"] = {
       fields = {
-        "find", "gmatch", "gsub", "match", "new",
+        "find", "gmatch", "gsub", "match", "new", "tfind",
       };
     };
 

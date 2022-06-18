@@ -1,6 +1,6 @@
 -- luacheck: globals _Plugin
 
-local F   = far.Flags
+local F = far.Flags
 
 local ColorPriority = 100
 local ColorFlags = bit64.bor(0, F.ECF_AUTODELETE) -- was: F.ECF_TABMARKCURRENT

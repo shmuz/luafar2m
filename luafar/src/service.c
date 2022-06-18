@@ -26,6 +26,7 @@ extern int  luaopen_utf8 (lua_State *L);
 extern int  luaopen_timer (lua_State *L);
 extern int  luaopen_usercontrol (lua_State *L);
 extern int  far_Find (lua_State*);
+extern int  far_Tfind (lua_State*);
 extern int  far_Gmatch (lua_State*);
 extern int  far_Gsub (lua_State*);
 extern int  far_Match (lua_State*);
@@ -5277,6 +5278,7 @@ const luaL_Reg regex_funcs[] =
   {"gsub",   far_Gsub},
   {"match",  far_Match},
   {"new",    far_Regex},
+  {"tfind",  far_Tfind},
   {NULL, NULL},
 };
 

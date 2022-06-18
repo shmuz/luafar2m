@@ -18,6 +18,12 @@ local function FormatInt (num)
   return tostring(num):reverse():gsub("...", "%1,"):gsub(",$", ""):reverse()
 end
 
+local function FormatTime (tm)
+  if tm < 0 then tm = 0 end
+  local fmt = (tm < 10) and "%.2f" or (tm < 100) and "%.1f" or "%.0f"
+  return fmt:format(tm)
+end
+
 local function MakeGsub (mode)
   local sub, len
   if     mode == "widechar"  then sub, len = win.subW, win.lenW
@@ -27,7 +33,7 @@ local function MakeGsub (mode)
   end
 
   return function (aSubj, aRegex, aRepFunc, ...)
-    local ufind_method = mode=="widechar" and aRegex.ufindW or aRegex.ufind
+    local ufind_method = mode=="widechar" and aRegex.ufindW or aRegex.ufind or aRegex.tfind
     local nFound, nReps = 0, 0
     local tOut = {}
     local x, last_to = 1, -1
@@ -112,6 +118,7 @@ local function EditorConfigDialog()
     {tp="dbox";  text=M.MConfigTitle; },
     {tp="chbox"; name="bForceScopeToBlock";  text=M.MOptForceScopeToBlock; },
     {tp="chbox"; name="bSelectFound";        text=M.MOptSelectFound; },
+    {tp="chbox"; name="bShowSpentTime";      text=M.MOptShowSpentTime; },
     {tp="text";  text=M.MPickFrom; ystep=2; },
     {tp="rbutt"; x1=7;  name="rPickEditor";  text=M.MPickEditor; group=1; val=1; },
     {tp="rbutt"; x1=27; name="rPickHistory"; text=M.MPickHistory; y1=""; },
@@ -148,16 +155,7 @@ local function GetRegexLib (lib_name)
   if lib_name == "far" then
     base = regex
     local tb_methods = getmetatable(regex.new(".")).__index
-    tb_methods.far_tfind = function(rr,subj,init)
-      local t = { rr:find(subj,init) }
-      local fr,to = t[1],t[2]
-      if fr then
-        table.remove(t,1)
-        table.remove(t,1)
-        return fr,to,t
-      end
-      return nil
-    end
+    tb_methods.far_tfind = tb_methods.tfind
     tb_methods.capturecount = function(r) return r:bracketscount() - 1 end
   -----------------------------------------------------------------------------
   elseif lib_name == "pcre" then
@@ -664,6 +662,7 @@ return {
   CreateSRFrame      = CreateSRFrame;
   ErrorMsg           = ErrorMsg;
   FormatInt          = FormatInt;
+  FormatTime         = FormatTime;
   GetDialogHistory   = GetDialogHistory;
   GetReplaceFunction = GetReplaceFunction;
   GetWordUnderCursor = GetWordUnderCursor;
