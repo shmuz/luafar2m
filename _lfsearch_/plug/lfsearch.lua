@@ -13,11 +13,17 @@ local SETTINGS_NAME = "plugin_lfsearch"
 local function NormDataOnFirstRun()
   local data = _Plugin.History["main"]
   data.bAdvanced          = false
+  data.bConfirmReplace    = true
   data.bDelEmptyLine      = false
   data.bDelNonMatchLine   = false
+  data.bGrepInverseSearch = false
+  data.bInverseSearch     = false
+  data.bMultiPatterns     = false
   data.bRepIsFunc         = false
   data.bSearchBack        = false
+  data.bUseDirFilter      = false
   data.bUseFileFilter     = false
+  data.sSearchArea        = "FromCurrFolder"
   --------------------------------
   --data = _Plugin.History["panels"] or {}       --TODO
   --data.sSearchArea        = "FromCurrFolder"   --TODO
@@ -27,9 +33,14 @@ end
 local function FirstRunActions()
   local Sett  = require "far2.settings"
   local hist = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
-  Sett.field(hist, "config")
+  local config = Sett.field(hist, "config")
   Sett.field(hist, "main")
   Sett.field(hist, "menu")
+
+  config.EditorHighlightColor    = config.EditorHighlightColor    or 0xCF
+  config.GrepLineNumMatchColor   = config.GrepLineNumMatchColor   or 0xA0
+  config.GrepLineNumContextColor = config.GrepLineNumContextColor or 0x80
+
   _Plugin = {
     ModuleDir = far.PluginStartupInfo().ModuleDir;
     OriginalRequire = require;
@@ -63,6 +74,7 @@ local EditorAction = EditMain.EditorAction
 local function SaveSettings()
   Sett.msave(SETTINGS_KEY, SETTINGS_NAME, History)
 end
+_Plugin.SaveSettings = SaveSettings
 
 
 local function MakeAddToMenu (Items)
@@ -86,12 +98,13 @@ end
 
 local function MakeMenuItems (aUserMenuFile)
   local items = {
-    {text=M.MMenuFind,             action="search" },
-    {text=M.MMenuReplace,          action="replace"},
-    {text=M.MMenuRepeat,           action="repeat" },
-    {text=M.MMenuRepeatRev,        action="repeat_rev"},
-    {text=M.MMenuMultilineReplace, action="mreplace"},
-    {text=M.MMenuConfig,           action="config" },
+    {text=M.MMenuFind,             action="search";   save=true; },
+    {text=M.MMenuReplace,          action="replace";  save=true; },
+    {text=M.MMenuRepeat,           action="repeat";              },
+    {text=M.MMenuRepeatRev,        action="repeat_rev";          },
+    {text=M.MMenuMultilineReplace, action="mreplace"; save=true; },
+    {text=M.MMenuToggleHighlight,  action="togglehighlight";     },
+    {text=M.MMenuConfig,           action="config";              },
   }
   for i,v in ipairs(items) do
     v.text = "&"..i..". "..v.text
@@ -166,7 +179,9 @@ function export.OpenPlugin (aFrom, aItem)
       if ret.action then
         local data = History["main"]
         data.fUserChoiceFunc = nil
-        if ret.action == "mreplace" then
+        if ret.action == "togglehighlight" then
+          Editors.ToggleHighlight()
+        elseif ret.action == "mreplace" then
           MReplace.ReplaceWithDialog(data, true)
         else
           EditorAction (ret.action, data, false)
@@ -174,7 +189,9 @@ function export.OpenPlugin (aFrom, aItem)
       elseif ret.filename then
         assert(loadfile(ret.filename))(ret.param1, ret.param2)
       end
-      SaveSettings()
+      if ret.save then
+        SaveSettings()
+      end
     end
 
   elseif aFrom == F.OPEN_COMMANDLINE then

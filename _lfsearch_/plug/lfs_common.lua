@@ -1,9 +1,10 @@
 -- lfs_common.lua
 -- luacheck: globals _Plugin
 
-local M      = require "lfs_message"
-local RepLib = require "lfs_replib"
-local sd     = require "far2.simpledialog"
+local M       = require "lfs_message"
+local RepLib  = require "lfs_replib"
+local Editors = require "lfs_editors"
+local sd      = require "far2.simpledialog"
 
 local bor = bit64.bor
 local Utf8, Utf16 = win.Utf16ToUtf8, win.Utf8ToUtf16
@@ -33,7 +34,8 @@ local function MakeGsub (mode)
   end
 
   return function (aSubj, aRegex, aRepFunc, ...)
-    local ufind_method = mode=="widechar" and aRegex.ufindW or aRegex.ufind or aRegex.tfind
+    local ufind_method = mode=="widechar" and aRegex.ufindW
+                         or aRegex.far_tfind or Editors.WrapTfindMethod(aRegex.ufind)
     local nFound, nReps = 0, 0
     local tOut = {}
     local x, last_to = 1, -1
@@ -112,6 +114,8 @@ end
 
 
 local function EditorConfigDialog()
+  local offset = 5 + M.MBtnHighlightColor:len() + 5
+  ----------------------------------------------------------------------------
   local Items = {
     width = 76;
     help = "Contents";
@@ -123,16 +127,39 @@ local function EditorConfigDialog()
     {tp="rbutt"; x1=7;  name="rPickEditor";  text=M.MPickEditor; group=1; val=1; },
     {tp="rbutt"; x1=27; name="rPickHistory"; text=M.MPickHistory; y1=""; },
     {tp="rbutt"; x1=47; name="rPickNowhere"; text=M.MPickNowhere; y1=""; },
+
     {tp="sep"; ystep=2; },
+    {tp="butt"; name="btnHighlight"; text=M.MBtnHighlightColor; btnnoclose=1; },
+    {tp="text"; name="labHighlight"; text=M.MTextSample; x1=offset; y1=""; width=M.MTextSample:len(); },
+
+    {tp="sep"; },
     {tp="butt"; centergroup=1; text=M.MOk;    default=1; },
     {tp="butt"; centergroup=1; text=M.MCancel; cancel=1; },
   }
   ----------------------------------------------------------------------------
+  local Pos = sd.Indexes(Items)
   local Data = _Plugin.History["config"]
   sd.LoadData(Data, Items)
+
+  local hColor0 = Data.EditorHighlightColor
+
+  Items.proc = function(hDlg, msg, param1, param2)
+    if msg == F.DN_BTNCLICK then
+      if param1 == Pos.btnHighlight then
+        local c = far.ColorDialog(hColor0)
+        if c then hColor0 = c; hDlg:Redraw(); end
+      end
+
+    elseif msg == F.DN_CTLCOLORDLGITEM then
+      if param1 == Pos.labHighlight then param2 = hColor0; return param2; end
+    end
+  end
+
   local out = sd.Run(Items)
   if out then
     sd.SaveData(out, Data)
+    Data.EditorHighlightColor = hColor0
+    _Plugin.SaveSettings()
     return true
   end
 end
@@ -309,6 +336,7 @@ local function ProcessDialogData (aData, bReplace, bInEditor, bUseMultiPatterns,
   params.bSearchBack = aData.bSearchBack
   params.bDelEmptyLine = aData.bDelEmptyLine
   params.bDelNonMatchLine = aData.bDelNonMatchLine
+  params.bHighlight = aData.bHighlight
   params.sOrigin = aData.sOrigin
   params.sSearchPat = aData.sSearchPat or ""
   params.FileFilter = aData.bUseFileFilter and aData.FileFilter
@@ -585,6 +613,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
         end
         Data.bWrapAround = hDlg:GetCheck(Pos.bWrapAround)
         Data.bSearchBack = hDlg:GetCheck(Pos.bSearchBack)
+        Data.bHighlight  = hDlg:GetCheck(Pos.bHighlight)
 
         Data.sScope  = hDlg:GetCheck(Pos.rScopeGlobal)  and "global" or "block"
         Data.sOrigin = hDlg:GetCheck(Pos.rOriginCursor) and "cursor" or "scope"

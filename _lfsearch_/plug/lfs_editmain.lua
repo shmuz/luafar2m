@@ -55,30 +55,31 @@ local function EditorDialog (aData, aReplace, aScriptCall)
   insert(Items, { tp="rbutt"; name="rScopeBlock";   text=M.MDlgScopeBlock;  x1=6; noauto=1; })
   insert(Items, { tp="text";                        text=M.MDlgOrigin; ystep=-2; x1=26; })
   insert(Items, { tp="rbutt"; name="rOriginCursor"; text=M.MDlgOrigCursor; x1=27; group=1; noauto=1; })
-  insert(Items, { tp="rbutt"; name="rOriginScope";  text=M.MDlgOrigScope;  x1=27; noauto=1; })
+  insert(Items, { tp="rbutt"; name="rOriginScope";  text=M.MDlgOrigScope;  x1=""; noauto=1; })
   insert(Items, { tp="chbox"; name="bWrapAround";   text=M.MDlgWrapAround; ystep=-2; x1=50; })
-  insert(Items, { tp="chbox"; name="bSearchBack";   text=M.MDlgReverseSearch;        x1=50; })
+  insert(Items, { tp="chbox"; name="bSearchBack";   text=M.MDlgReverseSearch;        x1=""; })
+  insert(Items, { tp="chbox"; name="bHighlight";    text=M.MDlgHighlightAll;         x1=""; })
   ------------------------------------------------------------------------------
-  insert(Items, { tp="sep"; ystep=2; })
+  insert(Items, { tp="sep"; })
   ------------------------------------------------------------------------------
   insert(Items, { tp="chbox"; name="bAdvanced";            text=M.MDlgAdvanced; })
   insert(Items, { tp="text";  name="labFilterFunc"; x1=39; text=M.MDlgFilterFunc; y1=""; })
-  insert(Items, { tp="edit";  name="sFilterFunc";   x1=39; hist=HIST_FILTERFUNC; ext="lua"; })
+  insert(Items, { tp="edit";  name="sFilterFunc";   x1=""; hist=HIST_FILTERFUNC; ext="lua"; })
   ------------------------------------------------------------------------------
   insert(Items, { tp="text";  name="labInitFunc";  text=M.MDlgInitFunc; })
   insert(Items, { tp="edit";  name="sInitFunc";    x2=36; hist=HIST_INITFUNC; ext="lua"; })
   insert(Items, { tp="text";  name="labFinalFunc"; x1=39; text=M.MDlgFinalFunc; ystep=-1; })
-  insert(Items, { tp="edit";  name="sFinalFunc";   x1=39; hist=HIST_FINALFUNC; ext="lua"; })
+  insert(Items, { tp="edit";  name="sFinalFunc";   x1=""; hist=HIST_FINALFUNC; ext="lua"; })
   ------------------------------------------------------------------------------
   insert(Items, { tp="sep"; })
   ------------------------------------------------------------------------------
-  insert(Items, { tp="butt"; name="btnOk"; centergroup=1; text=M.MOk; default=1; })
-  insert(Items, { tp="butt"; name="btnCancel"; centergroup=1; text=M.MCancel; cancel=1; })
+  insert(Items, { tp="butt"; name="btnOk";         centergroup=1; text=M.MOk; default=1; })
+  insert(Items, { tp="butt"; name="btnConfig";     centergroup=1; text=M.MDlgBtnConfig; btnnoclose=1; })
   if not aReplace then
-    insert(Items, { tp="butt"; name="btnCount"; centergroup=1; text=M.MDlgBtnCount; })
-    insert(Items, { tp="butt"; name="btnShowAll"; centergroup=1; text=M.MDlgBtnShowAll; })
+    insert(Items, { tp="butt"; name="btnCount";    centergroup=1; text=M.MDlgBtnCount; })
+    insert(Items, { tp="butt"; name="btnShowAll";  centergroup=1; text=M.MDlgBtnShowAll; })
   end
-  insert(Items, { tp="butt"; name="btnConfig"; centergroup=1; text=M.MDlgBtnConfig; btnnoclose=1; })
+  insert(Items, { tp="butt"; name="btnCancel";     centergroup=1; text=M.MCancel; cancel=1; })
   ----------------------------------------------------------------------------
   local Pos,Elem = sd.Indexes(Items)
 

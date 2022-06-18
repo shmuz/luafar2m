@@ -33,4 +33,5 @@ CFLAGS = -O2 -Wall -Wno-unused-function -fvisibility=hidden \
          -I$(INC_FAR) -I$(INC_WIN) -I$(INC_LUA) \
          -m$(DIRBIT) -fPIC $(JITCFLAG) $(MYCFLAGS)
 
+# LDFLAGS = -shared -m$(DIRBIT) -fPIC -Wl,-z,defs $(LIB_LUA) $(MYLDFLAGS)
 LDFLAGS = -shared -m$(DIRBIT) -fPIC $(LIB_LUA) $(MYLDFLAGS)

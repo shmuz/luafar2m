@@ -217,7 +217,7 @@ local function SelectItemInEditor (item)
   local fr, to = item.fr + offset, item.to + offset
   ScrollToPosition(item.lineno, to+1, fr, to, -10)
   editor.Select("BTYPE_STREAM", item.lineno, fr, to<=fr and 1 or to-fr+1, 1)
-  editor.Redraw()
+  actl.RedrawAll() -- editor.Redraw doesn't work from the dialog
 end
 
 
@@ -263,8 +263,6 @@ end
 
 
 local function ShowAll_ChangeState (hDlg, item, force_dock)
-  SelectItemInEditor(item)
-
   local EI = editor.GetInfo()
   local rect = hDlg:send("DM_GETDLGRECT")
   local scrline = item.lineno - EI.TopScreenLine + 1
@@ -311,17 +309,16 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
     }, items)
 
   function list:onlistchange (hDlg, key, item)
+    SelectItemInEditor(item)
     ShowAll_ChangeState(hDlg, item, false)
   end
-
-  -- local rep_html = {["<"]="&lt;"; [">"]="&gt;"; ["&"]="&amp;"; ["\""]="&quot;"}
-  -- local function html(s) return (s:gsub("[<>&\"]", rep_html)) end
 
   local newsearch = false
   function list:keyfunction (hDlg, key, item)
     if regex.match(key, "^R?Ctrl(?:Up|Down|Home|End|Num[1278])$") then
-      editor.ProcessInput(far.NameToInputRecord(key))
-      hDlg:send("DM_REDRAW")
+      editor.ProcessKey(far.NameToKey(key))
+      actl.RedrawAll()
+      hDlg:Redraw()
       return "done"
     elseif key=="CtrlNum0" or key=="RCtrlNum0" then
       self:onlistchange(hDlg, key, item)
@@ -329,22 +326,6 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
     elseif key=="F8" then
       newsearch = true
       return "break"
-    -- elseif key=="F2" then
-    --   local fname = Info.FileName:match(".+\\").."tmp.tmp.html"
-    --   local fp = io.open(fname, "w")
-    --   if fp then
-    --     fp:write("\239\187\191") -- UTF-8 BOM
-    --     fp:write("<pre><code>\n")
-    --     fp:write("*** ", html(Info.FileName), " ***\n")
-    --     fp:write("*** ", html(title), " ***\n")
-    --     for i,v in ipairs(items) do
-    --       local s1, s2, s3 = v.text:sub(1,v.fr-1), v.text:sub(v.fr,v.to), v.text:sub(v.to+1)
-    --       fp:write(html(s1).."<b>"..html(s2).."</b>"..html(s3), "\n")
-    --     end
-    --     fp:write("</code></pre>\n")
-    --     fp:close()
-    --     win.ShellExecute(nil, "open", fname)
-    --   end
     end
   end
 
@@ -354,6 +335,7 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
     ShowAll_ChangeState(hDlg, self.items[1], true)
   end
 
+  SelectItemInEditor(list.items[1])
   local item = CustomMenu.Menu(
     {
       DialogId  = win.Uuid("D0596479-B9AB-4C0E-A28B-D009C000C63C"),
