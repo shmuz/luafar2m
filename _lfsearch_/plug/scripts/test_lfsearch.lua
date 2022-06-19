@@ -121,6 +121,13 @@ local function test_Switches (lib)
   end end end end end end end
 end
 
+-- the bug was in Linux version
+local function test_bug_20220618 (lib)
+  SetEditorText("text-текст")
+  local dt = { bRegExpr=true; sSearchPat="."; }
+  RunEditorAction(lib, "test:count",  dt, 10, 0)
+end
+
 local function test_LineFilter (lib)
   SetEditorText("line1\rline2\rline3\r")
   local dt = { sSearchPat="line" }
@@ -615,6 +622,7 @@ function selftest.test_editor_search_replace (lib)
   assert(type(lfsearch) == "table")
   OpenHelperEditor()
   test_Switches     (lib)
+  test_bug_20220618 (lib)
   test_LineFilter   (lib)
   test_Replace      (lib)
   test_Encodings    (lib)
@@ -700,6 +708,13 @@ local function test_Switches (lib)
     RunEditorAction(lib, "count", dt, bEnable and (dt.bMultiLine and 4 or nRef1) or 0, 0)
     ---------------------------------
   end end end end end end
+end
+
+-- the bug was in Linux version
+local function test_bug_20220618 (lib)
+  SetEditorText("text-текст")
+  local dt = { bRegExpr=true; sSearchPat="."; }
+  RunEditorAction(lib, "test:count",  dt, 10, 0)
 end
 
 local function test_Replace (lib)
@@ -860,6 +875,7 @@ function selftest.test_editor_multiline_replace (lib)
   assert(type(lfsearch) == "table")
   OpenHelperEditor()
   test_Switches     (lib)
+  test_bug_20220618 (lib)
   test_Replace      (lib)
   test_Encodings    (lib)
   test_bug_20090208 (lib)

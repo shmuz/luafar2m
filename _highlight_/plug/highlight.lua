@@ -198,7 +198,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
   local pat_close
   local ID = ei.EditorID
 
-  local openbracket, bstack, bpattern, opattern
+  local openbracket, bstack, bpattern, opattern, params
   if Syn.bracketmatch then
     local char = editor.GetString(nil, 3):sub(ei.CurPos, ei.CurPos)
     openbracket = char=="(" or char=="[" or char=="{"
@@ -206,69 +206,18 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
     bstack = openbracket and 0 or closebracket and {}
     if bstack then
       if char=="(" or char==")" then
-        bpattern, opattern = rex.new("([()])"), "(\0"
+        bpattern, opattern = rex.new("([()])"), "(\0\0\0"
       elseif char=="[" or char=="]" then
-        bpattern, opattern = rex.new("([\\[\\]])"), "[\0"
+        bpattern, opattern = rex.new("([\\[\\]])"), "[\0\0\0"
       else
-        bpattern, opattern = rex.new("([{}])"), "{\0"
+        bpattern, opattern = rex.new("([{}])"), "{\0\0\0"
       end
-      editor.AddColor(ei.CurLine,ei.CurPos,ei.CurPos,acFlags,Syn.bracketcolor,Priority+1,Owner)
+      params = {ei.CurLine,ei.CurPos,ei.CurPos,acFlags,Syn.bracketcolor,Priority+1,Owner}
+      --editor.AddColor(ei.CurLine,ei.CurPos,ei.CurPos,acFlags,Syn.bracketcolor,Priority+1,Owner)
     end
   end
 
   for str, y, need_paint in GetNextString do
-    if bstack and need_paint then
-      if openbracket then
-        if y >= ei.CurLine then
-          local start = (y == ei.CurLine) and ei.CurPos+1 or 1
-          while true do
-            local from, to, br = bpattern:findW(str, start)
-            if not from then break end
-            start = to + 1
-            if br == opattern then
-              bstack = bstack + 1
-            else
-              if bstack > 0 then
-                bstack = bstack - 1
-              else
-                editor.AddColor(y, from, to, acFlags, Syn.bracketcolor, Priority+1, Owner)
-                bstack = nil
-                break
-              end
-            end
-          end
-        end
-      else -- if closebracket
-        if y <= ei.CurLine then
-          local start = 1
-          while true do
-            local from, to, br = bpattern:findW(str, start)
-            if not from then
-              if y == ei.CurLine then bstack = nil; end
-              break
-            end
-            start = to + 1
-            if y == ei.CurLine and from == ei.CurPos then
-              if bstack[1] then
-                editor.AddColor(bstack[#bstack-1], bstack[#bstack], bstack[#bstack],
-                                acFlags, Syn.bracketcolor, Priority+1, Owner)
-              end
-              bstack = nil
-              break
-            else
-              if br == opattern then
-                bstack[#bstack+1] = y
-                bstack[#bstack+1] = from
-              else
-                bstack[#bstack] = nil
-                bstack[#bstack] = nil
-              end
-            end
-          end
-        end
-      end
-    end
-
     local left = 1
     while true do
       if current == nil then -- outside long string or long comment
@@ -342,6 +291,58 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
       end
     end
 
+    if bstack and need_paint then
+      if openbracket then
+        if y >= ei.CurLine then
+          local start = (y == ei.CurLine) and ei.CurPos+1 or 1
+          while true do
+            local from, to, br = bpattern:findW(str, start)
+            if not from then break end
+            start = to + 1
+            if br == opattern then
+              bstack = bstack + 1
+            else
+              if bstack > 0 then
+                bstack = bstack - 1
+              else
+                editor.AddColor(y, from, to, acFlags, Syn.bracketcolor, Priority+1, Owner)
+                bstack = nil
+                break
+              end
+            end
+          end
+        end
+      else -- if closebracket
+        if y <= ei.CurLine then
+          local start = 1
+          while true do
+            local from, to, br = bpattern:findW(str, start)
+            if not from then
+              if y == ei.CurLine then bstack = nil; end
+              break
+            end
+            start = to + 1
+            if y == ei.CurLine and from == ei.CurPos then
+              if bstack[1] then
+                editor.AddColor(bstack[#bstack-1], bstack[#bstack], bstack[#bstack],
+                                acFlags, Syn.bracketcolor, Priority+1, Owner)
+              end
+              bstack = nil
+              break
+            else
+              if br == opattern then
+                bstack[#bstack+1] = y
+                bstack[#bstack+1] = from
+              else
+                bstack[#bstack] = nil
+                bstack[#bstack] = nil
+              end
+            end
+          end
+        end
+      end
+    end
+
     -- highlight extra pattern matches at the very end because color priorities in Far2 do not exist
     if need_paint and extrapattern then
       local start = 1
@@ -356,6 +357,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
     end
 
   end
+  if params then editor.AddColor(unpack(params)) end
 end
 
 local function RedrawExtraPattern (ei, Priority, extrapattern, extracolor)
@@ -720,6 +722,13 @@ local function OnNewEditor (id, ei)
       SetClass(id, nil, false)
     end
   end
+end
+
+-- This trick is needed under Far2l (not needed under Far3).
+-- Far2l does not redraw the entire visible part of the editor when navigation keys are pressed.
+-- That makes problems with highlighting matching brackets.
+function export.ProcessEditorInput (Rec)
+  editor.Redraw()
 end
 
 function export.ProcessEditorEvent (id, event, param)
