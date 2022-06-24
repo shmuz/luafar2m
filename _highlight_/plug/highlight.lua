@@ -728,7 +728,12 @@ end
 -- Far2l does not redraw the entire visible part of the editor when navigation keys are pressed.
 -- That makes problems with highlighting matching brackets.
 function export.ProcessEditorInput (Rec)
-  editor.Redraw()
+  local state = Editors[editor.GetInfo().EditorID]
+  if state and state.On then
+    if state.Class and state.Class.CS.bracketmatch then
+      editor.Redraw()
+    end
+  end
 end
 
 function export.ProcessEditorEvent (id, event, param)

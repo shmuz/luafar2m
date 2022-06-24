@@ -108,6 +108,72 @@ local function calc_x2 (tp, x1, text)
   end
 end
 
+local function get_dialog_state(hDlg, Items)
+  local out = {}
+  for pos,elem in ipairs(Items) do
+    if not (elem.noauto or elem.nosave) then
+      local tp = type(elem.name)
+      if tp=="string" or tp=="number" then
+        local item = Send(hDlg, "DM_GETDLGITEM", pos)
+        tp = item[IND_TYPE]
+
+        if tp==F.DI_CHECKBOX then
+          local val = item[IND_SELECTED]
+          if FarVer == 2 then out[elem.name] = val
+          else                out[elem.name] = (val==2) and 2 or (val ~= 0) -- false,true,2
+          end
+
+        elseif tp==F.DI_RADIOBUTTON then
+          local val = item[IND_SELECTED]
+          if FarVer == 2 then out[elem.name] = val
+          else                out[elem.name] = (val ~= 0) -- false,true
+          end
+
+        elseif tp==F.DI_EDIT or tp==F.DI_FIXEDIT or tp==F.DI_PSWEDIT then
+          out[elem.name] = item[IND_DATA] -- string
+
+        elseif tp==F.DI_COMBOBOX or tp==F.DI_LISTBOX then
+          local tt = Send(hDlg, "DM_LISTGETCURPOS", pos)
+          out[elem.name] = tt.SelectPos
+
+        end
+      end
+    end
+  end
+  return out
+end
+
+local function set_dialog_state(hDlg, Items, Data)
+  for pos,elem in ipairs(Items) do
+    if not (elem.noauto or elem.noload) then
+      if type(elem.name)=="string" or type(elem.name)=="number" then
+        local val = Data[elem.name]
+        local tp = elem.tp
+
+        if tp=="chbox" then
+          if FarVer == 2 then val = val
+          else                val = (val==2 or val==0) and val or (val and 1) or 0
+          end
+          Send(hDlg, "DM_SETCHECK", pos, val)
+
+        elseif tp=="rbutt" then
+          if FarVer == 2 then val = val
+          else                val = val and 1 or 0
+          end
+          Send(hDlg, "DM_SETCHECK", pos, val)
+
+        elseif tp=="edit" or tp=="fixedit" or tp=="pswedit" then
+          Send(hDlg, "DM_SETTEXT", pos, val or "")
+
+        elseif tp=="combobox" or tp=="listbox" then
+          Send(hDlg, "DM_LISTSETCURPOS", pos, {SelectPos=val or 1})
+
+        end
+      end
+    end
+  end
+end
+
 -- supported dialog item types
 local TypeMap = {
     butt           =  F.DI_BUTTON;
@@ -380,36 +446,6 @@ local function Run (inData)
     end
   end
   ----------------------------------------------------------------------------------------------
-  local function get_dialog_state(hDlg)
-    local out = {}
-    for i,v in ipairs(inData) do
-      if not (v.noauto or v.nosave) then
-        local tp = type(v.name)
-        if tp=="string" or tp=="number" then
-          local item = Send(hDlg, "DM_GETDLGITEM", i)
-          tp = item[IND_TYPE]
-          if tp==F.DI_CHECKBOX then
-            local val = item[IND_SELECTED]
-            if FarVer == 2 then out[v.name] = val
-            else                out[v.name] = (val==2) and 2 or (val ~= 0) -- false,true,2
-            end
-          elseif tp==F.DI_RADIOBUTTON then
-            local val = item[IND_SELECTED]
-            if FarVer == 2 then out[v.name] = val
-            else                out[v.name] = (val ~= 0) -- false,true
-            end
-          elseif tp==F.DI_EDIT or tp==F.DI_FIXEDIT or tp==F.DI_PSWEDIT then
-            out[v.name] = item[IND_DATA] -- string
-          elseif tp==F.DI_COMBOBOX or tp==F.DI_LISTBOX then
-            local pos = Send(hDlg, "DM_LISTGETCURPOS", i)
-            out[v.name] = pos.SelectPos
-          end
-        end
-      end
-    end
-    return out
-  end
-  ----------------------------------------------------------------------------------------------
   local function DlgProc(hDlg, Msg, Par1, Par2)
     local r = inData.proc and inData.proc(hDlg, Msg, Par1, Par2)
     if r then return r; end
@@ -422,7 +458,7 @@ local function Run (inData)
 
     elseif Msg == F.DN_CLOSE then
       if inData.closeaction and inData[Par1] and not inData[Par1].cancel then
-        return inData.closeaction(hDlg, Par1, get_dialog_state(hDlg))
+        return inData.closeaction(hDlg, Par1, get_dialog_state(hDlg, inData))
       end
 
     elseif (FarVer == 2) and Msg == F.DN_KEY then
@@ -495,7 +531,7 @@ local function Run (inData)
     far.DialogFree(hDlg)
     return nil
   end
-  local out = get_dialog_state(hDlg)
+  local out = get_dialog_state(hDlg, inData)
   far.DialogFree(hDlg)
   return out, ret
 end
@@ -534,4 +570,6 @@ return {
   Indexes = Indexes;
   LoadData = LoadData;
   SaveData = SaveData;
+  GetDialogState = get_dialog_state;
+  SetDialogState = set_dialog_state;
 }

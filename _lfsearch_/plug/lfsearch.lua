@@ -36,12 +36,14 @@ local function FirstRunActions()
   local config = Sett.field(hist, "config")
   Sett.field(hist, "main")
   Sett.field(hist, "menu")
+  Sett.field(hist, "presets")
 
   config.EditorHighlightColor    = config.EditorHighlightColor    or 0xCF
   config.GrepLineNumMatchColor   = config.GrepLineNumMatchColor   or 0xA0
   config.GrepLineNumContextColor = config.GrepLineNumContextColor or 0x80
 
   _Plugin = {
+    DialogHistoryPath = "LuaFAR Search\\";
     ModuleDir = far.PluginStartupInfo().ModuleDir;
     OriginalRequire = require;
     History = hist;

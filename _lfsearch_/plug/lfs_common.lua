@@ -6,7 +6,7 @@ local RepLib  = require "lfs_replib"
 local Editors = require "lfs_editors"
 local sd      = require "far2.simpledialog"
 
-local bor = bit64.bor
+local band, bnot, bor = bit64.band, bit64.bnot, bit64.bor
 local Utf8, Utf16 = win.Utf16ToUtf8, win.Utf8ToUtf16
 local F = far.Flags
 local KEEP_DIALOG_OPEN = 0
@@ -543,6 +543,60 @@ function SRFrame:OnDataLoaded (aData, aScriptCall)
   end
 end
 
+function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
+  local Pos = self.Pos
+  local bScript = self.bScriptCall or LoadFromPreset
+
+  if self.bInEditor then
+    -- Set scope
+    local EI = editor.GetInfo()
+    if EI.BlockType == F.BTYPE_NONE then
+      hDlg:SetCheck(Pos.rScopeGlobal, true)
+      hDlg:Enable(Pos.rScopeBlock, false)
+    else
+      local bScopeBlock
+      local bForceBlock = _Plugin.History.config.bForceScopeToBlock
+      if bScript or not bForceBlock then
+        bScopeBlock = (Data.sScope == "block")
+      else
+        local line = editor.GetString(EI.BlockStartLine+1) -- test the 2-nd selected line
+        bScopeBlock = line and line.SelStart>0
+      end
+      hDlg:SetCheck(bScopeBlock and Pos.rScopeBlock or Pos.rScopeGlobal, true)
+    end
+
+    -- Set origin
+    local key = bScript and "sOrigin"
+                or hDlg:GetCheck(Pos.rScopeGlobal) and "sOriginInGlobal"
+                or "sOriginInBlock"
+    local name = Data[key]=="scope" and "rOriginScope" or "rOriginCursor"
+    hDlg:SetCheck(Pos[name], true)
+
+    self:CheckWrapAround(hDlg)
+  end
+
+  self:CheckAdvancedEnab(hDlg)
+  self:CheckRegexInit(hDlg, Data)
+end
+
+function SRFrame:SaveDataDyn (hDlg, Data)
+  local Pos = self.Pos
+  ------------------------------------------------------------------------
+  if self.bInEditor then
+    Data.sScope  = hDlg:GetCheck(Pos.rScopeGlobal) and "global" or "block"
+    Data.sOrigin = hDlg:GetCheck(Pos.rOriginCursor) and "cursor" or "scope"
+
+    if not self.bScriptCall then
+      local key = Data.sScope == "global" and "sOriginInGlobal" or "sOriginInBlock"
+      Data[key] = Data.sOrigin -- to be passed to execution
+    end
+--###  else
+--###    Data.sSearchArea = IndexToSearchArea(hDlg:ListGetCurPos(Pos.cmbSearchArea))
+  end
+  ------------------------------------------------------------------------
+  Data.sRegexLib = self.Libs[ hDlg:ListGetCurPos(Pos.cmbRegexLib).SelectPos ]
+end
+
 function SRFrame:GetLibName (hDlg)
   local pos = hDlg:ListGetCurPos(self.Pos.cmbRegexLib)
   return self.Libs[pos.SelectPos]
@@ -645,6 +699,125 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
       end
     end
   end
+end
+
+
+function SRFrame:DoPresets (hDlg)
+  local Pos = self.Pos
+  local HistPresetNames = _Plugin.DialogHistoryPath .. "Presets"
+  hDlg:send("DM_SHOWDIALOG", 0)
+  local props = { Title=M.MTitlePresets, Bottom = "Esc,Enter,F2,Ins,F6,Del", HelpTopic="Presets", }
+  local presets = _Plugin.History.presets
+  local bkeys = { {BreakKey="F2"}, {BreakKey="INSERT"}, {BreakKey="DELETE"}, {BreakKey="F6"} }
+
+  while true do
+    local items = {}
+    for name, preset in pairs(presets) do
+      local t = { text=name, preset=preset }
+      items[#items+1] = t
+      if name == self.PresetName then t.selected,t.checked = true,true; end
+    end
+    table.sort(items, function(a,b) return win.CompareString(a.text,b.text,nil,"cS") < 0; end)
+    ----------------------------------------------------------------------------
+    local item, pos = far.Menu(props, items, bkeys)
+    ----------------------------------------------------------------------------
+    if not item then break end
+    ----------------------------------------------------------------------------
+    if item.preset then
+      self.PresetName = item.text
+      local data = item.preset
+      sd.SetDialogState(hDlg, self.Items, data)
+
+--###      if Pos.cmbSearchArea and data.sSearchArea then
+--###        hDlg:ListSetCurPos(Pos.cmbSearchArea, {SelectPos=SearchAreaToIndex(data.sSearchArea)} )
+--###      end
+
+--###      if Pos.cmbCodePage then
+--###        local info = hDlg:send(F.DM_LISTINFO, Pos.cmbCodePage)
+--###        if data.tCheckedCodePages then
+--###          local map = {}
+--###          for i,v in ipairs(data.tCheckedCodePages) do map[v]=i end
+--###          for i=3,info.ItemsNumber do -- skip "Default code pages" and "Checked code pages"
+--###            local cp = hDlg:send(F.DM_LISTGETDATA, Pos.cmbCodePage, i)
+--###            if cp then
+--###              local listItem = hDlg:send(F.DM_LISTGETITEM, Pos.cmbCodePage, i)
+--###              listItem.Index = i
+--###              if map[cp] then listItem.Flags = bor(listItem.Flags, F.LIF_CHECKED)
+--###              else listItem.Flags = band(listItem.Flags, bnot(F.LIF_CHECKED))
+--###              end
+--###              hDlg:send(F.DM_LISTUPDATE, Pos.cmbCodePage, listItem)
+--###            end
+--###          end
+--###        end
+--###        if data.iSelectedCodePage then
+--###          local scp = data.iSelectedCodePage
+--###          for i=1,info.ItemsNumber do
+--###            if scp == hDlg:send(F.DM_LISTGETDATA, Pos.cmbCodePage, i) then
+--###              hDlg:ListSetCurPos(Pos.cmbCodePage, {SelectPos=i})
+--###              break
+--###            end
+--###          end
+--###        end
+--###      end
+
+      local index
+      for i,v in ipairs(self.Libs) do
+        if data.sRegexLib == v then index = i; break; end
+      end
+      hDlg:ListSetCurPos(Pos.cmbRegexLib, {SelectPos=index or 1})
+
+      self:CompleteLoadData(hDlg, data, true)
+      break
+    ----------------------------------------------------------------------------
+    elseif item.BreakKey == "F2" or item.BreakKey == "INSERT" then
+      local pure_save_name = item.BreakKey == "F2" and self.PresetName
+      local name = pure_save_name or
+        far.InputBox(M.MSavePreset, M.MEnterPresetName, HistPresetNames,
+                     self.PresetName, nil, nil, F.FIB_NOUSELASTHISTORY)
+      if name then
+        if pure_save_name or not presets[name] or
+          far.Message(M.MPresetOverwrite, M.MConfirm, M.MBtnYesNo, "w") == 1
+        then
+          local data = sd.GetDialogState(hDlg, self.Items)
+          presets[name] = data
+          self.PresetName = name
+          self:SaveDataDyn(hDlg, data)
+--###          if Pos.cmbCodePage then SaveCodePageCombo(hDlg, Pos.cmbCodePage, data, true) end
+          _Plugin.SaveSettings()
+          if pure_save_name then
+            far.Message(M.MPresetWasSaved, M.MMenuTitle)
+            break
+          end
+        end
+      end
+    ----------------------------------------------------------------------------
+    elseif item.BreakKey == "DELETE" and items[1] then
+      local name = items[pos].text
+      local msg = ([[%s "%s"?]]):format(M.MDeletePreset, name)
+      if far.Message(msg, M.MConfirm, M.MBtnYesNo, "w") == 1 then
+        if self.PresetName == name then
+          self.PresetName = nil
+        end
+        presets[name] = nil
+        _Plugin.SaveSettings()
+      end
+    ----------------------------------------------------------------------------
+    elseif item.BreakKey == "F6" and items[1] then
+      local oldname = items[pos].text
+      local name = far.InputBox(M.MRenamePreset, M.MEnterPresetName, HistPresetNames, oldname)
+      if name and name ~= oldname then
+        if not presets[name] or far.Message(M.MPresetOverwrite, M.MConfirm, M.MBtnYesNo, "w") == 1 then
+          if self.PresetName == oldname then
+            self.PresetName = name
+          end
+          presets[name], presets[oldname] = presets[oldname], nil
+          _Plugin.SaveSettings()
+        end
+      end
+    ----------------------------------------------------------------------------
+    end
+  end
+  hDlg:send("DM_SHOWDIALOG", 1)
 end
 
 

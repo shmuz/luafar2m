@@ -74,17 +74,21 @@ local function EditorDialog (aData, aReplace, aScriptCall)
   insert(Items, { tp="sep"; })
   ------------------------------------------------------------------------------
   insert(Items, { tp="butt"; name="btnOk";         centergroup=1; text=M.MOk; default=1; })
-  insert(Items, { tp="butt"; name="btnConfig";     centergroup=1; text=M.MDlgBtnConfig; btnnoclose=1; })
+  insert(Items, { tp="butt"; name="btnPresets";    centergroup=1; text=M.MDlgBtnPresets; btnnoclose=1; })
+  insert(Items, { tp="butt"; name="btnConfig";     centergroup=1; text=M.MDlgBtnConfig;  btnnoclose=1; })
   if not aReplace then
     insert(Items, { tp="butt"; name="btnCount";    centergroup=1; text=M.MDlgBtnCount; })
-    insert(Items, { tp="butt"; name="btnShowAll";  centergroup=1; text=M.MDlgBtnShowAll; })
+    insert(Items, { tp="butt"; name="btnShowAll";  centergroup=1; text=M.MDlgBtnShowAll; ystep=1; })
   end
   insert(Items, { tp="butt"; name="btnCancel";     centergroup=1; text=M.MCancel; cancel=1; })
   ----------------------------------------------------------------------------
   local Pos,Elem = sd.Indexes(Items)
 
   function Items.proc (hDlg, msg, param1, param2)
-    if msg==F.DN_BTNCLICK and param1==Pos.btnConfig then
+    if msg==F.DN_BTNCLICK and param1==Pos.btnPresets then
+      Frame:DoPresets(hDlg)
+      hDlg:send(F.DM_SETFOCUS, Pos.btnOk)
+    elseif msg==F.DN_BTNCLICK and param1==Pos.btnConfig then
       hDlg:ShowDialog(0)
       Common.EditorConfigDialog()
       hDlg:ShowDialog(1)
