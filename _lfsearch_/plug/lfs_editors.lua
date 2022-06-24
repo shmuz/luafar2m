@@ -86,7 +86,7 @@ local function RedrawHighlightPattern (EI, Pattern, Priority, ProcessLineNumbers
   local ID = EI.EditorID
   local GetNextString = MakeGetString(ID, EI.TopScreenLine,
     math.min(EI.TopScreenLine+EI.WindowSizeY-1, EI.TotalLines))
-  local ufind = Pattern.ufindW or WrapTfindMethod(Pattern.ufind)
+  local ufind = Pattern.far_tfind or Pattern.ufindW or WrapTfindMethod(Pattern.ufind)
 
   local prefixPattern = regex.new("^(\\d+([:\\-]))") -- (grep) 123: matched_line; 123- context_line
   local filenamePattern = regex.new("^\\[\\d+\\]")   -- (grep) [123] c:\dir1\dir2\filename
