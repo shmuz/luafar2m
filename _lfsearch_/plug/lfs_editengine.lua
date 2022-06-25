@@ -108,8 +108,8 @@ end
 -- This function replaces the old 9-line function.
 -- The reason for applying a new, much more complicated algorithm is that
 -- the old algorithm has unacceptably poor performance on long subjects.
-local function find_back (patt, ufind_method, s, init)
-  local outFrom, outTo, out = ufind_method(patt, s, 1)
+local function find_back (patt, s, init)
+  local outFrom, outTo, out = patt:ufind(s, 1)
   if outFrom == nil or outTo >= init then return nil end
 
   local BEST = 1
@@ -118,7 +118,7 @@ local function find_back (patt, ufind_method, s, init)
   local start = ceil((MIN+MAX)/2)
 
   while true do
-    local resFrom, resTo, res = ufind_method(patt, s, start)
+    local resFrom, resTo, res = patt:ufind(s, start)
     if resFrom and resTo >= init then res=nil end
     local ok = false
     ---------------------------------------------------------------------------
@@ -399,7 +399,6 @@ local function DoSearch (
   bWrapAround = (not bScopeIsBlock) and (not bOriginIsScope) and bWrapAround
 
   local TT = GetInvariantTable(tRegex)
-  local ufind_method = tRegex.far_tfind or Editors.WrapTfindMethod(tRegex.ufind)
   -----------------------------------------------------------------------------
   local sTitle = M.MTitleSearch
   local bForward = not bSearchBack
@@ -553,8 +552,8 @@ local function DoSearch (
           end
           -----------------------------------------------------------------------
           local collect, fr, to
-          if bForward then fr, to, collect = ufind_method(tRegex, sLine, x)
-          else fr, to, collect = find_back(tRegex, ufind_method, sLine, x)
+          if bForward then fr, to, collect = tRegex:ufind(sLine, x)
+          else fr, to, collect = find_back(tRegex, sLine, x)
           end
           if not fr then
             if bLastLine then bFinish=true; end
@@ -574,12 +573,12 @@ local function DoSearch (
             if bForward then
               if x <= sLineLen then
                 x = x + 1
-                fr, to, collect = ufind_method(tRegex, sLine, x)
+                fr, to, collect = tRegex:ufind(sLine, x)
               end
             else
               if x > 1 then
                 x = x - 1
-                fr, to, collect = find_back(tRegex, ufind_method, sLine, x)
+                fr, to, collect = find_back(tRegex, sLine, x)
               end
             end
             if not collect then break end
@@ -653,7 +652,6 @@ local function DoReplace (
 
   bDelNonMatchLine = bDelNonMatchLine and bFirstSearch
   local TT = GetInvariantTable(tRegex)
-  local ufind_method = tRegex.far_tfind or Editors.WrapTfindMethod(tRegex.ufind)
   local EditorSetCurString = function(text, eol)
     if not TT.EditorSetString(nil, text, eol) then error("EditorSetString failed") end
   end
@@ -964,8 +962,8 @@ local function DoReplace (
           end
           -----------------------------------------------------------------------
           local collect, fr, to
-          if bForward then fr, to, collect = ufind_method(tRegex, sLine, x)
-          else fr, to, collect = find_back(tRegex, ufind_method, sLine, x)
+          if bForward then fr, to, collect = tRegex:ufind(sLine, x)
+          else fr, to, collect = find_back(tRegex, sLine, x)
           end
 
           if not fr then
@@ -996,12 +994,12 @@ local function DoReplace (
             if bForward then
               if x <= sLineLen then
                 x = x + 1
-                fr, to, collect = ufind_method(tRegex, sLine, x)
+                fr, to, collect = tRegex:ufind(sLine, x)
               end
             else
               if x > 1 then
                 x = x - 1
-                fr, to, collect = find_back(tRegex, ufind_method, sLine, x)
+                fr, to, collect = find_back(tRegex, sLine, x)
               end
             end
             if not collect then break end

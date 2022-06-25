@@ -3,7 +3,6 @@
 
 local M       = require "lfs_message"
 local RepLib  = require "lfs_replib"
-local Editors = require "lfs_editors"
 local sd      = require "far2.simpledialog"
 
 local band, bnot, bor = bit64.band, bit64.bnot, bit64.bor
@@ -32,14 +31,13 @@ local function MakeGsub (mode)
   end
 
   return function (aSubj, aRegex, aRepFunc, ...)
-    local ufind_method = aRegex.far_tfind or Editors.WrapTfindMethod(aRegex.ufind)
     local nFound, nReps = 0, 0
     local tOut = {}
     local x, last_to = 1, -1
     local len_limit = 1 + len(aSubj)
 
     while x <= len_limit do
-      local from, to, collect = ufind_method(aRegex, aSubj, x)
+      local from, to, collect = aRegex:ufind(aSubj, x)
       if not from then break end
 
       if to == last_to then
@@ -162,6 +160,19 @@ local function EditorConfigDialog()
 end
 
 
+-- Same as tfind, but all input and output offsets are in characters rather than bytes.
+local function WrapTfindMethod (tfind)
+  local usub, ssub = ("").sub, string.sub
+  local ulen = ("").len
+  return function(patt, s, init)
+    init = init and #(usub(s, 1, init-1)) + 1
+    local from, to, t = tfind(patt, s, init)
+    if from == nil then return nil end
+    return ulen(ssub(s, 1, from-1)) + 1, ulen(ssub(s, 1, to)), t
+  end
+end
+
+
 --------------------------------------------------------------------------------
 -- @param lib_name
 --    Either of ("far", "pcre", "pcre2", "oniguruma").
@@ -179,7 +190,7 @@ local function GetRegexLib (lib_name)
   if lib_name == "far" then
     base = regex
     local tb_methods = getmetatable(regex.new(".")).__index
-    tb_methods.far_tfind = tb_methods.tfind
+    tb_methods.ufind = tb_methods.tfind
     tb_methods.capturecount = function(r) return r:bracketscount() - 1 end
   -----------------------------------------------------------------------------
   elseif lib_name == "pcre" then
@@ -200,7 +211,7 @@ local function GetRegexLib (lib_name)
       return base.new (pat, cflags)
     end
     local tb_methods = getmetatable(base.new(".")).__index
-    tb_methods.ufind = tb_methods.tfind
+    tb_methods.ufind = WrapTfindMethod(tb_methods.tfind)
     tb_methods.gsub = function(patt, subj, rep) return base.gsub(subj, patt, rep) end
     tb_methods.capturecount = function(patt) return patt:fullinfo().CAPTURECOUNT end
   -----------------------------------------------------------------------------
@@ -208,7 +219,7 @@ local function GetRegexLib (lib_name)
     base = require("rex_onig")
     deriv.new = function (pat, cf) return base.new (pat, cf, "UTF8", "PERL_NG") end
     local tb_methods = getmetatable(base.new(".")).__index
-    tb_methods.ufind = tb_methods.tfind
+    tb_methods.ufind = WrapTfindMethod(tb_methods.tfind)
     -- tb_methods.capturecount = tb_methods.capturecount -- this method is already available
   -----------------------------------------------------------------------------
   else
