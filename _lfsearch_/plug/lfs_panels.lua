@@ -10,6 +10,7 @@ local field = Sett.field
 local Excl_Key = "sExcludeDirs"
 
 local F = far.Flags
+local bor, band, bxor = bit64.bor, bit64.band, bit64.bxor
 local dirsep = package.config:sub(1,1)
 
 local TmpPanelDefaults = {
@@ -102,9 +103,11 @@ local function DirFilterDialog (aData)
   end
 end
 
-
 local function GetCodePages (aData)
-  local Selected = aData.SelectedCodePages or {}
+  local Checked = {}
+  if aData.tCheckedCodePages then
+    for _,v in ipairs(aData.tCheckedCodePages) do Checked[v]=true end
+  end
   local delim = ("").char(9474)
   local function makeline(codepage, name)
     return ("%5d %s %s"):format(codepage, delim, name)
@@ -116,7 +119,8 @@ local function GetCodePages (aData)
 
   local items = {
     SelectIndex = 1,
-    { Text = M.MAllCodePages },
+    { Text = M.MDefaultCodePages, CodePage = -1 },
+    { Text = M.MCheckedCodePages, CodePage = -2 },
     ---------------------------------------------------------------------------
     { Text = M.MSystemCodePages,  Flags = F.LIF_SEPARATOR },
     { CodePage = win.GetOEMCP() },
@@ -141,9 +145,9 @@ local function GetCodePages (aData)
         local num, name = split_cpname(info.CodePageName)
         v.Text = num and makeline(num,name) or makeline(v.CodePage,info.CodePageName)
       end
-      if Selected[v.CodePage] then v.Flags = bit.bor(v.Flags or 0, F.LIF_CHECKED) end
-      if v.CodePage == aData.iCodePage then
-        v.Flags = bit.bor(v.Flags or 0, F.LIF_SELECTED)
+      if Checked[v.CodePage] then v.Flags = bor(v.Flags or 0, F.LIF_CHECKED) end
+      if v.CodePage == aData.iSelectedCodePage then
+        v.Flags = bor(v.Flags or 0, F.LIF_SELECTED)
         items.SelectIndex = nil
       end
     end
@@ -161,11 +165,11 @@ local function GetCodePages (aData)
         local item = { CodePage=v }
         item.Text = num and makeline(num,name) or makeline(v,info.CodePageName)
         items[#items+1] = item
-        if Selected[v] then
-          item.Flags = bit.bor(item.Flags or 0, F.LIF_CHECKED)
+        if Checked[v] then
+          item.Flags = bor(item.Flags or 0, F.LIF_CHECKED)
         end
-        if item.CodePage == aData.iCodePage then
-          item.Flags = bit.bor(item.Flags or 0, F.LIF_SELECTED)
+        if v == aData.iSelectedCodePage then
+          item.Flags = bor(item.Flags or 0, F.LIF_SELECTED)
           items.SelectIndex = nil
         end
       end
@@ -221,7 +225,7 @@ local function PanelDialog  (aOp, aData, aScriptCall)
   ------------------------------------------------------------------------------
   local X2 = 40 + M.MDlgUseFileFilter:gsub("&",""):len() + 5
   insert(Items, { tp="sep"; })
-  insert(Items, { tp="text"; text=M.MCodePages; })
+  insert(Items, { tp="text"; text=M.MDlgCodePages; })
   insert(Items, { tp="combobox"; name="cmbCodePage"; list=GetCodePages(aData); dropdownlist=1; noauto=1; })
   insert(Items, { tp="text"; text=M.MSearchArea; })
   insert(Items, { tp="combobox"; name="cmbSearchArea"; list=GetSearchAreas(aData); x2=36; dropdownlist=1; noauto=1; })
@@ -231,8 +235,9 @@ local function PanelDialog  (aOp, aData, aScriptCall)
   insert(Items, { tp="butt";  name="btnFileFilter";   text=M.MDlgBtnFileFilter; x1=X2; y1=""; btnnoclose=1; })
   insert(Items, { tp="sep"; })
   insert(Items, { tp="butt"; centergroup=1; text=M.MOk; default=1; name="btnOk"; })
-  insert(Items, { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; })
   insert(Items, { tp="butt"; centergroup=1; text=M.MBtnDirFilter; name="btnConfig"; }) --TODO
+  insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnPresets; name="btnPresets"; btnnoclose=1; })
+  insert(Items, { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; })
   ------------------------------------------------------------------------------
   local Pos,Elem = sd.Indexes(Items)
 
@@ -241,6 +246,8 @@ local function PanelDialog  (aOp, aData, aScriptCall)
   end
 
   function Items.proc (hDlg, msg, param1, param2)
+    local NeedCallFrame = true
+    --------------------------------------------------------------------------------------
     if msg == F.DN_INITDIALOG then
       SetBtnFilterText(hDlg)
       hDlg:SetComboboxEvent(Pos.cmbCodePage, F.CBET_KEY)
@@ -256,27 +263,34 @@ local function PanelDialog  (aOp, aData, aScriptCall)
       hDlg:SetCheck (Pos.bSearchSymLinks, aData.bSearchSymLinks)
       hDlg:SetCheck (Pos.bUseFileFilter,  aData.bUseFileFilter)
       hDlg:Enable   (Pos.btnFileFilter,   aData.bUseFileFilter)
-
+    --------------------------------------------------------------------------------------
     elseif msg == F.DN_BTNCLICK then
       if param1 == Pos.bUseFileFilter then
         hDlg:Enable(Pos.btnFileFilter, hDlg:GetCheck(Pos.bUseFileFilter))
+        NeedCallFrame = false
       elseif param1 == Pos.btnFileFilter then
         local filter = far.CreateFileFilter(1, "FFT_FINDFILE")
         if filter and filter:OpenFiltersMenu() then aData.FileFilter = filter end
+        NeedCallFrame = false
+      elseif param1 == Pos.btnPresets then
+        Frame:DoPresets(hDlg)
+        hDlg:SetFocus(Pos.btnOk)
+        NeedCallFrame = false
       end
-
+    --------------------------------------------------------------------------------------
     elseif msg == F.DN_KEY then
       if param1 == Pos.cmbCodePage then
         if param2==KEY_INS or param2==KEY_NUMPAD0 or param2==KEY_SPACE then
           local pos = hDlg:ListGetCurPos(param1)
-          if pos.SelectPos ~= 1 then -- if not "All code pages"
+          if pos.SelectPos > 2 then -- if not ("Default code pages" or "Checked code pages")
             local item = hDlg:ListGetItem(param1, pos.SelectPos)
-            item.Flags = bit.bxor(item.Flags, F.LIF_CHECKED)
+            item.Flags = bxor(item.Flags, F.LIF_CHECKED)
             item.Index = pos.SelectPos
             hDlg:ListUpdate(param1, item)
           end
         end
       end
+    --------------------------------------------------------------------------------------
     elseif msg == F.DN_CLOSE then
       if Pos.btnConfig and param1 == Pos.btnConfig then
         hDlg:ShowDialog(0)
@@ -294,7 +308,7 @@ local function PanelDialog  (aOp, aData, aScriptCall)
         end
         ------------------------------------------------------------------------
         local pos = hDlg:ListGetCurPos(Pos.cmbCodePage)
-        aData.iCodePage = Elem.cmbCodePage.list[pos.SelectPos].CodePage
+        aData.iSelectedCodePage = Elem.cmbCodePage.list[pos.SelectPos].CodePage
         ------------------------------------------------------------------------
         pos = hDlg:ListGetCurPos(Pos.cmbSearchArea)
         aData.iSearchArea = pos.SelectPos
@@ -306,18 +320,14 @@ local function PanelDialog  (aOp, aData, aScriptCall)
       end
       --------------------------------------------------------------------------
       -- store selected code pages no matter what user pressed: OK or Esc.
-      aData.SelectedCodePages = {}
-      local info = hDlg:ListInfo(Pos.cmbCodePage)
-      for i=1,info.ItemsNumber do
-        local item = hDlg:ListGetItem(Pos.cmbCodePage, i)
-        if 0 ~= bit.band(item.Flags, F.LIF_CHECKED) then
-          local t = hDlg:ListGetData(Pos.cmbCodePage, i)
-          if t then aData.SelectedCodePages[t] = true end
-        end
+      if Pos.cmbCodePage then
+        Common.SaveCodePageCombo(hDlg, Pos.cmbCodePage, Elem.cmbCodePage.list, aData, param1==Pos.btnOk)
       end
       --------------------------------------------------------------------------
     end
-    return Frame:DlgProc(hDlg, msg, param1, param2)
+    if NeedCallFrame then
+      return Frame:DlgProc(hDlg, msg, param1, param2)
+    end
   end
 
   local dataTP = _Plugin.History.TmpPanel
@@ -330,7 +340,7 @@ local function PanelDialog  (aOp, aData, aScriptCall)
 end
 
 local function MakeItemList (panelInfo, area)
-  local realNames = (bit.band(panelInfo.Flags, F.PFLAGS_REALNAMES) ~= 0)
+  local realNames = (band(panelInfo.Flags, F.PFLAGS_REALNAMES) ~= 0)
   local panelDir = panel.GetPanelDirectory(1) or ""
   local itemList, flags = {}, F.FRS_RECUR
 
@@ -379,6 +389,18 @@ local function PressEnter()
   end
 end
 
+local function GetActiveCodePages (aData)
+  if aData.iSelectedCodePage then
+    if aData.iSelectedCodePage > 0 then
+      return { aData.iSelectedCodePage }
+    elseif aData.iSelectedCodePage == -2 then
+      local t = aData.tCheckedCodePages
+      if t and t[1] then return t end
+    end
+  end
+  return { win.GetOEMCP(), win.GetACP(), 1200, 1201, 65000, 65001 }
+end
+
 local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   local tParams
   if aWithDialog then
@@ -401,17 +423,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   local Find = Regex.find
   local BLOCKLEN, OVERLAP = 32*1024, -1024
   ----------------------------------------------------------------------------
-  local codePages
-  local storedPages = aData.SelectedCodePages
-  if aData.iCodePage then
-    codePages = { aData.iCodePage }
-  elseif storedPages and next(storedPages) then
-    codePages = {}
-    for k in pairs(storedPages) do table.insert(codePages, k) end
-  else
-    codePages = { win.GetOEMCP(), win.GetACP(), 1200, 1201, 65000, 65001 }
-  end
-  ----------------------------------------------------------------------------
+  local activeCodePages = GetActiveCodePages(aData)
   local panelInfo = panel.GetPanelInfo(1)
   local area = aData.iSearchArea or 1
   if area < 1 or area > saCOUNT then area = 1 end
@@ -420,7 +432,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   if aData.bSearchSymLinks then
     bSymLinks = true
   end
-  if bit.band(flags, F.FRS_RECUR) ~= 0 then
+  if band(flags, F.FRS_RECUR) ~= 0 then
     bRecurse = true
   end
   -----------------------------------------------------------------------------
@@ -504,7 +516,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
       if #str == BLOCKLEN then fp:seek("cur", OVERLAP) end
       str = fp:read(BLOCKLEN)
       if not str then break end
-      for _, cp in ipairs(codePages) do
+      for _, cp in ipairs(activeCodePages) do
         local s
         if cp == 1200 or cp == 65001 then s = str
         elseif cp == 1201 then s = string.gsub(str, "(.)(.)", "%2%1")

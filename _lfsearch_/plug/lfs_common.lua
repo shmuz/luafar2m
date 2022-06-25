@@ -74,6 +74,23 @@ local function MakeGsub (mode)
 end
 
 
+local function SaveCodePageCombo (hDlg, combo_pos, combo_list, aData, aSaveCurPos)
+  if aSaveCurPos then
+    local pos = hDlg:ListGetCurPos(combo_pos).SelectPos
+    aData.iSelectedCodePage = combo_list[pos].CodePage
+  end
+  aData.tCheckedCodePages = {}
+  local info = hDlg:ListInfo(combo_pos)
+  for i=1,info.ItemsNumber do
+    local item = hDlg:ListGetItem(combo_pos, i)
+    if 0 ~= band(item.Flags, F.LIF_CHECKED) then
+      local t = hDlg:ListGetData(combo_pos, i)
+      if t then table.insert(aData.tCheckedCodePages, t) end
+    end
+  end
+end
+
+
 local hst_map = { ["\\"]="\\"; n="\n"; r="\r"; t="\t"; }
 
 local function GetDialogHistory (name)
@@ -485,13 +502,15 @@ end
 function SRFrame:CheckAdvancedEnab (hDlg)
   local Pos = self.Pos or sd.Indexes(self.Items)
   self.Pos = Pos
-  local bEnab = hDlg:GetCheck(Pos.bAdvanced)
-  hDlg:Enable(Pos.labFilterFunc, bEnab)
-  hDlg:Enable(Pos.sFilterFunc  , bEnab)
-  hDlg:Enable(Pos.labInitFunc  , bEnab)
-  hDlg:Enable(Pos.sInitFunc    , bEnab)
-  hDlg:Enable(Pos.labFinalFunc , bEnab)
-  hDlg:Enable(Pos.sFinalFunc   , bEnab)
+  if Pos.bAdvanced then
+    local bEnab = hDlg:GetCheck(Pos.bAdvanced)
+    hDlg:Enable(Pos.labFilterFunc, bEnab)
+    hDlg:Enable(Pos.sFilterFunc  , bEnab)
+    hDlg:Enable(Pos.labInitFunc  , bEnab)
+    hDlg:Enable(Pos.sInitFunc    , bEnab)
+    hDlg:Enable(Pos.labFinalFunc , bEnab)
+    hDlg:Enable(Pos.sFinalFunc   , bEnab)
+  end
 end
 
 function SRFrame:CheckWrapAround (hDlg)
@@ -723,33 +742,33 @@ function SRFrame:DoPresets (hDlg)
 --###        hDlg:ListSetCurPos(Pos.cmbSearchArea, {SelectPos=SearchAreaToIndex(data.sSearchArea)} )
 --###      end
 
---###      if Pos.cmbCodePage then
---###        local info = hDlg:send(F.DM_LISTINFO, Pos.cmbCodePage)
---###        if data.tCheckedCodePages then
---###          local map = {}
---###          for i,v in ipairs(data.tCheckedCodePages) do map[v]=i end
---###          for i=3,info.ItemsNumber do -- skip "Default code pages" and "Checked code pages"
---###            local cp = hDlg:send(F.DM_LISTGETDATA, Pos.cmbCodePage, i)
---###            if cp then
---###              local listItem = hDlg:send(F.DM_LISTGETITEM, Pos.cmbCodePage, i)
---###              listItem.Index = i
---###              if map[cp] then listItem.Flags = bor(listItem.Flags, F.LIF_CHECKED)
---###              else listItem.Flags = band(listItem.Flags, bnot(F.LIF_CHECKED))
---###              end
---###              hDlg:send(F.DM_LISTUPDATE, Pos.cmbCodePage, listItem)
---###            end
---###          end
---###        end
---###        if data.iSelectedCodePage then
---###          local scp = data.iSelectedCodePage
---###          for i=1,info.ItemsNumber do
---###            if scp == hDlg:send(F.DM_LISTGETDATA, Pos.cmbCodePage, i) then
---###              hDlg:ListSetCurPos(Pos.cmbCodePage, {SelectPos=i})
---###              break
---###            end
---###          end
---###        end
---###      end
+      if Pos.cmbCodePage then
+        local info = hDlg:send(F.DM_LISTINFO, Pos.cmbCodePage)
+        if data.tCheckedCodePages then
+          local map = {}
+          for i,v in ipairs(data.tCheckedCodePages) do map[v]=i end
+          for i=3,info.ItemsNumber do -- skip "Default code pages" and "Checked code pages"
+            local cp = hDlg:send(F.DM_LISTGETDATA, Pos.cmbCodePage, i)
+            if cp then
+              local listItem = hDlg:send(F.DM_LISTGETITEM, Pos.cmbCodePage, i)
+              listItem.Index = i
+              if map[cp] then listItem.Flags = bor(listItem.Flags, F.LIF_CHECKED)
+              else listItem.Flags = band(listItem.Flags, bnot(F.LIF_CHECKED))
+              end
+              hDlg:send(F.DM_LISTUPDATE, Pos.cmbCodePage, listItem)
+            end
+          end
+        end
+        if data.iSelectedCodePage then
+          local scp = data.iSelectedCodePage
+          for i=1,info.ItemsNumber do
+            if scp == hDlg:send(F.DM_LISTGETDATA, Pos.cmbCodePage, i) then
+              hDlg:ListSetCurPos(Pos.cmbCodePage, {SelectPos=i})
+              break
+            end
+          end
+        end
+      end
 
       local index
       for i,v in ipairs(self.Libs) do
@@ -773,7 +792,9 @@ function SRFrame:DoPresets (hDlg)
           presets[name] = data
           self.PresetName = name
           self:SaveDataDyn(hDlg, data)
---###          if Pos.cmbCodePage then SaveCodePageCombo(hDlg, Pos.cmbCodePage, data, true) end
+          if Pos.cmbCodePage then
+            SaveCodePageCombo(hDlg, Pos.cmbCodePage, self.Items[Pos.cmbCodePage].list, data, true)
+          end
           _Plugin.SaveSettings()
           if pure_save_name then
             far.Message(M.MPresetWasSaved, M.MMenuTitle)
@@ -861,4 +882,5 @@ return {
   GetWordUnderCursor = GetWordUnderCursor;
   GsubMB             = MakeGsub("multibyte");
   ProcessDialogData  = ProcessDialogData;
+  SaveCodePageCombo  = SaveCodePageCombo;
 }

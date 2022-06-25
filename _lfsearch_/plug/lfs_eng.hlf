@@ -1,5 +1,6 @@
 .Language=English,English
 .PluginContents=LuaFAR Search
+.Options CtrlStartPosChar=^<wrap>
 
 @Contents
 $ #LuaFAR Search (version 2.4)#
@@ -256,20 +257,20 @@ It can be any Lua type.
  #Regexp library#
  These settings are the same as in ~Operation in Editor~@OperInEditor@.
 
- #Encodings#
+ #Encodings# (only in "Find" dialog)
  Choose the code page or pages for searching in the text.
  There are 3 possibilities:
 
-   #*# Some code page from the list is selected: the search is performed using
+   #*# ^<wrap>Some code page from the list is selected: the search is performed using
 only that code page.
 
-   #*# "All code pages" is selected and some code pages are checked
-in the list. The search is performed using the checked code pages.
-(A page can be checked in the list by pressing Space or Ins).
-
-   #*# "All code pages" is selected and no code pages are checked in the list.
+   #*# ^<wrap>"Default code pages" is selected.
 The search is performed using the predefined set of code pages:
 { OEM, ANSI, 1200, 1201, 65000, 65001 }.
+
+   #*# ^<wrap>"Checked code pages" is selected and some code pages are checked
+in the list. The search is performed using the checked code pages.
+(A page can be checked in the list by pressing Space or Ins).
 
  #Search area#
  Choose where to look for files and directories:
