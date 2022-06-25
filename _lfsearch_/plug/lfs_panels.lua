@@ -1,4 +1,5 @@
 -- lfs_panels.lua
+-- luacheck: globals _Plugin
 
 local M      = require "lfs_message"
 local Common = require "lfs_common"
@@ -319,7 +320,7 @@ local function PanelDialog  (aOp, aData, aScriptCall)
     return Frame:DlgProc(hDlg, msg, param1, param2)
   end
 
-  local dataTP = field(_Plugin.History, "TmpPanel")
+  local dataTP = _Plugin.History.TmpPanel
   for k,v in pairs(TmpPanelDefaults) do
     if dataTP[k] == nil then dataTP[k] = v end
   end

@@ -1,4 +1,4 @@
--- luacheck: globals lfsearch
+-- luacheck: globals lfsearch _Plugin
 
 local F = far.Flags
 local ReqLuafarVersion = "2.9"
@@ -37,6 +37,7 @@ local function FirstRunActions()
   Sett.field(hist, "main")
   Sett.field(hist, "menu")
   Sett.field(hist, "presets")
+  Sett.field(hist, "TmpPanel")
 
   config.EditorHighlightColor    = config.EditorHighlightColor    or 0xCF
   config.GrepLineNumMatchColor   = config.GrepLineNumMatchColor   or 0xA0

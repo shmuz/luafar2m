@@ -27,15 +27,12 @@ end
 
 local function MakeGsub (mode)
   local sub, len
-  if     mode == "widechar"  then sub, len = win.subW, win.lenW
-  elseif mode == "byte"      then sub, len = string.sub, string.len
-  elseif mode == "multibyte" then sub, len = ("").sub, ("").len
+  if mode == "multibyte" then sub, len = ("").sub, ("").len
   else return nil
   end
 
   return function (aSubj, aRegex, aRepFunc, ...)
-    local ufind_method = mode=="widechar" and aRegex.ufindW
-                         or aRegex.far_tfind or Editors.WrapTfindMethod(aRegex.ufind)
+    local ufind_method = aRegex.far_tfind or Editors.WrapTfindMethod(aRegex.ufind)
     local nFound, nReps = 0, 0
     local tOut = {}
     local x, last_to = 1, -1
@@ -174,7 +171,7 @@ end
 
 --    This function also inserts some methods into the existing methods table
 --    of the compiled regex for the specified library.
---    Inserted are methods "ufind" and/or "ufindW", "gsub" and/or "gsubW".
+--    Inserted are methods "ufind", "gsub" and/or "gsubW".
 --------------------------------------------------------------------------------
 local function GetRegexLib (lib_name)
   local base, deriv = nil, {}
@@ -206,23 +203,6 @@ local function GetRegexLib (lib_name)
     tb_methods.ufind = tb_methods.tfind
     tb_methods.gsub = function(patt, subj, rep) return base.gsub(subj, patt, rep) end
     tb_methods.capturecount = function(patt) return patt:fullinfo().CAPTURECOUNT end
-  -----------------------------------------------------------------------------
-  elseif lib_name == "pcre2" then
-    base = require("rex_pcre2")
-    local ff = base.flags()
-    local CFlags = bor(ff.NEWLINE_ANYCRLF, ff.UTF, ff.UCP)
-    local TF = { i=ff.CASELESS, m=ff.MULTILINE, s=ff.DOTALL, x=ff.EXTENDED, U=ff.UNGREEDY }
-    deriv.new = function (pat, cf)
-      local cflags = CFlags
-      if cf then
-        for c in cf:gmatch(".") do cflags = bor(cflags, TF[c] or 0) end
-      end
-      return base.new (pat, cflags)
-    end
-    local tb_methods = getmetatable(base.new(".")).__index
-    tb_methods.ufind = tb_methods.tfind
-    tb_methods.gsub = function(patt, subj, rep) return base.gsub(subj, patt, rep) end
-    tb_methods.capturecount = function(patt) return patt:patterninfo().CAPTURECOUNT end
   -----------------------------------------------------------------------------
   elseif lib_name == "oniguruma" then
     base = require("rex_onig")
@@ -868,8 +848,6 @@ return {
   GetDialogHistory   = GetDialogHistory;
   GetReplaceFunction = GetReplaceFunction;
   GetWordUnderCursor = GetWordUnderCursor;
-  Gsub               = MakeGsub("byte");
-  GsubW              = MakeGsub("widechar");
   GsubMB             = MakeGsub("multibyte");
   ProcessDialogData  = ProcessDialogData;
 }

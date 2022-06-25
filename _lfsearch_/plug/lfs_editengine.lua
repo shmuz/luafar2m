@@ -10,8 +10,6 @@ local CustomMenu = require "far2.custommenu"
 
 local F = far.Flags
 local floor, ceil, min, max = math.floor, math.ceil, math.min, math.max
-local lenW = win.lenW
-local Utf16 = win.Utf8ToUtf16
 
 
 -- This function is that long because FAR API does not supply needed
@@ -357,17 +355,16 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
   return newsearch
 end
 
-local function GetInvariantTable (tRegex)
-  local is_wide = tRegex.ufindW and true
+local function GetInvariantTable()
   return {
-    EditorGetString = is_wide and editor.GetStringW  or editor.GetString,
-    EditorSetString = is_wide and editor.SetStringW  or editor.SetString,
-    empty           = is_wide and win.Utf8ToUtf16""  or "",
-    find            = is_wide and regex.findW        or regex.find,
-    gmatch          = is_wide and regex.gmatchW      or regex.gmatch,
-    len             = is_wide and win.lenW or ("").len,
-    sub             = is_wide and win.subW or ("").sub,
-    U8              = is_wide and win.Utf16ToUtf8    or function(s) return s end,
+    EditorGetString = editor.GetString,
+    EditorSetString = editor.SetString,
+    empty           = "",
+    find            = regex.find,
+    gmatch          = regex.gmatch,
+    len             = ("").len,
+    sub             = ("").sub,
+    U8              = function(s) return s end,
   }
 end
 
@@ -388,7 +385,7 @@ local function DoSearch (
     bFirstSearch,     -- [in]     whether this is first or repeated search
     bScriptCall,      -- [in]     whether this call is from a script
     tRepeat,          -- [in/out] data saved from previous operation / for next repeat operation
-    tRegex,           -- [in]     contains methods: ufindW, gsubW and/or ufind, gsub
+    tRegex,           -- [in]     contains methods: ufind, gsub
     bScopeIsBlock,    -- [in]     boolean
     bOriginIsScope,   -- [in]     boolean
     bWrapAround,      -- [in]     wrap search around the scope
@@ -401,9 +398,8 @@ local function DoSearch (
   local timing = NewTiming()
   bWrapAround = (not bScopeIsBlock) and (not bOriginIsScope) and bWrapAround
 
-  local is_wide = tRegex.ufindW and true
   local TT = GetInvariantTable(tRegex)
-  local ufind_method = tRegex.ufindW or tRegex.far_tfind or Editors.WrapTfindMethod(tRegex.ufind)
+  local ufind_method = tRegex.far_tfind or Editors.WrapTfindMethod(tRegex.ufind)
   -----------------------------------------------------------------------------
   local sTitle = M.MTitleSearch
   local bForward = not bSearchBack
@@ -433,9 +429,7 @@ local function DoSearch (
   local function set_sLine (s, eol)
     sLine, sLineEol, sLineLen, sLineU8 = s, eol, TT.len(s), nil
   end
-  local get_sLineU8 = is_wide and
-    function() sLineU8 = sLineU8 or win.Utf16ToUtf8(sLine); return sLineU8; end or
-    function() return sLine; end
+  local get_sLineU8 = function() return sLine; end
 
   local x, y, egs, part1
 
@@ -510,7 +504,7 @@ local function DoSearch (
   end
   -----------------------------------------------------------------------------
   local function ShowFound (x, fr, to, scroll)
-    local p1 = part1:len() -- lenW(is_wide and part1 or Utf16(part1))
+    local p1 = part1:len()
     ScrollToPosition (y, p1+x, fr, to, scroll)
     if _Plugin.History.config.bSelectFound then
       editor.Select("BTYPE_STREAM", y, p1+fr, to<=fr and 1 or to-fr+1, 1)
@@ -639,7 +633,7 @@ local function DoReplace (
     bFirstSearch,     -- [in]     whether this is first or repeated search
     bScriptCall,      -- [in]     whether this call is from a script
     tRepeat,          -- [in/out] data saved from previous operation / for next repeat operation
-    tRegex,           -- [in]     contains methods: ufindW, gsubW and/or ufind, gsub
+    tRegex,           -- [in]     contains methods: ufind, gsub
     bScopeIsBlock,    -- [in]     boolean
     bOriginIsScope,   -- [in]     boolean
     bWrapAround,      -- [in]     wrap search around the scope
@@ -658,9 +652,8 @@ local function DoReplace (
   bWrapAround = (not bScopeIsBlock) and (not bOriginIsScope) and bWrapAround
 
   bDelNonMatchLine = bDelNonMatchLine and bFirstSearch
-  local is_wide = tRegex.ufindW and true
   local TT = GetInvariantTable(tRegex)
-  local ufind_method = tRegex.ufindW or tRegex.far_tfind or Editors.WrapTfindMethod(tRegex.ufind)
+  local ufind_method = tRegex.far_tfind or Editors.WrapTfindMethod(tRegex.ufind)
   local EditorSetCurString = function(text, eol)
     if not TT.EditorSetString(nil, text, eol) then error("EditorSetString failed") end
   end
@@ -669,7 +662,7 @@ local function DoReplace (
   local bForward = not bSearchBack
   local bAllowEmpty = bFirstSearch
   fReplaceChoice = fReplaceChoice or GetReplaceChoice
-  local fReplace = Common.GetReplaceFunction(xReplacePat, is_wide)
+  local fReplace = Common.GetReplaceFunction(xReplacePat, false)
 
   local sChoice = bFirstSearch and not bConfirmReplace and "all" or "initial"
   local nFound, nReps, nLine = 0, 0, 0
@@ -770,7 +763,7 @@ local function DoReplace (
   end
   -----------------------------------------------------------------------------
   local function ShowFound (x, fr, to, scroll)
-    local p1 = part1:len() -- lenW(is_wide and part1 or Utf16(part1))
+    local p1 = part1:len()
     ScrollToPosition (y, p1+x, fr, to, scroll)
     editor.Select("BTYPE_STREAM", y, p1+fr, to<=fr and 1 or to-fr+1, 1)
     editor.Redraw()
@@ -1111,12 +1104,10 @@ local function DoReplace (
     local bSelectFound = _Plugin.History.config.bSelectFound
     if sChoice=="yes" then
       if bSelectFound and x2 then
-        if not is_wide then
-          -- Convert byte-wise offsets to character-wise ones
-          local str1 = editor.GetString(y1, 2)
-          local str2 = (y2 == y1) and str1 or editor.GetString(y2, 2)
-          x1, x2 = TT.sub(str1,1,x1):len(), TT.sub(str2,1,x2):len()
-        end
+        -- Convert byte-wise offsets to character-wise ones
+        local str1 = editor.GetString(y1, 2)
+        local str2 = (y2 == y1) and str1 or editor.GetString(y2, 2)
+        x1, x2 = TT.sub(str1,1,x1):len(), TT.sub(str2,1,x2):len()
         editor.Select("BTYPE_STREAM", y1, x1, x2-x1+1, y2-y1+1)
       else
         editor.Select("BTYPE_NONE")
@@ -1132,7 +1123,7 @@ local function DoReplace (
       else -- the last substitution was single-line
         if lastSubst ~= TT.empty then
           -- Convert byte-wise offsets to character-wise ones if needed
-          local len = is_wide and lenW or ("").len
+          local len = ("").len
           local width = len(lastSubst)
           local x1 = 1
           for i=1,indexLS-1 do x1 = x1 + len(acc[i]) end

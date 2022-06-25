@@ -1,4 +1,5 @@
 -- lfs_editmain.lua
+-- luacheck: globals _Plugin
 
 local Common     = require "lfs_common"
 local M          = require "lfs_message"

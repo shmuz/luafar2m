@@ -63,12 +63,12 @@ local function IsHighlightGrep()
   return state and state.is_grep
 end
 
-local function MakeGetString (EditorID, ymin, ymax)
+local function MakeGetString (ymin, ymax)
   ymin = ymin - 1
   return function()
     if ymin < ymax then
       ymin = ymin + 1
-      return editor.GetStringW(ymin), ymin
+      return editor.GetString(ymin), ymin
     end
   end
 end
@@ -83,10 +83,8 @@ end
 local function RedrawHighlightPattern (EI, Pattern, Priority, ProcessLineNumbers, bSkip)
   local config = _Plugin.History.config
   local Color = config.EditorHighlightColor
-  local ID = EI.EditorID
-  local GetNextString = MakeGetString(ID, EI.TopScreenLine,
-    math.min(EI.TopScreenLine+EI.WindowSizeY-1, EI.TotalLines))
-  local ufind = Pattern.far_tfind or Pattern.ufindW or WrapTfindMethod(Pattern.ufind)
+  local GetNextString = MakeGetString(EI.TopScreenLine, math.min(EI.TopScreenLine+EI.WindowSizeY-1, EI.TotalLines))
+  local ufind = Pattern.far_tfind or WrapTfindMethod(Pattern.ufind)
 
   local prefixPattern = regex.new("^(\\d+([:\\-]))") -- (grep) 123: matched_line; 123- context_line
   local filenamePattern = regex.new("^\\[\\d+\\]")   -- (grep) [123] c:\dir1\dir2\filename
@@ -95,19 +93,18 @@ local function RedrawHighlightPattern (EI, Pattern, Priority, ProcessLineNumbers
     local filename_line -- reliable detection is possible only when ProcessLineNumbers is true
     local offset, text = 0, str.StringText
     if ProcessLineNumbers then
-      local prefix, char = prefixPattern:matchW(text)
+      local prefix, char = prefixPattern:match(text)
       if prefix then
-        offset = win.lenW(prefix)
-        text = win.subW(text, offset+1)
-        local prColor = char==":\0" and config.GrepLineNumMatchColor or config.GrepLineNumContextColor
+        offset = prefix:len()
+        text = text:sub(offset+1)
+        local prColor = char==":" and config.GrepLineNumMatchColor or config.GrepLineNumContextColor
         editor.AddColor(y, 1, offset, ColorFlags, prColor, Priority, ColorOwner)
       else
-        filename_line = filenamePattern:matchW(text)
+        filename_line = filenamePattern:match(text)
       end
     end
 
     if not filename_line then
-      text = Pattern.ufindW and text or win.Utf16ToUtf8(text)
       local start = 1
       local maxstart = math.min(str.StringLength+1, EI.LeftPos+EI.WindowSizeX-1) - offset
 
