@@ -1,12 +1,53 @@
 -- tmppanel.lua
 
-local M = require "tmpp_message"
+--### local M = require "tmpp_message"
 
 local Package = {}
 
 -- UPVALUES : keep them above all function definitions !!
---### local _Su     = require "sysutils"
 local sd = require "far2.simpledialog"
+
+-- The default message table
+local M = {
+  MOk                         = "Ok";
+  MCancel                     = "Cancel";
+  MError                      = "Error";
+  MWarning                    = "Warning";
+  MTempPanel                  = "LuaFAR Temp. Panel";
+  MTempPanelTitleNum          = " %sLuaFAR Temp. Panel [%d] ";
+  MDiskMenuString             = "temporary (LuaFAR)";
+  MF7                         = "Remove";
+  MAltShiftF12                = "Switch";
+  MAltShiftF2                 = "SavLst";
+  MAltShiftF3                 = "Goto";
+  MTempUpdate                 = "Updating temporary panel contents";
+  MTempSendFiles              = "Sending files to temporary panel";
+  MSwitchMenuTxt              = "Total files:";
+  MSwitchMenuTitle            = "Available temporary panels";
+  MConfigTitle                = "LuaFAR Temporary Panel";
+  MConfigAddToDisksMenu       = "Add to &Disks menu";
+  MConfigAddToPluginsMenu     = "Add to &Plugins menu";
+  MConfigCommonPanel          = "Use &common panel";
+  MSafeModePanel              = "&Safe panel mode";
+  MReplaceInFilelist          = "&Replace files with file list";
+  MMenuForFilelist            = "&Menu from file list";
+  MCopyContents               = "Copy folder c&ontents";
+  MFullScreenPanel            = "F&ull screen mode";
+  MColumnTypes                = "Column &types";
+  MColumnWidths               = "Column &widths";
+  MStatusColumnTypes          = "Status line column t&ypes";
+  MStatusColumnWidths         = "Status l&ine column widths";
+  MMask                       = "File masks for the file &lists:";
+  MPrefix                     = "Command line pre&fix:";
+  MConfigNewOption            = "New settings will become active after FAR restart";
+  MNewPanelForSearchResults   = "&New panel for search results";
+  MListFilePath               = "Save file list as";
+  MCopyContentsMsg            = "Copy folder contents?";
+  MSavePanelsOnFarExit        = "Sa&ve panels on FAR exit";
+}
+
+-- This function should be called if message localization support is needed
+function Package.SetMessageTable(msg_tbl) M = msg_tbl; end
 
 local Opt = {
   AddToDisksMenu            = true,
@@ -62,7 +103,7 @@ end
 
 
 -- File lists are supported in the following formats:
--- (a) UTF-16LE with BOM, (b) UTF-8 with BOM, (c) OEM.
+-- (a) UTF-16LE with BOM, (b) UTF-8 with BOM, (c) UTF-8.
 local function ReadFileList (filename)
   local list = {}
   local hFile = io.open (filename, "rb")
@@ -75,8 +116,8 @@ local function ReadFileList (filename)
         text = strsub(text, 4)
       elseif strsub(text, 1, 2) == BOM_UTF16LE then
         text = win.Utf16ToUtf8(strsub(text, 3))
-      else -- (OEM assumed)
-        text = win.OemToUtf8(text)
+      else -- (UTF-8 assumed)
+        text = text
       end
       for line in text:gmatch("[^\n\r]+") do
         table.insert(list, line)
@@ -218,14 +259,13 @@ local function ShowMenuFromList (Name)
 end
 --------------------------------------------------------------------------------
 
-function Package.ListExportedFunctions()
-  local t = {}
+function Package.PutExportedFunctions (tab)
   for _, name in ipairs {
         "GetFindData", "GetOpenPluginInfo", "PutFiles", "SetDirectory",
-        "ProcessEvent", "ProcessKey", "SetFindList", "ClosePlugin", } do
-      t[name] = TmpPanelBase[name]
+        "ProcessEvent", "ProcessKey", "SetFindList", "ClosePlugin", }
+  do
+    tab[name] = TmpPanelBase[name]
   end
-  return t
 end
 
 
@@ -338,11 +378,11 @@ function Env:NewPanel (aOptions)
 
   if self.StartupOptCommonPanel then
     newpanel.Index = self.CurrentCommonPanel
-    newpanel.Items = TmpPanelBase.RefItems
+    newpanel.GetItems = TmpPanelBase.RefItems
     newpanel.ReplaceFiles = TmpPanelBase.ReplaceRefFiles
   else
     newpanel.Files = {}
-    newpanel.Items = TmpPanelBase.OwnItems
+    newpanel.GetItems = TmpPanelBase.OwnItems
     newpanel.ReplaceFiles = TmpPanelBase.ReplaceOwnFiles
   end
   return setmetatable (newpanel, { __index = TmpPanelBase })
@@ -504,7 +544,7 @@ end
 
 function TmpPanelBase:ProcessList (aList, aReplaceMode)
   if aReplaceMode then self:ReplaceFiles {} end
-  local items = self:Items()
+  local items = self:GetItems()
   for _,v in ipairs(aList) do
     local dir, name = v:match("^(.*[\\/])(.*)$")
     if not dir then dir, name = ".", v end
@@ -517,7 +557,7 @@ end
 
 
 function TmpPanelBase:UpdateItems (ShowOwners, ShowLinks)
---~   if not self.UpdateNeeded or #self:Items() == 0 then
+--~   if not self.UpdateNeeded or #self:GetItems() == 0 then
 --~     self.UpdateNeeded = true
 --~     return
 --~   end
@@ -529,7 +569,7 @@ function TmpPanelBase:UpdateItems (ShowOwners, ShowLinks)
   self.LastLinksRead = ShowLinks
   self.RemoveTable = {}
   local PanelItems = {}
-  local items = self:Items()
+  local items = self:GetItems()
   for i,v in ipairs(items) do
     local panelitem = CheckForCorrect (v)
     if panelitem then
@@ -562,7 +602,7 @@ function TmpPanelBase:ProcessRemoveKey (Handle)
     local item = panel.GetSelectedPanelItem (Handle, i)
     tb_dict[item.FileName] = true
   end
-  for _,v in ipairs(self:Items()) do
+  for _,v in ipairs(self:GetItems()) do
     if not tb_dict[v] then
       table.insert (tb_out, v)
     end
@@ -583,7 +623,7 @@ end
 function TmpPanelBase:SaveListFile (Path)
   local hFile = io.open (Path, "wb")
   if hFile then
-    for _,v in ipairs(self:Items()) do
+    for _,v in ipairs(self:GetItems()) do
       hFile:write (v, "\n")
     end
     hFile:close()
@@ -594,7 +634,7 @@ end
 
 
 function TmpPanelBase:ProcessSaveListKey (Handle)
-  if #self:Items() == 0 then return end
+  if #self:GetItems() == 0 then return end
 
   -- default path: opposite panel directory\panel<index>.<mask extension>
   local CurDir = panel.GetPanelDirectory(0)
@@ -702,7 +742,7 @@ end
 
 
 function TmpPanelBase:RemoveDuplicates ()
-  local items = self:Items()
+  local items = self:GetItems()
   local pat = "[\\/ ]+$"
   for _,v in ipairs(items) do
 --far.Message(type(v))
@@ -757,7 +797,7 @@ function TmpPanelBase:PutOneFile (PanelItem)
   if NameOnly then
     CurName = AddEndSlash (far.GetCurrentDirectory()) .. CurName
   end
-  local items = self:Items()
+  local items = self:GetItems()
   items[#items+1] = CurName
 
   if self.SelectedCopyContents ~= 0 and NameOnly and IsDirectory(PanelItem) then
@@ -783,6 +823,7 @@ end
 
 
 function TmpPanelBase:GetFindData (Handle, OpMode)
+--### far.Show("GetFindData")
   self:RemoveDuplicates()
   local types = panel.GetColumnTypes (Handle)
   local PanelItems = self:UpdateItems (IsOwnersDisplayed (types), IsLinksDisplayed (types))
@@ -793,7 +834,7 @@ end
 function TmpPanelBase:RemoveMarkedItems()
   if next(self.RemoveTable) then
     local tb = {}
-    local items = self:Items()
+    local items = self:GetItems()
     for i,v in ipairs(items) do
       if not self.RemoveTable[i] then table.insert (tb, v) end
     end

@@ -91,6 +91,56 @@ local function SaveCodePageCombo (hDlg, combo_pos, combo_list, aData, aSaveCurPo
 end
 
 
+local SearchAreas = {
+  { name = "FromCurrFolder",  msg = "MSaFromCurrFolder" },
+  { name = "OnlyCurrFolder",  msg = "MSaOnlyCurrFolder" },
+  { name = "SelectedItems",   msg = "MSaSelectedItems"  },
+  { name = "RootFolder",      msg = ""                  },
+--{ name = "NonRemovDrives",  msg = "MSaNonRemovDrives" },
+--{ name = "LocalDrives",     msg = "MSaLocalDrives"    },
+  { name = "PathFolders",     msg = "MSaPathFolders"    },
+}
+for k,v in ipairs(SearchAreas) do SearchAreas[v.name]=k end
+
+local function IndexToSearchArea(index)
+  index = index or 1
+  if index < 1 or index > #SearchAreas then index = 1 end
+  return SearchAreas[index].name
+end
+
+local function SearchAreaToIndex(area)
+  return type(area)=="string" and SearchAreas[area] or 1
+end
+
+local function CheckSearchArea(area)
+  assert(not area or SearchAreas[area], "invalid search area")
+  return SearchAreas[SearchAreaToIndex(area)].name
+end
+
+local function GetSearchAreas(aData)
+  local Info = panel.GetPanelInfo(1)
+  local RootFolderItem = {}
+  if Info.PanelType==F.PTYPE_FILEPANEL and not Info.Plugin then
+    RootFolderItem.Text = M.MSaRootFolder .. panel.GetPanelDirectory(1):match("/[^/]*")
+  else
+    RootFolderItem.Text = M.MSaRootFolder
+    RootFolderItem.Flags = F.LIF_GRAYED
+  end
+
+  local T = {}
+  for k,v in ipairs(SearchAreas) do
+    T[k] = v.name == "RootFolder" and RootFolderItem or { Text = M[v.msg] }
+  end
+
+  local idx = SearchAreaToIndex(aData.sSearchArea)
+  if (idx < 1) or (idx > #T) or (T[idx].Flags == F.LIF_GRAYED) then
+    idx = 1
+  end
+  T.SelectIndex = idx
+  return T
+end
+
+
 local hst_map = { ["\\"]="\\"; n="\n"; r="\r"; t="\t"; }
 
 local function GetDialogHistory (name)
@@ -600,8 +650,8 @@ function SRFrame:SaveDataDyn (hDlg, Data)
       local key = Data.sScope == "global" and "sOriginInGlobal" or "sOriginInBlock"
       Data[key] = Data.sOrigin -- to be passed to execution
     end
---###  else
---###    Data.sSearchArea = IndexToSearchArea(hDlg:ListGetCurPos(Pos.cmbSearchArea))
+  else
+    Data.sSearchArea = IndexToSearchArea(hDlg:ListGetCurPos(Pos.cmbSearchArea).SelectPos)
   end
   ------------------------------------------------------------------------
   Data.sRegexLib = self.Libs[ hDlg:ListGetCurPos(Pos.cmbRegexLib).SelectPos ]
@@ -738,9 +788,9 @@ function SRFrame:DoPresets (hDlg)
       local data = item.preset
       sd.SetDialogState(hDlg, self.Items, data)
 
---###      if Pos.cmbSearchArea and data.sSearchArea then
---###        hDlg:ListSetCurPos(Pos.cmbSearchArea, {SelectPos=SearchAreaToIndex(data.sSearchArea)} )
---###      end
+      if Pos.cmbSearchArea and data.sSearchArea then
+        hDlg:ListSetCurPos(Pos.cmbSearchArea, {SelectPos=SearchAreaToIndex(data.sSearchArea)} )
+      end
 
       if Pos.cmbCodePage then
         local info = hDlg:send(F.DM_LISTINFO, Pos.cmbCodePage)
@@ -873,14 +923,17 @@ end
 
 return {
   EditorConfigDialog = EditorConfigDialog;
+  CheckSearchArea    = CheckSearchArea;
   CreateSRFrame      = CreateSRFrame;
   ErrorMsg           = ErrorMsg;
   FormatInt          = FormatInt;
   FormatTime         = FormatTime;
   GetDialogHistory   = GetDialogHistory;
   GetReplaceFunction = GetReplaceFunction;
+  GetSearchAreas     = GetSearchAreas;
   GetWordUnderCursor = GetWordUnderCursor;
   GsubMB             = MakeGsub("multibyte");
+  IndexToSearchArea  = IndexToSearchArea;
   ProcessDialogData  = ProcessDialogData;
   SaveCodePageCombo  = SaveCodePageCombo;
 }

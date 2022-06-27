@@ -5,56 +5,70 @@ local M      = require "lfs_message"
 local Common = require "lfs_common"
 local sd     = require "far2.simpledialog"
 local Sett   = require "far2.settings"
+
+local TmpPan = require "far2.tmppanel"
+--###  TmpPan.SetMessageTable(M) -- message localization support
+
 local field = Sett.field
+local CheckSearchArea   = Common.CheckSearchArea
+local GetSearchAreas    = Common.GetSearchAreas
+local IndexToSearchArea = Common.IndexToSearchArea
 
 local Excl_Key = "sExcludeDirs"
 
 local F = far.Flags
 local bor, band, bxor = bit64.bor, bit64.band, bit64.bxor
+local MultiByteToWideChar = win.MultiByteToWideChar
+
 local dirsep = package.config:sub(1,1)
 
 local TmpPanelDefaults = {
-  ColT  = "NR,S",
-  ColW  = "0,8",
-  StatT = "NR,SC,D,T",
-  StatW = "0,8,0,5",
-  Full  = false,
-  Macro = "CtrlF12 $Rep(12) Down $End +"
+  CopyContents             = 0,
+  ReplaceMode              = true,
+  NewPanelForSearchResults = true,
+  ColumnTypes              = "NR,S",
+  ColumnWidths             = "0,8",
+  StatusColumnTypes        = "NR,SC,D,T",
+  StatusColumnWidths       = "0,8,0,5",
+  FullScreenPanel          = false,
+  StartSorting             = "14,0",
+  PreserveContents         = true,
+  Macro                    = "CtrlF12 $Rep(12) Down $End +",
 }
 
 local KEY_INS     = F.KEY_INS
 local KEY_NUMPAD0 = F.KEY_NUMPAD0
 local KEY_SPACE   = F.KEY_SPACE
 
--- search area
-local saFromCurrFolder, saOnlyCurrFolder, saSelectedItems, saRootFolder, saPathFolders = 1,2,3,4,5
-local saCOUNT = 5
+local function SwapEndian (str)
+  return (string.gsub(str, "(.)(.)", "%2%1"))
+end
 
 local function ConfigDialog (aHistory)
-  local aData = field(aHistory, "TmpPanel")
+  local aData = aHistory["tmppanel"]
   local WIDTH = 78
   local DC = math.floor(WIDTH/2-1)
 
   local Items = {
     width = WIDTH;
     help = "SearchResultsPanel";
-    { tp="dbox"; text=M.MConfigTitleTmpPanel; },
-    { tp="text"; text=M.MColumnTypes;  },
-    { tp="edit"; name="ColT"; x2=DC-2; },
-    { tp="text"; text=M.MColumnWidths; },
-    { tp="edit"; name="ColW"; x2=DC-2; },
+    { tp="dbox"; text=M.MConfigTitleTmpPanel;  },
+    { tp="text"; text=M.MColumnTypes;          },
+    { tp="edit"; name="ColumnTypes"; x2=DC-2;  },
+    { tp="text"; text=M.MColumnWidths;         },
+    { tp="edit"; name="ColumnWidths"; x2=DC-2; },
 
     { tp="text"; text=M.MStatusColumnTypes;  x1=DC; ystep=-3; },
-    { tp="edit"; name="StatT";               x1=DC; },
-    { tp="text"; text=M.MStatusColumnWidths; x1=DC; },
-    { tp="edit"; name="StatW";               x1=DC; },
-    { tp="text"; text=M.MTmpPanelMacro;             },
-    { tp="edit"; name="Macro"; x2=DC-2;             },
+    { tp="edit"; name="StatusColumnTypes";   x1=DC;           },
+    { tp="text"; text=M.MStatusColumnWidths; x1=DC;           },
+    { tp="edit"; name="StatusColumnWidths";  x1=DC;           },
+    { tp="text"; text=M.MTmpPanelMacro;                       },
+    { tp="edit"; name="Macro"; x2=DC-2;                       },
 
-    { tp="chbox"; name="Full"; text=M.MFullScreenPanel; },
-    { tp="sep"; },
-    { tp="butt"; centergroup=1; text=M.MOk; default=1;    },
-    { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; },
+    { tp="chbox"; name="FullScreenPanel"; text=M.MFullScreenPanel; },
+    { tp="sep";                                                    },
+    { tp="butt"; centergroup=1; text=M.MOk; default=1;             },
+    { tp="butt"; centergroup=1; text=M.MCancel; cancel=1;          },
     { tp="butt"; centergroup=1; text=M.MBtnDefaults; btnnoclose=1; name="reset"; },
   }
   local Pos = sd.Indexes(Items)
@@ -179,31 +193,6 @@ local function GetCodePages (aData)
   return items
 end
 
-local function GetSearchAreas(aData)
-  local Info = panel.GetPanelInfo(1)
-  local RootFolderItem = {}
-  if Info.PanelType == F.PTYPE_FILEPANEL and not Info.Plugin then
-    RootFolderItem.Text = M.MSaRootFolder .. panel.GetPanelDirectory(1):match("/[^/]*")
-  else
-    RootFolderItem.Text = M.MSaRootFolder
-    RootFolderItem.Flags = F.LIF_GRAYED
-  end
-
-  local T = {
-    [saFromCurrFolder] = { Text = M.MSaFromCurrFolder },
-    [saOnlyCurrFolder] = { Text = M.MSaOnlyCurrFolder },
-    [saSelectedItems]  = { Text = M.MSaSelectedItems },
-    [saRootFolder]     = RootFolderItem,
-    [saPathFolders]    = { Text = M.MSaPathFolders },
-  }
-  local idx = aData.iSearchArea or 1
-  if (idx < 1) or (idx > #T) or (T[idx].Flags == F.LIF_GRAYED) then
-    idx = 1
-  end
-  T.SelectIndex = idx
-  return T
-end
-
 local searchGuid  = "3CD8A0BB-8583-4769-BBBC-5B6667D13EF9"
 local replaceGuid = "F7118D4A-FBC3-482E-A462-0167DF7CC346"
 local grepGuid    = "74D7F486-487D-40D0-9B25-B2BB06171D86"
@@ -311,7 +300,7 @@ local function PanelDialog  (aOp, aData, aScriptCall)
         aData.iSelectedCodePage = Elem.cmbCodePage.list[pos.SelectPos].CodePage
         ------------------------------------------------------------------------
         pos = hDlg:ListGetCurPos(Pos.cmbSearchArea)
-        aData.iSearchArea = pos.SelectPos
+        aData.sSearchArea = IndexToSearchArea(pos.SelectPos)
         ------------------------------------------------------------------------
         aData.sFileMask       = hDlg:GetText(Pos.sFileMask)
         aData.bSearchFolders  = hDlg:GetCheck(Pos.bSearchFolders)
@@ -330,7 +319,7 @@ local function PanelDialog  (aOp, aData, aScriptCall)
     end
   end
 
-  local dataTP = _Plugin.History.TmpPanel
+  local dataTP = _Plugin.History.tmppanel
   for k,v in pairs(TmpPanelDefaults) do
     if dataTP[k] == nil then dataTP[k] = v end
   end
@@ -339,29 +328,30 @@ local function PanelDialog  (aOp, aData, aScriptCall)
   return sd.Run(Items) and Frame.close_params
 end
 
-local function MakeItemList (panelInfo, area)
-  local realNames = (band(panelInfo.Flags, F.PFLAGS_REALNAMES) ~= 0)
+local function MakeItemList (panelInfo, searchArea)
+  local bRealNames = (band(panelInfo.Flags, F.PFLAGS_REALNAMES) ~= 0)
   local panelDir = panel.GetPanelDirectory(1) or ""
   local itemList, flags = {}, F.FRS_RECUR
 
-  if area == saFromCurrFolder or area == saOnlyCurrFolder then
-    if realNames then
+  if searchArea == "FromCurrFolder" or searchArea == "OnlyCurrFolder" then
+    if bRealNames then
       if panelInfo.Plugin then
         for i=1, panelInfo.ItemsNumber do
-          local item = panel.GetPanelItem(1, i)
-          local name = item.FileName
-          if name ~= ".." and name ~= "." then itemList[#itemList+1] = name end
+          local name = panel.GetPanelItem(1, i).FileName
+          if name ~= ".." and name ~= "." then
+            itemList[#itemList+1] = name
+          end
         end
       else
         itemList[1] = panelDir
       end
-      if area == saOnlyCurrFolder then
+      if searchArea == "OnlyCurrFolder" then
         flags = 0
       end
     end
 
-  elseif area == saSelectedItems then
-    if realNames then
+  elseif searchArea == "SelectedItems" then
+    if bRealNames then
       local curdir_slash = panelInfo.Plugin and "" or panelDir:gsub(dirsep.."?$", dirsep, 1)
       for i=1, panelInfo.SelectedItemsNumber do
         local item = panel.GetSelectedPanelItem(1, i)
@@ -369,24 +359,15 @@ local function MakeItemList (panelInfo, area)
       end
     end
 
-  elseif area == saRootFolder then
+  elseif searchArea == "RootFolder" then
     itemList[1] = panelDir:match("/[^/]*")
 
-  elseif area == saPathFolders then
+  elseif searchArea == "PathFolders" then
     flags = 0
     local path = win.GetEnv("PATH")
     if path then path:gsub("[^:]+", function(c) itemList[#itemList+1]=c end) end
   end
   return itemList, flags
-end
-
-local function PressEnter()
-  local ver = far.LuafarVersion(true)
-  if ver <= 2 then
-    far.AdvControl(F.ACTL_POSTKEYSEQUENCE, {13}) -- KEY_ENTER
-  else
-    far.MacroPost("Keys('Enter')")
-  end
 end
 
 local function GetActiveCodePages (aData)
@@ -425,8 +406,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   ----------------------------------------------------------------------------
   local activeCodePages = GetActiveCodePages(aData)
   local panelInfo = panel.GetPanelInfo(1)
-  local area = aData.iSearchArea or 1
-  if area < 1 or area > saCOUNT then area = 1 end
+  local area = CheckSearchArea(aData.sSearchArea) -- can throw error
   local bRecurse, bSymLinks
   local itemList, flags = MakeItemList(panelInfo, area)
   if aData.bSearchSymLinks then
@@ -448,7 +428,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     if r==1 then userbreak = true end
     return r==1 or r==2
   end
-  local tOut, cnt, nShow = {}, 0, 0
+  local tFoundFiles, cnt, nShow = {}, 0, 0
   far.Message((" "):rep(WID).."\n"..M.MFilesFound.."0", TITLE, "")
 
   local function ShowProgress(fullname)
@@ -473,7 +453,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     if fdata.FileAttributes:find("d") then
       if mask_ok and aData.bSearchFolders and aData.sSearchPat == "" then
         cnt = cnt+1
-        tOut[cnt] = fullname
+        tFoundFiles[cnt] = fullname
       end
       ---------------------------------------------------------------------------
       if mask_dirs and far.ProcessName(F.PN_CMPNAMELIST, mask_dirs, fullname, F.PN_SKIPPATH) then
@@ -490,9 +470,9 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     ---------------------------------------------------------------------------
     if not mask_ok then return end
     ---------------------------------------------------------------------------
-    if aData.sSearchPat == "" then
+    if tParams.sSearchPat == "" then
       cnt = cnt+1
-      tOut[cnt] = fullname
+      tFoundFiles[cnt] = fullname
       return
     end
     ---------------------------------------------------------------------------
@@ -517,30 +497,30 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
       str = fp:read(BLOCKLEN)
       if not str then break end
       for _, cp in ipairs(activeCodePages) do
-        local s
-        if cp == 1200 or cp == 65001 then s = str
-        elseif cp == 1201 then s = string.gsub(str, "(.)(.)", "%2%1")
-        else s = win.MultiByteToWideChar(str, cp)--, cp==65000 and "" or "e")
-        end
-        if s and cp ~= 65001 then s = win.Utf16ToUtf8(s) end
+        local s = (cp == 1200 or cp == 65001) and str or
+                  (cp == 1201) and SwapEndian(str) or
+                  MultiByteToWideChar(str, cp)
         if s then
-          ---- local ok, start = pcall(Find, Regex, s)
-          ---- if ok and start then found = true break end
-          if tPlus == nil then
-            local ok, start = pcall(Find, Regex, s)
-            if ok and start then found = true; break; end
-          else
-            if uMinus and Find(uMinus, s) then
-              stop=true; break
-            end
-            for pattern in pairs(tPlus) do
-              if Find(pattern, s) then tPlus[pattern]=nil end
-            end
-            if uUsual and Find(uUsual, s) then
-              uUsual = nil
-            end
-            if not (next(tPlus) or uMinus or uUsual) then
-              found=true; break
+          if cp ~= 65001 then
+            s = win.Utf16ToUtf8(s)
+          end
+          if s then
+            if tPlus == nil then
+              local ok, start = pcall(Find, Regex, s)
+              if ok and start then found = true; break; end
+            else
+              if uMinus and Find(uMinus, s) then
+                stop=true; break
+              end
+              for pattern in pairs(tPlus) do
+                if Find(pattern, s) then tPlus[pattern]=nil end
+              end
+              if uUsual and Find(uUsual, s) then
+                uUsual = nil
+              end
+              if not (next(tPlus) or uMinus or uUsual) then
+                found=true; break
+              end
             end
           end
         end
@@ -552,7 +532,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     end
     if not found ~= not tParams.bInverseSearch then
       cnt = cnt+1
-      tOut[cnt] = fullname
+      tFoundFiles[cnt] = fullname
     end
 
     fp:close()
@@ -565,10 +545,10 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     -- note: fdata can be nil for root directories
     local isFile = fdata and not fdata.FileAttributes:find("d")
     ---------------------------------------------------------------------------
-    if isFile or ((area==saFromCurrFolder or area==saOnlyCurrFolder) and panelInfo.Plugin) then
+    if isFile or ((area=="FromCurrFolder" or area=="OnlyCurrFolder") and panelInfo.Plugin) then
       ProcessFile(fdata, item, FileFilter, "*")
     end
-    if not isFile and not (area == saOnlyCurrFolder and panelInfo.Plugin) then
+    if not isFile and not (area == "OnlyCurrFolder" and panelInfo.Plugin) then
       local mask_incl, mask_excl = aData.sFileMask:match("(.-)|(.*)")
       if mask_incl then
         if mask_incl=="" then mask_incl = "*" end
@@ -582,33 +562,55 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     if userbreak then break end
   end
 
-  if cnt > 0 then
-    local fname = "/tmp/lfsearch.found.files"
-    local fpOut = assert(io.open(fname, "wb"))
-    for _, fullname in ipairs(tOut) do
-      fpOut:write(fullname, "\n")
+  return tFoundFiles, userbreak
+end
+
+local function CreateTmpPanel (tFileList, tData)
+  tFileList = tFileList or {}
+  local t = {}
+  t.Opt = setmetatable({}, { __index=tData or TmpPanelDefaults })
+  t.Opt.CommonPanel = false
+  t.Opt.Mask = "*.temp" -- make possible to reopen saved panels with the standard TmpPanel plugin
+  local env = TmpPan.NewEnv(t)
+  local panel = env:NewPanel()
+  panel:ReplaceFiles(tFileList)
+  return panel
+end
+
+local function InitTmpPanel()
+  local history = _Plugin.History["tmppanel"]
+  for k,v in pairs(TmpPanelDefaults) do
+    if history[k] == nil then history[k] = v end
+  end
+
+  TmpPan.PutExportedFunctions(export)
+  export.SetFindList = nil
+
+  local tpGetOpenPluginInfo = export.GetOpenPluginInfo
+  export.GetOpenPluginInfo = function (Panel, Handle)
+    local hist = _Plugin.History["tmppanel"]
+    local Info = tpGetOpenPluginInfo (Panel, Handle)
+    local a,b = hist.StartSorting:match("(%d+)%s*,%s*(%d+)")
+    Info.StartSortMode, Info.StartSortOrder = tonumber(a), tonumber(b) -- w/o tonumber() it crashes Far
+    for _,mode in pairs(Info.PanelModesArray) do
+      mode.FullScreen = hist.FullScreenPanel
     end
-    fpOut:close()
-    -- run temporary panel from the command line
-    ---- local tp_settings = GetTmpPanelSettings()
-    local prefix = --[[tp_settings.Prefix or]] "tmp"
-    local cmd = ("%s: -menu %s"):format(prefix, fname)
-    panel.SetCmdLine (cmd)
-    PressEnter()
-    far.Timer(1000,
-      function(h)
-        h:Close()
-        win.DeleteFile(fname)
-      end)
-  else
-    actl.RedrawAll()
-    if userbreak or 1==far.Message(M.MNoFilesFound,M.MMenuTitle,M.MButtonsNewSearch) then
-      return SearchFromPanel(aData, true)
+    return Info
+  end
+
+  export.ClosePlugin = function(object, handle)
+    local hist = _Plugin.History["tmppanel"]
+    if hist.PreserveContents then
+      _Plugin.FileList = object:GetItems()
+      _Plugin.FileList.NoDuplicates = true
+    else
+      _Plugin.FileList = nil
     end
   end
-  return true
 end
 
 return {
+  CreateTmpPanel  = CreateTmpPanel;
+  InitTmpPanel    = InitTmpPanel;
   SearchFromPanel = SearchFromPanel;
 }

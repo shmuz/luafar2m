@@ -37,7 +37,7 @@ local function FirstRunActions()
   Sett.field(hist, "main")
   Sett.field(hist, "menu")
   Sett.field(hist, "presets")
-  Sett.field(hist, "TmpPanel")
+  Sett.field(hist, "tmppanel")
 
   config.EditorHighlightColor    = config.EditorHighlightColor    or 0xCF
   config.GrepLineNumMatchColor   = config.GrepLineNumMatchColor   or 0xA0
@@ -122,6 +122,24 @@ local function MakeMenuItems (aUserMenuFile)
 end
 
 
+local function GUI_SearchFromPanels (data)
+  local tFileList, bCancel = Panels.SearchFromPanel(data, true, false)
+  if tFileList then -- the dialog was not cancelled
+    if tFileList[1] then
+      local panel = Panels.CreateTmpPanel(tFileList)
+      SaveSettings()
+      return panel
+    else -- no files were found
+      actl.RedrawAll()
+      if bCancel or 1==far.Message(M.MNoFilesFound,M.MMenuTitle,M.MButtonsNewSearch) then
+        return GUI_SearchFromPanels(data)
+      end
+      SaveSettings()
+    end
+  end
+end
+
+
 local function OpenFromMacro (args)
   local Op, Where, Cmd = unpack(args)
   if Op=="own" then
@@ -145,7 +163,8 @@ local function OpenFromMacro (args)
          area==F.MACROAREA_QVIEWPANEL or area==F.MACROAREA_INFOPANEL
       then
         if Cmd=="search" then
-          return Panels.SearchFromPanel(data, true) and true
+          local panel = GUI_SearchFromPanels(data)
+          return panel and { panel, type="panel" }
         end
       end
     end
@@ -164,8 +183,11 @@ function export.OpenPlugin (aFrom, aItem)
   end
 
   if aFrom == F.OPEN_FROMMACRO then
-    if OpenFromMacro(aItem) then SaveSettings() end
-    return
+    local val = OpenFromMacro(aItem)
+    if val then
+      SaveSettings()
+      return val
+    end
   end
 
   if aFrom == F.OPEN_EDITOR then
@@ -203,9 +225,7 @@ function export.OpenPlugin (aFrom, aItem)
 
   elseif aFrom == F.OPEN_PLUGINSMENU then
     local data = History["main"]
-    if Panels.SearchFromPanel(data, true) then
-      SaveSettings()
-    end
+    return GUI_SearchFromPanels(data)
   end
 end
 
@@ -247,6 +267,11 @@ function lfsearch.SetDebugMode (On)
 end
 
 
-function lfsearch.SearchFromPanel (data)
-  return Panels.SearchFromPanel(data, true)
+function lfsearch.SearchFromPanel (data, bWithDialog)
+  return Panels.SearchFromPanel(data, bWithDialog, true)
+end
+
+
+do
+  Panels.InitTmpPanel()
 end

@@ -69,9 +69,7 @@ local function InitUpvalues (_Plugin)
   far.tmppanel = far.tmppanel or tmppanel
   far.tmppanel.Env = tmppanel.NewEnv (far.tmppanel.Env or field(History, "Env"))
   Env = far.tmppanel.Env
-  for name, func in pairs (tmppanel.ListExportedFunctions()) do
-    export[name] = func
-  end
+  tmppanel.PutExportedFunctions(export)
 end
 
 local function main()
