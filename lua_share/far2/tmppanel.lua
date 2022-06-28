@@ -1,11 +1,9 @@
+-- Encoding: UTF-8
 -- tmppanel.lua
 
---### local M = require "tmpp_message"
+local sd = require "far2.simpledialog"
 
 local Package = {}
-
--- UPVALUES : keep them above all function definitions !!
-local sd = require "far2.simpledialog"
 
 -- The default message table
 local M = {
@@ -49,6 +47,14 @@ local M = {
 -- This function should be called if message localization support is needed
 function Package.SetMessageTable(msg_tbl) M = msg_tbl; end
 
+local F  = far.Flags
+local band, bor = bit64.band, bit64.bor
+
+-- constants
+local COMMONPANELSNUMBER = 10
+local BOM_UTF16LE = "\255\254"
+local BOM_UTF8 = "\239\187\191"
+
 local Opt = {
   AddToDisksMenu            = true,
   AddToPluginsMenu          = true,
@@ -67,20 +73,9 @@ local Opt = {
   Prefix                    = "tmp2",
   SavePanels                = true, --> new
 }
-local Env = {}
+
+local Env, Panel = {}, {}
 local EnvMeta = { __index = Env }
-local TmpPanelBase = {} -- "class" TmpPanelBase
-
-local _Message = far.Message -- functions
-local band, bor = bit.band, bit.bor
-
--- variables
-local F = far.Flags
-
--- constants
-local COMMONPANELSNUMBER = 10
-local BOM_UTF16LE = "\255\254"
-local BOM_UTF8 = "\239\187\191"
 
 local function LTrim(s) return s:match "^%s*(.*)" end
 local function Trim(s) return s:match "^%s*(.-)%s*$" end
@@ -104,9 +99,9 @@ end
 
 -- File lists are supported in the following formats:
 -- (a) UTF-16LE with BOM, (b) UTF-8 with BOM, (c) UTF-8.
-local function ReadFileList (filename)
+local function ListFromFile (aFileName)
   local list = {}
-  local hFile = io.open (filename, "rb")
+  local hFile = io.open (aFileName, "rb")
   if hFile then
     local text = hFile:read("*a")
     hFile:close()
@@ -116,8 +111,8 @@ local function ReadFileList (filename)
         text = strsub(text, 4)
       elseif strsub(text, 1, 2) == BOM_UTF16LE then
         text = win.Utf16ToUtf8(strsub(text, 3))
-      else -- (UTF-8 assumed)
-        text = text
+      -- else -- default is UTF-8
+        -- do nothing
       end
       for line in text:gmatch("[^\n\r]+") do
         table.insert(list, line)
@@ -161,24 +156,23 @@ end
 local function CheckForCorrect (Name)
   Name = ExpandEnvironmentStr(Name)
   local _, p = ParseParam (Name)
-
-  if p:match "^\\\\%.\\%a%:$" or
-     isDevice(p, "\\\\.\\PhysicalDrive") or
-     isDevice(p, "\\\\.\\cdrom") then
-    return { FileName = p, FileAttributes = "a"; }
+  if p:match [[^\\%.\%a%:$]]
+      or isDevice(p, [[\\.\PhysicalDrive]])
+      or isDevice(p, [[\\.\cdrom]]) then
+    return { FileName = p, FileAttributes = "a" }
   end
 
   if p:find "%S" and not p:find "[?*]" and p ~= "\\" and p ~= ".." then
     local q = p:gsub("/$", "")
-    local data = win.GetFileInfo(q)
-    if data then
-      data.FileName = p
-      data.PackSize    = data.FileSize
-      data.Description = "One of my files"
-      data.Owner       = "Joe Average"
-      --data.UserData  = numline
-      --data.Flags     = { selected=true, }
-      return data
+    local PanelItem = win.GetFileInfo(q)
+    if PanelItem then
+      PanelItem.FileName = p
+      PanelItem.PackSize    = PanelItem.FileSize
+      PanelItem.Description = "One of my files"
+      PanelItem.Owner       = "Joe Average"
+    --PanelItem.UserData  = numline
+    --PanelItem.Flags     = { selected=true, }
+      return PanelItem
     end
   end
 end
@@ -214,26 +208,25 @@ local function SortListCmp (Item1, Item2)
 end
 
 
-local function ShowMenuFromList (Name)
-  local list = ReadFileList (Name)
-  local menuitems, breakkeys = {}, {}
-  for _, line in ipairs(list) do
-    local TMP = ExpandEnvironmentStr(line)
-    local part1, part2 = ParseParam(TMP)
+local function ShowMenuFromFile (FileName)
+  local list = ListFromFile(FileName,false)
+  local menuitems = {}
+  for i, line in ipairs(list) do
+    line = ExpandEnvironmentStr(line)
+    local part1, part2 = ParseParam(line)
     if part1 == "-" then
-      table.insert(menuitems, {separator=true})
+      menuitems[i] = { separator=true }
     else
       local menuline = TruncStr(part1 or part2, 67)
-      table.insert (menuitems, {text=menuline, action=part2})
+      menuitems[i] = { text=menuline, action=part2 }
     end
   end
-  table.insert(breakkeys, {BreakKey="S+RETURN"}) -- Shift+Enter
+  local breakkeys = { {BreakKey="S+RETURN"}, } -- Shift+Enter
 
-  local Title = ExtractFileName(Name):gsub("%.[^.]+$", "")
+  local Title = ExtractFileName(FileName):gsub("%.[^.]+$", "")
   Title = TruncStr(Title, 64)
   local Item, Position = far.Menu(
-    { Flags = "FMENU_WRAPMODE", Title = Title, HelpTopic = "Contents",
-      Bottom = #menuitems.." lines" },
+    { Flags="FMENU_WRAPMODE", Title=Title, HelpTopic="Contents", Bottom=#menuitems.." lines" },
     menuitems, breakkeys)
   if not Item then return end
 
@@ -253,40 +246,46 @@ local function ShowMenuFromList (Name)
       panel.SetCmdLine (Item.action)
     end
   end
-  if bShellExecute then
-    --### _Su.ShellExecute (nil, "open", Item.action, nil, nil, "SW_SHOW")
-  end
+  --### if bShellExecute then
+  --###   _Su.ShellExecute (nil, "open", Item.action, nil, nil, "SW_SHOW")
+  --### end
 end
---------------------------------------------------------------------------------
+
 
 function Package.PutExportedFunctions (tab)
   for _, name in ipairs {
         "GetFindData", "GetOpenPluginInfo", "PutFiles", "SetDirectory",
         "ProcessEvent", "ProcessKey", "SetFindList", "ClosePlugin", }
   do
-    tab[name] = TmpPanelBase[name]
+    tab[name] = Panel[name]
   end
 end
 
 
+-- Создать новое окружение, или воссоздать из истории /?/
 function Package.NewEnv (aEnv)
   local self = aEnv or {}
 
+  -- создать или воссоздать опции для окружения
   self.Opt = self.Opt or {}
-  for k,v in pairs(Opt) do
+  for k,v in pairs(Opt) do -- скопировать отсутствующие опции
     if self.Opt[k]==nil then self.Opt[k]=v end
   end
-  self.OptMeta = { __index = self.Opt }
+  self.OptMeta = { __index = self.Opt } -- метатаблица для будущего наследования
+
+  -- инициализировать некоторые переменные
   self.LastSearchResultsPanel = self.LastSearchResultsPanel or 1
   self.StartupOptCommonPanel = self.Opt.CommonPanel
   self.StartupOptFullScreenPanel = self.Opt.FullScreenPanel
 
+  -- если нет "общих" панелей - создать их
   if not self.CommonPanels then
     self.CommonPanels = {}
     for i=1,COMMONPANELSNUMBER do self.CommonPanels[i] = {} end
     self.CurrentCommonPanel = 1
   end
 
+  -- установить наследование функций от базового окружения
   return setmetatable (self, EnvMeta)
 end
 --------------------------------------------------------------------------------
@@ -324,7 +323,7 @@ function Env:GetPluginInfo()
 end
 
 
-function Env:ProcessPanelSwitchMenu()
+function Env:SelectPanelFromMenu()
   local txt = M.MSwitchMenuTxt
   local fmt1 = "&%s. %s %d"
   local menuitems = {}
@@ -337,7 +336,7 @@ function Env:ProcessPanelSwitchMenu()
     else
       menuline = ("   %s %d"):format(txt, #self.CommonPanels[i])
     end
-    table.insert(menuitems, { text=menuline })
+    menuitems[i] = { text=menuline }
   end
 
   local Item, Position = far.Menu( {
@@ -378,14 +377,14 @@ function Env:NewPanel (aOptions)
 
   if self.StartupOptCommonPanel then
     newpanel.Index = self.CurrentCommonPanel
-    newpanel.GetItems = TmpPanelBase.RefItems
-    newpanel.ReplaceFiles = TmpPanelBase.ReplaceRefFiles
+    newpanel.GetItems = Panel.GetRefItems
+    newpanel.ReplaceFiles = Panel.ReplaceRefFiles
   else
     newpanel.Files = {}
-    newpanel.GetItems = TmpPanelBase.OwnItems
-    newpanel.ReplaceFiles = TmpPanelBase.ReplaceOwnFiles
+    newpanel.GetItems = Panel.GetOwnItems
+    newpanel.ReplaceFiles = Panel.ReplaceOwnFiles
   end
-  return setmetatable (newpanel, { __index = TmpPanelBase })
+  return setmetatable (newpanel, { __index = Panel })
 end
 
 
@@ -394,13 +393,13 @@ function Env:OpenFilePlugin (Name, Data)
     for mask in self.Opt.Mask:gmatch "[^,]+" do
       if far.CmpName(mask, Name, true) then
         if self.Opt.MenuForFilelist then
-          ShowMenuFromList(Name)
+          ShowMenuFromFile(Name)
           break
         else
-          local Panel = self:NewPanel()
-          Panel:ProcessList (ReadFileList(Name), self.Opt.ReplaceMode)
-          Panel.HostFile = Name
-          return Panel
+          local pan = self:NewPanel()
+          pan:ProcessList (ListFromFile(Name), self.Opt.ReplaceMode)
+          pan.HostFile = Name
+          return pan
         end
       end
     end
@@ -446,13 +445,13 @@ function Env:OpenPlugin (OpenFrom, Item)
         local attr = win.GetFileAttr(PathName)
         if attr and not attr:find("d") then
           if newOpt.MenuForFilelist then
-            ShowMenuFromList (PathName)
+            ShowMenuFromFile (PathName)
             return nil
           else
-            local Panel = self:NewPanel(newOpt)
-            Panel:ProcessList (ReadFileList(PathName), newOpt.ReplaceMode)
-            Panel.HostFile = PathName
-            return Panel
+            local pan = self:NewPanel(newOpt)
+            pan:ProcessList (ListFromFile(PathName), newOpt.ReplaceMode)
+            pan.HostFile = PathName
+            return pan
           end
         else return
         end
@@ -513,8 +512,6 @@ function Env:Configure()
     {tp="butt"; text=M.MOk;     centergroup=1; default=1; },
     {tp="butt"; text=M.MCancel; centergroup=1; cancel=1;  },
   }
-  local _,Elem = sd.Indexes(Items)
-
   sd.LoadData(self.Opt, Items)
 
   local out = sd.Run(Items)
@@ -527,22 +524,34 @@ function Env:Configure()
     return true
   end
 end
---------------------------------------------------------------------------------
 
-function TmpPanelBase:OwnItems() return self.Files end
-function TmpPanelBase:RefItems() return self.Env.CommonPanels[self.Index] end
-function TmpPanelBase:ReplaceOwnFiles(Table) self.Files = Table end
-function TmpPanelBase:ReplaceRefFiles(Table)
+
+function Panel:GetOwnItems()
+  return self.Files
+end
+
+
+function Panel:GetRefItems()
+  return self.Env.CommonPanels[self.Index]
+end
+
+
+function Panel:ReplaceOwnFiles (Table)
+  self.Files = Table
+end
+
+
+function Panel:ReplaceRefFiles(Table)
   self.Env.CommonPanels[self.Index] = Table
 end
 
 
-function TmpPanelBase:ClosePlugin (Handle)
+function Panel:ClosePlugin (Handle)
   collectgarbage "collect"
 end
 
 
-function TmpPanelBase:ProcessList (aList, aReplaceMode)
+function Panel:ProcessList (aList, aReplaceMode)
   if aReplaceMode then self:ReplaceFiles {} end
   local items = self:GetItems()
   for _,v in ipairs(aList) do
@@ -556,14 +565,14 @@ function TmpPanelBase:ProcessList (aList, aReplaceMode)
 end
 
 
-function TmpPanelBase:UpdateItems (ShowOwners, ShowLinks)
+function Panel:UpdateItems (ShowOwners, ShowLinks)
 --~   if not self.UpdateNeeded or #self:GetItems() == 0 then
 --~     self.UpdateNeeded = true
 --~     return
 --~   end
 
-  local hScreen = far.SaveScreen()
-  _Message (M.MTempUpdate, M.MTempPanel, "")
+  local hScreen = #self:GetItems() >= 1000 and far.SaveScreen()
+  if hScreen then far.Message(M.MTempUpdate, M.MTempPanel, "") end
 
   self.LastOwnersRead = ShowOwners
   self.LastLinksRead = ShowLinks
@@ -590,12 +599,12 @@ function TmpPanelBase:UpdateItems (ShowOwners, ShowLinks)
       end
     end
   end
-  far.RestoreScreen(hScreen)
+  if hScreen then far.RestoreScreen(hScreen) end
   return PanelItems
 end
 
 
-function TmpPanelBase:ProcessRemoveKey (Handle)
+function Panel:ProcessRemoveKey (Handle)
   local tb_out, tb_dict = {}, {}
   local PInfo = assert(panel.GetPanelInfo (Handle))
   for i=1, PInfo.SelectedItemsNumber do
@@ -620,7 +629,7 @@ function TmpPanelBase:ProcessRemoveKey (Handle)
 end
 
 
-function TmpPanelBase:SaveListFile (Path)
+function Panel:SaveListFile (Path)
   local hFile = io.open (Path, "wb")
   if hFile then
     for _,v in ipairs(self:GetItems()) do
@@ -628,12 +637,12 @@ function TmpPanelBase:SaveListFile (Path)
     end
     hFile:close()
   else
-    _Message ("", M.MError, nil, "we")
+    far.Message ("", M.MError, nil, "we")
   end
 end
 
 
-function TmpPanelBase:ProcessSaveListKey (Handle)
+function Panel:ProcessSaveListKey (Handle)
   if #self:GetItems() == 0 then return end
 
   -- default path: opposite panel directory\panel<index>.<mask extension>
@@ -664,7 +673,7 @@ do
   local C, A, S = F.PKF_CONTROL, F.PKF_ALT, F.PKF_SHIFT
   local PREPROCESS = F.PKF_PREPROCESS
 
-  function TmpPanelBase:ProcessKey (Handle, Key, ControlState)
+  function Panel:ProcessKey (Handle, Key, ControlState)
     if band(Key, PREPROCESS) ~= 0 then
       return false
     end
@@ -725,7 +734,7 @@ do
     else
       if self.Env.StartupOptCommonPanel and ControlState == bor(A,S) then
         if Key == VK.F12 then
-          local index = self.Env:ProcessPanelSwitchMenu()
+          local index = self.Env:SelectPanelFromMenu()
           if index then
             self:SwitchToPanel (Handle, index)
           end
@@ -741,7 +750,7 @@ do
 end
 
 
-function TmpPanelBase:RemoveDuplicates ()
+function Panel:RemoveDuplicates ()
   local items = self:GetItems()
   local pat = "[\\/ ]+$"
   for _,v in ipairs(items) do
@@ -759,12 +768,12 @@ function TmpPanelBase:RemoveDuplicates ()
 end
 
 
-function TmpPanelBase:CommitPutFiles (hRestoreScreen)
+function Panel:CommitPutFiles (hRestoreScreen)
   far.RestoreScreen (hRestoreScreen)
 end
 
 
-function TmpPanelBase:PutFiles (Handle, PanelItems, Move, OpMode)
+function Panel:PutFiles (Handle, PanelItems, Move, OpMode)
   self.UpdateNeeded = true
   local hScreen = self:BeginPutFiles()
   for _,v in ipairs (PanelItems) do
@@ -779,15 +788,15 @@ function TmpPanelBase:PutFiles (Handle, PanelItems, Move, OpMode)
 end
 
 
-function TmpPanelBase:BeginPutFiles()
+function Panel:BeginPutFiles()
   self.SelectedCopyContents = self.Opt.CopyContents
   local hScreen = far.SaveScreen()
-  _Message (M.MTempSendFiles, M.MTempPanel, "")
+  far.Message (M.MTempSendFiles, M.MTempPanel, "")
   return hScreen
 end
 
 
-function TmpPanelBase:PutOneFile (PanelItem)
+function Panel:PutOneFile (PanelItem)
   local CurName = PanelItem.FileName
   PanelItem = CheckForCorrect(CurName)
   if not PanelItem then return false end
@@ -802,7 +811,7 @@ function TmpPanelBase:PutOneFile (PanelItem)
 
   if self.SelectedCopyContents ~= 0 and NameOnly and IsDirectory(PanelItem) then
     if self.SelectedCopyContents == 2 then
-      local res = _Message (M.MCopyContentsMsg, M.MWarning,
+      local res = far.Message (M.MCopyContentsMsg, M.MWarning,
                             "Yes;No", "", "Config")
       self.SelectedCopyContents = (res == 1) and 1 or 0
     end
@@ -822,7 +831,7 @@ function TmpPanelBase:PutOneFile (PanelItem)
 end
 
 
-function TmpPanelBase:GetFindData (Handle, OpMode)
+function Panel:GetFindData (Handle, OpMode)
 --### far.Show("GetFindData")
   self:RemoveDuplicates()
   local types = panel.GetColumnTypes (Handle)
@@ -831,7 +840,7 @@ function TmpPanelBase:GetFindData (Handle, OpMode)
 end
 
 
-function TmpPanelBase:RemoveMarkedItems()
+function Panel:RemoveMarkedItems()
   if next(self.RemoveTable) then
     local tb = {}
     local items = self:GetItems()
@@ -844,7 +853,7 @@ function TmpPanelBase:RemoveMarkedItems()
 end
 
 
-function TmpPanelBase:ProcessEvent (Handle, Event, Param)
+function Panel:ProcessEvent (Handle, Event, Param)
   if Event == F.FE_CHANGEVIEWMODE then
     local types = panel.GetColumnTypes (Handle)
     local UpdateOwners = IsOwnersDisplayed (types) and not self.LastOwnersRead
@@ -867,7 +876,7 @@ local OPIF_SAFE_FLAGS, OPIF_COMMON_FLAGS do
                   f.OPIF_EXTERNALGET, f.OPIF_EXTERNALDELETE)
 end
 
-function TmpPanelBase:GetOpenPluginInfo (Handle)
+function Panel:GetOpenPluginInfo (Handle)
   -----------------------------------------------------------------------------
   --far.Message"GetOpenPluginInfo" --> this crashes FAR if enter then exit viewer/editor
                                    --  on a file in the emulated file system
@@ -915,7 +924,7 @@ function TmpPanelBase:GetOpenPluginInfo (Handle)
 end
 
 
-function TmpPanelBase:SetDirectory (Handle, Dir, OpMode)
+function Panel:SetDirectory (Handle, Dir, OpMode)
   if 0 == band(OpMode, F.OPM_FIND) then
     panel.ClosePlugin (Handle, (Dir ~= "/" and Dir or nil))
     return true
@@ -923,7 +932,7 @@ function TmpPanelBase:SetDirectory (Handle, Dir, OpMode)
 end
 
 
-function TmpPanelBase:SetFindList (Handle, PanelItems)
+function Panel:SetFindList (Handle, PanelItems)
   local hScreen = self:BeginPutFiles()
   if self.Index and self.Opt.NewPanelForSearchResults then
     self.Env.CurrentCommonPanel = self.Env:FindSearchResultsPanel()
@@ -940,7 +949,7 @@ function TmpPanelBase:SetFindList (Handle, PanelItems)
 end
 
 
-function TmpPanelBase:SwitchToPanel (Handle, Index)
+function Panel:SwitchToPanel (Handle, Index)
   if Index and Index ~= self.Index then
     self.Env.CurrentCommonPanel = Index
     self.Index = self.Env.CurrentCommonPanel

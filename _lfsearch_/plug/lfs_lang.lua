@@ -17,4 +17,4 @@ require ("far2.makelang") (
 },
 
 ---- template file names
-"lfs_lang.templ", ...)
+"lfs_lang.templ", "tmpp_lang2.templ", ...)

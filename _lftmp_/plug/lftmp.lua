@@ -66,6 +66,7 @@ local function InitUpvalues (_Plugin)
   Require = Cfg.ReloadOnRequire and Require or require
   far.ReloadDefaultScript = Cfg.ReloadDefaultScript
   local tmppanel = Require "far2.tmppanel"
+  tmppanel.SetMessageTable(require "tmpp_message") -- message localization support
   far.tmppanel = far.tmppanel or tmppanel
   far.tmppanel.Env = tmppanel.NewEnv (far.tmppanel.Env or field(History, "Env"))
   Env = far.tmppanel.Env

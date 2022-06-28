@@ -1,6 +1,7 @@
 -- luacheck: globals lfsearch _Plugin
 
 local F = far.Flags
+local MenuFlags = bit64.bor(F.FMENU_WRAPMODE, F.FMENU_AUTOHIGHLIGHT)
 local ReqLuafarVersion = "2.9"
 _G.lfsearch = {}
 
@@ -38,6 +39,7 @@ local function FirstRunActions()
   Sett.field(hist, "menu")
   Sett.field(hist, "presets")
   Sett.field(hist, "tmppanel")
+  Sett.field(hist, "panels.menu")
 
   config.EditorHighlightColor    = config.EditorHighlightColor    or 0xCF
   config.GrepLineNumMatchColor   = config.GrepLineNumMatchColor   or 0xA0
@@ -140,6 +142,35 @@ local function GUI_SearchFromPanels (data)
 end
 
 
+local function OpenFromPanels (userItems)
+  local hMain = _Plugin.History["main"]
+  local hMenu = _Plugin.History.panels.menu
+
+  local items = {
+    {text=M.MMenuFind,     action="find"},
+    {text=M.MMenuTmpPanel, action="tmppanel"},
+  }
+  for k,v in ipairs(items) do v.text=k..". "..v.text end
+
+  local nOwnItems = #items
+  --### libUtils.AddMenuItems(items, userItems, M)
+  local item, pos = far.Menu(
+    { Title=M.MMenuTitle, HelpTopic="OperInPanels", SelectIndex=hMenu.position, Flags=MenuFlags }, items)
+  if not item then return end
+  hMenu.position = pos
+
+  if pos <= nOwnItems then
+    if item.action == "find" then
+      return GUI_SearchFromPanels(hMain)
+    elseif item.action == "tmppanel" then
+      return Panels.CreateTmpPanel(_Plugin.FileList or {}, _Plugin.History["tmppanel"])
+    end
+  --### else
+  --###   libUtils.RunUserItem(item, item.arg)
+  end
+end
+
+
 local function OpenFromMacro (args)
   local Op, Where, Cmd = unpack(args)
   if Op=="own" then
@@ -162,9 +193,12 @@ local function OpenFromMacro (args)
       if area==F.MACROAREA_SHELL or area==F.MACROAREA_TREEPANEL or
          area==F.MACROAREA_QVIEWPANEL or area==F.MACROAREA_INFOPANEL
       then
-        if Cmd=="search" then
-          local panel = GUI_SearchFromPanels(data)
-          return panel and { panel, type="panel" }
+        if Cmd == "search" then
+          local pan = GUI_SearchFromPanels(data)
+          return pan and { pan, type="panel" }
+        elseif Cmd == "panel" then
+          local pan = Panels.CreateTmpPanel(_Plugin.FileList or {}, _Plugin.History["tmppanel"])
+          return { pan; type="panel" }
         end
       end
     end
@@ -224,8 +258,7 @@ function export.OpenPlugin (aFrom, aItem)
     return libUtils.OpenCommandLine(aItem, commandTable, nil)
 
   elseif aFrom == F.OPEN_PLUGINSMENU then
-    local data = History["main"]
-    return GUI_SearchFromPanels(data)
+    return OpenFromPanels(nil)
   end
 end
 

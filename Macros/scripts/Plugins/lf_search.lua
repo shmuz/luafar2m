@@ -54,3 +54,10 @@ Macro {
   area="Shell QView Tree Info"; key="CtrlShiftF";
   action = function() LFS_Panels "search" end;
 }
+
+Macro {
+  description="LF Search: Show Panel";
+  area="Shell QView Tree Info"; key="CtrlShiftK";
+  action = function() LFS_Panels "panel" end
+}
+

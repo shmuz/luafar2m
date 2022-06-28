@@ -137,11 +137,10 @@ local function mload (key, name)
   return deserialize(get_work_dir(key)..name:lower(), true)
 end
 
-local function field(t, ...)
+local function field (t, seq)
   checkarg(t, 1, "table")
-  for i, key in ipairs {...} do
-    checkarg(key, 1+i, "string")
-    assert(t[key]==nil or type(t[key])=="table", "non-table field")
+  checkarg(seq, 2, "string")
+  for key in seq:gmatch("[^.]+") do
     t[key] = t[key] or {}
     t = t[key]
   end

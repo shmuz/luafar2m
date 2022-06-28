@@ -7,7 +7,7 @@ local sd     = require "far2.simpledialog"
 local Sett   = require "far2.settings"
 
 local TmpPan = require "far2.tmppanel"
---###  TmpPan.SetMessageTable(M) -- message localization support
+TmpPan.SetMessageTable(M) -- message localization support
 
 local field = Sett.field
 local CheckSearchArea   = Common.CheckSearchArea
@@ -33,7 +33,6 @@ local TmpPanelDefaults = {
   FullScreenPanel          = false,
   StartSorting             = "14,0",
   PreserveContents         = true,
-  Macro                    = "CtrlF12 $Rep(12) Down $End +",
 }
 
 local KEY_INS     = F.KEY_INS
@@ -44,31 +43,32 @@ local function SwapEndian (str)
   return (string.gsub(str, "(.)(.)", "%2%1"))
 end
 
-local function ConfigDialog (aHistory)
-  local aData = aHistory["tmppanel"]
-  local WIDTH = 78
-  local DC = math.floor(WIDTH/2-1)
+local function ConfigDialog()
+  local aData = _Plugin.History["tmppanel"]
+  local W1 = 33
+  local DC = (5+W1) + 2
 
   local Items = {
-    width = WIDTH;
+    width = (5+W1)*2 + 2;
     help = "SearchResultsPanel";
-    { tp="dbox"; text=M.MConfigTitleTmpPanel;  },
-    { tp="text"; text=M.MColumnTypes;          },
-    { tp="edit"; name="ColumnTypes"; x2=DC-2;  },
-    { tp="text"; text=M.MColumnWidths;         },
-    { tp="edit"; name="ColumnWidths"; x2=DC-2; },
+    { tp="dbox";  text=M.MConfigTitleTmpPanel;   },
+    { tp="text";  text=M.MColumnTypes;           },
+    { tp="edit";  name="ColumnTypes";  width=W1; },
+    { tp="text";  text=M.MColumnWidths;          },
+    { tp="edit";  name="ColumnWidths"; width=W1; },
+    { tp="text";  text=M.MStartSorting;          },
+    { tp="edit";  name="StartSorting"; width=W1; },
 
-    { tp="text"; text=M.MStatusColumnTypes;  x1=DC; ystep=-3; },
-    { tp="edit"; name="StatusColumnTypes";   x1=DC;           },
-    { tp="text"; text=M.MStatusColumnWidths; x1=DC;           },
-    { tp="edit"; name="StatusColumnWidths";  x1=DC;           },
-    { tp="text"; text=M.MTmpPanelMacro;                       },
-    { tp="edit"; name="Macro"; x2=DC-2;                       },
+    { tp="text";  text=M.MStatusColumnTypes;  x1=DC; y1=2; },
+    { tp="edit";  name="StatusColumnTypes";   x1=DC;       },
+    { tp="text";  text=M.MStatusColumnWidths; x1=DC;       },
+    { tp="edit";  name="StatusColumnWidths";  x1=DC;       },
+    { tp="chbox"; name="FullScreenPanel";  text=M.MFullScreenPanel;  x1=DC; ystep=2; },
+    { tp="chbox"; name="PreserveContents"; text=M.MPreserveContents; x1=DC; },
+    { tp="sep"; },
 
-    { tp="chbox"; name="FullScreenPanel"; text=M.MFullScreenPanel; },
-    { tp="sep";                                                    },
-    { tp="butt"; centergroup=1; text=M.MOk; default=1;             },
-    { tp="butt"; centergroup=1; text=M.MCancel; cancel=1;          },
+    { tp="butt"; centergroup=1; text=M.MOk; default=1;    },
+    { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; },
     { tp="butt"; centergroup=1; text=M.MBtnDefaults; btnnoclose=1; name="reset"; },
   }
   local Pos = sd.Indexes(Items)
@@ -223,15 +223,16 @@ local function PanelDialog  (aOp, aData, aScriptCall)
   insert(Items, { tp="chbox"; name="bUseFileFilter";  text=M.MDlgUseFileFilter; x1=40; })
   insert(Items, { tp="butt";  name="btnFileFilter";   text=M.MDlgBtnFileFilter; x1=X2; y1=""; btnnoclose=1; })
   insert(Items, { tp="sep"; })
-  insert(Items, { tp="butt"; centergroup=1; text=M.MOk; default=1; name="btnOk"; })
-  insert(Items, { tp="butt"; centergroup=1; text=M.MBtnDirFilter; name="btnConfig"; }) --TODO
-  insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnPresets; name="btnPresets"; btnnoclose=1; })
+  insert(Items, { tp="butt"; centergroup=1; text=M.MOk; default=1; name="btnOk";        })
+  insert(Items, { tp="butt"; centergroup=1; text=M.MBtnDirFilter;  name="btnDirFilter"; btnnoclose=1; })
+  insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnPresets; name="btnPresets";   btnnoclose=1; })
+  insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnConfig;  name="btnConfig";    btnnoclose=1; })
   insert(Items, { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; })
   ------------------------------------------------------------------------------
   local Pos,Elem = sd.Indexes(Items)
 
   local function SetBtnFilterText(hDlg)
-    hDlg:SetText(Pos.btnConfig, M.MBtnDirFilter..(aData[Excl_Key] and "*" or ""))
+    hDlg:SetText(Pos.btnDirFilter, M.MBtnDirFilter..(aData[Excl_Key] and "*" or ""))
   end
 
   function Items.proc (hDlg, msg, param1, param2)
@@ -256,15 +257,24 @@ local function PanelDialog  (aOp, aData, aScriptCall)
     elseif msg == F.DN_BTNCLICK then
       if param1 == Pos.bUseFileFilter then
         hDlg:Enable(Pos.btnFileFilter, hDlg:GetCheck(Pos.bUseFileFilter))
-        NeedCallFrame = false
       elseif param1 == Pos.btnFileFilter then
         local filter = far.CreateFileFilter(1, "FFT_FINDFILE")
         if filter and filter:OpenFiltersMenu() then aData.FileFilter = filter end
-        NeedCallFrame = false
       elseif param1 == Pos.btnPresets then
         Frame:DoPresets(hDlg)
         hDlg:SetFocus(Pos.btnOk)
-        NeedCallFrame = false
+      elseif param1 == Pos.btnDirFilter then
+        hDlg:ShowDialog(0)
+        if DirFilterDialog(aData) then
+          SetBtnFilterText(hDlg)
+        end
+        hDlg:ShowDialog(1)
+        hDlg:SetFocus(Pos.btnOk)
+      elseif param1 == Pos.btnConfig then
+        hDlg:ShowDialog(0)
+        ConfigDialog()
+        hDlg:ShowDialog(1)
+        hDlg:SetFocus(Pos.btnOk)
       end
     --------------------------------------------------------------------------------------
     elseif msg == F.DN_KEY then
@@ -281,16 +291,7 @@ local function PanelDialog  (aOp, aData, aScriptCall)
       end
     --------------------------------------------------------------------------------------
     elseif msg == F.DN_CLOSE then
-      if Pos.btnConfig and param1 == Pos.btnConfig then
-        hDlg:ShowDialog(0)
-        --ConfigDialog(aHistory) --TODO
-        if DirFilterDialog(aData) then
-          SetBtnFilterText(hDlg)
-        end
-        hDlg:ShowDialog(1)
-        hDlg:SetFocus(Pos.btnOk)
-        return 0
-      elseif param1 == Pos.btnOk then
+      if param1 == Pos.btnOk then
         if not hDlg:GetText(Pos.sFileMask):find("%S") then
           far.Message(M.MInvalidFileMask, M.MError, ";Ok", "w")
           return 0
