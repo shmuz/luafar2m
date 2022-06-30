@@ -1,4 +1,4 @@
-﻿-- Note: false, nil, true - placed in the group of "literals" rather than "keywords".
+-- Note: false, nil, true - placed in the group of "literals" rather than "keywords".
 local syntax_lua =
 {
   bgcolor = "darkblue";

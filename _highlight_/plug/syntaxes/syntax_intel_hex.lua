@@ -1,4 +1,4 @@
-﻿local syntax_hex =
+local syntax_hex =
 {
   bgcolor = "darkblue";
   {

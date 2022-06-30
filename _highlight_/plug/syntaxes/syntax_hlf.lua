@@ -1,4 +1,4 @@
-﻿local syntax_hlf =
+local syntax_hlf =
 {
   bgcolor = "darkblue";
   {

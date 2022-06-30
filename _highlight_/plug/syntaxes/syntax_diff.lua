@@ -1,4 +1,4 @@
-﻿local syntax_diff =
+local syntax_diff =
 {
   bgcolor = "darkblue";
   {

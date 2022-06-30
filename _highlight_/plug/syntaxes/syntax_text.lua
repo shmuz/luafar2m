@@ -1,4 +1,4 @@
-﻿local syntax_text =
+local syntax_text =
 {
   bgcolor = "darkblue";
   bracketmatch = true;

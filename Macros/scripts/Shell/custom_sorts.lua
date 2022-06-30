@@ -1,4 +1,4 @@
-﻿do return end
+do return end
 if not (bit and jit and Panel.LoadCustomSortMode) then return end
 
 local ffi=require'ffi'

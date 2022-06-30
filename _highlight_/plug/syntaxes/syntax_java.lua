@@ -1,4 +1,4 @@
-﻿local syntax_java =
+local syntax_java =
 {
   bgcolor = "darkblue";
   bracketmatch = true;

@@ -1,4 +1,4 @@
-﻿local syntax_cpp =
+local syntax_cpp =
 {
   bgcolor = "darkblue";
   bracketmatch = true;

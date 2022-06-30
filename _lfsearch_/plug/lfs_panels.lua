@@ -1,15 +1,14 @@
 -- lfs_panels.lua
 -- luacheck: globals _Plugin
 
-local M      = require "lfs_message"
-local Common = require "lfs_common"
-local sd     = require "far2.simpledialog"
-local Sett   = require "far2.settings"
+local M         = require "lfs_message"
+local Common    = require "lfs_common"
+local libReader = require "reader"
+local sd        = require "far2.simpledialog"
 
 local TmpPan = require "far2.tmppanel"
 TmpPan.SetMessageTable(M) -- message localization support
 
-local field = Sett.field
 local CheckSearchArea   = Common.CheckSearchArea
 local GetSearchAreas    = Common.GetSearchAreas
 local IndexToSearchArea = Common.IndexToSearchArea
@@ -383,6 +382,17 @@ local function GetActiveCodePages (aData)
   return { win.GetOEMCP(), win.GetACP(), 1200, 1201, 65000, 65001 }
 end
 
+local function CheckBoms (str)
+  if str then
+    local find = string.find
+    if find(str, "^\254\255")         then return { 1201  }, 2 -- UTF16BE
+    elseif find(str, "^\255\254")     then return { 1200  }, 2 -- UTF16LE
+    elseif find(str, "^%+/v[89+/]")   then return { 65000 }, 4 -- UTF7
+    elseif find(str, "^\239\187\191") then return { 65001 }, 3 -- UTF8
+    end
+  end
+end
+
 local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   local tParams
   if aWithDialog then
@@ -403,13 +413,18 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   local TITLE = M.MTitleSearching
   local Regex = tParams.Regex
   local Find = Regex.find
-  local BLOCKLEN, OVERLAP = 32*1024, -1024
   ----------------------------------------------------------------------------
   local activeCodePages = GetActiveCodePages(aData)
+  local userbreak
   local panelInfo = panel.GetPanelInfo(1)
   local area = CheckSearchArea(aData.sSearchArea) -- can throw error
   local bRecurse, bSymLinks
   local itemList, flags = MakeItemList(panelInfo, area)
+
+  local bTextSearch = (tParams.tMultiPatterns and tParams.tMultiPatterns.NumPatterns > 0) or
+                      (not tParams.tMultiPatterns and tParams.sSearchPat ~= "")
+  local reader = bTextSearch and assert(libReader.new(4*1024*1024)) -- (default = 4 MiB)
+
   if aData.bSearchSymLinks then
     bSymLinks = true
   end
@@ -417,7 +432,6 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     bRecurse = true
   end
   -----------------------------------------------------------------------------
-  local userbreak
   local function ConfirmEsc()
     if 1 == far.Message(M.MConfirmCancel, M.MInterrupted, ";YesNo", "w") then
       userbreak = true; return true
@@ -477,8 +491,14 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
       return
     end
     ---------------------------------------------------------------------------
-    local fp = io.open(fullname, "rb")
-    if not fp then return end
+    if not reader:openfile(fullname) then return end
+    local str = reader:get_next_overlapped_chunk()
+    local currCodePages, len = CheckBoms(str)
+    if currCodePages then
+      str = string.sub(str, len+1)
+    else
+      currCodePages = activeCodePages
+    end
     ---------------------------------------------------------------------------
     local found, stop
     local tPlus, uMinus, uUsual
@@ -489,15 +509,12 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     end
 
     ShowProgress(fullname)
-    local str = ""
-    repeat
+    while str do
       if win.ExtractKey() == "ESCAPE" and ConfirmEsc2() then
-        fp:close(); return userbreak
+        reader:closefile()
+        return userbreak
       end
-      if #str == BLOCKLEN then fp:seek("cur", OVERLAP) end
-      str = fp:read(BLOCKLEN)
-      if not str then break end
-      for _, cp in ipairs(activeCodePages) do
+      for _, cp in ipairs(currCodePages) do
         local s = (cp == 1200 or cp == 65001) and str or
                   (cp == 1201) and SwapEndian(str) or
                   MultiByteToWideChar(str, cp)
@@ -526,8 +543,11 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
           end
         end
       end
-    until found or stop
-
+      if found or stop then
+        break
+      end
+      str = reader:get_next_overlapped_chunk()
+    end
     if tPlus then
       found = found or not (stop or next(tPlus) or uUsual)
     end
@@ -535,8 +555,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
       cnt = cnt+1
       tFoundFiles[cnt] = fullname
     end
-
-    fp:close()
+    reader:closefile()
   end
 
   local FileFilter = tParams.FileFilter

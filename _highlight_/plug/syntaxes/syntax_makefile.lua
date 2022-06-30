@@ -1,4 +1,4 @@
-﻿local syntax_makefile =
+local syntax_makefile =
 {
   bgcolor = "darkblue";
   bracketmatch = true;

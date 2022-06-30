@@ -1,4 +1,4 @@
-﻿local syntax_grep =
+local syntax_grep =
 {
   bgcolor = "darkblue";
   {

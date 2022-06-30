@@ -1,4 +1,4 @@
-﻿local syntax_batch =
+local syntax_batch =
 {
   bgcolor = "darkblue";
   {

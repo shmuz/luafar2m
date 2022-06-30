@@ -1,4 +1,4 @@
-﻿local syntax_lng =
+local syntax_lng =
 {
   bgcolor = "darkblue";
   {

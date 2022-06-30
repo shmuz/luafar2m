@@ -1,4 +1,4 @@
-﻿local syntax_python =
+local syntax_python =
 {
   bgcolor = "darkblue";
   bracketmatch = true;

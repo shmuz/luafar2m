@@ -1,4 +1,4 @@
-﻿local syntax_srec =
+local syntax_srec =
 {
   bgcolor = "darkblue";
   {

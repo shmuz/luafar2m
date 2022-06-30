@@ -14,7 +14,7 @@ local Sett       = require "far2.settings"
 local M          = require "lfh_message"
 local F          = far.Flags
 local Field      = Sett.field
-local band, bor  = bit.band, bit.bor
+local band, bor  = bit64.band, bit64.bor
 
 local DefaultCfg = {
   bDynResize  = true,

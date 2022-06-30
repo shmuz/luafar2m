@@ -1,4 +1,4 @@
-﻿local syntax_pascal =
+local syntax_pascal =
 {
   bgcolor = "darkblue";
   bracketmatch = true;

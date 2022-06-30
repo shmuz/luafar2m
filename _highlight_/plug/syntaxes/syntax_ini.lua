@@ -1,4 +1,4 @@
-﻿local syntax_ini =
+local syntax_ini =
 {
   bgcolor = "darkblue";
   {

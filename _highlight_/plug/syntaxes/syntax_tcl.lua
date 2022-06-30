@@ -1,4 +1,4 @@
-﻿local syntax_tcl =
+local syntax_tcl =
 {
   bgcolor = "darkblue";
   bracketmatch = true;
