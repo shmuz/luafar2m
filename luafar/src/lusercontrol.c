@@ -93,7 +93,7 @@ static int uc_New(lua_State* L)
 	return 1;
 }
 
-const luaL_Reg usercontrol_methods[] =
+static const luaL_Reg usercontrol_methods[] =
 {
 	{"__tostring", uc_tostring},
 	{"__len", uc_len},
@@ -102,7 +102,7 @@ const luaL_Reg usercontrol_methods[] =
 	{NULL, NULL}
 };
 
-const luaL_Reg usercontrol_functions[] =
+static const luaL_Reg usercontrol_functions[] =
 {
 	{"CreateUserControl", uc_New},
 	{NULL, NULL}

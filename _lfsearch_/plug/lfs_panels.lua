@@ -2,16 +2,21 @@
 -- luacheck: globals _Plugin
 
 local M         = require "lfs_message"
-local Common    = require "lfs_common"
+local libCommon = require "lfs_common"
 local libReader = require "reader"
 local sd        = require "far2.simpledialog"
 
-local TmpPan = require "far2.tmppanel"
-TmpPan.SetMessageTable(M) -- message localization support
+local libTmpPanel = require "far2.tmppanel"
+libTmpPanel.SetMessageTable(M) -- message localization support
 
-local CheckSearchArea   = Common.CheckSearchArea
-local GetSearchAreas    = Common.GetSearchAreas
-local IndexToSearchArea = Common.IndexToSearchArea
+local CheckSearchArea    = libCommon.CheckSearchArea
+local CreateSRFrame      = libCommon.CreateSRFrame
+local DisplaySearchState = libCommon.DisplaySearchState
+local GetSearchAreas     = libCommon.GetSearchAreas
+local IndexToSearchArea  = libCommon.IndexToSearchArea
+local NewUserBreak       = libCommon.NewUserBreak
+local ProcessDialogData  = libCommon.ProcessDialogData
+local SaveCodePageCombo  = libCommon.SaveCodePageCombo
 
 local Excl_Key = "sExcludeDirs"
 
@@ -203,7 +208,7 @@ local function PanelDialog  (aOp, aData, aScriptCall)
     help = "OperInPanels";
     guid = aOp=="search" and searchGuid or aOp=="replace" and replaceGuid or grepGuid;
   }
-  local Frame = Common.CreateSRFrame(Items, aData, false)
+  local Frame = CreateSRFrame(Items, aData, false)
   ------------------------------------------------------------------------------
   insert(Items, { tp="dbox"; text=M.MTitlePanels; })
   insert(Items, { tp="text"; text=M.MFileMask; })
@@ -310,7 +315,7 @@ local function PanelDialog  (aOp, aData, aScriptCall)
       --------------------------------------------------------------------------
       -- store selected code pages no matter what user pressed: OK or Esc.
       if Pos.cmbCodePage then
-        Common.SaveCodePageCombo(hDlg, Pos.cmbCodePage, Elem.cmbCodePage.list, aData, param1==Pos.btnOk)
+        SaveCodePageCombo(hDlg, Pos.cmbCodePage, Elem.cmbCodePage.list, aData, param1==Pos.btnOk)
       end
       --------------------------------------------------------------------------
     end
@@ -398,7 +403,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   if aWithDialog then
     tParams = PanelDialog("search", aData, aScriptCall)
   else
-    tParams = Common.ProcessDialogData(aData, false, false, true)
+    tParams = ProcessDialogData(aData, false, false, true)
   end
   if not tParams then return end
   ----------------------------------------------------------------------------
@@ -407,68 +412,32 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   aData.sLastOp = "search"
   aData.bSearchBack = false
   ----------------------------------------------------------------------------
-  local WID = 60
-  local W1 = 3
-  local W2 = WID - W1 - 3
-  local TITLE = M.MTitleSearching
+  local activeCodePages = GetActiveCodePages(aData)
+  local userbreak = NewUserBreak()
+  local tFoundFiles, nTotalFiles = {}, 0
   local Regex = tParams.Regex
   local Find = Regex.find
-  ----------------------------------------------------------------------------
-  local activeCodePages = GetActiveCodePages(aData)
-  local userbreak
-  local panelInfo = panel.GetPanelInfo(1)
-  local area = CheckSearchArea(aData.sSearchArea) -- can throw error
-  local bRecurse, bSymLinks
-  local itemList, flags = MakeItemList(panelInfo, area)
-
   local bTextSearch = (tParams.tMultiPatterns and tParams.tMultiPatterns.NumPatterns > 0) or
                       (not tParams.tMultiPatterns and tParams.sSearchPat ~= "")
   local reader = bTextSearch and assert(libReader.new(4*1024*1024)) -- (default = 4 MiB)
 
-  if aData.bSearchSymLinks then
-    bSymLinks = true
-  end
-  if band(flags, F.FRS_RECUR) ~= 0 then
-    bRecurse = true
-  end
+  local panelInfo = panel.GetPanelInfo(1)
+  local area = CheckSearchArea(aData.sSearchArea) -- can throw error
+  local itemList, flags = MakeItemList(panelInfo, area)
+  local bRecurse = band(flags, F.FRS_RECUR) ~= 0
+  local bSymLinks = aData.bSearchSymLinks
+
   -----------------------------------------------------------------------------
-  local function ConfirmEsc()
-    if 1 == far.Message(M.MConfirmCancel, M.MInterrupted, ";YesNo", "w") then
-      userbreak = true; return true
-    end
-  end
-
-  local function ConfirmEsc2()
-    local r = far.Message(M.MConfirmCancel, M.MInterrupted, M.MButtonsCancelOnFile, "w")
-    if r==1 then userbreak = true end
-    return r==1 or r==2
-  end
-  local tFoundFiles, cnt, nShow = {}, 0, 0
-  far.Message((" "):rep(WID).."\n"..M.MFilesFound.."0", TITLE, "")
-
-  local function ShowProgress(fullname)
-    local len = fullname:len()
-    local s = len<=WID and fullname..(" "):rep(WID-len) or
-              fullname:sub(1,W1).. "..." .. fullname:sub(-W2)
-    far.Message(s.."\n"..M.MFilesFound..cnt, TITLE, "")
-  end
-
-  local function ProcessFile(fdata, fullname, file_filter, mask_incl, mask_excl, mask_dirs)
-    ---------------------------------------------------------------------------
-    if win.ExtractKey()=="ESCAPE" and ConfirmEsc() then return true end
+  local function Search_ProcessFile(fdata, fullname, file_filter, mask_files, mask_dirs)
     ---------------------------------------------------------------------------
     if file_filter and not file_filter:IsFileInFilter(fdata) then return end
     ---------------------------------------------------------------------------
-    nShow = nShow + 1
-    if nShow % 32 == 0 then ShowProgress(fullname) end
-    ---------------------------------------------------------------------------
-    local mask_ok = far.ProcessName(F.PN_CMPNAMELIST, mask_incl, fdata.FileName, F.PN_SKIPPATH) and
-      not (mask_excl and far.ProcessName(F.PN_CMPNAMELIST, mask_excl, fdata.FileName, F.PN_SKIPPATH))
+    local mask_ok = far.ProcessName(F.PN_CMPNAMELIST, mask_files, fdata.FileName, F.PN_SKIPPATH)
     ---------------------------------------------------------------------------
     if fdata.FileAttributes:find("d") then
       if mask_ok and aData.bSearchFolders and aData.sSearchPat == "" then
-        cnt = cnt+1
-        tFoundFiles[cnt] = fullname
+        nTotalFiles = nTotalFiles+1
+        tFoundFiles[nTotalFiles] = fullname
       end
       ---------------------------------------------------------------------------
       if mask_dirs and far.ProcessName(F.PN_CMPNAMELIST, mask_dirs, fullname, F.PN_SKIPPATH) then
@@ -477,18 +446,22 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
       ---------------------------------------------------------------------------
       if bRecurse then
         if bSymLinks or not fdata.FileAttributes:find("e") then
-          return far.RecursiveSearch(fullname, "*", ProcessFile, 0, file_filter, mask_incl, mask_excl, mask_dirs)
+          return far.RecursiveSearch(fullname, "*", Search_ProcessFile, 0, file_filter, mask_files, mask_dirs)
         end
       end
-      return
+      return DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, 0, userbreak) and "break"
     end
     ---------------------------------------------------------------------------
     if not mask_ok then return end
     ---------------------------------------------------------------------------
     if tParams.sSearchPat == "" then
-      cnt = cnt+1
-      tFoundFiles[cnt] = fullname
+      nTotalFiles = nTotalFiles+1
+      tFoundFiles[nTotalFiles] = fullname
       return
+    end
+    ---------------------------------------------------------------------------
+    if DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, 0, userbreak) then
+      return "break"
     end
     ---------------------------------------------------------------------------
     if not reader:openfile(fullname) then return end
@@ -508,11 +481,10 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
       tPlus = {}; for k,v in pairs(t.Plus) do tPlus[k]=v end -- copy; do not use the original table directly!
     end
 
-    ShowProgress(fullname)
     while str do
-      if win.ExtractKey() == "ESCAPE" and ConfirmEsc2() then
+      if userbreak:ConfirmEscape("in_file") then
         reader:closefile()
-        return userbreak
+        return userbreak.fullcancel and "break"
       end
       for _, cp in ipairs(currCodePages) do
         local s = (cp == 1200 or cp == 65001) and str or
@@ -546,14 +518,18 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
       if found or stop then
         break
       end
+      if fdata.FileSize >= 0x100000 then
+        local pos = reader:ftell()
+        DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, pos/fdata.FileSize)
+      end
       str = reader:get_next_overlapped_chunk()
     end
     if tPlus then
       found = found or not (stop or next(tPlus) or uUsual)
     end
     if not found ~= not tParams.bInverseSearch then
-      cnt = cnt+1
-      tFoundFiles[cnt] = fullname
+      nTotalFiles = nTotalFiles+1
+      tFoundFiles[nTotalFiles] = fullname
     end
     reader:closefile()
   end
@@ -566,23 +542,16 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     local isFile = fdata and not fdata.FileAttributes:find("d")
     ---------------------------------------------------------------------------
     if isFile or ((area=="FromCurrFolder" or area=="OnlyCurrFolder") and panelInfo.Plugin) then
-      ProcessFile(fdata, item, FileFilter, "*")
+      Search_ProcessFile(fdata, item, FileFilter, "*")
     end
     if not isFile and not (area == "OnlyCurrFolder" and panelInfo.Plugin) then
-      local mask_incl, mask_excl = aData.sFileMask:match("(.-)|(.*)")
-      if mask_incl then
-        if mask_incl=="" then mask_incl = "*" end
-        if mask_excl=="" then mask_excl = nil end
-      else
-        mask_incl = aData.sFileMask
-      end
-      far.RecursiveSearch(item, "*", ProcessFile, 0, FileFilter, mask_incl, mask_excl, aData[Excl_Key])
+      far.RecursiveSearch(item, "*", Search_ProcessFile, 0, FileFilter, aData.sFileMask, aData[Excl_Key])
     end
     ---------------------------------------------------------------------------
-    if userbreak then break end
+    if userbreak.fullcancel then break end
   end
 
-  return tFoundFiles, userbreak
+  return tFoundFiles, userbreak.fullcancel
 end
 
 local function CreateTmpPanel (tFileList, tData)
@@ -591,7 +560,7 @@ local function CreateTmpPanel (tFileList, tData)
   t.Opt = setmetatable({}, { __index=tData or TmpPanelDefaults })
   t.Opt.CommonPanel = false
   t.Opt.Mask = "*.temp" -- make possible to reopen saved panels with the standard TmpPanel plugin
-  local env = TmpPan.NewEnv(t)
+  local env = libTmpPanel.NewEnv(t)
   local panel = env:NewPanel()
   panel:ReplaceFiles(tFileList)
   return panel
@@ -603,7 +572,7 @@ local function InitTmpPanel()
     if history[k] == nil then history[k] = v end
   end
 
-  TmpPan.PutExportedFunctions(export)
+  libTmpPanel.PutExportedFunctions(export)
   export.SetFindList = nil
 
   local tpGetOpenPluginInfo = export.GetOpenPluginInfo

@@ -5152,7 +5152,7 @@ int win_IsProcess64bit(lua_State *L)
   return 1;
 }
 
-const luaL_Reg filefilter_methods[] = {
+static const luaL_Reg filefilter_methods[] = {
   {"__gc",             filefilter_gc},
   {"__tostring",       filefilter_tostring},
   {"FreeFileFilter",   filefilter_Free},
@@ -5162,7 +5162,7 @@ const luaL_Reg filefilter_methods[] = {
   {NULL, NULL},
 };
 
-const luaL_Reg dialog_methods[] = {
+static const luaL_Reg dialog_methods[] = {
   {"__gc",                 far_DialogFree},
   {"__tostring",           dialog_tostring},
   {"rawhandle",            dialog_rawhandle},
@@ -5238,7 +5238,7 @@ const luaL_Reg dialog_methods[] = {
   {NULL, NULL},
 };
 
-const luaL_Reg actl_funcs[] =
+static const luaL_Reg actl_funcs[] =
 {
   {"Commit",                adv_Commit},
   {"EjectMedia",            adv_EjectMedia},
@@ -5271,7 +5271,7 @@ const luaL_Reg actl_funcs[] =
   {NULL, NULL},
 };
 
-const luaL_Reg regex_funcs[] =
+static const luaL_Reg regex_funcs[] =
 {
   {"find",   far_Find},
   {"gmatch", far_Gmatch},
@@ -5282,7 +5282,7 @@ const luaL_Reg regex_funcs[] =
   {NULL, NULL},
 };
 
-const luaL_Reg viewer_funcs[] =
+static const luaL_Reg viewer_funcs[] =
 {
   {"Viewer",        viewer_Viewer},
   {"GetFileName",   viewer_GetFileName},
@@ -5296,7 +5296,7 @@ const luaL_Reg viewer_funcs[] =
   {NULL, NULL},
 };
 
-const luaL_Reg editor_funcs[] =
+static const luaL_Reg editor_funcs[] =
 {
   {"AddColor",            editor_AddColor},
   {"AddStackBookmark",    editor_AddStackBookmark},
@@ -5339,7 +5339,7 @@ const luaL_Reg editor_funcs[] =
   {NULL, NULL},
 };
 
-const luaL_Reg panel_funcs[] =
+static const luaL_Reg panel_funcs[] =
 {
   {"BeginSelection",          panel_BeginSelection},
   {"CheckPanelsExist",        panel_CheckPanelsExist},
@@ -5379,7 +5379,7 @@ const luaL_Reg panel_funcs[] =
   {NULL, NULL},
 };
 
-const luaL_Reg win_funcs[] = {
+static const luaL_Reg win_funcs[] = {
   {"GetConsoleScreenBufferInfo", win_GetConsoleScreenBufferInfo},
   {"CopyFile",                   win_CopyFile},
   {"DeleteFile",                 win_DeleteFile},
@@ -5423,7 +5423,7 @@ const luaL_Reg win_funcs[] = {
   {NULL, NULL},
 };
 
-const luaL_Reg far_funcs[] = {
+static const luaL_Reg far_funcs[] = {
   {"PluginStartupInfo",   far_PluginStartupInfo},
   {"GetPluginId",         far_GetPluginId},
 

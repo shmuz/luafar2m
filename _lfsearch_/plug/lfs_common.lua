@@ -7,6 +7,7 @@ local sd      = require "far2.simpledialog"
 
 local band, bnot, bor = bit64.band, bit64.bnot, bit64.bor
 local Utf8, Utf16 = win.Utf16ToUtf8, win.Utf8ToUtf16
+local uchar = ("").char
 local F = far.Flags
 local KEEP_DIALOG_OPEN = 0
 
@@ -223,6 +224,80 @@ local function EditorConfigDialog()
     Data.EditorHighlightColor = hColor0
     _Plugin.SaveSettings()
     return true
+  end
+end
+
+
+local TUserBreak = {
+  time       = nil;
+  cancel     = nil;
+  fullcancel = nil;
+}
+local UserBreakMeta = { __index=TUserBreak }
+
+local function NewUserBreak()
+  return setmetatable({ time=0 }, UserBreakMeta)
+end
+
+function TUserBreak:ConfirmEscape (in_file)
+  local ret
+  if win.ExtractKey() == "ESCAPE" then
+    local hScreen = far.SaveScreen()
+    local msg = M.MInterrupted.."\n"..M.MConfirmCancel
+    local t1 = os.clock()
+    if in_file then
+      -- [Cancel current file] [Cancel all files] [Continue]
+      local r = far.Message(msg, M.MMenuTitle, M.MButtonsCancelOnFile, "w")
+      if r == 2 then
+        self.fullcancel = true
+      end
+      ret = r==1 or r==2
+    else
+      -- [Yes] [No]
+      local r = far.Message(msg, M.MMenuTitle, M.MBtnYesNo, "w")
+      if r == 1 then
+        self.fullcancel = true
+        ret = true
+      end
+    end
+    self.time = self.time + os.clock() - t1
+    far.RestoreScreen(hScreen); far.Text();
+  end
+  return ret
+end
+
+function TUserBreak:fInterrupt()
+  local c = self:ConfirmEscape("in_file")
+  self.cancel = c
+  return c
+end
+
+
+local function set_progress (LEN, ratio, space)
+  space = space or ""
+  local uchar1, uchar2 = uchar(9608), uchar(9617)
+  local len = math.floor(ratio*LEN + 0.5)
+  local text = uchar1:rep(len) .. uchar2:rep(LEN-len) .. space .. ("%3d%%"):format(ratio*100)
+  return text
+end
+
+
+local DisplaySearchState do
+  local lastclock = 0
+  local wMsg, wHead = 60, 10
+  local wTail = wMsg - wHead - 3
+  DisplaySearchState = function (fullname, cntFound, cntTotal, ratio, userbreak)
+    local newclock = win.Clock()
+    if newclock >= lastclock then
+      lastclock = newclock + 0.2 -- period = 0.2 sec
+      local len = fullname:len()
+      local s = len<=wMsg and fullname..(" "):rep(wMsg-len) or
+                fullname:sub(1,wHead).. "..." .. fullname:sub(-wTail)
+      far.Message(
+        (s.."\n") .. (set_progress(wMsg-4, ratio).."\n") .. (M.MFilesFound..cntFound.."/"..cntTotal),
+        M.MTitleSearching, "")
+      return userbreak and userbreak:ConfirmEscape()
+    end
   end
 end
 
@@ -925,6 +1000,7 @@ return {
   EditorConfigDialog = EditorConfigDialog;
   CheckSearchArea    = CheckSearchArea;
   CreateSRFrame      = CreateSRFrame;
+  DisplaySearchState = DisplaySearchState;
   ErrorMsg           = ErrorMsg;
   FormatInt          = FormatInt;
   FormatTime         = FormatTime;
@@ -934,6 +1010,7 @@ return {
   GetWordUnderCursor = GetWordUnderCursor;
   GsubMB             = MakeGsub("multibyte");
   IndexToSearchArea  = IndexToSearchArea;
+  NewUserBreak       = NewUserBreak;
   ProcessDialogData  = ProcessDialogData;
   SaveCodePageCombo  = SaveCodePageCombo;
 }

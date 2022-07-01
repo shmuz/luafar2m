@@ -311,7 +311,7 @@ int timer_newindex (lua_State *L)
   return 0;
 }
 
-const luaL_Reg timer_methods[] = {
+static const luaL_Reg timer_methods[] = {
   {"__gc",             timer_Close},
   {"__tostring",       timer_tostring},
   {"__index",          timer_index},

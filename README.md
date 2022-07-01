@@ -1,14 +1,14 @@
 ## What is it
 
 This repository contains LuaFAR2L library for writing plugins
-for [Far2L](https://github.com/elfmz/far2l)
+for my [Far2L fork](https://github.com/shmuz/far2l)
 in [Lua](https://www.lua.org/) 5.1 programming language.
 It also contains a few luafar plugins and various utilities
 for Far2L written in Lua.
 
 ## Prerequisites
 
-Either Lua 5.1 or LuaJIT 2.1 (configurable in `config.mak`)
+Either LuaJIT 2.1 or Lua 5.1 (configurable in `config.mak`)
 
 ## How to build
 
