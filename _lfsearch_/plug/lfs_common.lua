@@ -6,7 +6,7 @@ local RepLib  = require "lfs_replib"
 local sd      = require "far2.simpledialog"
 
 local band, bnot, bor = bit64.band, bit64.bnot, bit64.bor
-local Utf8, Utf16 = win.Utf16ToUtf8, win.Utf8ToUtf16
+local Utf8, Utf32 = win.Utf32ToUtf8, win.Utf8ToUtf32
 local uchar = ("").char
 local F = far.Flags
 local KEEP_DIALOG_OPEN = 0
@@ -961,7 +961,7 @@ end
 local function GetReplaceFunction (aReplacePat, is_wide)
   local fSame = function(s) return s end
   local U8 = is_wide and Utf8 or fSame
-  local U16 = is_wide and Utf16 or fSame
+  local U32 = is_wide and Utf32 or fSame
 
   if type(aReplacePat) == "function" then
     return is_wide and
@@ -973,8 +973,8 @@ local function GetReplaceFunction (aReplacePat, is_wide)
         end
         local R1,R2 = aReplacePat(ccopy,nMatch,nReps+1,nLine)
         local tp1 = type(R1)
-        if     tp1 == "string" then R1 = U16(R1)
-        elseif tp1 == "number" then R1 = U16(tostring(R1))
+        if     tp1 == "string" then R1 = U32(R1)
+        elseif tp1 == "number" then R1 = U32(tostring(R1))
         end
         return R1, R2
       end or
@@ -985,7 +985,7 @@ local function GetReplaceFunction (aReplacePat, is_wide)
       end
 
   elseif type(aReplacePat) == "string" then
-    return function() return U16(aReplacePat) end
+    return function() return U32(aReplacePat) end
 
   elseif type(aReplacePat) == "table" then
     return RepLib.GetReplaceFunction(aReplacePat, is_wide)

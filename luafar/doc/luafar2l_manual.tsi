@@ -3134,9 +3134,9 @@ lv=2
 dt=Text
 nm=editor.GetStringW
 ctime=3863801209
-mtime=3863801320
+mtime=3865959577
 <article>
-#_Same as editor.GetString but *StringText* and *StringEOL* are encoded in UTF-16LE.
+#_Same as editor.GetString but *StringText* and *StringEOL* are encoded in UTF-32LE.
 #_
 #_@@@
 #_<lua>Links = { ["editor.GetString"]="31.html" }</lua>
@@ -5035,7 +5035,7 @@ lv=2
 dt=Text
 nm=far.MacroExecute
 ctime=3861727323
-mtime=3861763155
+mtime=3865959595
 <article>
 #_result = far.MacroExecute (SequenceText, Flags, ...)
 #_
@@ -5065,7 +5065,7 @@ mtime=3861763155
 #_    Type of userdata, produced by `bit64` library.
 #_  **"binary"**
 #_    By convention, it is a string enclosed in a table as its first element.
-#_    The string is intended to be passed to and from without conversions UTF-8 <-> UTF-16LE.
+#_    The string is intended to be passed to and from without conversions UTF-8 <-> UTF-32LE.
 #_
 #_**Far API used:**
 #_  MacroControl(MCTL_EXECSTRING)
@@ -7811,13 +7811,13 @@ nm=win.OemToUtf8
 id=264
 lv=3
 dt=Text
-nm=win.Utf16ToUtf8
-mtime=3491909511
+nm=win.Utf32ToUtf8
+mtime=3865959341
 <article>
-#_str_out = win.Utf16ToUtf8 (str_in)
+#_str_out = win.Utf32ToUtf8 (str_in)
 #_
 #_**Parameters:**
-#_  str_in  : string in UTF-16 (little endian) encoding
+#_  str_in  : string in UTF-32 (little endian) encoding
 #_
 #_**Returns:**
 #_  str_out : string in UTF-8 encoding
@@ -7849,16 +7849,16 @@ nm=win.Utf8ToOem
 id=265
 lv=3
 dt=Text
-nm=win.Utf8ToUtf16
-mtime=3491909525
+nm=win.Utf8ToUtf32
+mtime=3865959376
 <article>
-#_str_out = win.Utf8ToUtf16 (str_in)
+#_str_out = win.Utf8ToUtf32 (str_in)
 #_
 #_**Parameters:**
 #_  str_in  : string in UTF-8 encoding
 #_
 #_**Returns:**
-#_  str_out : string in UTF-16 (little endian) encoding
+#_  str_out : string in UTF-32 (little endian) encoding
 #_
 #_@@@
 #_

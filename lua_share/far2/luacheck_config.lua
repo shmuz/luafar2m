@@ -415,7 +415,7 @@ local luafar = {
         "GetFileAttr", "GetFileInfo", "GetOEMCP", "GetSystemTimeAsFileTime",
         "GetVirtualKeys", "IsProcess64bit", "MoveFile", "MultiByteToWideChar", "OemToUtf8",
         "RemoveDir", "RenameFile", "SetCurrentDir", "SetEnv", "SetFileAttr", "Sleep",
-        "SystemTimeToFileTime", "Utf16ToUtf8", "Utf8ToOem", "Utf8ToUtf16", "Uuid", "wcscmp",
+        "SystemTimeToFileTime", "Utf32ToUtf8", "Utf8ToOem", "Utf8ToUtf32", "Uuid", "wcscmp",
       };
     };
 

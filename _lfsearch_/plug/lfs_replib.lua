@@ -154,14 +154,14 @@ local function GetReplaceFunction (aReplacePat, is_wide)
   end
 
   local fSame = function(s) return s end
-  local U8, U16, sub, empty = fSame, fSame, ("").sub, ""
+  local U8, U32, sub, empty = fSame, fSame, ("").sub, ""
   if is_wide then
-    U8, U16, sub, empty = win.Utf16ToUtf8, win.Utf8ToUtf16, win.subW, win.Utf8ToUtf16("")
+    U8, U32, sub, empty = win.Utf32ToUtf8, win.Utf8ToUtf32, win.subW, win.Utf8ToUtf32("")
   end
   local cache = {} -- performance optimization
   for i,v in ipairs(aReplacePat) do
     if v[1] == "hex" or v[1] == "literal" or v[1] == "ngroup" then
-      cache[i] = U16(v[2])
+      cache[i] = U32(v[2])
     end
   end
   ---------------------------------------------------------------------------
@@ -182,7 +182,7 @@ local function GetReplaceFunction (aReplacePat, is_wide)
         end
       ---------------------------------------------------------------------
       elseif v[1] == "counter" then
-        rep = rep .. U16(("%%0%dd"):format(v[3]):format(nReps+v[2]))
+        rep = rep .. U32(("%%0%dd"):format(v[3]):format(nReps+v[2]))
       ---------------------------------------------------------------------
       elseif v[1] == "hex" then
         rep = rep .. cache[i]
@@ -198,11 +198,11 @@ local function GetReplaceFunction (aReplacePat, is_wide)
         if c ~= false then -- a capture *can* equal false
           if instant_case then
             local d = U8(c):sub(1,1)
-            rep = rep .. U16((instant_case=="l" and d:lower() or d:upper()))
+            rep = rep .. U32((instant_case=="l" and d:lower() or d:upper()))
             c = sub(c, 2)
           end
-          if case=="L" then rep = rep .. U16(U8(c):lower())
-          elseif case=="U" then rep = rep .. U16(U8(c):upper())
+          if case=="L" then rep = rep .. U32(U8(c):lower())
+          elseif case=="U" then rep = rep .. U32(U8(c):upper())
           else rep = rep .. c
           end
         end
@@ -211,7 +211,7 @@ local function GetReplaceFunction (aReplacePat, is_wide)
         if c then rep = rep .. c end
       elseif v[1] == "date" then
         local c = os.date(v[2])
-        if type(c)=="string" then rep = rep .. U16(c) end
+        if type(c)=="string" then rep = rep .. U32(c) end
       ---------------------------------------------------------------------
       end
       if not instant_case_set then

@@ -202,22 +202,6 @@ ffi.cdef[[
   } CustomSort;
 ]]
 
--- local function Utf16Buf (str)
---   str = win.Utf8ToUtf16(str)
---   local buf = ffi.new("wchar_t[?]", #str/2+1)
---   ffi.copy(buf, str, #str)
---   return buf
--- end
-
--- local function wcscmp(p1,p2)
---   local pos = 0
---   while p1[pos] == p2[pos] do
---     if p1[pos] == 0 then return 0 end
---     pos = pos + 1
---   end
---   return p1[pos] - p2[pos]
--- end
-
 local function IsTwoDots(p) return p[0]==46 and p[1]==46 and p[2]==0 end
 local function Empty(p) return p[0]==0 end
 

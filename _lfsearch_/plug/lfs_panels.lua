@@ -45,6 +45,7 @@ local KEY_SPACE   = F.KEY_SPACE
 
 local function SwapEndian (str)
   return (string.gsub(str, "(.)(.)", "%2%1"))
+--  return (string.gsub(str, "(.)(.)(.)(.)", "%4%3%2%1"))
 end
 
 local function ConfigDialog()
@@ -419,6 +420,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   local Find = Regex.find
   local bTextSearch = (tParams.tMultiPatterns and tParams.tMultiPatterns.NumPatterns > 0) or
                       (not tParams.tMultiPatterns and tParams.sSearchPat ~= "")
+  local bAcceptFolders = aData.bSearchFolders and not bTextSearch
   local reader = bTextSearch and assert(libReader.new(4*1024*1024)) -- (default = 4 MiB)
 
   local panelInfo = panel.GetPanelInfo(1)
@@ -435,36 +437,29 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     local mask_ok = far.ProcessName(F.PN_CMPNAMELIST, mask_files, fdata.FileName, F.PN_SKIPPATH)
     ---------------------------------------------------------------------------
     if fdata.FileAttributes:find("d") then
-      if mask_ok and aData.bSearchFolders and aData.sSearchPat == "" then
-        nTotalFiles = nTotalFiles+1
-        tFoundFiles[nTotalFiles] = fullname
+      if mask_ok and bAcceptFolders then
+        nTotalFiles = nTotalFiles + 1
+        table.insert(tFoundFiles, fullname)
       end
-      ---------------------------------------------------------------------------
-      if mask_dirs and far.ProcessName(F.PN_CMPNAMELIST, mask_dirs, fullname, F.PN_SKIPPATH) then
-        return
-      end
-      ---------------------------------------------------------------------------
+
       if bRecurse then
-        if bSymLinks or not fdata.FileAttributes:find("e") then
+        local skip = mask_dirs and far.ProcessName(F.PN_CMPNAMELIST, mask_dirs, fdata.FileName, F.PN_SKIPPATH)
+                     or not bSymLinks and fdata.FileAttributes:find("e")
+        if not skip then
           return far.RecursiveSearch(fullname, "*", Search_ProcessFile, 0, file_filter, mask_files, mask_dirs)
         end
       end
+
       return DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, 0, userbreak) and "break"
     end
     ---------------------------------------------------------------------------
     if not mask_ok then return end
-    ---------------------------------------------------------------------------
-    if tParams.sSearchPat == "" then
-      nTotalFiles = nTotalFiles+1
-      tFoundFiles[nTotalFiles] = fullname
-      return
-    end
-    ---------------------------------------------------------------------------
-    if DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, 0, userbreak) then
-      return "break"
-    end
-    ---------------------------------------------------------------------------
+    nTotalFiles = nTotalFiles + 1
+    if not bTextSearch then table.insert(tFoundFiles, fullname) end
+    if DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, 0, userbreak) then return "break" end
+    if not bTextSearch then return end
     if not reader:openfile(fullname) then return end
+    ---------------------------------------------------------------------------
     local str = reader:get_next_overlapped_chunk()
     local currCodePages, len = CheckBoms(str)
     if currCodePages then
@@ -522,14 +517,16 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
         local pos = reader:ftell()
         DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, pos/fdata.FileSize)
       end
+      if #str > 0x100000 then
+        str = nil; collectgarbage("collect") -- luacheck: ignore (overwritten before use)
+      end
       str = reader:get_next_overlapped_chunk()
     end
     if tPlus then
       found = found or not (stop or next(tPlus) or uUsual)
     end
     if not found ~= not tParams.bInverseSearch then
-      nTotalFiles = nTotalFiles+1
-      tFoundFiles[nTotalFiles] = fullname
+      table.insert(tFoundFiles, fullname)
     end
     reader:closefile()
   end

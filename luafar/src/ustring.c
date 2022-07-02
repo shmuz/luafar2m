@@ -270,7 +270,7 @@ int ustring_Utf8ToOem (lua_State *L)
   return 1;
 }
 
-int ustring_Utf16ToUtf8 (lua_State *L)
+int ustring_Utf32ToUtf8 (lua_State *L)
 {
   size_t len;
   const wchar_t *ws = (const wchar_t*) luaL_checklstring(L, 1, &len);
@@ -278,7 +278,7 @@ int ustring_Utf16ToUtf8 (lua_State *L)
   return 1;
 }
 
-int ustring_Utf8ToUtf16 (lua_State *L)
+int ustring_Utf8ToUtf32 (lua_State *L)
 {
   int len;
   const wchar_t *ws = check_utf8_string(L, 1, &len);

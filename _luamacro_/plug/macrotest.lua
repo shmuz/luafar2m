@@ -1360,7 +1360,7 @@ local function test_MacroControl()
 end
 
 local function test_RegexControl()
-  local L = win.Utf8ToUtf16
+  local L = win.Utf8ToUtf32
   local pat = "([bc]+)"
   local pat2 = "([bc]+)|(zz)"
   local rep = "%1%1"

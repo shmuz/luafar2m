@@ -53,6 +53,7 @@ local band, bor = bit64.band, bit64.bor
 -- constants
 local COMMONPANELSNUMBER = 10
 local BOM_UTF16LE = "\255\254"
+local BOM_UTF32LE = "\255\254\0\0"
 local BOM_UTF8 = "\239\187\191"
 
 local Opt = {
@@ -109,8 +110,8 @@ local function ListFromFile (aFileName)
       local strsub = string.sub
       if strsub(text, 1, 3) == BOM_UTF8 then
         text = strsub(text, 4)
-      elseif strsub(text, 1, 2) == BOM_UTF16LE then
-        text = win.Utf16ToUtf8(strsub(text, 3))
+      elseif strsub(text, 1, 4) == BOM_UTF32LE then
+        text = win.Utf32ToUtf8(strsub(text, 5))
       -- else -- default is UTF-8
         -- do nothing
       end
@@ -367,7 +368,6 @@ function Env:NewPanel (aOptions)
     Env = self,
     LastOwnersRead = false,
     LastLinksRead = false,
-    UpdateNeeded = true
   }
 
   newpanel.Opt = setmetatable({}, self.OptMeta)
@@ -566,17 +566,12 @@ end
 
 
 function Panel:UpdateItems (ShowOwners, ShowLinks)
---~   if not self.UpdateNeeded or #self:GetItems() == 0 then
---~     self.UpdateNeeded = true
---~     return
---~   end
-
   local hScreen = #self:GetItems() >= 1000 and far.SaveScreen()
   if hScreen then far.Message(M.MTempUpdate, M.MTempPanel, "") end
 
   self.LastOwnersRead = ShowOwners
   self.LastLinksRead = ShowLinks
-  self.RemoveTable = {}
+  local RemoveTable = {}
   local PanelItems = {}
   local items = self:GetItems()
   for i,v in ipairs(items) do
@@ -584,10 +579,10 @@ function Panel:UpdateItems (ShowOwners, ShowLinks)
     if panelitem then
       table.insert (PanelItems, panelitem)
     else
-      self.RemoveTable[i] = true
+      RemoveTable[i] = true
     end
   end
-  self:RemoveMarkedItems()
+  self:RemoveMarkedItems(RemoveTable)
 
   if ShowOwners or ShowLinks then
     for _,v in ipairs(PanelItems) do
@@ -758,13 +753,13 @@ function Panel:RemoveDuplicates ()
     v = v:gsub(pat, "")
   end
   table.sort(items, SortListCmp)
-  self.RemoveTable = {}
+  local RemoveTable = {}
   for i = 1, #items - 1 do
     if items[i]:upper() == items[i+1]:upper() then
-      self.RemoveTable[i] = true
+      RemoveTable[i] = true
     end
   end
-  self:RemoveMarkedItems()
+  self:RemoveMarkedItems(RemoveTable)
 end
 
 
@@ -774,7 +769,6 @@ end
 
 
 function Panel:PutFiles (Handle, PanelItems, Move, OpMode)
-  self.UpdateNeeded = true
   local hScreen = self:BeginPutFiles()
   for _,v in ipairs (PanelItems) do
     if not self:PutOneFile(v) then
@@ -840,15 +834,14 @@ function Panel:GetFindData (Handle, OpMode)
 end
 
 
-function Panel:RemoveMarkedItems()
-  if next(self.RemoveTable) then
+function Panel:RemoveMarkedItems (RemoveTable)
+  if next(RemoveTable) then
     local tb = {}
     local items = self:GetItems()
     for i,v in ipairs(items) do
-      if not self.RemoveTable[i] then table.insert (tb, v) end
+      if not RemoveTable[i] then table.insert(tb, v) end
     end
-    self.RemoveTable = nil
-    self:ReplaceFiles (tb)
+    self:ReplaceFiles(tb)
   end
 end
 
@@ -944,7 +937,6 @@ function Panel:SetFindList (Handle, PanelItems)
   end
   self:ReplaceFiles (newfiles)
   self:CommitPutFiles (hScreen)
-  self.UpdateNeeded = true
   return true
 end
 

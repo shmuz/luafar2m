@@ -49,8 +49,8 @@ local function GetRegex(sSearchPat, bCaseSens)
     ffi.gc(tmpHandle, function(h) RegExpControl(h[0], F.RECTL_FREE, 0) end)
     sSearchPat = "/"..sSearchPat.."/"
     if not bCaseSens then sSearchPat = sSearchPat.."i"; end
-    local Pat16 = win.Utf8ToUtf16(sSearchPat) .. "\0\0\0"
-    if 0 ~= RegExpControl(tmpHandle[0], F.RECTL_COMPILE, ffi.cast("LONG_PTR",Pat16)) then
+    local Pat32 = win.Utf8ToUtf32(sSearchPat) .. "\0\0\0"
+    if 0 ~= RegExpControl(tmpHandle[0], F.RECTL_COMPILE, ffi.cast("LONG_PTR",Pat32)) then
       return tmpHandle
     end
   end

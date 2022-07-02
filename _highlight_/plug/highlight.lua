@@ -16,10 +16,10 @@ MenuPos = MenuPos or 1
 
 if not rex.new then
   rex = require "rex_onig"
-  local Utf8ToUtf16 = win.Utf8ToUtf16
+  local Utf8ToUtf32 = win.Utf8ToUtf32
   local orig_new = rex.new
   rex.new = function (pat, cf, syn)
-    return orig_new(Utf8ToUtf16(pat), cf, "UTF32_LE", syn or "PERL_NG")
+    return orig_new(Utf8ToUtf32(pat), cf, "UTF32_LE", syn or "PERL_NG")
   end
 
   local methods = getmetatable(orig_new(".")).__index
@@ -87,7 +87,7 @@ local function template(str, ...)
   str = str:gsub("%%(.)",
     function(c)
       local n = tonumber(c)
-      return n and rep[n] and win.Utf16ToUtf8(rep[n]) or c
+      return n and rep[n] and win.Utf32ToUtf8(rep[n]) or c
     end)
   return str
 end

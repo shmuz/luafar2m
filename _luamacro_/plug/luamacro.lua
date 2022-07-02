@@ -56,7 +56,7 @@ function coroutine.resume(co, ...) return yield_resume(co, co_resume(co, ...)) e
 local ErrMsg = function(msg, title, buttons, flags)
   if type(msg)=="string" and not msg:utf8valid() and string.sub(msg,1,3)~="..." then
     local wstr = win.MultiByteToWideChar(msg, win.GetACP(), "e")
-    msg = wstr and win.Utf16ToUtf8(wstr) or msg
+    msg = wstr and win.Utf32ToUtf8(wstr) or msg
   end
   return far.Message(msg, title or "LuaMacro", buttons, flags or "wl")
 end
