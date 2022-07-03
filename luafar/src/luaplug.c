@@ -68,7 +68,10 @@ void LUAPLUG SetStartupInfoW(const PSInfo *aInfo)
 
 void LUAPLUG GetPluginInfoW(struct PluginInfo *Info)
 {
-  if(LS) LF_GetPluginInfo (LS, Info);
+  if(LS) {
+    LF_GetPluginInfo (LS, Info);
+    Info->SysID = SYS_ID;
+  }
 }
 //---------------------------------------------------------------------------
 

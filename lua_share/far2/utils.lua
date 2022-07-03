@@ -348,7 +348,7 @@ Macro call syntax:
 Available commands:
 ]]
 
-  syn = syn:format(info.CommandPrefix, info.SysId)
+  syn = syn:format(info.CommandPrefix, far.GetPluginId())
   if tCommands and next(tCommands) then
     local arr = {}
     for k in pairs(tCommands) do arr[#arr+1] = k end

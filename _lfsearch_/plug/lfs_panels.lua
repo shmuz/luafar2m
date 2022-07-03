@@ -35,7 +35,7 @@ local TmpPanelDefaults = {
   StatusColumnTypes        = "NR,SC,D,T",
   StatusColumnWidths       = "0,8,0,5",
   FullScreenPanel          = false,
-  StartSorting             = "14,0",
+  StartSorting             = "12,0", -- sort by full name
   PreserveContents         = true,
 }
 

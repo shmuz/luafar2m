@@ -720,7 +720,6 @@ local function export_GetPluginInfo()
     PluginMenuStrings = { M.MPluginName },
     PluginConfigStrings = { M.MPluginName },
     CommandPrefix = "lfe:edit:view:load:unload",
-    SysId = far.GetPluginId(),
   }
 end
 

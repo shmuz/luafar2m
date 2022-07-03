@@ -25,7 +25,6 @@ function export.GetPluginInfo()
     Flags = 0,
     PluginConfigStrings = { Title },
     PluginMenuStrings = { Title },
-    SysId = far.GetPluginId(),
   }
 end
 

@@ -317,7 +317,7 @@ id=105
 lv=2
 dt=Text
 nm=export.GetPluginInfo
-mtime=3504697062
+mtime=3866020707
 <article>
 #_PluginInfo = export.GetPluginInfo ()
 #_
@@ -332,7 +332,6 @@ mtime=3504697062
 #_      PluginMenuStrings:   table (array of strings)
 #_      PluginConfigStrings: table (array of strings)
 #_      CommandPrefix:       string
-#_      SysId:               integer
 #_
 #_@@@
 #_

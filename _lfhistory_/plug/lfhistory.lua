@@ -546,7 +546,6 @@ local function export_GetPluginInfo()
     Flags = bor(F.PF_EDITOR, F.PF_VIEWER),
     PluginConfigStrings = { M.mPluginTitle },
     PluginMenuStrings = { M.mPluginTitle },
-    SysId = far.GetPluginId(),
   }
 end
 

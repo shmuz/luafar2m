@@ -193,7 +193,6 @@ function export.GetPluginInfo()
     info.Flags = bor(info.Flags, F.PF_DISABLEPANELS)
   end
 
-  info.SysId = far.GetPluginId()
   return info
 end
 

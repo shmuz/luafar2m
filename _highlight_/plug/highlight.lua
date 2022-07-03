@@ -515,7 +515,6 @@ do
     Flags = bor(F.PF_EDITOR, F.PF_DISABLEPANELS),
     PluginMenuGuids = win.Uuid("BE07BD22-B463-4C8E-8BA2-2DA1497C9086"),
     PluginMenuStrings = { AppTitle },
-    SysId = far.GetPluginId(),
   }
   function export.GetPluginInfo() return info end
 end
