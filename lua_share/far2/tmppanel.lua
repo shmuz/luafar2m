@@ -52,7 +52,6 @@ local band, bor = bit64.band, bit64.bor
 
 -- constants
 local COMMONPANELSNUMBER = 10
-local BOM_UTF16LE = "\255\254"
 local BOM_UTF32LE = "\255\254\0\0"
 local BOM_UTF8 = "\239\187\191"
 
@@ -573,8 +572,7 @@ function Panel:UpdateItems (ShowOwners, ShowLinks)
   self.LastLinksRead = ShowLinks
   local RemoveTable = {}
   local PanelItems = {}
-  local items = self:GetItems()
-  for i,v in ipairs(items) do
+  for i,v in ipairs(self:GetItems()) do
     local panelitem = CheckForCorrect (v)
     if panelitem then
       table.insert (PanelItems, panelitem)

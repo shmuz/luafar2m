@@ -44,8 +44,7 @@ local KEY_NUMPAD0 = F.KEY_NUMPAD0
 local KEY_SPACE   = F.KEY_SPACE
 
 local function SwapEndian (str)
-  return (string.gsub(str, "(.)(.)", "%2%1"))
---  return (string.gsub(str, "(.)(.)(.)(.)", "%4%3%2%1"))
+  return (string.gsub(str, "(.)(.)(.)(.)", "%4%3%2%1"))
 end
 
 local function ConfigDialog()
@@ -146,8 +145,8 @@ local function GetCodePages (aData)
     { CodePage = win.GetACP() },
     ---------------------------------------------------------------------------
     { Text = M.MUnicodeCodePages, Flags = F.LIF_SEPARATOR },
-    { CodePage = 1200, Text = makeline(1200, "UTF-16 (Little endian)") },
-    { CodePage = 1201, Text = makeline(1201, "UTF-16 (Big endian)") },
+    { CodePage = 61200, Text = makeline(61200, "UTF-32 (Little endian)") },
+    { CodePage = 61201, Text = makeline(61201, "UTF-32 (Big endian)") },
     { CodePage = 65000 },
     { CodePage = 65001 },
     ---------------------------------------------------------------------------
@@ -385,14 +384,14 @@ local function GetActiveCodePages (aData)
       if t and t[1] then return t end
     end
   end
-  return { win.GetOEMCP(), win.GetACP(), 1200, 1201, 65000, 65001 }
+  return { win.GetOEMCP(), win.GetACP(), 61200, 61201, 65000, 65001 }
 end
 
 local function CheckBoms (str)
   if str then
     local find = string.find
-    if find(str, "^\254\255")         then return { 1201  }, 2 -- UTF16BE
-    elseif find(str, "^\255\254")     then return { 1200  }, 2 -- UTF16LE
+    if     find(str, "^%z%z\254\255") then return { 61201 }, 4 -- UTF32BE
+    elseif find(str, "^\255\254%z%z") then return { 61200 }, 4 -- UTF32LE
     elseif find(str, "^%+/v[89+/]")   then return { 65000 }, 4 -- UTF7
     elseif find(str, "^\239\187\191") then return { 65001 }, 3 -- UTF8
     end
@@ -482,26 +481,32 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
         return userbreak.fullcancel and "break"
       end
       for _, cp in ipairs(currCodePages) do
-        local s = (cp == 1200 or cp == 65001) and str or
-                  (cp == 1201) and SwapEndian(str) or
+        local s = (cp == 61200 or cp == 65001) and str or
+                  (cp == 61201) and SwapEndian(str) or
                   MultiByteToWideChar(str, cp)
         if s then
           if cp ~= 65001 then
-            s = win.Utf16ToUtf8(s)
+            s = win.Utf32ToUtf8(s)
           end
           if s then
+            local ok, start
             if tPlus == nil then
-              local ok, start = pcall(Find, Regex, s)
+              ok, start = pcall(Find, Regex, s)
               if ok and start then found = true; break; end
             else
-              if uMinus and Find(uMinus, s) then
-                stop=true; break
+              if uMinus then
+                ok, start = pcall(Find, uMinus, s)
+                if ok and start then
+                  stop=true; break
+                end
               end
               for pattern in pairs(tPlus) do
-                if Find(pattern, s) then tPlus[pattern]=nil end
+                ok, start = pcall(Find, pattern, s)
+                if ok and start then tPlus[pattern]=nil end
               end
-              if uUsual and Find(uUsual, s) then
-                uUsual = nil
+              if uUsual then
+                ok, start = pcall(Find, uUsual, s)
+                if ok and start then uUsual=nil end
               end
               if not (next(tPlus) or uMinus or uUsual) then
                 found=true; break
@@ -531,6 +536,9 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     reader:closefile()
   end
 
+  local hScreen = far.SaveScreen()
+  DisplaySearchState("", 0, 0, 0)
+
   local FileFilter = tParams.FileFilter
   if FileFilter then FileFilter:StartingToFilter() end
   for _, item in ipairs(itemList) do
@@ -548,6 +556,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     if userbreak.fullcancel then break end
   end
 
+  far.RestoreScreen(hScreen)
   return tFoundFiles, userbreak.fullcancel
 end
 

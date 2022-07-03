@@ -916,7 +916,7 @@ end
 
 local function AddFile(dir, name, contents)
   dir = dir or TestDir
-  local fp=assert(io.open(dir.."\\"..name, "wb"))
+  local fp=assert(io.open(dir.."/"..name, "wb"))
   if contents then fp:write(contents) end
   fp:close()
 end
@@ -924,7 +924,7 @@ end
 local function RemoveFiles(dir, files)
   dir = dir or TestDir
   for _,f in ipairs(files) do
-    win.DeleteFile(dir.."\\"..f)
+    win.DeleteFile(dir.."/"..f)
   end
 end
 
@@ -1177,9 +1177,9 @@ function selftest.test_panels_search_replace (lib_list)
   test_masks()
   for _,lib in ipairs(lib_list) do
     test_search(lib)
-    test_replace(lib)
+    --### test_replace(lib)
   end
-  test_dir_filter()
+  --### test_dir_filter()
   panel.SetPanelDirectory(1, CurDir)
   RemoveTree()
 end
@@ -1194,7 +1194,7 @@ function selftest.test_all()
     selftest.test_editor_search_replace(lib)
     selftest.test_editor_multiline_replace(lib)
   end
-  --### selftest.test_panels_search_replace(lib_list)
+  selftest.test_panels_search_replace(lib_list)
   far.AdvControl("ACTL_REDRAWALL")
 end
 
