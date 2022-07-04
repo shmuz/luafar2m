@@ -7,10 +7,10 @@ id=91
 lv=0
 dt=Text
 nm=Manual of LuaFAR 2L
-mtime=3851415964
+mtime=3866072335
 <article>
 #_<markdown>
-#_## This manual describes the LuaFAR variant intended for work with [far2l](https://github.com/elfmz/far2l) (Linux fork of FAR Manager v2).
+#_## This manual describes the LuaFAR variant intended for work with [far2l](https://github.com/shmuz/far2l) (Linux fork of FAR Manager v2).
 #_
 #_### Brief description of LuaFAR package
 #_
@@ -388,6 +388,35 @@ mtime=3505220184
 #_
 #_@@@
 #_
+#_
+</article>
+</node>
+<node>
+id=485
+lv=2
+dt=Text
+nm=export.ProcessConsoleInput
+ctime=3866071840
+mtime=3866074560
+<article>
+#_result = export.ProcessConsoleInput (Rec)
+#_
+#_**Parameters:**
+#_  Rec:   table InputRecord
+#_
+#_**Returns:**
+#_  result: 0, 1, or table InputRecord
+#_    **Details:**
+#_    - 0/nil/nothing results in returning 0 to FAR ("continue processing")
+#_    - 1/true results in returning 1 to FAR ("stop processing")
+#_    - a table results in returning 2 to FAR ("*Rec* was changed");
+#_      this table is converted to an INPUT_RECORD which is also passed to FAR.
+#_
+#_**Far API used:**
+#_  ProcessConsoleInputW
+#_
+#_@@@
+#_<lua> Links = { InputRecord="187.html" } </lua>
 #_
 </article>
 </node>

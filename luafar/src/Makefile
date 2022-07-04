@@ -18,7 +18,6 @@ OBJ = \
   $(OUT)/lutf8lib.o    \
   $(OUT)/ustring.o     \
   $(OUT)/util.o        \
-  $(OUT)/reg.o         \
   $(OUT)/mytimer.o     \
   $(OUT)/luamacro.o    \
   $(OUT)/bit64.o       \
@@ -52,7 +51,6 @@ farkeys.c: $(INC_FAR)/farkeys.h
 
 # Dependencies
 $(OUT)/*.o        : $(INC_FAR)/farplug-wide.h luafar.h ustring.h util.h
-$(OUT)/reg.o      : reg.h
-$(OUT)/service.o  : reg.h version.h
+$(OUT)/service.o  : version.h
 
 # (end of Makefile)

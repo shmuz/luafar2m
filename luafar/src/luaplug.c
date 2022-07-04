@@ -18,10 +18,10 @@ extern int FUNC_OPENLIBS (lua_State*);
 #define FUNC_OPENLIBS NULL
 #endif
 
-PSInfo Info;
-struct FarStandardFunctions FSF;
-lua_State* LS;
-TPluginData PluginData;
+static PSInfo Info;
+static struct FarStandardFunctions FSF;
+static lua_State* LS;
+static TPluginData PluginData;
 //---------------------------------------------------------------------------
 
 lua_State* GetLuaState()

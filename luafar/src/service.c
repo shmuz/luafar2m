@@ -8,7 +8,6 @@
 #include <ctype.h>
 #include <math.h>
 #include "luafar.h"
-#include "reg.h"
 #include "util.h"
 #include "ustring.h"
 #include "version.h"
