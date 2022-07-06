@@ -1250,7 +1250,7 @@ int LF_GetCustomData(lua_State* L, const wchar_t *FilePath, wchar_t **CustomData
     push_utf8_string(L, FilePath, -1);  //+2
     if (pcall_msg(L, 1, 1) == 0) {  //+1
       if (lua_isstring(L, -1)) {
-        const wchar_t* p = utf8_to_utf16(L, -1, NULL);
+        const wchar_t* p = utf8_to_wcstring(L, -1, NULL);
         if (p) {
           *CustomData = wcsdup(p);
           lua_pop(L, 1);

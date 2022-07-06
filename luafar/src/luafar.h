@@ -30,7 +30,7 @@ typedef struct
 TPluginData* GetPluginData(lua_State* L);
 
 DLLFUNC int  LF_LuaOpen(TPluginData* aPlugData, lua_CFunction aOpenLibs);
-DLLFUNC void LF_InitLuaState(lua_State *L, PSInfo *Info, lua_CFunction aOpenLibs);
+DLLFUNC int  LF_InitOtherLuaState (lua_State *L, lua_State *Lplug, lua_CFunction aOpenLibs);
 DLLFUNC void LF_LuaClose(TPluginData* aPlugData);
 DLLFUNC int  LF_Message(PSInfo *Info, const wchar_t* aMsg, const wchar_t* aTitle, const wchar_t* aButtons, const char* aFlags, const wchar_t* aHelpTopic);
 DLLFUNC BOOL LF_RunDefaultScript(lua_State* L);

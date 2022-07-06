@@ -130,7 +130,7 @@ BOOL GetOptBoolFromTable(lua_State *L, const char* key, BOOL dflt)
 
 //---------------------------------------------------------------------------
 // Check a multibyte string at 'pos' Lua stack position
-// and convert it in place to UTF-16.
+// and convert it in place to UTF-32.
 // Return a pointer to the converted string.
 wchar_t* convert_multibyte_string (lua_State *L, int pos, UINT codepage,
   DWORD dwFlags, int* pTrgSize, int can_raise)
@@ -172,7 +172,7 @@ wchar_t* check_utf8_string (lua_State *L, int pos, int* pTrgSize)
   return convert_multibyte_string(L, pos, CP_UTF8, 0, pTrgSize, TRUE);
 }
 
-wchar_t* utf8_to_utf16 (lua_State *L, int pos, int* pTrgSize)
+wchar_t* utf8_to_wcstring (lua_State *L, int pos, int* pTrgSize)
 {
   return convert_multibyte_string(L, pos, CP_UTF8, 0, pTrgSize, FALSE);
 }
@@ -182,7 +182,7 @@ const wchar_t* opt_utf8_string (lua_State *L, int pos, const wchar_t* dflt)
   return lua_isnoneornil(L,pos) ? dflt : check_utf8_string(L, pos, NULL);
 }
 
-wchar_t* oem_to_utf16 (lua_State *L, int pos, int* pTrgSize)
+wchar_t* oem_to_wcstring (lua_State *L, int pos, int* pTrgSize)
 {
   return convert_multibyte_string (L, pos, CP_OEMCP, 0, pTrgSize, FALSE);
 }
@@ -200,7 +200,7 @@ void push_multibyte_string (lua_State* L, UINT CodePage, const wchar_t* str, int
     NULL      // LPBOOL lpUsedDefaultChar
   );
   if (targetSize == 0 && numchars == -1 && str[0]) {
-    luaL_error(L, "invalid UTF-16 string");
+    luaL_error(L, "invalid UTF-32 string");
   }
   char *target = (char*)malloc(targetSize+1);
   WINPORT(WideCharToMultiByte)(CodePage, 0, str, numchars, target, targetSize, NULL, NULL);
@@ -220,7 +220,7 @@ void push_oem_string (lua_State* L, const wchar_t* str, int numchars)
   push_multibyte_string(L, CP_OEMCP, str, numchars);
 }
 
-void push_utf16_string(lua_State* L, const wchar_t* str, int numchars)
+void push_wcstring(lua_State* L, const wchar_t* str, int numchars)
 {
 	if(numchars < 0)
 		numchars = wcslen(str);
@@ -257,7 +257,7 @@ int ustring_OemToUtf8 (lua_State *L)
   int intlen;
   (void) luaL_checklstring(L, 1, &len);
   intlen = len;
-  wchar_t* buf = oem_to_utf16(L, 1, &intlen);
+  wchar_t* buf = oem_to_wcstring(L, 1, &intlen);
   push_utf8_string(L, buf, len);
   return 1;
 }

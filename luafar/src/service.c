@@ -659,8 +659,8 @@ static int _EditorGetString(lua_State *L, int is_wide)
     {
       if(is_wide)
       {
-        push_utf16_string(L, egs.StringText, egs.StringLength);
-        push_utf16_string(L, egs.StringEOL, -1);
+        push_wcstring(L, egs.StringText, egs.StringLength);
+        push_wcstring(L, egs.StringEOL, -1);
       }
       else
       {
@@ -680,9 +680,9 @@ static int _EditorGetString(lua_State *L, int is_wide)
 
       if(is_wide)
       {
-        push_utf16_string(L, egs.StringText, egs.StringLength);
+        push_wcstring(L, egs.StringText, egs.StringLength);
         lua_setfield(L, -2, "StringText");
-        push_utf16_string(L, egs.StringEOL, -1);
+        push_wcstring(L, egs.StringEOL, -1);
         lua_setfield(L, -2, "StringEOL");
       }
       else
@@ -1260,7 +1260,7 @@ void FillInputRecord(lua_State *L, int pos, INPUT_RECORD *ir)
 
       lua_getfield(L, -1, "UnicodeChar");
       if (lua_type(L,-1) == LUA_TSTRING) {
-        wchar_t* ptr = utf8_to_utf16(L, -1, &size);
+        wchar_t* ptr = utf8_to_wcstring(L, -1, &size);
         if (ptr && size>=1)
           ir->Event.KeyEvent.uChar.UnicodeChar = ptr[0];
       }
@@ -1377,7 +1377,7 @@ int far_Menu(lua_State *L)
     //-------------------------------------------------------------------------
     lua_getfield(L,-1,"checked");
     if (lua_type(L,-1) == LUA_TSTRING) {
-      const wchar_t* s = utf8_to_utf16(L,-1,NULL);
+      const wchar_t* s = utf8_to_wcstring(L,-1,NULL);
       if (s) pItem->Flags |= s[0];
     }
     else if (lua_toboolean(L,-1)) pItem->Flags |= MIF_CHECKED;
@@ -3118,7 +3118,7 @@ int ProcessDNResult(lua_State *L, int Msg, LONG_PTR Param2)
       break;
 
     case DN_HELP:
-      ret = (utf8_to_utf16(L, -1, NULL) != NULL);
+      ret = (utf8_to_wcstring(L, -1, NULL) != NULL);
       if(ret)
       {
         lua_getfield(L, LUA_REGISTRYINDEX, FAR_DN_STORAGE);
@@ -3252,7 +3252,7 @@ LONG_PTR LF_DlgProc(lua_State *L, HANDLE hDlg, int Msg, int Param1, LONG_PTR Par
   }
 
   else if (Msg == DN_HELP) {
-    if ((ret = (LONG_PTR)utf8_to_utf16(L, -1, NULL)) != 0) {
+    if ((ret = (LONG_PTR)utf8_to_wcstring(L, -1, NULL)) != 0) {
       lua_pushvalue(L, -1);                // keep stack balanced
       lua_setfield(L, -3, "helpstring");   // protect from garbage collector
     }
@@ -5632,7 +5632,7 @@ BOOL LF_RunDefaultScript(lua_State* L)
     if (status == 0)
       status = pcall_msg(L,0,0);
     else
-      LF_Error(L, utf8_to_utf16 (L, -1, NULL));
+      LF_Error(L, utf8_to_wcstring (L, -1, NULL));
   }
   else
     LF_Error(L, L"Default script not found");
@@ -5674,7 +5674,7 @@ void LF_InitLuaState (lua_State *L, PSInfo *aInfo, lua_CFunction aOpenLibs)
   if (fp) {
     fclose(fp);
     if (luaL_loadfile(L,lua_tostring(L,-1)) || lua_pcall(L,0,0,0))
-      LF_Error(L, utf8_to_utf16(L,-1,NULL));
+      LF_Error(L, utf8_to_wcstring(L,-1,NULL));
   }
   lua_settop(L,top);
 }
@@ -5703,5 +5703,19 @@ int LF_LuaOpen (TPluginData* aPlugData, lua_CFunction aOpenLibs)
     return 1;
   }
   dlclose(handle);
+  return 0;
+}
+
+int LF_InitOtherLuaState (lua_State *L, lua_State *Lplug, lua_CFunction aOpenLibs)
+{
+  if (L != Lplug) {
+    TPluginData *PluginData = GetPluginData(Lplug);
+    TPluginData *pd = (TPluginData*)lua_newuserdata(L, sizeof(TPluginData));
+    lua_setfield(L, LUA_REGISTRYINDEX, FAR_KEYINFO);
+    memcpy(pd, PluginData, sizeof(TPluginData));
+    pd->MainLuaState = L;
+    pd->dlopen_handle = NULL;
+    LF_InitLuaState(L, pd->Info, aOpenLibs);
+  }
   return 0;
 }

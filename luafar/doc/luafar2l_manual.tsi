@@ -101,13 +101,13 @@ lv=1
 dt=Text
 nm=Unicode support
 ctime=3480525243
-mtime=3851412355
+mtime=3866283394
 <article>
 #_<markdown>
 #_
 #_### Passing string arguments and returning string values
 #_
-#_Most functions of the Unicode LuaFAR library assume string
+#_Most functions of the LuaFAR library assume string
 #_arguments and string return values to be in the **UTF-8**
 #_encoding (unless they are meant to hold binary data).
 #_
@@ -135,7 +135,7 @@ lv=2
 dt=Text
 nm=Customizing the generic plugin
 ctime=3851409449
-mtime=3861767466
+mtime=3866283742
 <article>
 #_<markdown>
 #_
@@ -162,11 +162,6 @@ mtime=3861767466
 #_(This setting is used only if `FAR_EXPORTS` includes `GETMINFARVERSION`.)
 #_
 #_@@@
-#_- **`PATH_LUAFAR`** - root directory of the LuaFAR distribution.
-#_
-#_- **`ENV_PREFIX`** - prefix for LuaFAR-specific environment variables.
-#_Defaults to `L"LUAFAR"` for 32-bit plugins, and to `L"LUAFAR64"` for 64-bit plugins. (See [`LF_InitLuaState`](385.html) for details).
-#_
 #_
 </article>
 </node>
@@ -176,13 +171,13 @@ lv=2
 dt=Text
 nm=Extra exported functions
 ctime=3851409469
-mtime=3852182584
+mtime=3866304282
 <article>
 #_<markdown>
 #_
 #_<a name="luaopen_luaplug"></a>
 #_### Extra exported function: `luaopen_luaplug`
-#_Some libraries (e.g. `rings`) can create additional `lua_State` instances from Lua scripts. To initialize those instances with libraries included in LuaFAR (`far`, `panel`, `editor`, etc.), call `luaopen_luaplug`. The function must be loaded via `package.loadlib`. Internally, it calls [`LF_InitLuaState`](385.html).
+#_Some libraries (e.g. `rings`) can create additional `lua_State` instances from Lua scripts. To initialize those instances with libraries included in LuaFAR (`far`, `panel`, `editor`, etc.), call `luaopen_luaplug`. The function must be loaded via `package.loadlib`. Internally, it calls [`LF_InitOtherLuaState`](385.html).
 #_
 #_**Example:**
 #_      local rings = require "rings"
@@ -210,70 +205,6 @@ lv=1
 dt=Text
 nm=Common functions
 <article>
-</article>
-</node>
-<node>
-id=103
-lv=2
-dt=Text
-nm=GetMinFarVersionW
-<article>
-#_**This function is not called by LuaFAR**
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
-id=467
-lv=2
-dt=Text
-nm=GetGlobalInfoW
-ctime=3861011876
-mtime=3861768160
-<article>
-#_SysId = GetGlobalInfoW ()
-#_
-#_**Parameters:**
-#_  none
-#_
-#_**Returns:**
-#_  SysId: plugin's identifier; integer (0 ... 2^32-1)
-#_
-#_**Far API used:**
-#_  GetGlobalInfoW
-#_
-#_**Notes:**
-#_  1. This function is supported only with a modified Far2L version.
-#_  2. This function lives in C not in Lua.
-#_  3. If the generic LuaFAR plugin (*luaplug.c*) is used then *SYS_ID*
-#_     value must be defined as a compilation flag. The function will
-#_     return this value when called.
-#_  4. This function is called by Far prior to SetStartupInfoW()
-#_     and Far fills the *Private* field of StartupInfo struct if SysId
-#_     identifies one of the "known plugins".
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
-id=118
-lv=2
-dt=Text
-nm=SetStartupInfoW
-mtime=3861013835
-<article>
-#_<markdown>
-#_**`This function is not called by LuaFAR`**
-#_
-#_The C-language part of a plugin should implement
-#_and export function `SetStartupInfoW`.
-#_Within this function, it should call the following
-#_LuaFAR functions: [`LF_LuaOpen`](129.html) and [`LF_RunDefaultScript`](130.html).
-#_
-#_@@@
-#_
 </article>
 </node>
 <node>
@@ -417,20 +348,6 @@ mtime=3866074560
 #_
 #_@@@
 #_<lua> Links = { InputRecord="187.html" } </lua>
-#_
-</article>
-</node>
-<node>
-id=319
-lv=2
-dt=Text
-nm=export.ProcessSynchroEvent
-ctime=3480185395
-mtime=3851366779
-<article>
-#_**This function is not called by LuaFAR**
-#_
-#_@@@
 #_
 </article>
 </node>
@@ -1034,6 +951,94 @@ mtime=3851366615
 #_  this function, passing it the error message value.
 #_  The return values of export.OnError (if any) are ignored.
 #_
+#_
+</article>
+</node>
+<node>
+id=486
+lv=1
+dt=Text
+nm=C-functions
+ctime=3866132436
+mtime=3866133497
+<article>
+</article>
+</node>
+<node>
+id=467
+lv=2
+dt=Text
+nm=GetGlobalInfoW
+ctime=3861011876
+mtime=3866132986
+<article>
+#_DWORD GetGlobalInfoW()
+#_
+#_**Returns:**
+#_  Pugin's identifier (SysId) - integer (0 ... 2^32-1)
+#_
+#_**Notes:**
+#_  1. This function is supported only with a modified Far2L version.
+#_     Plugins are not required to export this function.
+#_  2. If the generic LuaFAR plugin (*luaplug.c*) is used then *SYS_ID*
+#_     value must be defined as a compilation flag. The function will
+#_     return this value when called.
+#_  3. This function is called by Far prior to SetStartupInfoW()
+#_     and Far may fill the *Private* field of StartupInfo struct
+#_     if SysId identifies one of the "known plugins".
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=103
+lv=2
+dt=Text
+nm=GetMinFarVersionW
+mtime=3866133117
+<article>
+#_int GetMinFarVersionW()
+#_
+</article>
+</node>
+<node>
+id=319
+lv=2
+dt=Text
+nm=ProcessSynchroEventW
+ctime=3480185395
+mtime=3866134386
+<article>
+#_int ProcessSynchroEventW (int Event, void *Param)
+#_
+#_This function is always exported by LuaFAR plugins.
+#_It is used internally by LuaFAR in far.Timer implementation.
+#_
+#_@@@
+#_<lua> Links = {
+#_  ["far.Timer"]="346.html";
+#_} </lua>
+#_
+</article>
+</node>
+<node>
+id=118
+lv=2
+dt=Text
+nm=SetStartupInfoW
+mtime=3866133413
+<article>
+#_<markdown>
+#_
+#_    void SetStartupInfoW (const struct PluginStartupInfo *Info)
+#_
+#_The C-language part of a plugin must export this function.
+#_Within this function, it should call the following
+#_LuaFAR functions: [`LF_LuaOpen`](129.html) and
+#_[`LF_RunDefaultScript`](130.html).
+#_
+#_@@@
 #_
 </article>
 </node>
@@ -9509,7 +9514,7 @@ id=129
 lv=2
 dt=Text
 nm=LF_LuaOpen
-mtime=3864472807
+mtime=3866304389
 <article>
 #_<markdown>
 #_    lua_State* LF_LuaOpen (PluginStartupInfo *Info, 
@@ -9530,7 +9535,7 @@ mtime=3864472807
 #_#### Description:
 #_
 #_The function creates an instance of Lua interpreter, then calls
-#_[`LF_InitLuaState`](385.html).
+#_`LF_InitLuaState`.
 #_
 #_@@@
 #_
@@ -9604,33 +9609,29 @@ nm=LF_Message
 id=385
 lv=2
 dt=Text
-nm=LF_InitLuaState
+nm=LF_InitOtherLuaState
 ctime=3497514263
-mtime=3864472984
+mtime=3866304231
 <article>
 #_<markdown>
-#_    void LF_InitLuaState (lua_State* L,
-#_                          PluginStartupInfo *Info, 
-#_                          lua_CFunction OpenLibs)
+#_    int LF_InitOtherLuaState (lua_State *L,
+#_                              lua_State *Lplug,
+#_                              lua_CFunction aOpenLibs) 
 #_
 #_#### Parameters:
-#_      L:            Lua state.
+#_      L:            Other Lua state.
 #_
-#_      Info:         Pointer to a static struct that must be already
-#_                    initialized during SetStartupInfo call.
+#_      Lplug:        Lua state of the LuaFAR plugin.
 #_
 #_      OpenLibs:     Pointer to a function that can open additional
 #_                    libraries. (NULL is allowed.)
 #_
 #_#### Description:
 #_
-#_The function performs the following actions, in this order
-#_(for simplicity, let's assume `EnvVarPrefix==L"LUAFAR"`):
+#_The function initializes **L** Lua state.
 #_
-#_1. Open the standard Lua libraries, `far`, `bit` and `utf8`
-#_   libraries.
-#_1. Call `OpenLibs` function.
-#_1. Prepend `<plugin directory>\?.lua;` to `package.path`.
+#_1. Open the standard Lua libraries, `far`, `bit` and `utf8` libraries.
+#_1. Call `aOpenLibs` function.
 #_
 #_@@@
 #_

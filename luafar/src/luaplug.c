@@ -32,8 +32,7 @@ lua_State* GetLuaState()
 
 int LUAPLUG luaopen_luaplug (lua_State *L)
 {
-  LF_InitLuaState(L, &Info, FUNC_OPENLIBS);
-  return 0;
+  return LF_InitOtherLuaState(L, LS, FUNC_OPENLIBS);
 }
 //---------------------------------------------------------------------------
 
