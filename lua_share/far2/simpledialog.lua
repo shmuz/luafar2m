@@ -9,8 +9,7 @@ local DirSep    = package.config:sub(1,1)
 local OpSys     = DirSep=="/" and "linux" or "windows"
 local FarVer    = F.ACTL_GETFARMANAGERVERSION and 3 or 2
 local VK        = win.GetVirtualKeys()
-local bit       = (FarVer==2) and bit or bit64
-local band, bor = bit.band, bit.bor
+local band, bor = bit64.band, bit64.bor
 local Send      = far.SendDlgMessage
 
 local IND_TYPE, IND_X1, IND_Y1, IND_X2, IND_Y2, IND_HISTORY, IND_DATA = 1,2,3,4,5,7,10
@@ -462,15 +461,14 @@ local function Run (inData)
       end
 
     elseif (FarVer == 2) and Msg == F.DN_KEY then
-      local keyname = far.KeyToName(Par2)
-      if inData.keyaction and inData.keyaction(hDlg, Par1, keyname) then
+      if inData.keyaction and inData.keyaction(hDlg, Par1, far.KeyToName(Par2)) then
         return true
       end
-      if keyname == "F1" then
+      if Par2 == F.KEY_F1 then
         if type(inData.help) == "function" then
           inData.help()
         end
-      elseif keyname == "F4" then
+      elseif Par2 == F.KEY_F4 then
         if outData[Par1][IND_TYPE] == F.DI_EDIT then
           local txt = Send(hDlg, "DM_GETTEXT", Par1)
           txt = OpenInEditor(txt, inData[Par1].ext)
@@ -480,7 +478,7 @@ local function Run (inData)
 
     elseif (FarVer == 3) and Msg==F.DN_CONTROLINPUT and Par2.EventType==F.KEY_EVENT and Par2.KeyDown then
       if inData.keyaction and inData.keyaction(hDlg, Par1, far.InputRecordToName(Par2)) then
-        return
+        return true
       end
       local mod = band(Par2.ControlKeyState,0x1F) ~= 0
       if Par2.VirtualKeyCode == VK.F1 and not mod then

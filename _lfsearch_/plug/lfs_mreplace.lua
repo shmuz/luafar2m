@@ -99,6 +99,12 @@ local function ReplaceDialog (Data)
       elseif param1==Pos.bAdvanced then
         CheckAdvancedEnab(hDlg)
       end
+    elseif msg == F.DN_KEY and param2 == F.KEY_F4 then
+      if param1 == Pos.sReplacePat and hDlg:GetCheck(Pos.bRepIsFunc) then
+        local txt = sd.OpenInEditor(hDlg:GetText(Pos.sReplacePat), "lua")
+        if txt then hDlg:SetText(Pos.sReplacePat, txt) end
+        return true
+      end
     end
   end
 

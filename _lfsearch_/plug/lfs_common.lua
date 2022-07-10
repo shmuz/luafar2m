@@ -779,6 +779,13 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
       end
     end
   ----------------------------------------------------------------------------
+  elseif msg == F.DN_KEY and param2 == F.KEY_F4 then
+    if param1 == Pos.sReplacePat and hDlg:GetCheck(Pos.bRepIsFunc) then
+      local txt = sd.OpenInEditor(hDlg:GetText(Pos.sReplacePat), "lua")
+      if txt then hDlg:SetText(Pos.sReplacePat, txt) end
+      return true
+    end
+  ----------------------------------------------------------------------------
   elseif msg == F.DN_EDITCHANGE then
     if param1 == Pos.cmbRegexLib then self:CheckRegexChange(hDlg) end
   ----------------------------------------------------------------------------
