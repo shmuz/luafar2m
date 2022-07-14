@@ -11,7 +11,7 @@ local function FlagsToInt (input)
   local tp, ret = type(input), 0
   if tp == "table" then
     for k,v in pairs(input) do
-      if F[k] and v then ret = bit.bor(ret, F[k]) end
+      if F[k] and v then ret = bit64.bor(ret, F[k]) end
     end
   elseif tp == "string" then ret = F[input] or 0
   elseif tp == "number" then ret = input
@@ -25,7 +25,7 @@ local function limit (v, lo, hi)
 end
 
 local function btest (bitset, bitname)
-  return bit.band(bitset, F[bitname]) ~= 0
+  return bit64.band(bitset, F[bitname]) ~= 0
 end
 
 local List = {}

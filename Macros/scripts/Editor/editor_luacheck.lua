@@ -14,9 +14,9 @@ local MenuMaxHeight = 5
 
 local F = far.Flags
 
-local menuflags = bit.bor(F.FMENU_SHOWAMPERSAND,F.FMENU_WRAPMODE)
+local menuflags = bit64.bor(F.FMENU_SHOWAMPERSAND,F.FMENU_WRAPMODE)
 --if FarBuild >= 5505 then
---  menuflags = bit.bor(menuflags, F.FMENU_SHOWSHORTBOX, F.FMENU_NODRAWSHADOW)
+--  menuflags = bit64.bor(menuflags, F.FMENU_SHOWSHORTBOX, F.FMENU_NODRAWSHADOW)
 --end
 
 local function traverse(path)

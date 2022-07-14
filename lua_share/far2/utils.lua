@@ -1,7 +1,7 @@
 -- utils.lua --
 
 local F = far.Flags
-local bor = bit.bor
+local bor = bit64.bor
 local PluginDir = far.PluginStartupInfo().ModuleDir
 local dirsep = package.config:sub(1,1)
 

@@ -1083,7 +1083,7 @@ function mypanel:handle_key_tbview(handle, key)
         -- call SetSortOrder() requesting the current sort order. Hopefully, the future Far Manager
         -- versions won't optimize such a case out and will always initiate sorting operation.
         -- As for Far 3.0.5886 (September 2021) it is OK.
-        panel.SetSortOrder(handle, bit.band(info.Flags, F.PFLAGS_REVERSESORTORDER)~=0)
+        panel.SetSortOrder(handle, bit64.band(info.Flags, F.PFLAGS_REVERSESORTORDER)~=0)
       end
     end
     return true
@@ -1206,7 +1206,7 @@ function mypanel:view_db_object()
     if not ok then return end
   end
   local title = M.title_short .. ": " .. RealItemName
-  viewer.Viewer(tmp_file_name, title, 0, 0, -1, -1, bit.bor(
+  viewer.Viewer(tmp_file_name, title, 0, 0, -1, -1, bit64.bor(
     F.VF_ENABLE_F6, F.VF_DISABLEHISTORY, F.VF_DELETEONLYFILEONCLOSE, F.VF_IMMEDIATERETURN, F.VF_NONMODAL), 65001)
   viewer.SetMode { Type=F.VSMT_WRAP,     iParam=0,          Flags=0 }
   viewer.SetMode { Type=F.VSMT_VIEWMODE, iParam=F.VMT_TEXT, Flags=F.VSMFL_REDRAW }
@@ -1475,7 +1475,7 @@ function export.Compare (self, handle, PanelItem1, PanelItem2, Mode)
     ret = self._sort_col_index or 0
     compare = self._sort_compare
   end
-  return bit.bor(ret+2, bit.lshift(compare,8)) -- (ret + 2) | (compare << 8)
+  return bit64.bor(ret+2, bit64.lshift(compare,8)) -- (ret + 2) | (compare << 8)
 end
 
 

@@ -3,7 +3,7 @@
 include ../../config.mak
 
 OUT= Out$(DIRBIT)
-MYCFLAGS  = -DBUILD_DLL -DFAR_DONT_USE_INTERNALS
+MYCFLAGS  = -DFAR_DONT_USE_INTERNALS
 MYLDFLAGS = -luuid
 TARGET = ../../$(LUAFARDLL)
 
@@ -22,10 +22,6 @@ OBJ = \
   $(OUT)/luamacro.o    \
   $(OUT)/bit64.o       \
   $(OUT)/lusercontrol.o
-
-ifneq ($(USE_LUAJIT),1)
-  OBJ += $(OUT)/bit.o
-endif
 
 .PHONY: directories all
 all: directories $(TARGET)

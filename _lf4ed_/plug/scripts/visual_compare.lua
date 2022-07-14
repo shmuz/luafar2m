@@ -35,7 +35,7 @@ local function Run()
       trgActive = join(dirActive, aItem.FileName)
       if pInfo.SelectedItemsNumber == 1 then
         local pItem = GetSelectedItem(PSV,1)
-        if bit.band(pItem.Flags, F.PPIF_SELECTED) ~= 0 then
+        if bit64.band(pItem.Flags, F.PPIF_SELECTED) ~= 0 then
           trgPassive = join(dirPassive, pItem.FileName)
         end
       end

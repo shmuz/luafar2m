@@ -72,7 +72,7 @@ end
 -- Depends on: FAR API
 local function PutLines(arr_compare, arr_index, arr_target, OnlySelection)
   local editInfo = editor.GetInfo()
-  if bit.band (editInfo.CurState, F.ECSTATE_LOCKED) ~= 0 then
+  if bit64.band (editInfo.CurState, F.ECSTATE_LOCKED) ~= 0 then
     ErrMsg("The editor is locked"); return
   end
   local pstart = editInfo.BlockStartLine - 1

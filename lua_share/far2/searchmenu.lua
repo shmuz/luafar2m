@@ -76,7 +76,7 @@ end
 local function hasShowAmpersand(flags)
     local tp = type(flags)
     local sa = "FMENU_SHOWAMPERSAND"
-    if tp == "number" then return bit.band(flags, F[sa]) ~= 0 end
+    if tp == "number" then return bit64.band(flags, F[sa]) ~= 0 end
     if tp == "string" then return flags == sa end
     if tp == "table" then return tp[sa] and true end
     return false

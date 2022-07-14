@@ -309,11 +309,6 @@ TmpPanel are restored.
  #Full screen mode#
  Read about these settings in the help file of TmpPanel plugin.
 
- #Macro#
- Specify text of the macro to be executed immediately after the search
-results panel is displayed. (The default macro sets the "Full name" sorting
-order).
-
  ~Contents~@Contents@
 
 @LuaStringPatterns

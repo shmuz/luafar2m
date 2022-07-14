@@ -22,7 +22,7 @@ local OptCursorMoveResetsBlock = true
 -- END OF OPTIONS ----------------------------------------------------------------------------------
 
 local F = far.Flags
-local band = bit.band
+local band = bit64.band
 local CharMap = {Space=" ", ShiftSpace=" ", Tab="\t",     BackSlash="\\",
                  Add="+",   Subtract="-",   Multiply="*", Divide="/",     Decimal="."}
 local KeyMap = {Num2="Down", Num4="Left", Num6="Right", Num8="Up", NumDel="Del", ShiftIns="CtrlV", ShiftNum0="CtrlV"}

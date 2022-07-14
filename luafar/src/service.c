@@ -18,7 +18,6 @@
 #  define LUADLL "liblua5.1.so"
 #endif
 
-extern int  luaopen_bit (lua_State *L);
 extern int  luaopen_bit64 (lua_State *L);
 extern int  luaopen_unicode (lua_State *L);
 extern int  luaopen_utf8 (lua_State *L);
@@ -5644,13 +5643,13 @@ BOOL LF_RunDefaultScript(lua_State* L)
 void LF_InitLuaState (lua_State *L, PSInfo *aInfo, lua_CFunction aOpenLibs)
 {
   int idx;
-  lua_CFunction func_arr[] = { luaopen_far, luaopen_bit, luaopen_bit64, luaopen_unicode, luaopen_utf8 };
+  lua_CFunction func_arr[] = { luaopen_far, luaopen_bit64, luaopen_unicode, luaopen_utf8 };
 
   // open Lua libraries
   luaL_openlibs(L);
   if (aOpenLibs) aOpenLibs(L);
 
-  // open "far", "bit", "unicode" and utf8 libraries
+  // open "far", "bit64", "unicode" and "utf8" libraries
   for (idx=0; idx < ARRAYSIZE(func_arr); idx++) {
     lua_pushcfunction(L, func_arr[idx]);
     lua_call(L, 0, 0);

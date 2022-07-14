@@ -24,7 +24,7 @@ local Info = { --luacheck: no unused
 -------- /Settings
 
 local F = far.Flags
-local band = bit.band
+local band = bit64.band
 local dirsep = string.sub(package.config,1,1)
 
 local function join(s1, s2)

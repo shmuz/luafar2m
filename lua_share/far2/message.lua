@@ -13,7 +13,7 @@
 
 
 local F = far.Flags
-local bnot, band, bor, lshift, rshift = bit.bnot, bit.band, bit.bor, bit.lshift, bit.rshift
+local bnot, band, bor, lshift, rshift = bit64.bnot, bit64.band, bit64.bor, bit64.lshift, bit64.rshift
 local min, max = math.min, math.max
 local STARTX, STARTY = 5, 2
 

@@ -11,7 +11,7 @@ far.ReloadDefaultScript = true
 local F = far.Flags
 local Title = "Lua Panel"
 local VK = win.GetVirtualKeys()
-local band = bit.band
+local band = bit64.band
 
 local Settings = {
   LastPanelMode = ("1"):byte();

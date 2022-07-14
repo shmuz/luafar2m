@@ -27,8 +27,7 @@ local MFLAGS_ENABLEOUTPUT, MFLAGS_NOSENDKEYSTOPLUGINS, MFLAGS_POSTFROMPLUGIN =
 local KEY_NONE = 0x30001
 
 local type, setmetatable = type, setmetatable
-local bit = bit or bit64
-local band, bor, bxor, lshift = bit.band, bit.bor, bit.bxor, bit.lshift
+local band, bor, bxor, lshift = bit64.band, bit64.bor, bit64.bxor, bit64.lshift
 --------------------------------------------------------------------------------
 
 local MCODE_F_KEYMACRO = op.MCODE_F_KEYMACRO

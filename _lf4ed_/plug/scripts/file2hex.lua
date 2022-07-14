@@ -41,7 +41,7 @@ local function File2Hex()
   if item.FileAttributes:find("d") then return end
 
   local Title = "Convert file contents to HEX";
-  local band, rshift = bit.band, bit.rshift
+  local band, rshift = bit64.band, bit64.rshift
   local dir = panel.GetPanelDirectory(1)
   local name_in = dir.."/"..item.FileName
   local name_out = name_in..".hex"

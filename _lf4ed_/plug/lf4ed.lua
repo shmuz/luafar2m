@@ -30,7 +30,7 @@ local F = far.Flags
 local field = Sett.field
 local VK = win.GetVirtualKeys()
 local FirstRun = not _Plugin
-local band, bor, bnot = bit.band, bit.bor, bit.bnot
+local band, bor, bnot = bit64.band, bit64.bor, bit64.bnot
 local dirsep = package.config:sub(1,1)
 lf4ed = lf4ed or {}
 local SetExportFunctions -- forward declaration
@@ -51,7 +51,7 @@ local bypass_reload = {
   -- Lua global tables --
   _G=1; coroutine=1; debug=1; io=1; math=1; os=1; package=1; string=1; table=1;
   -- LuaFAR global tables --
-  actl=1; bit=1; editor=1; far=1; panel=1; regex=1; utf8=1; viewer=1; win=1;
+  actl=1; bit=1; bit64=1; editor=1; far=1; panel=1; regex=1; utf8=1; viewer=1; win=1;
 }
 
 local function RequireWithReload (name)
@@ -503,7 +503,7 @@ local function SelectCommand(name, cmd_arr)
   local props = {
     Title = "Execute a command: "..name;
     Bottom = "Digit: execute | F4: open in editor";
-    Flags = bit.bor(F.FMENU_WRAPMODE, F.FMENU_CHANGECONSOLETITLE);
+    Flags = bor(F.FMENU_WRAPMODE, F.FMENU_CHANGECONSOLETITLE);
   }
   local bkeys = { {BreakKey="F4"} }
   local items = {}

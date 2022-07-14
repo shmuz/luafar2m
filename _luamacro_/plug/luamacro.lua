@@ -23,7 +23,7 @@ local function LOG (fmt, ...)
 end
 
 local F, Msg = far.Flags, nil
-local bor = bit.bor
+local bor = bit64.bor
 local co_yield, co_resume, co_status = coroutine.yield, coroutine.resume, coroutine.status
 
 local PROPAGATE={} -- a unique value, inaccessible to scripts.

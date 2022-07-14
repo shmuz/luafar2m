@@ -129,7 +129,7 @@ local function row_dialog(db, schema, table_name, rowid_name, db_data, row_id)
         fp:write(txt)
         fp:close()
         viewer.Viewer(fname, item.Colname, nil,nil,nil,nil,
-                      bit.bor(F.VF_DELETEONLYFILEONCLOSE,F.VF_DISABLEHISTORY), 65001)
+                      bit64.bor(F.VF_DELETEONLYFILEONCLOSE,F.VF_DISABLEHISTORY), 65001)
       end
     -- convert blob to text and show it
     elseif key == "AltF3" then

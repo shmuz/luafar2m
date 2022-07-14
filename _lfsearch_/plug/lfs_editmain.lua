@@ -10,7 +10,7 @@ local CustomMessage = require "far2.message"
 
 local F = far.Flags
 local FormatInt = Common.FormatInt
-local band = bit.band
+local band = bit64.band
 
 local ErrorMsg = Common.ErrorMsg
 

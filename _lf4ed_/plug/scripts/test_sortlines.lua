@@ -30,7 +30,7 @@ end
 local function PrepareFile (filename)
   OpenHelperEditor(filename)
   local editInfo = editor.GetInfo()
-  if bit.band (editInfo.CurState, F.ECSTATE_SAVED) == 0 then
+  if bit64.band (editInfo.CurState, F.ECSTATE_SAVED) == 0 then
     local result = far.Message("\nSave current file?\n",
       "A new file will be created", "Yes;No;Cancel")
     if result < 0 or result == 3 then return false end

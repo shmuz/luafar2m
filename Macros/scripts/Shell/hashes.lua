@@ -9,7 +9,7 @@ local ProgressBar_Length = 40
 
 local F = far.Flags
 local char = ("").char
-local band = bit.band
+local band = bit64.band
 
 local function create_callback(aCurr, aCount, aFname)
   local title = ("%s: %d/%d"):format(Message_Title, aCurr, aCount)

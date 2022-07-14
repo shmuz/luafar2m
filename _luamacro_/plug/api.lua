@@ -8,7 +8,7 @@ local op = Shared.OpCodes
 local MCODE_F_USERMENU = op.MCODE_F_USERMENU
 local MCODE_F_FAR_GETCONFIG = op.MCODE_F_FAR_GETCONFIG
 local F=far.Flags
-local band,bor = bit.band,bit.bor
+local band, bor = bit64.band, bit64.bor
 local MacroCallFar = Shared.MacroCallFar
 
 local function SetProperties (namespace, proptable)
