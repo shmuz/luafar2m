@@ -54,7 +54,7 @@ CFLAGS2 = $(CFLAGS1) -DEMBED
 LIBS    = ../../$(LUAFARDLL)
 
 $(TRG): $(OBJ) $(LIBS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS) -Wl,-rpath,../../
 	mv -f $@ $(PATH_PLUGIN)
 	cd $(PATH_PLUGIN) && $(MAKE_LANG)
 
