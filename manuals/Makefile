@@ -7,11 +7,11 @@ PATH := $(APPDIR);$(PATH)
 
 .PHONY: lfar lf4
 
-lfar: SRC = $(DIR_LUAFAR)\luafar2l_manual.tsi
+lfar: SRC = src\luafar2l_manual.tsi
 lfar: OUT = luafar_unicode
 lfar: INSTALL = $(DIR_LUAFAR)
 
-lf4:  SRC = $(DIR_LF4ED)\lf4ed_manual.tsi
+lf4:  SRC = src\lf4ed_manual.tsi
 lf4:  OUT = lf4ed
 lf4:  INSTALL = $(DIR_LF4ED)
 
