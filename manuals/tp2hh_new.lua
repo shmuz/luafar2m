@@ -3,9 +3,10 @@
 -- Started:  29 Dec 2000
 -- Ported to Lua: 02-03 Dec 2008
 
-local rex = require "rex_pcre"
 local discount = require "discount"
-local lxsh = require "lxsh"
+local lxsh     = require "lxsh"
+local rex      = require "rex_pcre"
+local tsi      = require "tsi"
 
 local function fprintf(fp_out, fmt, ...)
   fp_out:write(fmt:format(...))
@@ -21,7 +22,7 @@ local function HTML_puts(s, fp_out)
 end
 
 local function fputs_indent(s, fp_out, indent)
-  for i=1,indent do fp_out:write '\t' end
+  for _=1,indent do fp_out:write '\t' end
   fp_out:write(s)
 end
 
@@ -207,7 +208,7 @@ local function generateFPT (NodeIterator, ProjectName, fp_template, out_dir)
   local ProjectHeaderReady
   local nodeLevel = -1
   local ProjectFiles = {}
-  for node, nodenumber in NodeIterator do
+  for node in NodeIterator do
     local filename = ("%d.html"):format(node.id)
     local fCurrent = assert(io.open(path_join(out_dir,filename), "w"))
     local article, ready = process_article(node.article)
@@ -275,24 +276,10 @@ local function generateFPT (NodeIterator, ProjectName, fp_template, out_dir)
 end
 
 do
-  local args = {...}
-  local datafile = args[1]
-  local lib, tem, outdir
-  for k=2,4 do
-    assert(args[k], "too few arguments")
-    local key,val = rex.match(args[k], "([^=]+)=(.+)")
-    if     key=="tem" then tem=val
-    elseif key=="lib" then lib=val
-    elseif key=="out" then outdir=val
-    else error("bad argument #"..k)
-    end
-  end
-  assert(datafile and tem and lib and outdir, "some parameter is missing")
-  assert(lib=="hjt" or lib=="tsi", "library not supported")
-  lib = require(lib)
-  local fp_template = tem and (tem~="-") and assert(io.open(tem))
+  local datafile, tem, outdir = ...
+  assert(datafile and tem and outdir, "some parameter is missing")
+  local fp_template = (tem~="-") and assert(io.open(tem))
   local project_name = datafile:match("[^/\\]+$"):gsub("%.[^.]+$", "")
-  generateFPT(lib.Nodes(datafile), project_name, fp_template, outdir or ".")
+  generateFPT(tsi.Nodes(datafile), project_name, fp_template, outdir or ".")
   if fp_template then fp_template:close() end
 end
-

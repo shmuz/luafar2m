@@ -55,7 +55,7 @@ lv=1
 dt=Text
 nm=Loading macrofiles
 ctime=3618592117
-mtime=3862501904
+mtime=3867582924
 <article>
 #_<markdown>
 #_
@@ -65,7 +65,7 @@ mtime=3862501904
 #_  determined by one of the following ways (in order of priorities):
 #_  1. A sequence of directories, specified explicitly (in a command or a function argument)
 #_  1. The value of `MainPath` variable in the file [`luamacro.ini`](93.html)
-#_  1. The directory `%HOME%/.config/far2l/Macros/scripts`<br><br>
+#_  1. The directory `$HOME/.config/far2l/Macros/scripts`<br><br>
 #_
 #_* Far Manager itself **never** makes any changes to the above mentioned directories. The files are added, removed, renamed and edited solely by the user.
 #_
@@ -201,7 +201,7 @@ lv=2
 dt=Text
 nm=Keyboard macros
 ctime=3580139029
-mtime=3862502125
+mtime=3867583033
 <article>
 #_<markdown>
 #_
@@ -210,7 +210,7 @@ mtime=3862502125
 #_  macros should be preferred.
 #_
 #_* Keyboard macros are loaded from Lua-files (extension `*.lua`), residing in the directory<br>
-#_  `%HOME%/.config/far2l/Macros/internal`.
+#_  `$HOME/.config/far2l/Macros/internal`.
 #_
 #_* Far Manager automatically creates, modifies and deletes files in this directory
 #_  in accordance with operations conducted on keyboard macros. It is **not** recommended
@@ -244,11 +244,11 @@ lv=2
 dt=Text
 nm=Event handlers
 ctime=3580139337
-mtime=3862503674
+mtime=3867583046
 <article>
 #_<markdown>
 #_
-#_Like [regular macros][1], event handlers are loaded from macrofiles (extensions `*.lua` and `*.moon`), residing in the directory<br> `%HOME%/.config/far2l/Macros/scripts` and its subdirectories. Each macrofile may contain both macros and event handlers.
+#_Like [regular macros][1], event handlers are loaded from macrofiles (extensions `*.lua` and `*.moon`), residing in the directory<br> `$HOME/.config/far2l/Macros/scripts` and its subdirectories. Each macrofile may contain both macros and event handlers.
 #_
 #_Loading a handler occurs when the global function `Event` is called. It receives one argument - a table containing parameters of the event handler. On successful completion the function returns `true`.
 #_
@@ -288,11 +288,11 @@ lv=2
 dt=Text
 nm=Adding items to plugins' menus
 ctime=3613740592
-mtime=3862503699
+mtime=3867586427
 <article>
 #_<markdown>
 #_
-#_Like the [regular macros][1], the added menu items are loaded from Lua- and MoonScript-files,  residing in the directory `%HOME%/.config/far2l/Macros/scripts` and its subdirectories.
+#_Like the [regular macros][1], the added menu items are loaded from Lua- and MoonScript-files,  residing in the directory `$HOME/.config/far2l/Macros/scripts` and its subdirectories.
 #_
 #_A menu item is loaded by the global function `MenuItem` that takes one argument - a table with parameters. The function returns `true` on success.
 #_
@@ -320,7 +320,7 @@ mtime=3862503699
 #_  1. *menu* - type of the menu (either of: `"Plugins"`, `"Disks"` or `"Config"`)
 #_  2. *area* - name of the current macroarea.<br><br>
 #_
-#_* The field `action` is the function that is called upon activation of the given menu item. It takes the same arguments as the function `export.Open` (see `luafar_manual.chm`), except `Guid`. If the function is called from the plugins configuration menu then both the arguments have `nil` value. The returned value is not used.
+#_* The field `action` is the function that is called upon activation of the given menu item. It takes the same arguments as the function `export.OpenPlugin` (see `luafar_manual.chm`). If the function is called from the plugins configuration menu then both the arguments have `nil` value. The returned value is not used.
 #_
 #_[1]: 75.html
 #_@@@
@@ -333,11 +333,11 @@ lv=2
 dt=Text
 nm=Adding command line prefixes
 ctime=3636459316
-mtime=3862503708
+mtime=3867583065
 <article>
 #_<markdown>
 #_
-#_Like the [regular macros][1], the added command line prefixes are loaded from Lua- and MoonScript-files,  residing in the directory `%HOME%/.config/far2l/Macros/scripts` and its subdirectories.
+#_Like the [regular macros][1], the added command line prefixes are loaded from Lua- and MoonScript-files,  residing in the directory `$HOME/.config/far2l/Macros/scripts` and its subdirectories.
 #_
 #_Prefixes are loaded by the global function `CommandLine` that takes one argument - a table with parameters. The function returns the number of successfully loaded prefixes.
 #_
@@ -363,17 +363,15 @@ lv=2
 dt=Text
 nm=Adding panel modules
 ctime=3730113272
-mtime=3862573774
+mtime=3867597568
 <article>
 #_<markdown>
-#_
-#_## <font color="red">(This article needs corrections)</font>
 #_
 #_"Panel module" is a set of Lua functions placed in a table and loaded with `PanelModule` function.
 #_
 #_- Names of those functions and their parameter sets coincide with functions from `export` table (see LuaFAR manual).
 #_- Here is the list of module-exported functions that are supported by the plugin:<br>
-#_`Analyse`, `ClosePanel`, `Compare`, `DeleteFiles`, `GetFiles`, `GetFindData`, `GetOpenPanelInfo`, `MakeDirectory`, `Open`, `ProcessHostFile`, `ProcessPanelEvent`, `ProcessPanelInput`, `PutFiles`, `SetDirectory`, `SetFindList`.
+#_`ClosePlugin`, `Compare`, `DeleteFiles`, `GetFiles`, `GetFindData`, `GetOpenPluginInfo`, `MakeDirectory`, `OpenFilePlugin`, `OpenPlugin`, `ProcessHostFile`, `ProcessEvent`, `ProcessKey`, `PutFiles`, `SetDirectory`, `SetFindList`.
 #_- Every panel module must contain a table `Info` with a mandatory field `Guid`. Other fields are optional.
 #_
 #_```
@@ -388,9 +386,9 @@ mtime=3862573774
 #_}
 #_
 #_-- Add only those "exported" functions that are needed for this panel module
-#_mod.Analyse     = function(...) ...... end
-#_mod.Open        = function(...) ...... end
-#_mod.GetFindData = function(...) ...... end
+#_mod.OpenFilePlugin = function(...) ...... end
+#_mod.OpenPlugin     = function(...) ...... end
+#_mod.GetFindData    = function(...) ...... end
 #_......
 #_
 #_-- Load the module
@@ -400,8 +398,8 @@ mtime=3862573774
 #_**Notes:**
 #_
 #_1. To create a panel from the command line or from the plugins menu, the existing function [`CommandLine`](96.html) and [`MenuItem`](90.html) should be used. Their `action()` should return 2 values: (1) the module table and (2) the panel object (any non-false Lua value).
-#_1. Function `mod.Open` is called by the plugin only with the following values of `OpenFrom` parameter:<br>
-#_`OPEN_ANALYSE`, `OPEN_FINDLIST` and `OPEN_SHORTCUT`.
+#_1. Function `mod.OpenPlugin` is called by the plugin only with the following values of `OpenFrom` parameter:<br>
+#_`OPEN_FINDLIST` and `OPEN_SHORTCUT`.
 #_
 #_See also: [Demo Example](99.html)
 #_
@@ -413,18 +411,18 @@ lv=3
 dt=Text
 nm=Demo example
 ctime=3730114449
-mtime=3732100057
+mtime=3867597452
 <article>
 #_<markdown>
 #_```
-#_if ({ far.AdvControl("ACTL_GETFARMANAGERVERSION", true) })[4] < 5171 then return end
-#_
 #_local F = far.Flags
 #_local Title ="Demo panel in LuaMacro"
 #_local mod = {}
 #_
 #_mod.Info = {
-#_  Guid = win.Uuid("715E5E90-DEB9-470A-84CE-7CF8D92A7B05")
+#_  Guid = win.Uuid("715E5E90-DEB9-470A-84CE-7CF8D92A7B05"); -- mandatory field
+#_  Author       = "Shmuel Zeigerman";
+#_  StartDate    = "2018-03-13";
 #_}
 #_
 #_local function FileToObject(FileName)
@@ -433,6 +431,7 @@ mtime=3732100057
 #_  if fp then
 #_    local obj = { HostFile=FileName; List={} }
 #_    for line in fp:lines() do
+#_      line = line:gsub("\r", "")
 #_      table.insert(obj.List, {FileName=line})
 #_    end
 #_    fp:close()
@@ -440,16 +439,16 @@ mtime=3732100057
 #_  end
 #_end
 #_
-#_function mod.Analyse(Data)
-#_  return Data.FileName and Data.FileName:sub(-5):lower() == ".abcd"
+#_function mod.OpenFilePlugin (Name, Data, OpMode)
+#_  if Name and Name:sub(-5):lower() == ".abcd" then
+#_    return FileToObject(Name)
+#_  end
 #_end
 #_
-#_function mod.Open(OpenFrom, Guid, Item)
-#_  if OpenFrom == F.OPEN_ANALYSE then
-#_    return FileToObject(Item.FileName)
-#_  elseif OpenFrom == F.OPEN_SHORTCUT then
+#_function mod.OpenPlugin(OpenFrom, Item)
+#_  if OpenFrom == F.OPEN_SHORTCUT then
 #_    return FileToObject(Item.HostFile)
-#_  elseif OpenFrom == F.OPEN_FINDLIST then
+#_  elseif OpenFrom == F.OPEN_FINDLIST then -- luacheck: ignore
 #_    -- If we uncomment the line "return {}", then this module will be
 #_    -- used instead of TmpPanel for displaying search results.
 #_    ---- return {}
@@ -460,14 +459,14 @@ mtime=3732100057
 #_  return object.List
 #_end
 #_
-#_function mod.GetOpenPanelInfo(object, handle)
+#_function mod.GetOpenPluginInfo(object, handle)
 #_  return {
 #_    HostFile = object.HostFile;
 #_    PanelTitle = Title;
+#_    ShortcutData = "";
 #_    StartSortMode = F.SM_UNSORTED;
 #_    StartSortOrder = 0;
-#_    ShortcutData = "";
-#_    Flags = bit64.bor(F.OPIF_SHORTCUT, F.OPIF_ADDDOTS);
+#_    Flags = bit64.bor(0, F.OPIF_ADDDOTS);
 #_  }
 #_end
 #_
@@ -590,16 +589,16 @@ lv=2
 dt=Text
 nm=External modules
 ctime=3580139041
-mtime=3862503846
+mtime=3867583103
 <article>
 #_<markdown>
 #_
-#_Lua modules can be placed in `%HOME%/.config/far2l/Macros/modules` and its subdirectories, as<br>
-#_`%HOME%/.config/far2l/Macros/modules/?.lua;%HOME%/.config/far2l/Macros/modules/?/init.lua;`<br>
+#_Lua modules can be placed in `$HOME/.config/far2l/Macros/modules` and its subdirectories, as<br>
+#_`$HOME/.config/far2l/Macros/modules/?.lua;$HOME/.config/far2l/Macros/modules/?/init.lua;`<br>
 #_is automatically added to `package.path`.
 #_
-#_Binary modules (DLL) can be placed in `%HOME%/.config/far2l/Macros/lib32` and
-#_`%HOME%/.config/far2l/Macros/lib64` and their subdirectories as those paths are automatically added to `package.cpath`.
+#_Binary modules (DLL) can be placed in `$HOME/.config/far2l/Macros/lib32` and
+#_`$HOME/.config/far2l/Macros/lib64` and their subdirectories as those paths are automatically added to `package.cpath`.
 #_
 </article>
 </node>
@@ -683,7 +682,7 @@ lv=2
 dt=Text
 nm=File luamacro.ini
 ctime=3617998172
-mtime=3862501806
+mtime=3867583110
 <article>
 #_<markdown>
 #_The file `luamacro.ini` contains some plugin's settings. If the file is missing, or some setting is missing then the default value will be used.
@@ -692,7 +691,7 @@ mtime=3862501806
 #_
 #_* `MainPath`<br>
 #_  The main path under which directories with macrofiles and modules are kept.<br>
-#_  The default value is `%HOME%/.config/far2l/Macros`.
+#_  The default value is `$HOME/.config/far2l/Macros`.
 #_
 #_* `LoadPathList`<br>
 #_  A sequence of paths separated with semicolons.

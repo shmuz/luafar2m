@@ -3,8 +3,9 @@
 -- Started:  29 Dec 2000
 -- Ported to Lua: 02-03 Dec 2008
 
-local rex = require "rex_pcre"
-local cmdline = require "cmdline"
+local discount = require "old-discount"
+local rex      = require "rex_pcre"
+local tsi      = require "tsi"
 
 local function fprintf(fp_out, fmt, ...)
   fp_out:write(fmt:format(...))
@@ -22,7 +23,7 @@ local function HTML_puts(s, fp_out)
 end
 
 local function fputs_indent(s, fp_out, indent)
-  for i=1,indent do fp_out:write '\t' end
+  for _=1,indent do fp_out:write '\t' end
   fp_out:write(s)
 end
 
@@ -135,7 +136,6 @@ local function process_article (text)
     return { kind="html"; text=text; }
   elseif line == "<markdown>" then
     text = text:sub(start)
-    local discount = require "old-discount"
     local part1, part2 = text:match("(.-)@@@(.*)")
     part1 = discount(part1 or text)
     return { kind="markdown"; text=postprocess_article(part1, part2, false); }
@@ -275,23 +275,11 @@ local function generateFPT (NodeIterator, ProjectName, fp_template, out_dir)
   fChmIndex:close()
 end
 
-local function syntax()
-  io.stderr:write[[
-TP2HH: Treepad to HTML Help Conversion Utility
-  Syntax: TP2HH <input file> lib=<library> [tem=<template file>] [out=<output dir>]
-]]
-end
-
 do
-  local arg = {...}
-  local param, msg = cmdline.getparam (arg, {"lib","tem","out"}, {1,"lib"})
-  if not param then
-    io.stderr:write(msg, "\n"); return syntax()
-  end
-  assert(param.lib=="hjt" or param.lib=="tsi", "safety check failed")
-  local lib = require(param.lib)
-  local fp_template = param.tem and assert(io.open(param.tem))
-  local project_name = param[1]:match("[^/\\]+$"):gsub("%.[^.]+$", "")
-  generateFPT(lib.Nodes(param[1]), project_name, fp_template, param.out or ".")
+  local datafile, tem, outdir = ...
+  assert(datafile and tem and outdir, "some parameter is missing")
+  local fp_template = (tem~="-") and assert(io.open(tem))
+  local project_name = datafile:match("[^/\\]+$"):gsub("%.[^.]+$", "")
+  generateFPT(tsi.Nodes(datafile), project_name, fp_template, outdir or ".")
   if fp_template then fp_template:close() end
 end

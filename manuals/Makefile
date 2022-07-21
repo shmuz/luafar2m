@@ -40,7 +40,7 @@ endif
 
 $(HHP): $(FILE_SRC)
 	@if not exist $(DIR_OUT) mkdir $(DIR_OUT)
-	set LUA_PATH=$(LUA_PATH) && set LUA_CPATH=$(LUA_CPATH) && lua $(TP2HH) $(FILE_SRC) tem=templates\api.tem lib=tsi out=$(DIR_OUT)
+	set LUA_PATH=$(LUA_PATH) && set LUA_CPATH=$(LUA_CPATH) && lua $(TP2HH) $(FILE_SRC) templates\api.tem $(DIR_OUT)
 
 clean:
 	@if exist out rmdir /s /q out

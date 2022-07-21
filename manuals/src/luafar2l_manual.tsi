@@ -293,16 +293,28 @@ id=109
 lv=2
 dt=Text
 nm=export.OpenPlugin
-mtime=3505220184
+mtime=3867586029
 <article>
 #_object = export.OpenPlugin (OpenFrom, Item)
+#_
+#_**Definitions:**
+#_  **"int64"**
+#_    Type of userdata, produced by `bit64` library.
+#_  **"binary"**
+#_    By convention, it is a string enclosed in a table as its first element.
+#_    The string is intended to be passed to and from without conversions UTF-8 <-> UTF-32LE.
+#_  **"panel"**
+#_    By convention, it is a panel handle (any non-false Lua value) enclosed in a table
+#_    as its first element. The table must contain the field ["type"]="panel".
 #_
 #_**Parameters:**
 #_  OpenFrom: integer
 #_  Item:
-#_    - If OpenFrom contains OPEN_FROMMACRO:
-#_        string  (if OpenFrom contains OPEN_FROMMACROSTRING)
-#_        integer (for other cases of OpenFrom)
+#_    - If OpenFrom == OPEN_FROMMACRO:
+#_        table (array of arguments):
+#_        - each argument can be either of:
+#_          string, nil, boolean, number, "int64", or "binary"
+#_        - field *n* of the table holds the length of the array
 #_    - else:
 #_        string (if OpenFrom is OPEN_SHORTCUT or OPEN_COMMANDLINE)
 #_        table  (if OpenFrom is OPEN_DIALOG)
@@ -311,14 +323,20 @@ mtime=3505220184
 #_        integer (for other cases of OpenFrom)
 #_
 #_**Returns:**
-#_  object: plugin object (any Lua value)
-#_    - Nil and false result in returning INVALID_HANDLE_VALUE to FAR.
-#_    - Number 0 (zero) tells Far to unload the plugin.
-#_    - The plugin object is passed to other exported functions
-#_      when they are called by Far.
+#_  if OpenFrom == OPEN_FROMMACRO:
+#_    0 or more Lua values.
+#_    Currently, values of the following types are supported:
+#_        string, nil, boolean, number, "int64", "binary", or "panel".
+#_    To open a panel, return a "panel" value as the first return value.
+#_  else:
+#_    object: plugin object (any Lua value)
+#_      - Nil and false result in returning INVALID_HANDLE_VALUE to FAR.
+#_      - Number 0 (zero) tells Far to unload the plugin.
+#_      - The plugin object is passed to other exported functions
+#_        when they are called by Far.
 #_
 #_@@@
-#_
+#_<lua> Links = { bit64="471.html" } </lua>
 #_
 </article>
 </node>
