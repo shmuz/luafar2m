@@ -707,11 +707,11 @@ lv=2
 dt=Text
 nm=File luafar_init.lua
 ctime=3639831305
-mtime=3867668857
+mtime=3867678765
 <article>
 #_<markdown>
 #_
-#_Plugin LuaMacro runs the file `Plugins/luafar/luafar_init.lua` (if that file exists) before loading its default script.
+#_Plugin LuaMacro runs the file `Plugins/luafar/luafar_init.lua` (if that file exists) before running its default script.
 #_See description of this feature in LuaFAR manual.
 </article>
 </node>
@@ -1487,9 +1487,9 @@ lv=3
 dt=Text
 nm=usermenu
 ctime=3571243204
-mtime=3862574528
+mtime=3867680847
 <article>
-#_**== Not yet inplemented ==**
+#_**== Not yet implemented ==**
 #_
 #_mf.usermenu (mode, filename)
 #_
@@ -1529,7 +1529,7 @@ lv=2
 dt=Text
 nm=Area
 ctime=3552736839
-mtime=3607091184
+mtime=3867679230
 <article>
 #_**Area** - a table with the following fields:
 #_
@@ -1551,8 +1551,7 @@ mtime=3607091184
 #_  Tree:                  boolean
 #_  FindFolder:            boolean
 #_  UserMenu:              boolean
-#_  ShellAutoCompletion:   boolean
-#_  DialogAutoCompletion:  boolean
+#_  AutoCompletion:        boolean
 #_
 #_**Functions:**
 #_
@@ -2123,8 +2122,10 @@ lv=3
 dt=Text
 nm=GetConfig
 ctime=3618906297
-mtime=3618922303
+mtime=3867680868
 <article>
+#_**== Not yet implemented ==**
+#_
 #_val, tp = Far.GetConfig (keyname)
 #_
 #_**Parameters:**
@@ -2185,23 +2186,23 @@ lv=2
 dt=Text
 nm=Menu
 ctime=3553252746
-mtime=3607109038
+mtime=3867681118
 <article>
 #_**Menu** - a table with the following fields:
 #_
 #_**Properties:**
 #_
-#_  Id:     string (GUID)
+#_  Id:     string   (not yet implemented)
 #_  Value:  string
 #_
 #_**Functions:**
 #_
-#_  Filter
-#_  FilterStr
+#_  Filter           (not yet implemented)
+#_  FilterStr        (not yet implemented)
 #_  GetValue
 #_  ItemStatus
 #_  Select
-#_  Show
+#_  Show             (not yet implemented)
 #_
 #_@@@
 #_{filterstr}: http://api.farmanager.com/ru/macro/macrocmd/prop_func/menus.html#Menu.FilterStr
@@ -2623,31 +2624,6 @@ mtime=3607111386
 </article>
 </node>
 <node>
-id=84
-lv=2
-dt=Text
-nm=editor.SubscribeChangeEvent
-ctime=3589525063
-mtime=3607111437
-<article>
-#_<markdown>
-#_LuaFAR library contains the function `editor.SubscribeChangeEvent`. This function is redefined by [LuaMacro][LuaMacro] plugin for use by [event handlers][events]:
-#_
-#_* The original function is called only when the internal *subscription counter* changes from 0 to 1 (if argument `Subscribe==true`), or from 1 to 0 (if argument `Subscribe==false`). It is therefore necessary that every event handler containing a call `Subscribe==true`, contained also a matching call `Subscribe==false`.
-#_
-#_* Unlike plugins, the `EE_CHANGE` event could come to an event handler regardless of whether that handler called `editor.SubscribeChangeEvent`.
-#_
-#_* There is a separate subscription counter for each editor session.
-#_
-#_[LuaMacro]: 7.html
-#_[events]: 78.html
-#_
-#_@@@
-#_{ee_change}: http://api.farmanager.com/ru/structures/processeditoreventinfo.html#EE_CHANGE
-#_
-</article>
-</node>
-<node>
 id=73
 lv=2
 dt=Text
@@ -2745,7 +2721,7 @@ lv=2
 dt=Text
 nm=Select files newer than current one
 ctime=3552222560
-mtime=3607111650
+mtime=3867681850
 <article>
 #_<markdown>
 #_```
@@ -2755,15 +2731,15 @@ mtime=3607111650
 #_  description="Select all files/folders newer than the current one in the active panel";
 #_  area="Shell"; key="CtrlM";
 #_  action=function()
-#_    local info = panel.GetPanelInfo(nil,1)
-#_    local curItem = panel.GetCurrentPanelItem(nil,1)
+#_    local info = panel.GetPanelInfo(1)
+#_    local curItem = panel.GetCurrentPanelItem(1)
 #_    for i=1,info.ItemsNumber do
-#_      local item = panel.GetPanelItem(nil,1,i)
+#_      local item = panel.GetPanelItem(1,i)
 #_      if item.LastWriteTime > curItem.LastWriteTime then
-#_        panel.SetSelection(nil,1,i,true)
+#_        panel.SetSelection(1,i,true)
 #_      end
 #_    end
-#_    panel.RedrawPanel(nil,1)
+#_    panel.RedrawPanel(1)
 #_  end;
 #_}
 #_```
