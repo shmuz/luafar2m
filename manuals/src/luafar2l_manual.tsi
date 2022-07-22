@@ -166,6 +166,28 @@ mtime=3866283742
 </article>
 </node>
 <node>
+id=487
+lv=2
+dt=Text
+nm=luafar_init.lua
+ctime=3867668999
+mtime=3867670115
+<article>
+#_<markdown>
+#_
+#_If the file `Plugins/luafar/luafar_init.lua` exists it is executed before the first run of
+#_the plugin's default script.<br>
+#_It is **not** executed when the default script is reloaded due to `far.ReloadDefaultScript == true`.
+#_
+#_See also:<br>
+#_[`LF_RunDefaultScript`](130.html)<br>
+#_[`LF_OpenPlugin`](173.html)<br>
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=426
 lv=2
 dt=Text
