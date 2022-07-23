@@ -389,14 +389,15 @@ local luafar = {
         "GetStackBookmarks", "GetString", "GetStringW", "InsertString", "InsertText",
         "NextStackBookmark", "PrevStackBookmark", "ProcessInput", "ProcessKey", "Quit",
         "ReadInput", "RealToTab", "Redraw", "SaveFile", "Select", "SetKeyBar", "SetParam",
-        "SetPosition", "SetString", "SetTitle", "TabToReal", "TurnOffMarkingBlock",
+        "SetPosition", "SetString", "SetStringW", "SetTitle", "TabToReal", "TurnOffMarkingBlock",
         "UndoRedo",
       };
     };
 
     ["regex"] = {
       fields = {
-        "find", "gmatch", "gsub", "match", "new", "tfind",
+        "exec",  "find",  "gmatch",  "gsub",  "match",  "tfind",  "new",
+        "execW", "findW", "gmatchW", "gsubW", "matchW", "tfindW",
       };
     };
 
@@ -413,8 +414,8 @@ local luafar = {
         "ExtractKey", "FileTimeToLocalFileTime", "FileTimeToSystemTime", "GetACP",
         "GetConsoleScreenBufferInfo", "GetCPInfo", "GetCurrentDir", "GetDriveType", "GetEnv",
         "GetFileAttr", "GetFileInfo", "GetOEMCP", "GetSystemTimeAsFileTime",
-        "GetVirtualKeys", "IsProcess64bit", "MoveFile", "MultiByteToWideChar", "OemToUtf8",
-        "RemoveDir", "RenameFile", "SetCurrentDir", "SetEnv", "SetFileAttr", "Sleep",
+        "GetVirtualKeys", "IsProcess64bit", "lenW", "MoveFile", "MultiByteToWideChar", "OemToUtf8",
+        "RemoveDir", "RenameFile", "SetCurrentDir", "SetEnv", "SetFileAttr", "Sleep", "subW",
         "SystemTimeToFileTime", "Utf32ToUtf8", "Utf8ToOem", "Utf8ToUtf32", "Uuid", "wcscmp",
       };
     };

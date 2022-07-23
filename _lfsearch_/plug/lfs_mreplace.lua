@@ -13,7 +13,7 @@ local AppName = function() return M.MDlgMultilineReplace end
 local F=far.Flags
 local KEEP_DIALOG_OPEN = 0
 
-local RegexLibs = {"far", "oniguruma", "pcre"} -- "lua" is not supported here
+local RegexLibs = {"far", "oniguruma", "pcre"}
 
 local function ReplaceDialog (Data)
   local HIST_INITFUNC   = _Plugin.RegPath .. "InitFunc"
@@ -135,17 +135,18 @@ local function EditorAction (op, data)
     far.Message("invalid input data"); return
   end
 
-  local TT_EditorGetString = editor.GetString
-  local TT_EditorSetString = editor.SetString
-  local TT_empty           = ""
-  local TT_newline         = "\n"
-  local TT_gmatch          = regex.gmatch
-  local TT_Gsub            = Common.GsubMB
+	local is_wide = tParams.Regex.ufindW and true
+  local TT_EditorGetString = is_wide and editor.GetStringW  or editor.GetString
+  local TT_EditorSetString = is_wide and editor.SetStringW  or editor.SetString
+  local TT_empty           = is_wide and win.Utf8ToUtf32("")  or ""
+  local TT_newline         = is_wide and win.Utf8ToUtf32("\n")  or "\n"
+  local TT_gmatch          = is_wide and regex.gmatchW or regex.gmatch
+  local TT_Gsub            = is_wide and Common.GsubW or Common.GsubMB
 
   local fReplace = function() end
   if op == "replace" then
     local nMatch,nReps = 0,0
-    local ff = Common.GetReplaceFunction(tParams.ReplacePat)
+    local ff = Common.GetReplaceFunction(tParams.ReplacePat, is_wide)
     fReplace = function (collect)
       nMatch = nMatch + 1
       local r1,r2 = ff(collect,nMatch,nReps)
@@ -185,7 +186,7 @@ local function EditorAction (op, data)
     lineno = lineno + 1
   end
 
-  -- get the resulting text as a string
+	-- get the resulting text as a string
   local result, nFound, nReps = TT_Gsub(table.concat(t,TT_newline), tParams.Regex, fReplace)
   if nReps == 0 or op == "count" then
     if data.bAdvanced then tParams.FinalFunc() end

@@ -27,18 +27,21 @@ end
 
 local function MakeGsub (mode)
   local sub, len
-  if mode == "multibyte" then sub, len = ("").sub, ("").len
+  if     mode == "widechar"  then sub, len = win.subW, win.lenW
+  elseif mode == "byte"      then sub, len = string.sub, string.len
+  elseif mode == "multibyte" then sub, len = ("").sub, ("").len
   else return nil
   end
 
   return function (aSubj, aRegex, aRepFunc, ...)
+    local ufind_method = mode=="widechar" and aRegex.ufindW or aRegex.ufind
     local nFound, nReps = 0, 0
     local tOut = {}
     local x, last_to = 1, -1
     local len_limit = 1 + len(aSubj)
 
     while x <= len_limit do
-      local from, to, collect = aRegex:ufind(aSubj, x)
+      local from, to, collect = ufind_method(aRegex, aSubj, x)
       if not from then break end
 
       if to == last_to then
@@ -333,6 +336,7 @@ local function GetRegexLib (lib_name)
     base = regex
     local tb_methods = getmetatable(regex.new(".")).__index
     tb_methods.ufind = tb_methods.tfind
+    tb_methods.ufindW = tb_methods.tfindW
     tb_methods.capturecount = function(r) return r:bracketscount() - 1 end
   -----------------------------------------------------------------------------
   elseif lib_name == "pcre" then
@@ -1015,7 +1019,9 @@ return {
   GetReplaceFunction = GetReplaceFunction;
   GetSearchAreas     = GetSearchAreas;
   GetWordUnderCursor = GetWordUnderCursor;
+  Gsub               = MakeGsub("byte");
   GsubMB             = MakeGsub("multibyte");
+  GsubW              = MakeGsub("widechar");
   IndexToSearchArea  = IndexToSearchArea;
   NewUserBreak       = NewUserBreak;
   ProcessDialogData  = ProcessDialogData;

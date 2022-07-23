@@ -3622,6 +3622,24 @@ mtime=3851869148
 </article>
 </node>
 <node>
+id=490
+lv=2
+dt=Text
+nm=editor.SetStringW
+ctime=3867751767
+mtime=3867751916
+<article>
+#_Same as `editor.SetString` but *StringText* and *StringEOL*
+#_should be encoded in UTF-32LE.
+#_
+#_@@@
+#_<lua> Links = {
+#_  ["editor.SetString"]="44.html" 
+#_} </lua>
+#_
+</article>
+</node>
+<node>
 id=45
 lv=2
 dt=Text
@@ -6138,11 +6156,49 @@ nm=Regular expression functions
 </article>
 </node>
 <node>
+id=488
+lv=2
+dt=Text
+nm=regex.exec, execW
+ctime=3867734456
+mtime=3867735676
+<article>
+#_from, to, offsets = regex.exec (s, pattern, [init], [cflags])
+#_
+#_**Parameters:**
+#_  s       :  string
+#_  pattern :  string
+#_  init    :  integer (default=1; can be negative)
+#_  cflags  :  string (any combination of 'i','m','o','s' and 'x')
+#_
+#_**Returns:**
+#_  from    : integer
+#_  to      : integer
+#_  offsets : table - array of captures' offsets (there can be *false*
+#_                    in place of captures not participated in the match)
+#_
+#_**Example:**
+#_  If the whole match is at offsets 10,20 and substring matches are
+#_  at offsets 12,14 and 16,19 then the function returns the following:
+#_  10, 20, { 12,14,16,19 }.
+#_
+#_**Note:**
+#_*regex.execW* receives its 1-st argument in UTF-32LE encoding.
+#_
+#_**Far API used:**
+#_  RegExpControl
+#_
+#_@@@
+#_<lua> Links = { RegExpControl="http://api.farmanager.com/ru/service_functions/regexpcontrol.html" } </lua>
+#_
+</article>
+</node>
+<node>
 id=271
 lv=2
 dt=Text
-nm=regex.find
-mtime=3490797670
+nm=regex.find, findW
+mtime=3867736301
 <article>
 #_from, to [,c1 [,c2]...] = regex.find (s, pattern, [init], [cflags])
 #_
@@ -6163,9 +6219,15 @@ mtime=3490797670
 #_  by the meaning of its optional 4-th parameter:
 #_  -- *cflags* : compilation flags;
 #_
+#_**Note:**
+#_*regex.findW* receives its 1-st argument and returns captures in
+#_UTF-32LE encoding.
+#_
 #_**Far API used:**
 #_  RegExpControl
 #_
+#_@@@
+#_<lua> Links = { RegExpControl="http://api.farmanager.com/ru/service_functions/regexpcontrol.html" } </lua>
 #_
 </article>
 </node>
@@ -6173,8 +6235,8 @@ mtime=3490797670
 id=269
 lv=2
 dt=Text
-nm=regex.gmatch
-mtime=3490797699
+nm=regex.gmatch, gmatchW
+mtime=3867736328
 <article>
 #_for c1 [,c2 ...] in regex.gmatch (s, pattern [, cflags]) do
 #_  ......
@@ -6194,9 +6256,15 @@ mtime=3490797699
 #_  following extensions:
 #_  -- *cflags* : optional 3-rd parameter: compilation flags;
 #_
+#_**Note:**
+#_*regex.gmatchW* receives its 1-st argument and returns captures in
+#_UTF-32LE encoding.
+#_
 #_**Far API used:**
 #_  RegExpControl
 #_
+#_@@@
+#_<lua> Links = { RegExpControl="http://api.farmanager.com/ru/service_functions/regexpcontrol.html" } </lua>
 #_
 </article>
 </node>
@@ -6204,8 +6272,8 @@ mtime=3490797699
 id=270
 lv=2
 dt=Text
-nm=regex.gsub
-mtime=3490797715
+nm=regex.gsub, gsubW
+mtime=3867736358
 <article>
 #_res, nmatch, nrep = regex.gsub (s, pattern, repl, [n], [cflags])
 #_
@@ -6227,10 +6295,15 @@ mtime=3490797715
 #_  -- *cflags* : optional 5-th parameter: compilation flags;
 #_  -- *nrep*   : 3-rd return value: number of replacements made;
 #_
+#_**Note:**
+#_*regex.gsubW* receives its 1-st argument and returns captures in
+#_UTF-32LE encoding.
+#_
 #_**Far API used:**
 #_  RegExpControl
 #_
 #_@@@
+#_<lua> Links = { RegExpControl="http://api.farmanager.com/ru/service_functions/regexpcontrol.html" } </lua>
 #_
 </article>
 </node>
@@ -6238,8 +6311,8 @@ mtime=3490797715
 id=272
 lv=2
 dt=Text
-nm=regex.match
-mtime=3490797724
+nm=regex.match, matchW
+mtime=3867736390
 <article>
 #_c1 [,c2]...] = regex.match (s, pattern, [init], [cflags])
 #_
@@ -6258,9 +6331,15 @@ mtime=3490797724
 #_  following extensions:
 #_  -- *cflags* : optional 4-th parameter: compilation flags;
 #_
+#_**Note:**
+#_*regex.matchW* receives its 1-st argument and returns captures in
+#_UTF-32LE encoding.
+#_
 #_**Far API used:**
 #_  RegExpControl
 #_
+#_@@@
+#_<lua> Links = { RegExpControl="http://api.farmanager.com/ru/service_functions/regexpcontrol.html" } </lua>
 #_
 </article>
 </node>
@@ -6268,9 +6347,9 @@ mtime=3490797724
 id=483
 lv=2
 dt=Text
-nm=regex.tfind
+nm=regex.tfind, tfindW
 ctime=3864718897
-mtime=3864719352
+mtime=3867736447
 <article>
 #_from, to, tbl = regex.tfind (subj, pattern, [init], [cflags])
 #_
@@ -6289,8 +6368,15 @@ mtime=3864719352
 #_**Returns on failure:**
 #_  nil
 #_
+#_**Note:**
+#_*regex.tfindW* receives its 1-st argument and returns captures in
+#_UTF-32LE encoding.
+#_
 #_**Far API used:**
 #_  RegExpControl
+#_
+#_@@@
+#_<lua> Links = { RegExpControl="http://api.farmanager.com/ru/service_functions/regexpcontrol.html" } </lua>
 #_
 </article>
 </node>
@@ -6299,7 +6385,7 @@ id=266
 lv=2
 dt=Text
 nm=regex.new
-mtime=3490797736
+mtime=3867736171
 <article>
 #_regex_object = regex.new (pattern [, cflags])
 #_
@@ -6319,14 +6405,21 @@ mtime=3490797736
 #_    -- Via the *cflags* parameter.
 #_
 #_**Object methods:**
-#_  bracketscount, find, match
+#_  bracketscount, exec, find, gsub, match, tfind
 #_
 #_**Far API used:**
 #_  RegExpControl
 #_
 #_@@@
-#_<lua> Links = { find="267.html", match="268.html",
-#_  bracketscount="377.html" } </lua>
+#_<lua> Links = {
+#_  bracketscount="377.html",
+#_  exec="489.html";
+#_  find="267.html",
+#_  gsub="386.html";
+#_  match="268.html",
+#_  tfind="484.html";
+#_  RegExpControl="http://api.farmanager.com/ru/service_functions/regexpcontrol.html",
+#_} </lua>
 #_
 </article>
 </node>
@@ -6336,7 +6429,7 @@ lv=3
 dt=Text
 nm=method bracketscount
 ctime=3489988958
-mtime=3489990041
+mtime=3867735907
 <article>
 #_count = regex_object:bracketscount ()
 #_
@@ -6349,6 +6442,44 @@ mtime=3489990041
 #_**Far API used:**
 #_  RegExpControl
 #_
+#_@@@
+#_<lua> Links = { RegExpControl="http://api.farmanager.com/ru/service_functions/regexpcontrol.html" } </lua>
+#_
+</article>
+</node>
+<node>
+id=489
+lv=3
+dt=Text
+nm=methods exec, execW
+ctime=3867734783
+mtime=3867736489
+<article>
+#_from, to, offsets = regex_object:exec (subj [, init])
+#_
+#_**Parameters:**
+#_  subj   :  string
+#_  init   :  integer (default=1; can be negative)
+#_
+#_**Returns:**
+#_  from    : integer
+#_  to      : integer
+#_  offsets : table - array of captures' offsets (there can be *false*
+#_                    in place of captures not participated in the match)
+#_
+#_**Example:**
+#_  If the whole match is at offsets 10,20 and substring matches are
+#_  at offsets 12,14 and 16,19 then the method returns the following:
+#_  10, 20, { 12,14,16,19 }.
+#_
+#_**Note:**
+#_*regex_object:execW* receives its 1-st argument in UTF-32LE encoding.
+#_
+#_**Far API used:**
+#_  RegExpControl
+#_
+#_@@@
+#_<lua> Links = { RegExpControl="http://api.farmanager.com/ru/service_functions/regexpcontrol.html" } </lua>
 #_
 </article>
 </node>
@@ -6356,7 +6487,8 @@ mtime=3489990041
 id=267
 lv=3
 dt=Text
-nm=method find
+nm=methods find, findW
+mtime=3867736527
 <article>
 #_from, to [,c1 [,c2]...] = regex_object:find (subj [, init])
 #_
@@ -6370,9 +6502,15 @@ nm=method find
 #_  c1,... : strings (there can be *false* in place of captures
 #_                    not participated in the match)
 #_
+#_**Note:**
+#_*regex_object:findW* receives its 1-st argument and returns captures
+#_in UTF-32LE encoding.
+#_
 #_**Far API used:**
 #_  RegExpControl
 #_
+#_@@@
+#_<lua> Links = { RegExpControl="http://api.farmanager.com/ru/service_functions/regexpcontrol.html" } </lua>
 #_
 </article>
 </node>
@@ -6380,9 +6518,9 @@ nm=method find
 id=386
 lv=3
 dt=Text
-nm=method gsub
+nm=methods gsub, gsubW
 ctime=3497976622
-mtime=3497976774
+mtime=3867736556
 <article>
 #_res, nmatch, nrep = regex_object:gsub (s, repl, [n])
 #_
@@ -6396,9 +6534,15 @@ mtime=3497976774
 #_  nmatch:   integer
 #_  nrep:     integer
 #_
+#_**Note:**
+#_*regex_object:gsubW* receives its 1-st argument and returns captures
+#_in UTF-32LE encoding.
+#_
 #_**Far API used:**
 #_  RegExpControl
 #_
+#_@@@
+#_<lua> Links = { RegExpControl="http://api.farmanager.com/ru/service_functions/regexpcontrol.html" } </lua>
 #_
 </article>
 </node>
@@ -6406,7 +6550,8 @@ mtime=3497976774
 id=268
 lv=3
 dt=Text
-nm=method match
+nm=methods match, matchW
+mtime=3867736585
 <article>
 #_c1 [,c2 ...] = regex_object:match (subj [, init])
 #_
@@ -6418,9 +6563,15 @@ nm=method match
 #_  c1,... : strings (there can be *false* in place of captures
 #_                    not participated in the match)
 #_
+#_**Note:**
+#_*regex_object:matchW* receives its 1-st argument and returns captures
+#_in UTF-32LE encoding.
+#_
 #_**Far API used:**
 #_  RegExpControl
 #_
+#_@@@
+#_<lua> Links = { RegExpControl="http://api.farmanager.com/ru/service_functions/regexpcontrol.html" } </lua>
 #_
 </article>
 </node>
@@ -6428,9 +6579,9 @@ nm=method match
 id=484
 lv=3
 dt=Text
-nm=method tfind
+nm=methods tfind, tfindW
 ctime=3864719159
-mtime=3864719274
+mtime=3867736618
 <article>
 #_from, to, tbl = regex_object:tfind (subj, [init])
 #_
@@ -6447,8 +6598,15 @@ mtime=3864719274
 #_**Returns on failure:**
 #_  nil
 #_
+#_**Note:**
+#_*regex_object:tfindW* receives its 1-st argument and returns captures
+#_in UTF-32LE encoding.
+#_
 #_**Far API used:**
 #_  RegExpControl
+#_
+#_@@@
+#_<lua> Links = { RegExpControl="http://api.farmanager.com/ru/service_functions/regexpcontrol.html" } </lua>
 #_
 </article>
 </node>
@@ -7833,6 +7991,28 @@ mtime=3500653766
 </article>
 </node>
 <node>
+id=491
+lv=3
+dt=Text
+nm=win.lenW
+ctime=3867754214
+mtime=3867754267
+<article>
+#_length = win.lenW (str)
+#_
+#_**Parameters:**
+#_  str:    string
+#_
+#_**Returns:**
+#_  length: integer
+#_
+#_**Description:**
+#_  This function is similar to *string.len* except that it works on UTF-32LE strings
+#_  and returns their lengths as  number of characters rather than bytes.
+#_
+</article>
+</node>
+<node>
 id=370
 lv=3
 dt=Text
@@ -7877,6 +8057,30 @@ nm=win.OemToUtf8
 #_  str_out : string in UTF-8 encoding
 #_
 #_@@@
+#_
+</article>
+</node>
+<node>
+id=492
+lv=3
+dt=Text
+nm=win.subW
+ctime=3867754224
+mtime=3867754300
+<article>
+#_strOut = win.subW (str, from, to)
+#_
+#_**Parameters:**
+#_  str:    string
+#_  from:   integer (default = 1)
+#_  to:     integer (default = -1)
+#_
+#_**Returns:**
+#_  strOut: string
+#_
+#_**Description:**
+#_  This function is similar to *string.sub* except that it works on UTF-32LE strings
+#_  and considers arguments *from* and *to* expressed in characters rather than bytes.
 #_
 </article>
 </node>
