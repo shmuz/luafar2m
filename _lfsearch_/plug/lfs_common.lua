@@ -320,7 +320,7 @@ end
 
 --------------------------------------------------------------------------------
 -- @param lib_name
---    Either of ("far", "pcre", "pcre2", "oniguruma").
+--    Either of ("far", "pcre", "oniguruma").
 -- @return
 --    A table that "mirrors" the specified library's table (via
 --    metatable.__index) and that may have its own version of function "new".
@@ -363,9 +363,16 @@ local function GetRegexLib (lib_name)
   -----------------------------------------------------------------------------
   elseif lib_name == "oniguruma" then
     base = require("rex_onig")
-    deriv.new = function (pat, cf) return base.new (pat, cf, "UTF8", "PERL_NG") end
+    deriv.new = function (pat, cf) return base.new (Utf32(pat), cf, "UTF32_LE", "PERL_NG") end
     local tb_methods = getmetatable(base.new(".")).__index
-    tb_methods.ufind = WrapTfindMethod(tb_methods.tfind)
+    if tb_methods.ufindW == nil then
+      local tfindW = tb_methods.tfind
+      tb_methods.ufindW = function(r, s, init)
+        local from, to, t = tfindW(r, s, 4*init-3)
+        if from then from, to = (from+3)/4, to/4; return from, to, t; end
+      end
+      tb_methods.gsubW = function(patt, subj, rep) return base.gsub(subj, patt, rep) end
+    end
     -- tb_methods.capturecount = tb_methods.capturecount -- this method is already available
   -----------------------------------------------------------------------------
   else

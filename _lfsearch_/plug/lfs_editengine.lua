@@ -10,6 +10,7 @@ local CustomMenu = require "far2.custommenu"
 
 local F = far.Flags
 local floor, ceil, min, max = math.floor, math.ceil, math.min, math.max
+local lenW = win.lenW
 
 
 -- This function is that long because FAR API does not supply needed
@@ -108,8 +109,8 @@ end
 -- This function replaces the old 9-line function.
 -- The reason for applying a new, much more complicated algorithm is that
 -- the old algorithm has unacceptably poor performance on long subjects.
-local function find_back (patt, s, init)
-  local outFrom, outTo, out = patt:ufind(s, 1)
+local function find_back (patt, ufind_method, s, init)
+  local outFrom, outTo, out = ufind_method(patt, s, 1)
   if outFrom == nil or outTo >= init then return nil end
 
   local BEST = 1
@@ -118,7 +119,7 @@ local function find_back (patt, s, init)
   local start = ceil((MIN+MAX)/2)
 
   while true do
-    local resFrom, resTo, res = patt:ufind(s, start)
+    local resFrom, resTo, res = ufind_method(patt, s, start)
     if resFrom and resTo >= init then res=nil end
     local ok = false
     ---------------------------------------------------------------------------
@@ -355,16 +356,17 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
   return newsearch
 end
 
-local function GetInvariantTable()
+local function GetInvariantTable (tRegex)
+  local is_wide = tRegex.ufindW and true
   return {
-    EditorGetString = editor.GetString,
-    EditorSetString = editor.SetString,
-    empty           = "",
-    find            = regex.find,
-    gmatch          = regex.gmatch,
-    len             = ("").len,
-    sub             = ("").sub,
-    U8              = function(s) return s end,
+    EditorGetString = is_wide and editor.GetStringW  or editor.GetString,
+    EditorSetString = is_wide and editor.SetStringW  or editor.SetString,
+    empty           = is_wide and win.Utf8ToUtf32""  or "",
+    find            = is_wide and regex.findW        or regex.find,
+    gmatch          = is_wide and regex.gmatchW      or regex.gmatch,
+    len             = is_wide and win.lenW or ("").len,
+    sub             = is_wide and win.subW or ("").sub,
+    U8              = is_wide and win.Utf32ToUtf8    or function(s) return s end,
   }
 end
 
@@ -398,7 +400,9 @@ local function DoSearch (
   local timing = NewTiming()
   bWrapAround = (not bScopeIsBlock) and (not bOriginIsScope) and bWrapAround
 
+  local is_wide = tRegex.ufindW and true
   local TT = GetInvariantTable(tRegex)
+  local ufind_method = tRegex.ufindW or tRegex.ufind
   -----------------------------------------------------------------------------
   local sTitle = M.MTitleSearch
   local bForward = not bSearchBack
@@ -428,7 +432,9 @@ local function DoSearch (
   local function set_sLine (s, eol)
     sLine, sLineEol, sLineLen, sLineU8 = s, eol, TT.len(s), nil
   end
-  local get_sLineU8 = function() return sLine; end
+  local get_sLineU8 = is_wide and
+    function() sLineU8 = sLineU8 or win.Utf32ToUtf8(sLine); return sLineU8; end or
+    function() return sLine; end
 
   local x, y, egs, part1
 
@@ -552,8 +558,8 @@ local function DoSearch (
           end
           -----------------------------------------------------------------------
           local collect, fr, to
-          if bForward then fr, to, collect = tRegex:ufind(sLine, x)
-          else fr, to, collect = find_back(tRegex, sLine, x)
+          if bForward then fr, to, collect = ufind_method(tRegex, sLine, x)
+          else fr, to, collect = find_back(tRegex, ufind_method, sLine, x)
           end
           if not fr then
             if bLastLine then bFinish=true; end
@@ -573,12 +579,12 @@ local function DoSearch (
             if bForward then
               if x <= sLineLen then
                 x = x + 1
-                fr, to, collect = tRegex:ufind(sLine, x)
+                fr, to, collect = ufind_method(tRegex, sLine, x)
               end
             else
               if x > 1 then
                 x = x - 1
-                fr, to, collect = find_back(tRegex, sLine, x)
+                fr, to, collect = find_back(tRegex, ufind_method, sLine, x)
               end
             end
             if not collect then break end
@@ -651,7 +657,9 @@ local function DoReplace (
   bWrapAround = (not bScopeIsBlock) and (not bOriginIsScope) and bWrapAround
 
   bDelNonMatchLine = bDelNonMatchLine and bFirstSearch
+  local is_wide = tRegex.ufindW and true
   local TT = GetInvariantTable(tRegex)
+  local ufind_method = tRegex.ufindW or tRegex.ufind
   local EditorSetCurString = function(text, eol)
     if not TT.EditorSetString(nil, text, eol) then error("EditorSetString failed") end
   end
@@ -660,7 +668,7 @@ local function DoReplace (
   local bForward = not bSearchBack
   local bAllowEmpty = bFirstSearch
   fReplaceChoice = fReplaceChoice or GetReplaceChoice
-  local fReplace = Common.GetReplaceFunction(xReplacePat, false)
+  local fReplace = Common.GetReplaceFunction(xReplacePat, is_wide)
 
   local sChoice = bFirstSearch and not bConfirmReplace and "all" or "initial"
   local nFound, nReps, nLine = 0, 0, 0
@@ -962,8 +970,8 @@ local function DoReplace (
           end
           -----------------------------------------------------------------------
           local collect, fr, to
-          if bForward then fr, to, collect = tRegex:ufind(sLine, x)
-          else fr, to, collect = find_back(tRegex, sLine, x)
+          if bForward then fr, to, collect = ufind_method(tRegex, sLine, x)
+          else fr, to, collect = find_back(tRegex, ufind_method, sLine, x)
           end
 
           if not fr then
@@ -994,12 +1002,12 @@ local function DoReplace (
             if bForward then
               if x <= sLineLen then
                 x = x + 1
-                fr, to, collect = tRegex:ufind(sLine, x)
+                fr, to, collect = ufind_method(tRegex, sLine, x)
               end
             else
               if x > 1 then
                 x = x - 1
-                fr, to, collect = find_back(tRegex, sLine, x)
+                fr, to, collect = find_back(tRegex, ufind_method, sLine, x)
               end
             end
             if not collect then break end
@@ -1102,10 +1110,12 @@ local function DoReplace (
     local bSelectFound = _Plugin.History.config.bSelectFound
     if sChoice=="yes" then
       if bSelectFound and x2 then
-        -- Convert byte-wise offsets to character-wise ones
-        local str1 = editor.GetString(y1, 2)
-        local str2 = (y2 == y1) and str1 or editor.GetString(y2, 2)
-        x1, x2 = TT.sub(str1,1,x1):len(), TT.sub(str2,1,x2):len()
+        if not is_wide then
+          -- Convert byte-wise offsets to character-wise ones
+          local str1 = editor.GetString(y1, 2)
+          local str2 = (y2 == y1) and str1 or editor.GetString(y2, 2)
+          x1, x2 = TT.sub(str1,1,x1):len(), TT.sub(str2,1,x2):len()
+        end
         editor.Select("BTYPE_STREAM", y1, x1, x2-x1+1, y2-y1+1)
       else
         editor.Select("BTYPE_NONE")
@@ -1121,7 +1131,7 @@ local function DoReplace (
       else -- the last substitution was single-line
         if lastSubst ~= TT.empty then
           -- Convert byte-wise offsets to character-wise ones if needed
-          local len = ("").len
+          local len = is_wide and lenW or ("").len
           local width = len(lastSubst)
           local x1 = 1
           for i=1,indexLS-1 do x1 = x1 + len(acc[i]) end

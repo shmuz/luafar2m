@@ -416,7 +416,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   local userbreak = NewUserBreak()
   local tFoundFiles, nTotalFiles = {}, 0
   local Regex = tParams.Regex
-  local Find = Regex.find
+  local Find = Regex.findW or Regex.find
   local bTextSearch = (tParams.tMultiPatterns and tParams.tMultiPatterns.NumPatterns > 0) or
                       (not tParams.tMultiPatterns and tParams.sSearchPat ~= "")
   local bAcceptFolders = aData.bSearchFolders and not bTextSearch
@@ -485,8 +485,10 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
                   (cp == 61201) and SwapEndian(str) or
                   MultiByteToWideChar(str, cp)
         if s then
-          if cp ~= 65001 then
-            s = win.Utf32ToUtf8(s)
+          if Regex.ufindW then
+            if cp == 65001 then s = win.Utf8ToUtf32(s) end
+          else
+            if cp ~= 65001 then s = win.Utf32ToUtf8(s) end
           end
           if s then
             local ok, start
