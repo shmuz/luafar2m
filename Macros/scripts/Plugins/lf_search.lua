@@ -56,6 +56,12 @@ Macro {
 }
 
 Macro {
+  description="LF Search: Panel Rename";
+  area="Shell QView Tree Info"; key="CtrlShiftJ";
+  action = function() LFS_Panels "rename" end
+}
+
+Macro {
   description="LF Search: Show Panel";
   area="Shell QView Tree Info"; key="CtrlShiftK";
   action = function() LFS_Panels "panel" end

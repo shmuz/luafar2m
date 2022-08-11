@@ -254,7 +254,7 @@ local function UserDialog (aData, aList, aDlgTitle)
     { tp="sep";                                                                                    },
 
     { tp="butt";  name="btnOk";     centergroup=1; default=1; text=M.MOk;                          },
-    { tp="butt";  name="btnConfig"; centergroup=1;            text=M.MDlgBtnConfig;                },
+--  { tp="butt";  name="btnConfig"; centergroup=1;            text=M.MDlgBtnConfig;                },
     { tp="butt";  name="btnCancel"; centergroup=1; cancel=1;  text=M.MCancel;                      },
   }
   local Pos = libDialog.Indexes(Items)
@@ -481,7 +481,7 @@ local function DoAction (Params, aDir, aLog)
       if not bRenFiles then return end
     end
     nMatch = nMatch + 1
-    local path, oldname = aFullName:match("^(.-)([^\\]+)$")
+    local path, oldname = aFullName:match("^(.-)([^/]+)$")
     local newname = GsubMB(oldname, Regex, fReplace, nMatch, nReps, oldname)
     if newname ~= oldname then
       if sChoice ~= "all" then
@@ -489,16 +489,15 @@ local function DoAction (Params, aDir, aLog)
         if sChoice == "cancel" then return true end
       end
       if sChoice ~= "no" then
-        local prefix = [[\\?\]]
         local newFullName = path .. newname
-        local res, err = win.RenameFile(prefix..aFullName, prefix..newFullName)
+        local res, err = win.RenameFile(aFullName, newFullName)
         if res then
           nReps = nReps + 1
-          aLog:AddItem(("  %q, %q, %q,"):format(prefix..path, oldname, newname))
+          aLog:AddItem(("  %q, %q, %q,"):format(path, oldname, newname))
           return nil, newFullName
         else
           err = string.gsub(err, "[\r\n]+", " ")
-          aLog:AddItem(("--%q, %q, %q, --ERROR: %s"):format(prefix..path, oldname, newname, err))
+          aLog:AddItem(("--%q, %q, %q, --ERROR: %s"):format(path, oldname, newname, err))
           far.Message(aFullName.."\n\n"..newFullName.."\n\n"..err, AppName, nil, "wl")
         end
       end
@@ -541,7 +540,7 @@ local function DoAction (Params, aDir, aLog)
 
   local panelInfo = panel.GetPanelInfo(1)
   local dir = panel.GetPanelDirectory(1)
-  if dir ~= "" then dir = dir:gsub("\\?$", "\\", 1) end
+  if dir ~= "" then dir = dir:gsub("/?$", "/", 1) end
   local ItemsNumber = Params.rSearchInAll and panelInfo.ItemsNumber or panelInfo.SelectedItemsNumber
   local GetItem = Params.rSearchInAll and panel.GetPanelItem or panel.GetSelectedPanelItem
   local ItemList = {}
@@ -625,7 +624,7 @@ local function main()
   if not tParams then return end
 
   local dir = panel.GetPanelDirectory(1)
-  if not (dir == "" or dir:find("[\\/]$")) then dir = dir.."\\" end
+  if not (dir == "" or dir:find("[\\/]$")) then dir = dir.."/" end
 
   local log = NewLog(HistData.bLogFile)
   if log:IsReal() then

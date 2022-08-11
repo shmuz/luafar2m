@@ -5,6 +5,8 @@ local M       = require "lfs_message"
 local RepLib  = require "lfs_replib"
 local sd      = require "far2.simpledialog"
 
+local DefaultLogFileName = "\\D{%Y%m%d-%H%M%S}.log"
+
 local band, bnot, bor = bit64.band, bit64.bnot, bit64.bor
 local Utf8, Utf32 = win.Utf32ToUtf8, win.Utf8ToUtf32
 local uchar = ("").char
@@ -23,6 +25,13 @@ local function FormatTime (tm)
   if tm < 0 then tm = 0 end
   local fmt = (tm < 10) and "%.2f" or (tm < 100) and "%.1f" or "%.0f"
   return fmt:format(tm)
+end
+
+local function GotoEditField (hDlg, id)
+  local len = hDlg:GetText(id):len()
+  hDlg:SetFocus(id)
+  hDlg:SetCursorPos(id, {X=len+1, Y=1})
+  hDlg:SetSelection(id, {BlockType="BTYPE_STREAM", BlockStartPos=1, BlockWidth=len})
 end
 
 local function MakeGsub (mode)
@@ -976,6 +985,37 @@ function SRFrame:DoPresets (hDlg)
 end
 
 
+local function TransformLogFilePat (aStr)
+  local T = { MaxGroupNumber=0 }
+  local patt = [[
+    \\D \{ ([^\}]+) \} |
+    (.) |
+    ($)
+  ]]
+
+  for date,char,dollar in regex.gmatch(aStr,patt,"sx") do
+    if date then
+      T[#T+1] = { "date", date }
+    elseif char then
+      if T[#T] and T[#T][1]=="literal" then T[#T][2] = T[#T][2] .. char
+      else T[#T+1] = { "literal", char }
+      end
+    elseif dollar then
+      if not T[1] then return nil, "empty pattern" end
+    end
+
+    local curr = T[#T]
+    if curr[1]=="literal" then
+      local c = curr[2]:match("[\\/:*?\"<>|%c%z]")
+      if c then
+        return nil, "invalid filename character: "..c
+      end
+    end
+  end
+  return T
+end
+
+
 local function GetReplaceFunction (aReplacePat, is_wide)
   local fSame = function(s) return s end
   local U8 = is_wide and Utf8 or fSame
@@ -1015,23 +1055,26 @@ end
 
 
 return {
-  EditorConfigDialog = EditorConfigDialog;
-  CheckSearchArea    = CheckSearchArea;
-  CreateSRFrame      = CreateSRFrame;
-  DisplaySearchState = DisplaySearchState;
-  ErrorMsg           = ErrorMsg;
-  FormatInt          = FormatInt;
-  FormatTime         = FormatTime;
-  GetDialogHistory   = GetDialogHistory;
-  GetRegexLib        = GetRegexLib;
-  GetReplaceFunction = GetReplaceFunction;
-  GetSearchAreas     = GetSearchAreas;
-  GetWordUnderCursor = GetWordUnderCursor;
-  Gsub               = MakeGsub("byte");
-  GsubMB             = MakeGsub("multibyte");
-  GsubW              = MakeGsub("widechar");
-  IndexToSearchArea  = IndexToSearchArea;
-  NewUserBreak       = NewUserBreak;
-  ProcessDialogData  = ProcessDialogData;
-  SaveCodePageCombo  = SaveCodePageCombo;
+  EditorConfigDialog  = EditorConfigDialog;
+  CheckSearchArea     = CheckSearchArea;
+  CreateSRFrame       = CreateSRFrame;
+  DefaultLogFileName  = DefaultLogFileName;
+  DisplaySearchState  = DisplaySearchState;
+  ErrorMsg            = ErrorMsg;
+  FormatInt           = FormatInt;
+  FormatTime          = FormatTime;
+  GetDialogHistory    = GetDialogHistory;
+  GetRegexLib         = GetRegexLib;
+  GetReplaceFunction  = GetReplaceFunction;
+  GetSearchAreas      = GetSearchAreas;
+  GetWordUnderCursor  = GetWordUnderCursor;
+  GotoEditField       = GotoEditField;
+  Gsub                = MakeGsub("byte");
+  GsubMB              = MakeGsub("multibyte");
+  GsubW               = MakeGsub("widechar");
+  IndexToSearchArea   = IndexToSearchArea;
+  NewUserBreak        = NewUserBreak;
+  ProcessDialogData   = ProcessDialogData;
+  SaveCodePageCombo   = SaveCodePageCombo;
+  TransformLogFilePat = TransformLogFilePat;
 }

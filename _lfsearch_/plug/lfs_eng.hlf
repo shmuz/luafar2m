@@ -15,6 +15,7 @@ $ #LuaFAR Search (version 2.4)#
 
    ~Operation in Editor~@OperInEditor@
    ~Operation in Panels~@OperInPanels@
+   ~Rename files~@Rename@
 
  For details on regular exressions, consult their documentation:
    ~Far regular expressions~@:RegExp@
@@ -1301,5 +1302,58 @@ for handling presets: create, load, rename and delete them.
  #F2#    - save the loaded preset under the same name
  #F6#    - rename a preset
  #Ins#   - save the current dialog settings as a new preset
+
+ ~Contents~@Contents@
+
+@Rename
+$ #Rename#
+ The utility is intended for renaming files and directories. It works from
+panels.
+
+ Call the utility from the plugin's menu. The "LF Rename" dialog will be
+displayed.
+
+ #File mask:#
+ Only files and directories matching the given mask will be renamed.
+The syntax is identical to Far-style ~file masks~@:FileMasks@.
+ File mask has nothing to do with the search scope, e.g. the name of a
+directory to be recursively searched does not have to match the mask.
+
+ #(•) Search in all#
+ Items for renaming and directories for recursion are searched among
+all items of the active panel.
+
+ #( ) Search in selected#
+ Items for renaming and directories for recursion are searched only among
+selected items of the active panel. If there are no selected items then
+the item under panel cursor is processed.
+
+ #[x] Rename files#
+ #[x] Rename folders#
+ Either one or both attributes can be specified.
+
+ #[x] Process subfolders#
+ If the search scope contains directories, do search under those directories
+and their subdirectories as well.
+
+ #Search for:#
+ This field should contain a ~Far regex~@:RegExp@ pattern that will be
+matched against every selected file or directory name. The matching is case
+insensitive.
+
+ #Replace with:#
+ See ~Syntax of Replace pattern~@SyntaxReplace@.
+
+ #[x] Function mode#
+ Same mode as such in replace in editor.
+
+ #[x] Log file#
+ A log file will be created. The file is created in the form
+of a Lua-script that when being run renames files and directories to their
+previous names, i.e. it reverts the renaming done by the plugin.
+ In order to do that, run either
+      #lfs: -r<logfile>#
+ or (equivalently)
+      #lua: @@<logfile>#
 
  ~Contents~@Contents@

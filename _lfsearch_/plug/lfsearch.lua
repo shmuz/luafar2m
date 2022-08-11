@@ -201,6 +201,8 @@ local function OpenFromMacro (args)
         if Cmd == "search" then
           local pan = GUI_SearchFromPanels(data)
           return pan and { pan, type="panel" }
+        elseif Cmd=="rename" then
+          Rename.main()
         elseif Cmd == "panel" then
           local pan = Panels.CreateTmpPanel(_Plugin.FileList or {}, _Plugin.History["tmppanel"])
           return { pan; type="panel" }
