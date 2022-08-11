@@ -1285,30 +1285,6 @@ mtime=3861339714
 </article>
 </node>
 <node>
-id=2
-lv=2
-dt=Text
-nm=far.CmpName
-<article>
-#_result = far.CmpName (Pattern, String [, SkipPath])
-#_
-#_**Parameters:**
-#_  Pattern:  string
-#_  String:   string
-#_  SkipPath: boolean (defaults to false)
-#_
-#_**Returns:**
-#_  result: boolean
-#_
-#_**Far API used:**
-#_  CmpName
-#_
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
 id=53
 lv=2
 dt=Text
@@ -5456,6 +5432,79 @@ mtime=3852954473
 </article>
 </node>
 <node>
+id=494
+lv=2
+dt=Text
+nm=far.CheckMask
+ctime=3869370298
+mtime=3869370719
+<article>
+#_Result = far.CheckMask (Mask, Flags)
+#_
+#_**Parameters:**
+#_  Mask:  string
+#_  Flags: flags (default=0)
+#_
+#_**Returns:**
+#_  Result: boolean
+#_
+#_**Far API used:**
+#_  ProcessName
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=2
+lv=2
+dt=Text
+nm=far.CmpName
+mtime=3869370731
+<article>
+#_Result = far.CmpName (Mask, Name, Flags)
+#_
+#_**Parameters:**
+#_  Mask:  string
+#_  Name:  string
+#_  Flags: flags (default=0)
+#_
+#_**Returns:**
+#_  Result: boolean
+#_
+#_**Far API used:**
+#_  ProcessName
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=493
+lv=2
+dt=Text
+nm=far.CmpNameList
+ctime=3869369459
+mtime=3869370740
+<article>
+#_Result = far.CmpNameList (Mask, Name, Flags)
+#_
+#_**Parameters:**
+#_  Mask:  string
+#_  Name:  string
+#_  Flags: flags (default=0)
+#_
+#_**Returns:**
+#_  Result: boolean
+#_
+#_**Far API used:**
+#_  ProcessName
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=284
 lv=2
 dt=Text
@@ -5596,6 +5645,31 @@ mtime=3852926447
 #_
 #_**Far API used:**
 #_  FSF.ExecuteLibrary
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=495
+lv=2
+dt=Text
+nm=far.GenerateName
+ctime=3869370435
+mtime=3869371040
+<article>
+#_Result = far.GenerateName (Mask, Name, Flags)
+#_
+#_**Parameters:**
+#_  Mask:  string
+#_  Name:  string
+#_  Flags: flags (default=0)
+#_
+#_**Returns:**
+#_  Result: string, or false
+#_
+#_**Far API used:**
+#_  ProcessName
 #_
 #_@@@
 #_
@@ -6018,7 +6092,7 @@ id=190
 lv=2
 dt=Text
 nm=far.ProcessName
-mtime=3864298184
+mtime=3869371075
 <article>
 #_Result = far.ProcessName (Op, Mask, Name, Flags)
 #_
@@ -6026,7 +6100,7 @@ mtime=3864298184
 #_  Op:    flag (either of PN_CMPNAME, PN_CMPNAMELIST, PN_GENERATENAME, PN_CHECKMASK)
 #_  Mask:  string
 #_  Name:  string (ignored when Op==PN_CHECKMASK)
-#_  Flags: flags (0 or PN_SKIPPATH; default=0)
+#_  Flags: flags (default=0)
 #_
 #_**Returns:**
 #_  Result: boolean, or string.

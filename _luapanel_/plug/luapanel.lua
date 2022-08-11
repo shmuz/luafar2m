@@ -23,7 +23,6 @@ function export.GetPluginInfo()
   return {
     CommandPrefix = "luapanel",
     Flags = 0,
-    PluginConfigStrings = { Title },
     PluginMenuStrings = { Title },
   }
 end

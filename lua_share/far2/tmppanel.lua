@@ -390,7 +390,7 @@ end
 function Env:OpenFilePlugin (Name, Data)
   if Name then
     for mask in self.Opt.Mask:gmatch "[^,]+" do
-      if far.CmpName(mask, Name, true) then
+      if far.CmpName(mask, Name, "PN_SKIPPATH") then
         if self.Opt.MenuForFilelist then
           ShowMenuFromFile(Name)
           break
