@@ -211,7 +211,7 @@ local function PanelDialog  (aOp, aData, aScriptCall)
   local Frame = CreateSRFrame(Items, aData, false)
   ------------------------------------------------------------------------------
   insert(Items, { tp="dbox"; text=M.MTitlePanels; })
-  insert(Items, { tp="text"; text=M.MFileMask; })
+  insert(Items, { tp="text"; text=M.MDlgFileMask; })
   insert(Items, { tp="edit"; name="sFileMask"; hist="Masks"; uselasthistory=1; })
   ------------------------------------------------------------------------------
   Frame:InsertInDialog(true, aOp)

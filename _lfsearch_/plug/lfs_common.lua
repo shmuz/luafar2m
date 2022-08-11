@@ -1023,6 +1023,7 @@ return {
   FormatInt          = FormatInt;
   FormatTime         = FormatTime;
   GetDialogHistory   = GetDialogHistory;
+  GetRegexLib        = GetRegexLib;
   GetReplaceFunction = GetReplaceFunction;
   GetSearchAreas     = GetSearchAreas;
   GetWordUnderCursor = GetWordUnderCursor;

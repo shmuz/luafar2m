@@ -38,6 +38,7 @@ local function FirstRunActions()
   Sett.field(hist, "main")
   Sett.field(hist, "menu")
   Sett.field(hist, "presets")
+  Sett.field(hist, "rename")
   Sett.field(hist, "tmppanel")
   Sett.field(hist, "panels.menu")
 
@@ -68,6 +69,7 @@ local Editors    = require "lfs_editors"
 local M          = require "lfs_message"
 local MReplace   = require "lfs_mreplace"
 local Panels     = require "lfs_panels"
+local Rename     = require "lfs_rename"
 local _          = require "lfs_common"
 local _          = require "lfs_editengine"
 
@@ -148,6 +150,7 @@ local function OpenFromPanels (userItems)
 
   local items = {
     {text=M.MMenuFind,     action="find"},
+    {text=M.MMenuRename,   action="rename"},
     {text=M.MMenuTmpPanel, action="tmppanel"},
   }
   for k,v in ipairs(items) do v.text=k..". "..v.text end
@@ -162,6 +165,8 @@ local function OpenFromPanels (userItems)
   if pos <= nOwnItems then
     if item.action == "find" then
       return GUI_SearchFromPanels(hMain)
+    elseif item.action == "rename" then
+      Rename.main()
     elseif item.action == "tmppanel" then
       return Panels.CreateTmpPanel(_Plugin.FileList or {}, _Plugin.History["tmppanel"])
     end
