@@ -69,7 +69,6 @@ end --end
 local M=Messages()
 local S=Settings()
 
-local SimSU= _G.SimSU or {}
 -------------------------------------------------------------------------------
 local TitleBar,KeyBar,ScrollBar
 S.Timing = S.Timing==nil and Settings().Timing or S.Timing
@@ -188,21 +187,6 @@ local function MouseSelect(Action,PostAct)
   end
 end;
 
--------------------------------------------------------------------------------
-local Editor_MouseSelect={
-  Condition   = Condition  ;
-  MouseToText = MouseToText;
-  MouseMove   = MouseMove  ;
-  ClickInSel  = ClickInSel ;
-  SelWord     = SelWord    ;
-  SelLine     = SelLine    ;
-  MouseSelect = MouseSelect;
-}
-local function filename(args) return MouseSelect(args[1],args[2]) end
--------------------------------------------------------------------------------
-if _filename then return filename(...) end
-if not Macro then return {Editor_MouseSelect=Editor_MouseSelect} end
-SimSU.Editor_MouseSelect=Editor_MouseSelect; _G.SimSU=SimSU
 -------------------------------------------------------------------------------
 
 for i=1,#S do

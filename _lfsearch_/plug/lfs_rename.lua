@@ -213,21 +213,21 @@ local function UserDialog (aData, aList, aDlgTitle)
   local HIST_INITFUNC  = _Plugin.DialogHistoryPath .. "InitFunc"
   local HIST_FINALFUNC = _Plugin.DialogHistoryPath .. "FinalFunc"
 
-  local W = 72
+  local W = 35
   local X1 = 5 + M.MDlgFileMask:len() -- mask offset
   local X2 = 5 + math.max(M.MDlgRenameBefore:len()+4, M.MDlgRenameAfter:len())
   ------------------------------------------------------------------------------
   local Items = {
     guid="AF8D7072-FF17-4407-9AF4-7323273BA899";
     help="Rename";
-    width=W+4;
+    width=2*W+6;
     { tp="dbox";  text=aDlgTitle;                                                                  },
     { tp="text";  text=M.MDlgFileMask;                                                             },
     { tp="edit";  x1=X1; y1="";                  name="sFileMask";         hist="Masks";           },
     { tp="rbutt"; text=M.MDlgRenameInAll;        name="rSearchInAll";      group=1;                },
     { tp="rbutt"; text=M.MDlgRenameInSelected;   name="rSearchInSelected";                         },
-    { tp="chbox"; text=M.MDlgRenameFiles;        name="bRenFiles";         x1=39; ystep=-1; val=1; },
-    { tp="chbox"; text=M.MDlgRenameFolders;      name="bRenFolders";       x1="";                  },
+    { tp="chbox"; text=M.MDlgRenameFiles;        name="bRenFiles";        x1=W+4; ystep=-1; val=1; },
+    { tp="chbox"; text=M.MDlgRenameFolders;      name="bRenFolders";      x1="";                   },
     { tp="chbox"; text=M.MDlgRenameInSubfolders; name="bRenRecurse";                               },
     { tp="sep";                                                                                    },
 
@@ -236,14 +236,14 @@ local function UserDialog (aData, aList, aDlgTitle)
     { tp="text";  text=M.MDlgReplacePat;                                                           },
     { tp="edit";  name="sReplacePat";            hist=HIST_REPLACE; uselasthistory=1;              },
     { tp="chbox"; text=M.MDlgRepIsFunc;          name="bRepIsFunc";      x1=7;                     },
-    { tp="chbox"; text=M.MRenameConfirmRename;   name="bConfirmRename";  x1=39; y1="";             },
+    { tp="chbox"; text=M.MRenameConfirmRename;   name="bConfirmRename";  x1=W+4; y1="";            },
     { tp="chbox"; text=M.MDlgRenameLogfile;      name="bLogFile";        x1=7;                     },
     { tp="sep";                                                                                    },
 
     { tp="chbox"; text=M.MDlgAdvanced;           name="bAdvanced";                                 },
     { tp="text";  text=M.MDlgInitFunc;           name="labInitFunc";                               },
-    { tp="edit";  name="sInitFunc";              hist=HIST_INITFUNC;  ext="lua"; x2=36;            },
-    { tp="text";  text=M.MDlgFinalFunc;          name="labFinalFunc";            x1=39; ystep=-1;  },
+    { tp="edit";  name="sInitFunc";              hist=HIST_INITFUNC;  ext="lua"; x2=W+1;           },
+    { tp="text";  text=M.MDlgFinalFunc;          name="labFinalFunc";            x1=W+4; ystep=-1; },
     { tp="edit";  name="sFinalFunc";             hist=HIST_FINALFUNC; ext="lua"; x1="";            },
     { tp="sep";                                                                                    },
 
