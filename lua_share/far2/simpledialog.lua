@@ -469,7 +469,7 @@ local function Run (inData)
           inData.help()
         end
       elseif Par2 == F.KEY_F4 then
-        if outData[Par1][IND_TYPE] == F.DI_EDIT then
+        if outData[Par1][IND_TYPE] == F.DI_EDIT and not inData[Par1].skipF4 then
           local txt = Send(hDlg, "DM_GETTEXT", Par1)
           txt = OpenInEditor(txt, inData[Par1].ext)
           if txt then Send(hDlg, "DM_SETTEXT", Par1, txt); end

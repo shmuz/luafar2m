@@ -867,7 +867,7 @@ end
 function SRFrame:DoPresets (hDlg)
   local Pos = self.Pos
   local HistPresetNames = _Plugin.DialogHistoryPath .. "Presets"
-  hDlg:send("DM_SHOWDIALOG", 0)
+  hDlg:ShowDialog(0)
   local props = { Title=M.MTitlePresets, Bottom = "Esc,Enter,F2,Ins,F6,Del", HelpTopic="Presets", }
   local presets = _Plugin.History.presets
   local bkeys = { {BreakKey="F2"}, {BreakKey="INSERT"}, {BreakKey="DELETE"}, {BreakKey="F6"} }
@@ -895,26 +895,26 @@ function SRFrame:DoPresets (hDlg)
       end
 
       if Pos.cmbCodePage then
-        local info = hDlg:send(F.DM_LISTINFO, Pos.cmbCodePage)
+        local info = hDlg:ListInfo(Pos.cmbCodePage)
         if data.tCheckedCodePages then
           local map = {}
           for i,v in ipairs(data.tCheckedCodePages) do map[v]=i end
           for i=3,info.ItemsNumber do -- skip "Default code pages" and "Checked code pages"
-            local cp = hDlg:send(F.DM_LISTGETDATA, Pos.cmbCodePage, i)
+            local cp = hDlg:ListGetData(Pos.cmbCodePage, i)
             if cp then
-              local listItem = hDlg:send(F.DM_LISTGETITEM, Pos.cmbCodePage, i)
+              local listItem = hDlg:ListGetItem(Pos.cmbCodePage, i)
               listItem.Index = i
               if map[cp] then listItem.Flags = bor(listItem.Flags, F.LIF_CHECKED)
               else listItem.Flags = band(listItem.Flags, bnot(F.LIF_CHECKED))
               end
-              hDlg:send(F.DM_LISTUPDATE, Pos.cmbCodePage, listItem)
+              hDlg:ListUpdate(Pos.cmbCodePage, listItem)
             end
           end
         end
         if data.iSelectedCodePage then
           local scp = data.iSelectedCodePage
           for i=1,info.ItemsNumber do
-            if scp == hDlg:send(F.DM_LISTGETDATA, Pos.cmbCodePage, i) then
+            if scp == hDlg:ListGetData(Pos.cmbCodePage, i) then
               hDlg:ListSetCurPos(Pos.cmbCodePage, {SelectPos=i})
               break
             end
@@ -981,7 +981,7 @@ function SRFrame:DoPresets (hDlg)
     ----------------------------------------------------------------------------
     end
   end
-  hDlg:send("DM_SHOWDIALOG", 1)
+  hDlg:ShowDialog(1)
 end
 
 

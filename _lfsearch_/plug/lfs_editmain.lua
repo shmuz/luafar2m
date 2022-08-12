@@ -89,7 +89,7 @@ local function EditorDialog (aData, aReplace, aScriptCall)
     if msg==F.DN_BTNCLICK then
       if param1==Pos.btnPresets then
         Frame:DoPresets(hDlg)
-        hDlg:send(F.DM_SETFOCUS, Pos.btnOk)
+        hDlg:SetFocus(Pos.btnOk)
         return true
       elseif param1==Pos.btnConfig then
         hDlg:ShowDialog(0)

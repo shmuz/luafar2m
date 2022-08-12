@@ -15,7 +15,7 @@ end
 
 local function CloseHelperEditor()
   editor.Quit()
-  far.AdvControl("ACTL_COMMIT")
+  actl.Commit()
 end
 
 local function ProtectedError(msg, level)
@@ -1195,7 +1195,7 @@ function selftest.test_all()
     selftest.test_editor_multiline_replace(lib)
   end
   selftest.test_panels_search_replace(lib_list)
-  far.AdvControl("ACTL_REDRAWALL")
+  actl.RedrawAll()
 end
 
 -- use as a script (rather than a module)

@@ -276,9 +276,9 @@ local function UserDialog (aData, aList, aDlgTitle)
   --   Far incorrectly calculates LeftPos and the new value may either not show at all
   --   or show only a few of its last characters.
   local function FixLeftPos (hDlg, Id)
-    local len = hDlg:send("DM_GETTEXT", Id):len()
-    local p = hDlg:send("DM_GETITEMPOSITION", Id)
-    hDlg:send("DM_SETEDITPOSITION", Id,
+    local len = hDlg:GetText(Id):len()
+    local p = hDlg:GetItemPosition(Id)
+    hDlg:SetEditPosition(Id,
       { LeftPos=math.max(1, len+1-(p.Right-p.Left)); CurPos=len+1; CurTabPos=len+1 })
   end
 
@@ -419,10 +419,10 @@ local function UserDialog (aData, aList, aDlgTitle)
           setfenv(m_FinalFunc, env)
         end
       elseif param1 == Pos.btnConfig then
-        hDlg:send(F.DM_SHOWDIALOG, 0)
+        hDlg:ShowDialog(0)
         Common.ConfigDialog()
-        hDlg:send(F.DM_SHOWDIALOG, 1)
-        hDlg:send(F.DM_SETFOCUS, Pos.btnOk)
+        hDlg:ShowDialog(1)
+        hDlg:SetFocus(Pos.btnOk)
         return KEEP_DIALOG_OPEN
       end
     end
