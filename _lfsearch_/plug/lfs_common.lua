@@ -194,14 +194,14 @@ local function EditorConfigDialog()
   local Items = {
     width = 76;
     help = "Contents";
-    {tp="dbox";  text=M.MConfigTitle; },
+    {tp="dbox";  text=M.MConfigTitleEditor; },
     {tp="chbox"; name="bForceScopeToBlock";  text=M.MOptForceScopeToBlock; },
     {tp="chbox"; name="bSelectFound";        text=M.MOptSelectFound; },
     {tp="chbox"; name="bShowSpentTime";      text=M.MOptShowSpentTime; },
-    {tp="text";  text=M.MPickFrom; ystep=2; },
-    {tp="rbutt"; x1=7;  name="rPickEditor";  text=M.MPickEditor; group=1; val=1; },
-    {tp="rbutt"; x1=27; name="rPickHistory"; text=M.MPickHistory; y1=""; },
-    {tp="rbutt"; x1=47; name="rPickNowhere"; text=M.MPickNowhere; y1=""; },
+    {tp="text";  text=M.MOptPickFrom; ystep=2; },
+    {tp="rbutt"; x1=7;  name="rPickEditor";  text=M.MOptPickEditor; group=1; val=1; },
+    {tp="rbutt"; x1=27; name="rPickHistory"; text=M.MOptPickHistory; y1=""; },
+    {tp="rbutt"; x1=47; name="rPickNowhere"; text=M.MOptPickNowhere; y1=""; },
 
     {tp="sep"; ystep=2; },
     {tp="butt"; name="btnHighlight"; text=M.MBtnHighlightColor; btnnoclose=1; },
@@ -603,7 +603,7 @@ function SRFrame:InsertInDialog (aPanelsDialog, aOp)
   ------------------------------------------------------------------------------
   insert(Items, { tp="chbox"; name="bRegExpr";                         text=M.MDlgRegExpr;  })
   insert(Items, { tp="text";                         y1=""; x1=md;     text=M.MDlgRegexLib; })
-  local x1 = md + M.MDlgRegexLib:len()
+  local x1 = md + M.MDlgRegexLib:gsub("&",""):len() + 1;
   insert(Items, { tp="combobox"; name="cmbRegexLib"; y1=""; x1=x1; width=14; dropdownlist=1; noauto=1;
            list = { {Text="Far regex"}, {Text="Oniguruma"}, {Text="PCRE"} };  })
   ------------------------------------------------------------------------------

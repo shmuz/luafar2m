@@ -215,7 +215,7 @@ local function UserDialog (aData, aList, aDlgTitle)
 
   local W = 35
   local X1 = 5 + M.MDlgFileMask:len() -- mask offset
-  local X2 = 5 + math.max(M.MDlgRenameBefore:len()+4, M.MDlgRenameAfter:len())
+  local X2 = 5 + math.max(M.MDlgRenameBefore:len()+5, M.MDlgRenameAfter:len()+1)
   ------------------------------------------------------------------------------
   local Items = {
     guid="AF8D7072-FF17-4407-9AF4-7323273BA899";
@@ -249,13 +249,13 @@ local function UserDialog (aData, aList, aDlgTitle)
 
     { tp="butt";  text=M.MDlgRenameBefore;       name="btnBefore"; btnnoclose=1;                   },
     { tp="edit";  name="edtBefore";              noauto=1;  readonly=1;  x1=X2; y1=""; skipF4=1;   },
-    { tp="text";  text=M.MDlgRenameAfter;                                                          },
+    { tp="text";  text=M.MDlgRenameAfter;        nohilite=1;                                       },
     { tp="edit";  name="edtAfter";               noauto=1;  readonly=1;  x1=X2; y1=""; skipF4=1;   },
     { tp="sep";                                                                                    },
 
-    { tp="butt";  name="btnOk";     centergroup=1; default=1; text=M.MOk;                          },
+    { tp="butt";  name="btnOk";     centergroup=1; default=1; text=M.MOk; nohilite=1;              },
 --  { tp="butt";  name="btnConfig"; centergroup=1;            text=M.MDlgBtnConfig;                },
-    { tp="butt";  name="btnCancel"; centergroup=1; cancel=1;  text=M.MCancel;                      },
+    { tp="butt";  name="btnCancel"; centergroup=1; cancel=1;  text=M.MCancel; nohilite=1;          },
   }
   local Pos = libDialog.Indexes(Items)
   ------------------------------------------------------------------------------
@@ -428,7 +428,7 @@ local function UserDialog (aData, aList, aDlgTitle)
     end
   end
 
-  -- Common.AssignHotKeys(Dlg)
+  libDialog.AssignHotKeys(Items)
   libDialog.LoadData(aData, Items)
   local out = libDialog.Run(Items)
   if out then

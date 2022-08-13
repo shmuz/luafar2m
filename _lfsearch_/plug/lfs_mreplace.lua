@@ -56,7 +56,7 @@ local function ReplaceDialog (Data)
     ------------------------------------------------------------------------------
     { tp="butt"; centergroup=1; default=1; name="btnReplace"; text=M.MDlgBtnReplace; },
     { tp="butt"; centergroup=1;            name="btnCount";   text=M.MDlgBtnCount2;  },
-    { tp="butt"; centergroup=1;  cancel=1;                    text=M.MCancel;        },
+    { tp="butt"; centergroup=1;  cancel=1; nohilite=1;        text=M.MCancel;        },
   }
   local Pos,Elem = sd.Indexes(Items)
 
@@ -108,7 +108,7 @@ local function ReplaceDialog (Data)
     end
   end
 
-  --Common.AssignHotKeys(Dlg)
+  sd.AssignHotKeys(Items)
   sd.LoadData(Data, Items)
   local list = Elem.cmbRegexLib.list
   list.SelectIndex = 1

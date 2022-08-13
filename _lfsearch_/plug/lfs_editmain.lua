@@ -74,14 +74,14 @@ local function EditorDialog (aData, aReplace, aScriptCall)
   ------------------------------------------------------------------------------
   insert(Items, { tp="sep"; })
   ------------------------------------------------------------------------------
-  insert(Items, { tp="butt"; name="btnOk";         centergroup=1; text=M.MOk; default=1; })
+  insert(Items, { tp="butt"; name="btnOk";         centergroup=1; text=M.MOk; default=1; nohilite=1; })
   insert(Items, { tp="butt"; name="btnPresets";    centergroup=1; text=M.MDlgBtnPresets; btnnoclose=1; })
   insert(Items, { tp="butt"; name="btnConfig";     centergroup=1; text=M.MDlgBtnConfig;  btnnoclose=1; })
   if not aReplace then
     insert(Items, { tp="butt"; name="btnCount";    centergroup=1; text=M.MDlgBtnCount; })
     insert(Items, { tp="butt"; name="btnShowAll";  centergroup=1; text=M.MDlgBtnShowAll; ystep=1; })
   end
-  insert(Items, { tp="butt"; name="btnCancel";     centergroup=1; text=M.MCancel; cancel=1; })
+  insert(Items, { tp="butt"; name="btnCancel";     centergroup=1; text=M.MCancel; cancel=1; nohilite=1; })
   ----------------------------------------------------------------------------
   local Pos,Elem = sd.Indexes(Items)
 
@@ -101,6 +101,7 @@ local function EditorDialog (aData, aReplace, aScriptCall)
     return Frame:DlgProc(hDlg, msg, param1, param2)
   end
   ----------------------------------------------------------------------------
+  sd.AssignHotKeys(Items)
   sd.LoadData(aData, Items)
   Frame.Pos, Frame.Elem = Pos, Elem
   Frame:OnDataLoaded(aData, aScriptCall)

@@ -203,35 +203,36 @@ local grepGuid    = "74D7F486-487D-40D0-9B25-B2BB06171D86"
 
 local function PanelDialog  (aOp, aData, aScriptCall)
   local insert = table.insert
+  local W = 35
   local Items = {
-    width = 76;
+    width = 2*W+6;
     help = "OperInPanels";
     guid = aOp=="search" and searchGuid or aOp=="replace" and replaceGuid or grepGuid;
   }
   local Frame = CreateSRFrame(Items, aData, false)
   ------------------------------------------------------------------------------
-  insert(Items, { tp="dbox"; text=M.MTitlePanels; })
+  insert(Items, { tp="dbox"; text=M.MTitleSearch; })
   insert(Items, { tp="text"; text=M.MDlgFileMask; })
   insert(Items, { tp="edit"; name="sFileMask"; hist="Masks"; uselasthistory=1; })
   ------------------------------------------------------------------------------
   Frame:InsertInDialog(true, aOp)
   ------------------------------------------------------------------------------
-  local X2 = 40 + M.MDlgUseFileFilter:gsub("&",""):len() + 5
+  local X2 = W+5 + M.MDlgUseFileFilter:gsub("&",""):len() + 5
   insert(Items, { tp="sep"; })
   insert(Items, { tp="text"; text=M.MDlgCodePages; })
   insert(Items, { tp="combobox"; name="cmbCodePage"; list=GetCodePages(aData); dropdownlist=1; noauto=1; })
-  insert(Items, { tp="text"; text=M.MSearchArea; })
-  insert(Items, { tp="combobox"; name="cmbSearchArea"; list=GetSearchAreas(aData); x2=36; dropdownlist=1; noauto=1; })
-  insert(Items, { tp="chbox"; name="bSearchFolders"; text=M.MSearchFolders; ystep=-1; x1=40; })
-  insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MSearchSymLinks;   x1=40; })
-  insert(Items, { tp="chbox"; name="bUseFileFilter";  text=M.MDlgUseFileFilter; x1=40; })
+  insert(Items, { tp="text"; text=M.MDlgSearchArea; })
+  insert(Items, { tp="combobox"; name="cmbSearchArea"; list=GetSearchAreas(aData); x2=W+1; dropdownlist=1; noauto=1; })
+  insert(Items, { tp="butt";  name="btnDirFilter";    text=M.MBtnDirFilter;  btnnoclose=1; })
+  insert(Items, { tp="chbox"; name="bSearchFolders";  text=M.MDlgSearchFolders; ystep=-2; x1=W+5; })
+  insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MDlgSearchSymLinks;          x1=""; })
+  insert(Items, { tp="chbox"; name="bUseFileFilter";  text=M.MDlgUseFileFilter;           x1=""; })
   insert(Items, { tp="butt";  name="btnFileFilter";   text=M.MDlgBtnFileFilter; x1=X2; y1=""; btnnoclose=1; })
   insert(Items, { tp="sep"; })
-  insert(Items, { tp="butt"; centergroup=1; text=M.MOk; default=1; name="btnOk";        })
-  insert(Items, { tp="butt"; centergroup=1; text=M.MBtnDirFilter;  name="btnDirFilter"; btnnoclose=1; })
+  insert(Items, { tp="butt"; centergroup=1; text=M.MOk; default=1; name="btnOk"; nohilite=1;       })
   insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnPresets; name="btnPresets";   btnnoclose=1; })
   insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnConfig;  name="btnConfig";    btnnoclose=1; })
-  insert(Items, { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; })
+  insert(Items, { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; nohilite=1; })
   ------------------------------------------------------------------------------
   local Pos,Elem = sd.Indexes(Items)
 
@@ -328,6 +329,7 @@ local function PanelDialog  (aOp, aData, aScriptCall)
   for k,v in pairs(TmpPanelDefaults) do
     if dataTP[k] == nil then dataTP[k] = v end
   end
+  sd.AssignHotKeys(Items)
   sd.LoadData(aData, Items)
   Frame:OnDataLoaded(aData, false)
   return sd.Run(Items) and Frame.close_params
