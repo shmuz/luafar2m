@@ -75,7 +75,8 @@ local function ConfigDialog()
     { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; },
     { tp="butt"; centergroup=1; text=M.MBtnDefaults; btnnoclose=1; name="reset"; },
   }
-  local Pos = sd.Indexes(Items)
+  local dlg = sd.New(Items)
+  local Pos = dlg:Indexes()
 
   Items[Pos.reset].action = function(hDlg,Par1,Par2)
     for i,v in ipairs(Items) do
@@ -90,10 +91,10 @@ local function ConfigDialog()
     end
   end
 
-  sd.LoadData (aData, Items)
-  local out = sd.Run(Items)
+  dlg:LoadData (aData)
+  local out = dlg:Run()
   if out then
-    sd.SaveData (out, aData)
+    dlg:SaveData (out, aData)
     return true
   end
 end
@@ -111,12 +112,13 @@ local function DirFilterDialog (aData)
     { tp="butt"; text=M.MOk; default=1; centergroup=1; },
     { tp="butt"; text=M.MCancel; cancel=1; centergroup=1; },
   }
-  sd.LoadData(aData, Items)
-  local out = sd.Run(Items)
+  local dlg = sd.New(Items)
+  dlg:LoadData(aData)
+  local out = dlg:Run()
   if out then
     local s = out[Excl_Key]:match("^%s*(.-)%s*$")
     out[Excl_Key] = (s ~= "") and s -- false is OK, nil is not as it does not erase the existing value
-    sd.SaveData(out, aData)
+    dlg:SaveData(out, aData)
     return true
   end
 end
@@ -234,7 +236,9 @@ local function PanelDialog  (aOp, aData, aScriptCall)
   insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnConfig;  name="btnConfig";    btnnoclose=1; })
   insert(Items, { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; nohilite=1; })
   ------------------------------------------------------------------------------
-  local Pos,Elem = sd.Indexes(Items)
+  local dlg = sd.New(Items)
+  local Pos,Elem = dlg:Indexes()
+  Frame:SetDialogObject(dlg,Pos,Elem)
 
   local function SetBtnFilterText(hDlg)
     hDlg:SetText(Pos.btnDirFilter, M.MBtnDirFilter..(aData[Excl_Key] and "*" or ""))
@@ -329,10 +333,10 @@ local function PanelDialog  (aOp, aData, aScriptCall)
   for k,v in pairs(TmpPanelDefaults) do
     if dataTP[k] == nil then dataTP[k] = v end
   end
-  sd.AssignHotKeys(Items)
-  sd.LoadData(aData, Items)
+  dlg:AssignHotKeys()
+  dlg:LoadData(aData)
   Frame:OnDataLoaded(aData, false)
-  return sd.Run(Items) and Frame.close_params
+  return dlg:Run() and Frame.close_params
 end
 
 local function MakeItemList (panelInfo, searchArea)

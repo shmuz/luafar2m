@@ -81,13 +81,14 @@ local function GetRegexFromDialog()
   end
 
   local sDialog = require("far2.simpledialog")
-  local _, Elem = sDialog.Indexes(Items)
+  local dlg = sDialog.New(Items)
+  local _, Elem = dlg:Indexes()
   local data = mf.mload(DBKey, DBName)
   if data then
     Elem.sSearchPat.val = data.sSearchPat
     Elem.bCaseSens.val = data.bCaseSens
   end
-  return sDialog.Run(Items) and true
+  return dlg:Run() and true
 end
 
 local data = mf.mload(DBKey, DBName) or {}

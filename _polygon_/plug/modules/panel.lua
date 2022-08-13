@@ -725,7 +725,7 @@ function mypanel:set_column_mask(handle)
     end
   end
 
-  local res = sdialog.Run(Items)
+  local res = sdialog.New(Items):Run()
   if res then
     local masks = {}
     curtable.col_masks = masks
@@ -953,7 +953,7 @@ function mypanel:set_table_filter(handle)
     end
   end
 
-  if sdialog.Run(Items) then
+  if sdialog.New(Items):Run() then
     panel.UpdatePanel(handle)
     panel.RedrawPanel(handle)
   end
@@ -1000,7 +1000,7 @@ function mypanel:create_table()
     end
   end
 
-  return sdialog.Run(items)
+  return sdialog.New(items):Run()
 end
 
 
@@ -1315,7 +1315,7 @@ function mypanel:view_pragma_statements()
 
   if items[1] then
     local W = 65
-    sdialog.Run {
+    local items = {
       guid = "FF769EE0-2643-48F1-A8A2-239CD3C6691F";
       width = W;
       { tp="dbox"; text=("%s [%s]"):format(M.title_pragma, self._schema);              },
@@ -1323,6 +1323,7 @@ function mypanel:view_pragma_statements()
       { tp="sep";                                                                      },
       { tp="butt"; text=M.ok; centergroup=1; default=1;                                },
     }
+    sdialog.New(items):Run()
   end
 end
 

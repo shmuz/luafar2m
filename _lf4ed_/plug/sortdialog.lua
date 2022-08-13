@@ -50,10 +50,11 @@ local function SortDialog (aData, columntype)
     {tp="butt";  centergroup=1; text=M.MOk; default=1; },
     {tp="butt";  centergroup=1; text=M.MCancel; cancel=1; },
   }
-  local Pos, Elem = sd.Indexes(Items)
+  local dlg = sd.New(Items)
+  local Pos, Elem = dlg:Indexes()
   ------------------------------------------------------------------------------
   local function LoadData()
-    sd.LoadData(aData, Items)
+    dlg:LoadData(aData)
     if not columntype then
       Elem.cbxOnlySel.val = false
       Elem.cbxOnlySel.disable = true
@@ -83,9 +84,9 @@ local function SortDialog (aData, columntype)
   end
   ----------------------------------------------------------------------------
   LoadData()
-  local out = sd.Run(Items)
+  local out = dlg:Run()
   if out then
-    sd.SaveData(out, aData)
+    dlg:SaveData(out, aData)
     return true
   end
 end

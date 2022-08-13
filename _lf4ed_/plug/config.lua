@@ -21,7 +21,8 @@ local function ExecuteDialog (aData)
     {tp="butt";  text=M.MCancel; cancel=1;  centergroup=1;                    },
   }
   ------------------------------------------------------------------------------
-  local Pos = sd.Indexes(Items)
+  local dlg = sd.New(Items)
+  local Pos = dlg:Indexes()
   function Items.proc(hDlg, Msg, Par1, Par2)
     if Msg==F.DN_INITDIALOG or (Msg==F.DN_BTNCLICK and Par1==Pos.RequireWithReload) then
       local enb = hDlg:GetCheck(Pos.RequireWithReload)
@@ -30,10 +31,10 @@ local function ExecuteDialog (aData)
     end
   end
   ------------------------------------------------------------------------------
-  sd.LoadData(aData, Items)
-  local out = sd.Run(Items)
+  dlg:LoadData(aData)
+  local out = dlg:Run()
   if out then
-    sd.SaveData(out, aData)
+    dlg:SaveData(out, aData)
     return true
   end
 end

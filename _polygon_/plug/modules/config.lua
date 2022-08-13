@@ -74,7 +74,7 @@ function mod.showdialog()
     v.val = v.name and Pdata[v.name]
   end
   -- run the dialog
-  local rc = sdialog.Run(Items)
+  local rc = sdialog.New(Items):Run()
   -- save the dialog data
   if rc then
     for k,v in pairs(rc) do Pdata[k] = v; end

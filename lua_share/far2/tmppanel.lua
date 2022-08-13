@@ -511,11 +511,12 @@ function Env:Configure()
     {tp="butt"; text=M.MOk;     centergroup=1; default=1; },
     {tp="butt"; text=M.MCancel; centergroup=1; cancel=1;  },
   }
-  sd.LoadData(self.Opt, Items)
+  local dlg = sd.New(Items)
+  dlg:LoadData(self.Opt)
 
-  local out = sd.Run(Items)
+  local out = dlg:Run()
   if out then
-    sd.SaveData(out, self.Opt)
+    dlg:SaveData(out, self.Opt)
 
     if self.StartupOptCommonPanel ~= self.Opt.CommonPanel then
       far.Message (M.MConfigNewOption, M.MTempPanel, M.MOk)

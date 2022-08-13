@@ -91,10 +91,11 @@ local function ParamsDialog (aData)
     if not ok then ErrMsg(msg); return 0; end
   end
   ------------------------------------------------------------------------------
-  sd.LoadData(aData, Items)
-  local out,pos = sd.Run(Items)
+  local dlg = sd.New(Items)
+  dlg:LoadData(aData)
+  local out,pos = dlg:Run()
   if out then
-    sd.SaveData(out, aData)
+    dlg:SaveData(out, aData)
     return Items[pos].Run and "run" or Items[pos].Store and "store"
   end
 end
@@ -138,10 +139,11 @@ local function ResultDialog (aHelpTopic, aData, result)
     {tp="butt";  text=M.MCancel; cancel=1;  centergroup=1;  },
   }
   ------------------------------------------------------------------------------
-  sd.LoadData(aData, Items)
-  local out = sd.Run(Items)
+  local dlg = sd.New(Items)
+  dlg:LoadData(aData)
+  local out = dlg:Run()
   if out then
-    sd.SaveData(out, aData)
+    dlg:SaveData(out, aData)
     return true
   end
 end

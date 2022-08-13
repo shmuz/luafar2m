@@ -155,7 +155,7 @@ local function row_dialog(db, schema, table_name, rowid_name, db_data, row_id)
     end
   end
 
-  return sdialog.Run(Items) and true
+  return sdialog.New(Items):Run() and true
 end
 
 

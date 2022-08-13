@@ -55,7 +55,7 @@ local function InsertMacro()
     end
   end;
 
-  local out = sDialog.Run(data)
+  local out = sDialog.New(data):Run()
   if not out then return; end
 
   local tFlags, num = {}, 0

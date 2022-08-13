@@ -257,7 +257,8 @@ local function UserDialog (aData, aList, aDlgTitle)
 --  { tp="butt";  name="btnConfig"; centergroup=1;            text=M.MDlgBtnConfig;                },
     { tp="butt";  name="btnCancel"; centergroup=1; cancel=1;  text=M.MCancel; nohilite=1;          },
   }
-  local Pos = libDialog.Indexes(Items)
+  local dlg = libDialog.New(Items)
+  local Pos = dlg:Indexes()
   ------------------------------------------------------------------------------
 
   local m_index = 1    -- circular index into aList; incremented when btnBefore is pressed;
@@ -428,11 +429,11 @@ local function UserDialog (aData, aList, aDlgTitle)
     end
   end
 
-  libDialog.AssignHotKeys(Items)
-  libDialog.LoadData(aData, Items)
-  local out = libDialog.Run(Items)
+  dlg:AssignHotKeys()
+  dlg:LoadData(aData)
+  local out = dlg:Run()
   if out then
-    libDialog.SaveData(out, aData)
+    dlg:SaveData(out, aData)
     _Plugin.SaveSettings()
     return {
       Regex             = m_uRegex,

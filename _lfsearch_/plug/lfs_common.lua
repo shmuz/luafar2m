@@ -212,9 +212,10 @@ local function EditorConfigDialog()
     {tp="butt"; centergroup=1; text=M.MCancel; cancel=1; },
   }
   ----------------------------------------------------------------------------
-  local Pos = sd.Indexes(Items)
+  local dlg = sd.New(Items)
+  local Pos = dlg:Indexes()
   local Data = _Plugin.History["config"]
-  sd.LoadData(Data, Items)
+  dlg:LoadData(Data)
 
   local hColor0 = Data.EditorHighlightColor
 
@@ -230,9 +231,9 @@ local function EditorConfigDialog()
     end
   end
 
-  local out = sd.Run(Items)
+  local out = dlg:Run()
   if out then
-    sd.SaveData(out, Data)
+    dlg:SaveData(out, Data)
     Data.EditorHighlightColor = hColor0
     _Plugin.SaveSettings()
     return true
@@ -583,6 +584,11 @@ local function CreateSRFrame (Items, aData, bInEditor)
   return setmetatable(self, SRFrameMeta)
 end
 
+function SRFrame:SetDialogHandle (dlg, Pos, Elem)
+  self.Dlg = dlg
+  self.Pos,self.Elem = Pos,Elem
+end
+
 function SRFrame:InsertInDialog (aPanelsDialog, aOp)
   local insert = table.insert
   local Items = self.Items
@@ -619,8 +625,7 @@ function SRFrame:InsertInDialog (aPanelsDialog, aOp)
 end
 
 function SRFrame:CheckRegexInit (hDlg, Data)
-  local Pos = self.Pos or sd.Indexes(self.Items)
-  self.Pos = Pos
+  local Pos = self.Pos
   hDlg:SetCheck (Pos.bWholeWords, Data.bWholeWords)
   hDlg:SetCheck (Pos.bExtended,   Data.bExtended)
   hDlg:SetCheck (Pos.bCaseSens,   Data.bCaseSens)
@@ -628,8 +633,7 @@ function SRFrame:CheckRegexInit (hDlg, Data)
 end
 
 function SRFrame:CheckRegexChange (hDlg)
-  local Pos = self.Pos or sd.Indexes(self.Items)
-  self.Pos = Pos
+  local Pos = self.Pos
   local bRegex = hDlg:GetCheck(Pos.bRegExpr)
 
   if bRegex then hDlg:SetCheck(Pos.bWholeWords, false) end
@@ -645,8 +649,7 @@ function SRFrame:CheckRegexChange (hDlg)
 end
 
 function SRFrame:CheckAdvancedEnab (hDlg)
-  local Pos = self.Pos or sd.Indexes(self.Items)
-  self.Pos = Pos
+  local Pos = self.Pos
   if Pos.bAdvanced then
     local bEnab = hDlg:GetCheck(Pos.bAdvanced)
     hDlg:Enable(Pos.labFilterFunc, bEnab)
@@ -659,8 +662,7 @@ function SRFrame:CheckAdvancedEnab (hDlg)
 end
 
 function SRFrame:CheckWrapAround (hDlg)
-  local Pos = self.Pos or sd.Indexes(self.Items)
-  self.Pos = Pos
+  local Pos = self.Pos
   if self.bInEditor and Pos.bWrapAround then
     local bEnab = hDlg:GetCheck(Pos.rScopeGlobal) and hDlg:GetCheck(Pos.rOriginCursor)
     hDlg:Enable(Pos.bWrapAround, bEnab)
@@ -668,8 +670,7 @@ function SRFrame:CheckWrapAround (hDlg)
 end
 
 function SRFrame:OnDataLoaded (aData, aScriptCall)
-  local Pos = self.Pos or sd.Indexes(self.Items)
-  self.Pos = Pos
+  local Pos = self.Pos
   self.ScriptCall = aScriptCall
   local Items = self.Items
   local bInEditor = self.bInEditor
@@ -758,12 +759,13 @@ function SRFrame:GetLibName (hDlg)
 end
 
 function SRFrame:DlgProc (hDlg, msg, param1, param2)
-  local Pos = self.Pos or sd.Indexes(self.Items)
+  local Pos = self.Pos
   self.Pos = Pos
   local Data, bInEditor = self.Data, self.bInEditor
   local bReplace = Pos.sReplacePat
   ----------------------------------------------------------------------------
   if msg == F.DN_INITDIALOG then
+    assert(self.Dlg, "self.Dlg not set; probably Frame:SetDialogHandle was not called")
     if bInEditor then
       local EI = editor.GetInfo()
       if EI.BlockType == F.BTYPE_NONE then
@@ -888,7 +890,7 @@ function SRFrame:DoPresets (hDlg)
     if item.preset then
       self.PresetName = item.text
       local data = item.preset
-      sd.SetDialogState(hDlg, self.Items, data)
+      self.Dlg:SetDialogState(hDlg, data)
 
       if Pos.cmbSearchArea and data.sSearchArea then
         hDlg:ListSetCurPos(Pos.cmbSearchArea, {SelectPos=SearchAreaToIndex(data.sSearchArea)} )
@@ -940,7 +942,7 @@ function SRFrame:DoPresets (hDlg)
         if pure_save_name or not presets[name] or
           far.Message(M.MPresetOverwrite, M.MConfirm, M.MBtnYesNo, "w") == 1
         then
-          local data = sd.GetDialogState(hDlg, self.Items)
+          local data = self.Dlg:GetDialogState(hDlg)
           presets[name] = data
           self.PresetName = name
           self:SaveDataDyn(hDlg, data)

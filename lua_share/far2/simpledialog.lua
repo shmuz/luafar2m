@@ -21,11 +21,19 @@ local IND_VBUF     = (FarVer==2) and 7 or 6
 local IND_FLAGS    = (FarVer==2) and 8 or 9
 local IND_DFLT     = (FarVer==2) and 9 or nil
 
+local mod = {} -- this module
+local mod_meta = { __index=mod; }
+
+function mod.New(Items)
+  assert(type(Items) == "table", "param #1 must be a table")
+  return setmetatable({Items=Items}, mod_meta)
+end
+
 --- Edit some text (e.g. a DI_EDIT dialog field) in Far editor
 -- @param text     : input text
 -- @param ext      : extension of temporary file (affects syntax highlighting; optional)
 -- @return         : output text (or nil)
-local function OpenInEditor(text, ext)
+function mod.OpenInEditor(text, ext)
   local tempdir = "/tmp"
   if OpSys == "windows" then
     tempdir = win.GetEnv("TEMP")
@@ -107,9 +115,9 @@ local function calc_x2 (tp, x1, text)
   end
 end
 
-local function get_dialog_state(hDlg, Items)
+function mod:GetDialogState(hDlg)
   local out = {}
-  for pos,elem in ipairs(Items) do
+  for pos,elem in ipairs(self.Items) do
     if not (elem.noauto or elem.nosave) then
       local tp = type(elem.name)
       if tp=="string" or tp=="number" then
@@ -142,8 +150,8 @@ local function get_dialog_state(hDlg, Items)
   return out
 end
 
-local function set_dialog_state(hDlg, Items, Data)
-  for pos,elem in ipairs(Items) do
+function mod:SetDialogState(hDlg, Data)
+  for pos,elem in ipairs(self.Items) do
     if not (elem.noauto or elem.noload) then
       if type(elem.name)=="string" or type(elem.name)=="number" then
         local val = Data[elem.name]
@@ -268,8 +276,8 @@ end
 -- @return1 out  table : contains final values of dialog items indexed by 'name' field of 'inData' items
 -- @return2 pos number : return value of API far.Dialog()
 ----------------------------------------------------------------------------------------------------
-local function Run (inData)
-  assert(type(inData)=="table", "parameter 'Data' must be a table")
+function mod:Run()
+  local inData = self.Items
   inData.flags = inData.flags or 0
   assert(type(inData.flags)=="number", "'Data.flags' must be a number")
   local HMARGIN = (0 == band(inData.flags,F.FDLG_SMALLDIALOG)) and 3 or 0 -- horisontal margin
@@ -457,7 +465,7 @@ local function Run (inData)
 
     elseif Msg == F.DN_CLOSE then
       if inData.closeaction and inData[Par1] and not inData[Par1].cancel then
-        return inData.closeaction(hDlg, Par1, get_dialog_state(hDlg, inData))
+        return inData.closeaction(hDlg, Par1, self:GetDialogState(hDlg))
       end
 
     elseif (FarVer == 2) and Msg == F.DN_KEY then
@@ -471,7 +479,7 @@ local function Run (inData)
       elseif Par2 == F.KEY_F4 then
         if outData[Par1][IND_TYPE] == F.DI_EDIT and not inData[Par1].skipF4 then
           local txt = Send(hDlg, "DM_GETTEXT", Par1)
-          txt = OpenInEditor(txt, inData[Par1].ext)
+          txt = mod.OpenInEditor(txt, inData[Par1].ext)
           if txt then Send(hDlg, "DM_SETTEXT", Par1, txt); end
         end
       end
@@ -480,15 +488,15 @@ local function Run (inData)
       if inData.keyaction and inData.keyaction(hDlg, Par1, far.InputRecordToName(Par2)) then
         return true
       end
-      local mod = band(Par2.ControlKeyState,0x1F) ~= 0
-      if Par2.VirtualKeyCode == VK.F1 and not mod then
+      local modif = band(Par2.ControlKeyState,0x1F) ~= 0
+      if Par2.VirtualKeyCode == VK.F1 and not modif then
         if type(inData.help) == "function" then
           inData.help()
         end
-      elseif Par2.VirtualKeyCode == VK.F4 and not mod then
+      elseif Par2.VirtualKeyCode == VK.F4 and not modif then
         if outData[Par1][IND_TYPE] == F.DI_EDIT then
           local txt = Send(hDlg, "DM_GETTEXT", Par1)
-          txt = OpenInEditor(txt, inData[Par1].ext)
+          txt = mod.OpenInEditor(txt, inData[Par1].ext)
           if txt then Send(hDlg, "DM_SETTEXT", Par1, txt); end
         end
       end
@@ -529,15 +537,14 @@ local function Run (inData)
     far.DialogFree(hDlg)
     return nil
   end
-  local out = get_dialog_state(hDlg, inData)
+  local out = self:GetDialogState(hDlg)
   far.DialogFree(hDlg)
   return out, ret
 end
 
-local function Indexes(inData)
-  assert(type(inData)=="table", "arg #1 is not a table")
+function mod:Indexes()
   local Pos, Elem = {}, {}
-  for i,v in ipairs(inData) do
+  for i,v in ipairs(self.Items) do
     if type(v) ~= "table" then
       error("element #"..i.." is not a table")
     end
@@ -546,17 +553,16 @@ local function Indexes(inData)
   return Pos, Elem
 end
 
-local function LoadData(Data, Items)
+function mod:LoadData(Data)
   assert(type(Data)=="table", "arg #1 is not a table")
-  assert(type(Items)=="table", "arg #2 is not a table")
-  for _,v in ipairs(Items) do
+  for _,v in ipairs(self.Items) do
     if v.name and not (v.noauto or v.noload) and Data[v.name]~=nil then
       v.val = Data[v.name]
     end
   end
 end
 
-local function SaveData(Out, Data)
+function mod:SaveData(Out, Data)
   assert(type(Out)=="table", "arg #1 is not a table")
   assert(type(Data)=="table", "arg #2 is not a table")
   for k,v in pairs(Out) do Data[k]=v end
@@ -644,10 +650,10 @@ end
 --- Automatically assign hot keys in dialog items.
 -- @param Items : an array of dialog items (tables);
 --                an item may have a boolean field 'nohilite' that means no automatic highlighting;
-local function AssignHotKeys (Items)
+function mod:AssignHotKeys()
   local types = { butt=1; chbox=1; rbutt=1; text=1; vtext=1; }
   local arr, idx = {}, {}
-  for i,v in ipairs(Items) do
+  for i,v in ipairs(self.Items) do
     if types[v.tp] and not v.nohilite then
       local n = #arr+1
       arr[n], idx[n] = v.text, i
@@ -659,13 +665,4 @@ local function AssignHotKeys (Items)
   end
 end
 
-return {
-  OpenInEditor = OpenInEditor;
-  Run = Run;
-  Indexes = Indexes;
-  LoadData = LoadData;
-  SaveData = SaveData;
-  GetDialogState = get_dialog_state;
-  SetDialogState = set_dialog_state;
-  AssignHotKeys = AssignHotKeys;
-}
+return mod

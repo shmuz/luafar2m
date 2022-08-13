@@ -36,8 +36,9 @@ local function ConfigDialog (aData)
     { tp="butt"; text=M.mCancel; centergroup=1; cancel=1;  },
   }
   ------------------------------------------------------------------------------
-  local Pos = sd.Indexes(Items)
-  sd.LoadData(aData, Items)
+  local dlg = sd.New(Items)
+  local Pos = dlg:Indexes()
+  dlg:LoadData(aData)
 
   local hColor0 = aData.HighTextColor    or 0x3A
   local hColor1 = aData.SelHighTextColor or 0x0A
@@ -58,9 +59,9 @@ local function ConfigDialog (aData)
     end
   end
 
-  local out = sd.Run(Items)
+  local out = dlg:Run()
   if out then
-    sd.SaveData(out, aData)
+    dlg:SaveData(out, aData)
     aData.iSizeCmd  = tonumber(aData.iSizeCmd)
     aData.iSizeView = tonumber(aData.iSizeView)
     aData.iSizeFold = tonumber(aData.iSizeFold)

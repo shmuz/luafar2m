@@ -206,7 +206,8 @@ local function calculator()
     { tp="butt";  name="btnCopy"; centergroup=1; text=M.mButtonCopy;                     },
   }
 
-  local dPos, dItems = sDialog.Indexes(items)
+  local dlg = sDialog.New(items)
+  local dPos, dItems = dlg:Indexes()
   local curlang = nil
   local compiled = nil
   local result = 0
@@ -427,7 +428,7 @@ local function calculator()
       if v.text and v.text:match("^&[0-4]$") then v.text=v.text:sub(2) end
     end
   end
-  sDialog.Run(items)
+  dlg:Run()
 
 end -- local function calculator()
 

@@ -68,7 +68,8 @@ local function GetText (aOpt)
     {tp="butt"; text="Cancel"; cancel=1;  centergroup=1;                     };
   }
 
-  local Pos, Elem = sDialog.Indexes(Items)
+  local dlg = sDialog.New(Items)
+  local Pos, Elem = dlg:Indexes()
   Elem.lua.val   = aOpt.lang~="moonscript"
   Elem.moon.val  = aOpt.lang=="moonscript"
   Elem.reuse.val = aOpt.reuse
@@ -104,7 +105,7 @@ local function GetText (aOpt)
     SendMsg(hDlg, "DM_ADDHISTORY", Pos.params, tOut.params)
   end
 
-  local out = sDialog.Run(Items)
+  local out = sDialog:Run()
   if out then
     aOpt.lang  = out.lua and "lua" or "moonscript"
     aOpt.reuse = out.reuse

@@ -83,7 +83,9 @@ local function EditorDialog (aData, aReplace, aScriptCall)
   end
   insert(Items, { tp="butt"; name="btnCancel";     centergroup=1; text=M.MCancel; cancel=1; nohilite=1; })
   ----------------------------------------------------------------------------
-  local Pos,Elem = sd.Indexes(Items)
+  local dlg = sd.New(Items)
+  local Pos,Elem = dlg:Indexes()
+  Frame:SetDialogObject(dlg,Pos,Elem)
 
   function Items.proc (hDlg, msg, param1, param2)
     if msg==F.DN_BTNCLICK then
@@ -101,11 +103,10 @@ local function EditorDialog (aData, aReplace, aScriptCall)
     return Frame:DlgProc(hDlg, msg, param1, param2)
   end
   ----------------------------------------------------------------------------
-  sd.AssignHotKeys(Items)
-  sd.LoadData(aData, Items)
-  Frame.Pos, Frame.Elem = Pos, Elem
+  dlg:AssignHotKeys()
+  dlg:LoadData(aData)
   Frame:OnDataLoaded(aData, aScriptCall)
-  local out, pos = sd.Run(Items)
+  local out, pos = dlg:Run()
   if not out then return "cancel" end
   return pos==Pos.btnOk      and (aReplace and "replace" or "search") or
          pos==Pos.btnCount   and "count"  or

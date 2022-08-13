@@ -94,7 +94,8 @@ function exporter:export_data_with_dialog()
     {tp="butt";   text=M.exp_exp; centergroup=1; default=1;                  },
     {tp="butt";   text=M.cancel;  centergroup=1; cancel=1;                   },
   }
-  local Pos = sdialog.Indexes(Items)
+  local dlg = sdialog.New(Items)
+  local Pos = dlg:Indexes()
   ------------------------------------------------------------------------------
   Items.proc = function(hDlg, Msg, Param1, Param2)
     if Msg == F.DN_INITDIALOG then
@@ -111,7 +112,7 @@ function exporter:export_data_with_dialog()
     end
   end
   ------------------------------------------------------------------------------
-  local rc = sdialog.Run(Items)
+  local rc = dlg:Run()
   if rc then
     data.format = rc.csv and "csv" or "text"
     data.multiline = rc.multiline
@@ -158,7 +159,8 @@ function exporter:dump_data_with_dialog()
     {tp="butt";  text=M.dump_dump; centergroup=1; default=1;                  },
     {tp="butt";  text=M.cancel;    centergroup=1; cancel=1;                   },
   }
-  local Pos = sdialog.Indexes(Items)
+  local dlg = sdialog.New(Items)
+  local Pos = dlg:Indexes()
   ------------------------------------------------------------------------------
   function Items.initaction(hDlg)
     if t_selected[1] == nil then
@@ -173,7 +175,7 @@ function exporter:dump_data_with_dialog()
     end
   end
   ------------------------------------------------------------------------------
-  local rc = sdialog.Run(Items)
+  local rc = dlg:Run()
   if rc then
     data.dump_dumpall = rc.dumpall
     data.dump_rowids  = rc.rowids
@@ -206,7 +208,8 @@ function exporter:recover_data_with_dialog()
     {tp="butt";  text=M.ok;     centergroup=1; default=1;          },
     {tp="butt";  text=M.cancel; centergroup=1; cancel=1;           },
   }
-  local Pos, Elem = sdialog.Indexes(Items)
+  local dlg = sdialog.New(Items)
+  local Pos, Elem = dlg:Indexes()
   ------------------------------------------------------------------------------
   local function set_output_name(hDlg)
     local as_dump = hDlg:send("DM_GETCHECK", Pos.as_dump)
@@ -226,7 +229,7 @@ function exporter:recover_data_with_dialog()
     end
   end
   ------------------------------------------------------------------------------
-  local rc = sdialog.Run(Items)
+  local rc = dlg:Run()
   if rc then
     for exec in get_sqlite_exe() do
       local cmd = rc.as_dump and

@@ -56,7 +56,7 @@ local function CreateArchive()
     {tp="butt"; centergroup=1; default=1; text="OK";    },
     {tp="butt"; centergroup=1; cancel=1; text="Cancel"; },
   }
-  local data = sd.Run(Items)
+  local data = sd.New(Items):Run()
   if data and data.filename:find("%S") then
     local lib = require "bin2text"
     return data.uu and {

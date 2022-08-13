@@ -419,7 +419,8 @@ local function ShowSettings()
     {tp="butt";    default=1; centergroup=1; text="OK";    },
     {tp="butt";    cancel=1; centergroup=1; text="Cancel"; },
   }
-  local Pos,Elem = sd.Indexes(Items)
+  local dlg = sd.New(Items)
+  local Pos,Elem = dlg:Indexes()
 
   Elem.cbHighAll.val = Config.On
   Elem.cbFastAll.val = Config.bFastMode
@@ -492,7 +493,7 @@ local function ShowSettings()
     end
   end
 
-  local out = sd.Run(Items)
+  local out = dlg:Run()
   if out then
     Config.On = out.cbHighAll
     Config.bFastMode = out.cbFastAll
@@ -611,7 +612,8 @@ local function HighlightExtra()
     {tp="butt"; centergroup=1;            text="&Reset"; name="btReset";     },
     {tp="butt"; centergroup=1; cancel=1;  text="Cancel";                     },
   }
-  local Pos,Elem = sd.Indexes(Items)
+  local dlg = sd.New(Items)
+  local Pos,Elem = dlg:Indexes()
 
   local function CheckRegexChange (hDlg)
     local bRegex = hDlg:GetCheck(Pos.bRegExpr)
@@ -677,7 +679,7 @@ local function HighlightExtra()
   Elem.bWholeWords.val = Extra.bWholeWords
   Elem.bExtended.val   = Extra.bExtended
 
-  sd.Run(Items)
+  dlg:Run()
 end
 
 function export.OpenPlugin (From, Item)

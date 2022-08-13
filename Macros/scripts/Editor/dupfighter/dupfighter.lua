@@ -170,7 +170,8 @@ local function Main()
     {tp="butt";  text=M.OK;     centergroup=1; default=1;                        },
     {tp="butt";  text=M.CANCEL; centergroup=1; cancel=1;                         },
   }
-  local Pos, Elem = sDialog.Indexes(dItems)
+  local dlg = sDialog.New(dItems)
+  local Pos, Elem = dlg:Indexes()
 
   dItems.initaction = function(hDlg)
     if not (ST.method>=1 and ST.method<=4) then ST.method=1; end
@@ -205,7 +206,7 @@ local function Main()
     end
   end
 
-  local out = sDialog.Run(dItems)
+  local out = dlg:Run()
   if out then
     ST.keepempty  = out.cbEmpty
     ST.statistics = out.cbStat

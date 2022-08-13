@@ -141,7 +141,8 @@ local function ExecuteWrapDialog (aData)
     {tp="butt";    text=M.MOk;     centergroup=1; default=1;              },
     {tp="butt";    text=M.MCancel; centergroup=1; cancel=1;               },
   }
-  local Pos = sd.Indexes(Items)
+  local dlg = sd.New(Items)
+  local Pos = dlg:Indexes()
   ----------------------------------------------------------------------------
   -- Handlers of dialog events --
   local function CheckGroup (hDlg, c1, ...)
@@ -172,10 +173,10 @@ local function ExecuteWrapDialog (aData)
     end
   end
   ----------------------------------------------------------------------------
-  sd.LoadData(aData, Items)
-  local out = sd.Run(Items)
+  dlg:LoadData(aData)
+  local out = dlg:Run()
   if out then
-    sd.SaveData(out, aData)
+    dlg:SaveData(out, aData)
     return true
   end
 end

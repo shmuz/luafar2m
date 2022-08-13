@@ -58,7 +58,8 @@ local function ReplaceDialog (Data)
     { tp="butt"; centergroup=1;            name="btnCount";   text=M.MDlgBtnCount2;  },
     { tp="butt"; centergroup=1;  cancel=1; nohilite=1;        text=M.MCancel;        },
   }
-  local Pos,Elem = sd.Indexes(Items)
+  local dlg = sd.New(Items)
+  local Pos,Elem = dlg:Indexes()
 
   local function CheckRegexChange (hDlg)
     local bRegex = hDlg:GetCheck(Pos.bRegExpr)
@@ -78,7 +79,7 @@ local function ReplaceDialog (Data)
 
   Items.closeaction = function(hDlg, param1, tOut)
     local tmpData = {}
-    sd.SaveData(tOut, tmpData)
+    dlg:SaveData(tOut, tmpData)
     tmpData.sRegexLib = RegexLibs[tOut.cmbRegexLib]
     if Common.ProcessDialogData(tmpData, true, true) then
       Data.sRegexLib = tmpData.sRegexLib
@@ -108,17 +109,17 @@ local function ReplaceDialog (Data)
     end
   end
 
-  sd.AssignHotKeys(Items)
-  sd.LoadData(Data, Items)
+  dlg:AssignHotKeys()
+  dlg:LoadData(Data)
   local list = Elem.cmbRegexLib.list
   list.SelectIndex = 1
   for i,v in ipairs(RegexLibs) do
     if Data.sRegexLib == v then list.SelectIndex = i; break; end
   end
 
-  local tOut, nPos = sd.Run(Items)
+  local tOut, nPos = dlg:Run()
   if tOut then
-    sd.SaveData(tOut, Data)
+    dlg:SaveData(tOut, Data)
     return nPos==Pos.btnReplace and "replace" or nPos==Pos.btnCount and "count"
   end
 end
