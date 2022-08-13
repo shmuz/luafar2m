@@ -651,9 +651,10 @@ end
 -- @param Items : an array of dialog items (tables);
 --                an item may have a boolean field 'nohilite' that means no automatic highlighting;
 function mod:AssignHotKeys()
+  local Items = self.Items
   local types = { butt=1; chbox=1; rbutt=1; text=1; vtext=1; }
   local arr, idx = {}, {}
-  for i,v in ipairs(self.Items) do
+  for i,v in ipairs(Items) do
     if types[v.tp] and not v.nohilite then
       local n = #arr+1
       arr[n], idx[n] = v.text, i
