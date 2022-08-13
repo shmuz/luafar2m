@@ -584,7 +584,7 @@ local function CreateSRFrame (Items, aData, bInEditor)
   return setmetatable(self, SRFrameMeta)
 end
 
-function SRFrame:SetDialogHandle (dlg, Pos, Elem)
+function SRFrame:SetDialogObject (dlg, Pos, Elem)
   self.Dlg = dlg
   self.Pos,self.Elem = Pos,Elem
 end
@@ -765,7 +765,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
   local bReplace = Pos.sReplacePat
   ----------------------------------------------------------------------------
   if msg == F.DN_INITDIALOG then
-    assert(self.Dlg, "self.Dlg not set; probably Frame:SetDialogHandle was not called")
+    assert(self.Dlg, "self.Dlg not set; probably Frame:SetDialogObject was not called")
     if bInEditor then
       local EI = editor.GetInfo()
       if EI.BlockType == F.BTYPE_NONE then
