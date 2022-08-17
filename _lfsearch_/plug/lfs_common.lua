@@ -3,7 +3,8 @@
 
 local M       = require "lfs_message"
 local RepLib  = require "lfs_replib"
-local sd      = require "far2.simpledialog"
+local sdialog = require "far2.simpledialog"
+local Sett    = require "far2.settings"
 
 local DefaultLogFileName = "\\D{%Y%m%d-%H%M%S}.log"
 
@@ -212,7 +213,7 @@ local function EditorConfigDialog()
     {tp="butt"; centergroup=1; text=M.MCancel; cancel=1; },
   }
   ----------------------------------------------------------------------------
-  local dlg = sd.New(Items)
+  local dlg = sdialog.New(Items)
   local Pos = dlg:Indexes()
   local Data = _Plugin.History["config"]
   dlg:LoadData(Data)
@@ -803,7 +804,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
   ----------------------------------------------------------------------------
   elseif msg == F.DN_KEY and param2 == F.KEY_F4 then
     if param1 == Pos.sReplacePat and hDlg:GetCheck(Pos.bRepIsFunc) then
-      local txt = sd.OpenInEditor(hDlg:GetText(Pos.sReplacePat), "lua")
+      local txt = sdialog.OpenInEditor(hDlg:GetText(Pos.sReplacePat), "lua")
       if txt then hDlg:SetText(Pos.sReplacePat, txt) end
       return true
     end
@@ -870,9 +871,10 @@ function SRFrame:DoPresets (hDlg)
   local Pos = self.Pos
   local HistPresetNames = _Plugin.DialogHistoryPath .. "Presets"
   hDlg:ShowDialog(0)
-  local props = { Title=M.MTitlePresets, Bottom = "Esc,Enter,F2,Ins,F6,Del", HelpTopic="Presets", }
+  local props = { Title=M.MTitlePresets, Bottom = "F1", HelpTopic="Presets", }
   local presets = _Plugin.History.presets
-  local bkeys = { {BreakKey="F2"}, {BreakKey="INSERT"}, {BreakKey="DELETE"}, {BreakKey="F6"} }
+  local bkeys = { {BreakKey="F2"},  {BreakKey="INSERT"}, {BreakKey="DELETE"}, {BreakKey="F6"},
+                  {BreakKey="C+S"}, {BreakKey="C+O"}, }
 
   while true do
     local items = {}
@@ -978,6 +980,55 @@ function SRFrame:DoPresets (hDlg)
           end
           presets[name], presets[oldname] = presets[oldname], nil
           _Plugin.SaveSettings()
+        end
+      end
+    ----------------------------------------------------------------------------
+    elseif item.BreakKey == "C+S" and items[1]then
+      local fname = far.InputBox(M.MPresetExportTitle, M.MPresetExportPrompt)
+      if fname then
+        fname = far.ConvertPath(fname)
+        if not win.GetFileAttr(fname) or 1==far.Message(
+          fname.."\n"..M.MPresetOverwriteQuery, M.MWarning, ";YesNo", "w")
+        then
+          local fp = io.open(fname, "w")
+          if fp then
+            fp:write(Sett.serialize(presets))
+            fp:close()
+            far.Message(M.MPresetExportSuccess, M.MMenuTitle)
+          else
+            ErrorMsg(M.MPresetExportFailure)
+          end
+        end
+      end
+    ----------------------------------------------------------------------------
+    elseif item.BreakKey == "C+O" then
+      local fname = far.InputBox(M.MPresetImportTitle, M.MPresetImportPrompt)
+      if fname then
+        local func, msg = loadfile(far.ConvertPath(fname))
+        if func then
+          local t = setfenv(func, {})()
+          if type(t) == "table" then
+            for k,v in pairs(t) do
+              if type(k)=="string" and type(v)=="table" then
+                if not presets[k] then
+                  presets[k] = v
+                else
+                  local root = k:match("%(%d+%)(.*)") or k
+                  for m=1,1000 do
+                    local k2 = ("(%d)%s"):format(m, root)
+                    if not presets[k2] then
+                      presets[k2] = v; break
+                    end
+                  end
+                end
+              end
+            end
+            _Plugin.SaveSettings()
+          else
+            ErrorMsg(M.MPresetImportDataNotTable)
+          end
+        else
+          ErrorMsg(msg)
         end
       end
     ----------------------------------------------------------------------------
