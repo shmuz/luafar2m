@@ -983,7 +983,7 @@ function SRFrame:DoPresets (hDlg)
         end
       end
     ----------------------------------------------------------------------------
-    elseif item.BreakKey == "C+S" and items[1]then
+    elseif item.BreakKey == "C+S" and items[1] then
       local fname = far.InputBox(M.MPresetExportTitle, M.MPresetExportPrompt)
       if fname then
         fname = far.ConvertPath(fname)

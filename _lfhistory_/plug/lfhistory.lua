@@ -35,7 +35,6 @@ local cfgView = {
     "CtrlEnter", "CtrlNumEnter", "RCtrlEnter", "RCtrlNumEnter",
     "ShiftEnter", "ShiftNumEnter",
     "CtrlPgUp", "RCtrlPgUp", "CtrlPgDn", "RCtrlPgDn",
-    "AltF8", "RAltF8", "AltF12", "RAltF12",
   },
   maxItemsKey = "iSizeView",
 }
@@ -48,7 +47,6 @@ local cfgCommands = {
   brkeys = {
     "CtrlEnter", "RCtrlEnter", "CtrlNumEnter", "RCtrlNumEnter",
     "ShiftEnter", "ShiftNumEnter",
-    "AltF11", "RAltF11", "AltF12", "RAltF12",
   },
   maxItemsKey = "iSizeCmd",
 }
@@ -61,7 +59,6 @@ local cfgFolders = {
   brkeys = {
     "CtrlEnter", "RCtrlEnter", "CtrlNumEnter", "RCtrlNumEnter",
     "ShiftEnter", "ShiftNumEnter",
-    "AltF8", "RAltF8", "AltF11", "RAltF11",
   },
   maxItemsKey = "iSizeFold",
 }
@@ -281,10 +278,6 @@ local function FoldersHistory_CanClose (self, item, breakkey)
     return true
   end
   ----------------------------------------------------------------------------
-  if breakkey=="AltF8" or breakkey=="RAltF8" or breakkey=="AltF11" or breakkey=="RAltF11" then
-    return true
-  end
-  ----------------------------------------------------------------------------
   if panel.SetPanelDirectory(breakkey==nil and 1 or 0, item.text) then
     return true
   end
@@ -448,10 +441,6 @@ end
 
 local function commands_history()
   local item, key = get_history(cfgCommands)
-
-  if key=="AltF11" or key=="RAltF11" then return "view" end
-  if key=="AltF12" or key=="RAltF12" then return "folders" end
-
   if item and IsCmdLineAvail() then
     if IsCtrlEnter(key) then
       panel.SetCmdLine(item.text)
@@ -462,10 +451,7 @@ local function commands_history()
 end
 
 local function folders_history()
-  local item, key = get_history(cfgFolders)
-
-  if key=="AltF8" or key=="RAltF8" then return "commands" end
-  if key=="AltF11" or key=="RAltF11" then return "view" end
+  get_history(cfgFolders)
 end
 
 local function CallViewer (fname, disablehistory)
@@ -480,9 +466,6 @@ end
 
 local function view_history()
   local item, key = get_history(cfgView)
-
-  if key=="AltF8" or key=="RAltF8" then return "commands" end
-  if key=="AltF12" or key=="RAltF12" then return "folders" end
 
   if not item then return end
   local fname = item.text
