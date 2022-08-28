@@ -105,7 +105,7 @@ local function GetText (aOpt)
     SendMsg(hDlg, "DM_ADDHISTORY", Pos.params, tOut.params)
   end
 
-  local out = sDialog:Run()
+  local out = dlg:Run()
   if out then
     aOpt.lang  = out.lua and "lua" or "moonscript"
     aOpt.reuse = out.reuse

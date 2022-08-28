@@ -1,8 +1,8 @@
 Macro {
   description="Show dialog GUID";
-  area="Dialog";  key="CtrlG";
+  area="Dialog Menu";  key="CtrlG";
   action=function()
-    local Id = Dlg.Id
+    local Id = Area.Dialog and Dlg.Id or Menu.Id
     local quotId = '"' .. Id .. '"'
     local fullname, text
     for name,guid in pairs(far.Guids or {}) do
