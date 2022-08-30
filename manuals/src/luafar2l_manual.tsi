@@ -1000,7 +1000,7 @@ lv=1
 dt=Text
 nm=C-functions
 ctime=3866132436
-mtime=3866133497
+mtime=3870956917
 <article>
 </article>
 </node>
@@ -1010,12 +1010,12 @@ lv=2
 dt=Text
 nm=GetGlobalInfoW
 ctime=3861011876
-mtime=3866132986
+mtime=3870956471
 <article>
 #_DWORD GetGlobalInfoW()
 #_
 #_**Returns:**
-#_  Pugin's identifier (SysId) - integer (0 ... 2^32-1)
+#_  Plugin's identifier (SysId) - integer (0 ... 2^32-1)
 #_
 #_**Notes:**
 #_  1. This function is supported only with a modified Far2L version.
@@ -5407,31 +5407,6 @@ nm=Far Standard Functions
 </article>
 </node>
 <node>
-id=453
-lv=2
-dt=Text
-nm=far.BackgroundTask
-ctime=3852954289
-mtime=3852954473
-<article>
-#_far.BackgroundTask (Info, Started)
-#_
-#_**Parameters:**
-#_  Info:     string
-#_  Started:  boolean
-#_
-#_**Returns:**
-#_  nothing
-#_
-#_**Far API used:**
-#_  FSF.BackgroundTask
-#_
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
 id=494
 lv=2
 dt=Text
@@ -5547,104 +5522,6 @@ nm=far.CopyToClipboard
 #_**Far API used:**
 #_  FSF.CopyToClipboard
 #_
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
-id=452
-lv=2
-dt=Text
-nm=far.DispatchInterThreadCalls
-ctime=3852954168
-mtime=3852954258
-<article>
-#_result = DispatchInterThreadCalls()
-#_
-#_**Parameters:**
-#_  none
-#_
-#_**Returns:**
-#_  result:  integer
-#_
-#_**Far API used:**
-#_  FSF.DispatchInterThreadCalls
-#_
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
-id=451
-lv=2
-dt=Text
-nm=far.DisplayNotification
-ctime=3852953930
-mtime=3852954119
-<article>
-#_far.DisplayNotification (action, object)
-#_
-#_**Parameters:**
-#_  action:  string
-#_  object:  string
-#_
-#_**Returns:**
-#_  nothing
-#_
-#_**Far API used:**
-#_  FSF.DisplayNotification
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
-id=449
-lv=2
-dt=Text
-nm=far.Execute
-ctime=3852926106
-mtime=3852926344
-<article>
-#_result = far.Execute (CmdStr, ExecFlags)
-#_
-#_**Parameters:**
-#_  CmdStr:     string
-#_  ExecFlags:  flags
-#_
-#_**Returns:**
-#_  result:     integer
-#_
-#_**Far API used:**
-#_  FSF.Execute
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
-id=450
-lv=2
-dt=Text
-nm=far.ExecuteLibrary
-ctime=3852926114
-mtime=3852926447
-<article>
-#_result = far.ExecuteLibrary (Library, Symbol, CmdStr, ExecFlags)
-#_
-#_**Parameters:**
-#_  Library:    string
-#_  Symbol:     string
-#_  CmdStr:     string
-#_  ExecFlags:  flags
-#_
-#_**Returns:**
-#_  result:     integer
-#_
-#_**Far API used:**
-#_  FSF.ExecuteLibrary
 #_
 #_@@@
 #_
@@ -6222,6 +6099,207 @@ mtime=3856507931
 </article>
 </node>
 <node>
+id=496
+lv=1
+dt=Text
+nm=Far2L-specific  functions
+ctime=3870880710
+mtime=3870923343
+<article>
+</article>
+</node>
+<node>
+id=453
+lv=2
+dt=Text
+nm=far.BackgroundTask
+ctime=3852954289
+mtime=3852954473
+<article>
+#_far.BackgroundTask (Info, Started)
+#_
+#_**Parameters:**
+#_  Info:     string
+#_  Started:  boolean
+#_
+#_**Returns:**
+#_  nothing
+#_
+#_**Far API used:**
+#_  FSF.BackgroundTask
+#_
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=452
+lv=2
+dt=Text
+nm=far.DispatchInterThreadCalls
+ctime=3852954168
+mtime=3852954258
+<article>
+#_result = DispatchInterThreadCalls()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  result:  integer
+#_
+#_**Far API used:**
+#_  FSF.DispatchInterThreadCalls
+#_
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=451
+lv=2
+dt=Text
+nm=far.DisplayNotification
+ctime=3852953930
+mtime=3852954119
+<article>
+#_far.DisplayNotification (action, object)
+#_
+#_**Parameters:**
+#_  action:  string
+#_  object:  string
+#_
+#_**Returns:**
+#_  nothing
+#_
+#_**Far API used:**
+#_  FSF.DisplayNotification
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=449
+lv=2
+dt=Text
+nm=far.Execute
+ctime=3852926106
+mtime=3852926344
+<article>
+#_result = far.Execute (CmdStr, ExecFlags)
+#_
+#_**Parameters:**
+#_  CmdStr:     string
+#_  ExecFlags:  flags
+#_
+#_**Returns:**
+#_  result:     integer
+#_
+#_**Far API used:**
+#_  FSF.Execute
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=450
+lv=2
+dt=Text
+nm=far.ExecuteLibrary
+ctime=3852926114
+mtime=3852926447
+<article>
+#_result = far.ExecuteLibrary (Library, Symbol, CmdStr, ExecFlags)
+#_
+#_**Parameters:**
+#_  Library:    string
+#_  Symbol:     string
+#_  CmdStr:     string
+#_  ExecFlags:  flags
+#_
+#_**Returns:**
+#_  result:     integer
+#_
+#_**Far API used:**
+#_  FSF.ExecuteLibrary
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=482
+lv=2
+dt=Text
+nm=far.GetConfigDir
+ctime=3864462591
+mtime=3870923762
+<article>
+#_Dir = far.GetConfigDir()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  Dir: string
+#_
+#_**Description:**
+#_  If Far Manager was launched with "-u <dir>" parameter this function
+#_  returns the value of **FARSETTINGS** environment variable.
+#_  Otherwise it returns "$HOME/.config/far2l" (with $HOME expanded).
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=476
+lv=2
+dt=Text
+nm=far.GetPluginId
+ctime=3861778095
+mtime=3861778166
+<article>
+#_PluginId = far.GetPluginId()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  PluginId: integer
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=459
+lv=2
+dt=Text
+nm=far.Log
+ctime=3853503608
+mtime=3853503949
+<article>
+#_far.Log (message)
+#_
+#_**Parameters:**
+#_  message : string
+#_
+#_**Returns:**
+#_  nothing
+#_
+#_**Description:**
+#_  Writes <message> into the file **$HOME/luafar_log.txt**
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=273
 lv=1
 dt=Text
@@ -6719,50 +6797,6 @@ nm=far.CPluginStartupInfo
 </article>
 </node>
 <node>
-id=482
-lv=2
-dt=Text
-nm=far.GetConfigDir
-ctime=3864462591
-mtime=3864466073
-<article>
-#_Dir = far.GetConfigDir()
-#_
-#_**Parameters:**
-#_  none
-#_
-#_**Returns:**
-#_  Dir: string
-#_
-#_**Description:**
-#_  Unless Far Manager was launched with "-u" switch this function returns
-#_  "~/.config/far2l".
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
-id=476
-lv=2
-dt=Text
-nm=far.GetPluginId
-ctime=3861778095
-mtime=3861778166
-<article>
-#_PluginId = far.GetPluginId()
-#_
-#_**Parameters:**
-#_  none
-#_
-#_**Returns:**
-#_  PluginId: integer
-#_
-#_@@@
-#_
-</article>
-</node>
-<node>
 id=461
 lv=2
 dt=Text
@@ -6787,29 +6821,6 @@ mtime=3853776891
 #_
 #_@@@
 #_<lua> Links = { InputRecord="187.html" } </lua>
-#_
-</article>
-</node>
-<node>
-id=459
-lv=2
-dt=Text
-nm=far.Log
-ctime=3853503608
-mtime=3853503949
-<article>
-#_far.Log (message)
-#_
-#_**Parameters:**
-#_  message : string
-#_
-#_**Returns:**
-#_  nothing
-#_
-#_**Description:**
-#_  Writes <message> into the file **$HOME/luafar_log.txt**
-#_
-#_@@@
 #_
 </article>
 </node>
@@ -7485,29 +7496,6 @@ nm=Additional libraries
 ctime=3851356343
 mtime=3851357415
 <article>
-</article>
-</node>
-<node>
-id=143
-lv=1
-dt=Text
-nm=bit
-<article>
-#_<markdown>
-#_**Lua BitOp** library (by Mike Pall) is embedded into LuaFAR. It contains the following functions:
-#_        bit.arshift
-#_        bit.band
-#_        bit.bnot
-#_        bit.bor
-#_        bit.bswap
-#_        bit.bxor
-#_        bit.lshift
-#_        bit.rol
-#_        bit.ror
-#_        bit.rshift
-#_        bit.tobit
-#_        bit.tohex
-#_
 </article>
 </node>
 <node>
@@ -10041,40 +10029,6 @@ nm=Lua
 #_OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 #_THE SOFTWARE.
 #_
-#_
-</article>
-</node>
-<node>
-id=197
-lv=1
-dt=Text
-nm=Lua BitOp
-<article>
-#_Lua BitOp -- a bit operations library for Lua 5.1.
-#_http://bitop.luajit.org/
-#_
-#_Copyright (C) 2008-2009 Mike Pall. All rights reserved.
-#_
-#_Permission is hereby granted, free of charge, to any person obtaining
-#_a copy of this software and associated documentation files (the
-#_"Software"), to deal in the Software without restriction, including
-#_without limitation the rights to use, copy, modify, merge, publish,
-#_distribute, sublicense, and/or sell copies of the Software, and to
-#_permit persons to whom the Software is furnished to do so, subject to
-#_the following conditions:
-#_
-#_The above copyright notice and this permission notice shall be
-#_included in all copies or substantial portions of the Software.
-#_
-#_THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-#_EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-#_MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-#_IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-#_CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-#_TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-#_SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#_
-#_[ MIT license: http://www.opensource.org/licenses/mit-license.php ]
 #_
 </article>
 </node>

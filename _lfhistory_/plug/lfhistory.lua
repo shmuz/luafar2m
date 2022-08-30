@@ -364,7 +364,7 @@ local function get_history (aConfig)
   -- add Far database items
   local last_time = settings.last_time or 0
 
-  local file = os.getenv("HOME") .. "/.config/far2l/history/" .. aConfig.FarFileName
+  local file = far.GetConfigDir() .. "/history/" .. aConfig.FarFileName
   local ini = IniFile.New(file, "nocomment")
   local far_lines, far_times = {}, {}
 
