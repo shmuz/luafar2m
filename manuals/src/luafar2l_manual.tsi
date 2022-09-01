@@ -3193,6 +3193,29 @@ mtime=3865959577
 </article>
 </node>
 <node>
+id=497
+lv=2
+dt=Text
+nm=editor.GetTitle
+ctime=3871192568
+mtime=3871192627
+<article>
+#_Title = editor.GetTitle()
+#_
+#_**Parameters:**
+#_  none
+#_
+#_**Returns:**
+#_  Title:    string
+#_
+#_**Far API used:**
+#_  EditorControl, ECTL_GETTITLE
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=32
 lv=2
 dt=Text
@@ -4137,6 +4160,29 @@ mtime=3853513277
 </article>
 </node>
 <node>
+id=498
+lv=2
+dt=Text
+nm=panel.GetPanelPrefix
+ctime=3871200318
+mtime=3871200417
+<article>
+#_Prefix = panel.GetPanelPrefix (handle)
+#_
+#_**Parameters:**
+#_  handle:  panel handle
+#_
+#_**Returns:**
+#_  Prefix:  string
+#_
+#_**Far API used:**
+#_  PanelControl, FCTL_GETPANELPREFIX
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=254
 lv=2
 dt=Text
@@ -4251,6 +4297,29 @@ mtime=3853512643
 #_**Far API used:**
 #_  Control, FCTL_REDRAWPANEL
 #_
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
+id=499
+lv=2
+dt=Text
+nm=panel.SetActivePanel
+ctime=3871203571
+mtime=3871203615
+<article>
+#_result = panel.SetActivePanel (handle)
+#_
+#_**Parameters:**
+#_  handle:  panel handle
+#_
+#_**Returns:**
+#_  result:  boolean
+#_
+#_**Far API used:**
+#_  PanelControl, FCTL_SETACTIVEPANEL
 #_
 #_@@@
 #_
