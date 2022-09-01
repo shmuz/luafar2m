@@ -518,7 +518,12 @@ local function ProcessDialogData (aData, bReplace, bInEditor, bUseMultiPatterns,
   else
     local SearchPat = ProcessSinglePattern(rex, aData.sSearchPat, aData)
     local cflags = GetCFlags(aData, bInEditor)
-    if libname=="far" then cflags = cflags.."o"; end -- optimize
+
+    -- 2022-09-01
+    -- The following line leads to crash in Far within a RECTL_SEARCHEX call
+    -- on a binary subject with a simple pattern, say "1234"
+    -->> if libname=="far" then cflags = cflags.."o"; end -- optimize
+
     local ok, ret = pcall(rex.new, SearchPat, cflags)
     if not ok then
       ErrorMsg(ret, M.MSearchPattern..": "..M.MSyntaxError)

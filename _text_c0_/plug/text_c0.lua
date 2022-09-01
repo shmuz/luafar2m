@@ -1,16 +1,15 @@
 -- Started 2010-06-15 by Shmuel Zeigerman.
 -- Proof of concept.
 
-local ext_list = {
-  "txt", "lua", "c", "h", "cpp" -- lower case!
+local extmap = { -- put extensions in lower case!
+  txt=1, lua=1, c=1, h=1, cpp=1,
 }
-local hash = {}; for _,v in ipairs(ext_list) do hash[v] = true end
 
 -- display text at the file beginning
 --------------------------------------
 function export.GetCustomData (FilePath)
   local ext = FilePath:match ( "%.([^/.]+)$" )
-  if ext and hash[ext:lower()] then
+  if ext and extmap[ext:lower()] then
     local fp = io.open(FilePath)
     if fp then
       local s = fp:read(512)
