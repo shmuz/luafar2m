@@ -7,25 +7,27 @@ end
 local function FindBracket()
   local ei = editor.GetInfo()
   local line = FastGetString(ei.CurLine)
-  if ei.CurPos > line:len() then
-    return
-  end
 
-  local Bracket = line:sub (ei.CurPos, ei.CurPos)
-  local Direction, Match
-  do
-    local tForward  = { ["("]=")", ["{"]="}", ["["]="]", ["<"]=">", }
-    local tBackward = { [")"]="(", ["}"]="{", ["]"]="[", [">"]="<", }
+  local CurPos, CurLine = ei.CurPos, ei.CurLine
+  local Bracket, Match, Direction
+
+  local tForward  = { ["("]=")", ["{"]="}", ["["]="]", ["<"]=">", }
+  local tBackward = { [")"]="(", ["}"]="{", ["]"]="[", [">"]="<", }
+  for k=0,1 do -- test cursor position and left-to-cursor position
+    if k==1 and CurPos==1 then return end
+    Bracket = line:sub (CurPos-k, CurPos-k)
     if tForward[Bracket] then
       Direction, Match = 1, tForward[Bracket]
+      break
     elseif tBackward[Bracket] then
-      Direction, Match = -1, tBackward[Bracket]
-    else
+      Direction, Match = -1, tBackward[Bracket];
+      CurPos = CurPos - k
+      break
+    elseif k==1 then
       return
     end
   end
 
-  local CurPos, CurLine = ei.CurPos, ei.CurLine
   local MatchCount = 1
   while true do
     CurPos = CurPos + Direction
@@ -62,14 +64,12 @@ local function FindBracket()
             end
           end
           editor.SetPosition(esp) -- match found: set the new position
-          editor.Redraw()
           return
         end
       end
     end
   end
   editor.SetPosition(ei) -- match not found: restore the initial position
-  editor.Redraw()
 end
 
 Macro {

@@ -33,12 +33,13 @@ local luafar = {
         "GetNumberOfLinks", "GetPathRoot", "GetPluginId", "GetPluginDirList", "GetReparsePointInfo",
         "Guids", "InputBox", "InputRecordToKey", "InputRecordToName", "Keys", "KeyToName",
         "LIsAlpha", "LIsAlphanum", "LIsLower", "LIsUpper", "LLowerBuf", "LoadPlugin", "Log",
-        "LStricmp", "LStrnicmp", "LuafarVersion", "LUpperBuf", "MacroCallFar", "MacroCheck",
-        "MacroGetArea", "MacroGetState", "MacroLoadAll", "MacroPost", "MacroSaveAll",
-        "MakeMenuItems", "Menu", "Message", "MkLink", "MkTemp", "NameToKey", "PasteFromClipboard",
-        "PluginStartupInfo", "ProcessName", "RecursiveSearch", "ReloadDefaultScript",
-        "RestoreScreen", "SaveScreen", "SendDlgMessage", "Show", "ShowHelp", "Text", "Timer",
-        "TruncPathStr", "TruncStr", "UnloadPlugin", "XLat",
+        "LStricmp", "LStrnicmp", "LuafarVersion", "LUpperBuf", "MacroAdd", "MacroCallFar",
+        "MacroCheck", "MacroDelete", "MacroExecute", "MacroGetArea", "MacroGetLastError",
+        "MacroGetState", "MacroLoadAll", "MacroPost", "MacroSaveAll", "MakeMenuItems", "Menu",
+        "Message", "MkLink", "MkTemp", "NameToKey", "PasteFromClipboard", "PluginStartupInfo",
+        "ProcessName", "RecursiveSearch", "ReloadDefaultScript", "RestoreScreen", "SaveScreen",
+        "SendDlgMessage", "Show", "ShowHelp", "Text", "Timer", "TruncPathStr", "TruncStr",
+        "UnloadPlugin", "XLat",
 
         ["Flags"] = {
           fields = {
@@ -461,7 +462,7 @@ local luamacro = {
       fields = {
         "Current", "Desktop", "Dialog", "DialogAutoCompletion", "Disks", "Editor", "FindFolder",
         "Grabber", "Help", "Info", "MainMenu", "Menu", "Other", "QView", "Search", "Shell",
-        "ShellAutoCompletion", "Tree", "UserMenu", "Viewer",
+        "AutoCompletion", "Tree", "UserMenu", "Viewer",
       };
     };
 

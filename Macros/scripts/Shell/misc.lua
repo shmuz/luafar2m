@@ -36,3 +36,13 @@ Macro {
   action=function() Keys "AltShiftF9" end;
 }
 
+Macro {
+  description="Macro-engine test";
+  area="Shell"; key="CtrlShiftF12";
+  action = function()
+    Far.DisableHistory(0x0F)
+    local mt = assert(loadfile(far.PluginStartupInfo().ModuleDir.."macrotest.lua"))()
+    mt.test_all()
+    far.Message("All tests OK", "LuaMacro")
+  end;
+}
