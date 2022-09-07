@@ -46,7 +46,7 @@ local function EditorDialog (aData, aReplace, aScriptCall)
     help = "OperInEditor";
     { tp="dbox"; text=sTitle; },
   }
-  local Frame = Common.CreateSRFrame(Items, aData, true)
+  local Frame = Common.CreateSRFrame(Items, aData, true, aScriptCall)
   ------------------------------------------------------------------------------
   Frame:InsertInDialog(false, aReplace and "replace" or "search")
   insert(Items, { tp="sep"; })
@@ -105,7 +105,7 @@ local function EditorDialog (aData, aReplace, aScriptCall)
   ----------------------------------------------------------------------------
   dlg:AssignHotKeys()
   dlg:LoadData(aData)
-  Frame:OnDataLoaded(aData, aScriptCall)
+  Frame:OnDataLoaded(aData)
   local out, pos = dlg:Run()
   if not out then return "cancel" end
   return pos==Pos.btnOk      and (aReplace and "replace" or "search") or

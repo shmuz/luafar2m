@@ -88,6 +88,13 @@ local function MakeGsub (mode)
 end
 
 
+local function FormatTime (tm)
+  if tm < 0 then tm = 0 end
+  local fmt = (tm < 10) and "%.2f" or (tm < 100) and "%.1f" or "%.0f"
+  return fmt:format(tm)
+end
+
+
 local function SaveCodePageCombo (hDlg, combo_pos, combo_list, aData, aSaveCurPos)
   if aSaveCurPos then
     local pos = hDlg:ListGetCurPos(combo_pos).SelectPos
@@ -313,6 +320,18 @@ local DisplaySearchState do
       return userbreak and userbreak:ConfirmEscape()
     end
   end
+end
+
+
+local function DisplayReplaceState (fullname, cnt, ratio)
+  local WID, W1 = 60, 3
+  local W2 = WID - W1 - 3
+  local len = fullname:len()
+  local s = len<=WID and fullname..(" "):rep(WID-len) or
+            fullname:sub(1,W1).. "..." .. fullname:sub(-W2)
+  far.Message(
+    (s.."\n") .. (set_progress(W2, ratio, " ").."\n") .. (M.MPanelFin_FilesProcessed.." "..cnt),
+    M.MTitleProcessing, "")
 end
 
 
@@ -582,8 +601,8 @@ local SRFrame = {}
 SRFrame.Libs = {"far", "oniguruma", "pcre"}
 local SRFrameMeta = {__index = SRFrame}
 
-local function CreateSRFrame (Items, aData, bInEditor)
-  local self = {Items=Items, Data=aData, bInEditor=bInEditor}
+local function CreateSRFrame (Items, aData, bInEditor, bScriptCall)
+  local self = {Items=Items, Data=aData, bInEditor=bInEditor, bScriptCall=bScriptCall}
   return setmetatable(self, SRFrameMeta)
 end
 
@@ -596,16 +615,33 @@ function SRFrame:InsertInDialog (aPanelsDialog, aOp)
   local insert = table.insert
   local Items = self.Items
   local md = 40 -- "middle"
+  ------------------------------------------------------------------------------
+  if aPanelsDialog then
+    insert(Items, { tp="text"; text=M.MDlgFileMask; })
+    insert(Items, { tp="edit"; name="sFileMask"; hist="Masks"; uselasthistory=1; })
+  end
+  ------------------------------------------------------------------------------
   insert(Items, { tp="text"; text=M.MDlgSearchPat; })
   insert(Items, { tp="edit"; name="sSearchPat"; hist="SearchText"; })
+  ------------------------------------------------------------------------------
+  if aPanelsDialog and aOp == "grep" then
+    insert(Items, { tp="text";  text=M.MDlgSkipPat; })
+    insert(Items, { tp="edit";  name="sSkipPat";      hist="SkipText"; })
+  end
   ------------------------------------------------------------------------------
   if aOp == "replace" then
     insert(Items, { tp="text";  text=M.MDlgReplacePat; })
     insert(Items, { tp="edit";  name="sReplacePat";      hist="ReplaceText"; })
+    if aPanelsDialog then
+      insert(Items, { tp="chbox"; name="bRepIsFunc";      x1=7,         text=M.MDlgRepIsFunc; })
+      insert(Items, { tp="chbox"; name="bMakeBackupCopy"; x1=27, y1=""; text=M.MDlgMakeBackupCopy; })
+      insert(Items, { tp="chbox"; name="bConfirmReplace"; x1=48, y1=""; text=M.MDlgConfirmReplace; })
+    else
     insert(Items, { tp="chbox"; name="bRepIsFunc";       x1=7,         text=M.MDlgRepIsFunc; })
     insert(Items, { tp="chbox"; name="bDelEmptyLine";    x1=md, y1=""; text=M.MDlgDelEmptyLine; })
     insert(Items, { tp="chbox"; name="bConfirmReplace";  x1=7,         text=M.MDlgConfirmReplace; })
     insert(Items, { tp="chbox"; name="bDelNonMatchLine"; x1=md, y1=""; text=M.MDlgDelNonMatchLine; })
+    end
   end
   ------------------------------------------------------------------------------
   insert(Items, { tp="sep"; })
@@ -672,13 +708,12 @@ function SRFrame:CheckWrapAround (hDlg)
   end
 end
 
-function SRFrame:OnDataLoaded (aData, aScriptCall)
+function SRFrame:OnDataLoaded (aData)
   local Pos = self.Pos
-  self.ScriptCall = aScriptCall
   local Items = self.Items
   local bInEditor = self.bInEditor
 
-  if not aScriptCall then
+  if not self.bScriptCall then
     if bInEditor then
       local data = _Plugin.History["config"]
       if data.rPickHistory then
@@ -777,7 +812,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
       else
         local bScopeBlock
         local bForceBlock = _Plugin.History["config"].bForceScopeToBlock
-        if self.ScriptCall or not bForceBlock then
+        if self.bScriptCall or not bForceBlock then
           bScopeBlock = (Data.sScope == "block")
         else
           local line = editor.GetString(EI.BlockStartLine+1) -- test the 2-nd selected line
@@ -815,41 +850,20 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
     if param1 == Pos.cmbRegexLib then self:CheckRegexChange(hDlg) end
   ----------------------------------------------------------------------------
   elseif msg == F.DN_CLOSE then
-    if (param1 == Pos.btnOk) or bInEditor and
-      (Pos.btnCount and param1 == Pos.btnCount or Pos.btnShowAll and param1 == Pos.btnShowAll)
+    if Pos.btnOk      and param1 == Pos.btnOk       or
+       Pos.btnCount   and param1 == Pos.btnCount    or
+       Pos.btnShowAll and param1 == Pos.btnShowAll
     then
-      Data.sSearchPat  = hDlg:GetText(Pos.sSearchPat)
-      Data.bCaseSens   = hDlg:GetCheck(Pos.bCaseSens)
-      Data.bRegExpr    = hDlg:GetCheck(Pos.bRegExpr)
-      Data.bWholeWords = hDlg:GetCheck(Pos.bWholeWords)
-      Data.bExtended   = hDlg:GetCheck(Pos.bExtended)
-      if Pos.bFileAsLine    then Data.bFileAsLine    = hDlg:GetCheck(Pos.bFileAsLine)    end
-      if Pos.bMultiPatterns then Data.bMultiPatterns = hDlg:GetCheck(Pos.bMultiPatterns) end
-      if Pos.bInverseSearch then Data.bInverseSearch = hDlg:GetCheck(Pos.bInverseSearch) end
+      local out = self.Dlg:GetDialogState(hDlg)
+      for k,v in pairs(out) do Data[k] = v; end
       ------------------------------------------------------------------------
       if bInEditor then
         if Data.sSearchPat == "" then
           ErrorMsg(M.MSearchFieldEmpty)
           return KEEP_DIALOG_OPEN
         end
-        Data.bWrapAround = hDlg:GetCheck(Pos.bWrapAround)
-        Data.bSearchBack = hDlg:GetCheck(Pos.bSearchBack)
-        Data.bHighlight  = hDlg:GetCheck(Pos.bHighlight)
-
         Data.sScope  = hDlg:GetCheck(Pos.rScopeGlobal)  and "global" or "block"
         Data.sOrigin = hDlg:GetCheck(Pos.rOriginCursor) and "cursor" or "scope"
-        Data.bAdvanced   = hDlg:GetCheck(Pos.bAdvanced)
-        Data.sFilterFunc = hDlg:GetText(Pos.sFilterFunc)
-        Data.sInitFunc   = hDlg:GetText(Pos.sInitFunc)
-        Data.sFinalFunc  = hDlg:GetText(Pos.sFinalFunc)
-      end
-      ------------------------------------------------------------------------
-      if bReplace then
-        Data.sReplacePat      = hDlg:GetText (Pos.sReplacePat)
-        Data.bRepIsFunc       = hDlg:GetCheck(Pos.bRepIsFunc)
-        Data.bDelEmptyLine    = hDlg:GetCheck(Pos.bDelEmptyLine)
-        Data.bConfirmReplace  = hDlg:GetCheck(Pos.bConfirmReplace)
-        Data.bDelNonMatchLine = hDlg:GetCheck(Pos.bDelNonMatchLine)
       end
       ------------------------------------------------------------------------
       local lib = self:GetLibName(hDlg)
@@ -1109,12 +1123,19 @@ local function GetReplaceFunction (aReplacePat, is_wide)
 end
 
 
+local function CheckMask (mask)
+  return far.ProcessName("PN_CHECKMASK", mask, nil, "PN_SHOWERRORMESSAGE")
+end
+
+
 return {
   EditorConfigDialog  = EditorConfigDialog;
+  CheckMask           = CheckMask;
   CheckSearchArea     = CheckSearchArea;
   CreateSRFrame       = CreateSRFrame;
   DefaultLogFileName  = DefaultLogFileName;
   DisplaySearchState  = DisplaySearchState;
+  DisplayReplaceState = DisplayReplaceState;
   ErrorMsg            = ErrorMsg;
   FormatInt           = FormatInt;
   FormatTime          = FormatTime;

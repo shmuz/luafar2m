@@ -1,27 +1,41 @@
 -- lfs_panels.lua
 -- luacheck: globals _Plugin
 
-local M         = require "lfs_message"
-local libCommon = require "lfs_common"
-local libReader = require "reader"
-local sd        = require "far2.simpledialog"
+local M          = require "lfs_message"
+local libCommon  = require "lfs_common"
+local libEditors = require "lfs_editors"
+local libReader  = require "reader"
+local libCqueue  = require "cqueue"
+local libMessage = require "far2.message"
+local sd         = require "far2.simpledialog"
 
 local libTmpPanel = require "far2.tmppanel"
 libTmpPanel.SetMessageTable(M) -- message localization support
 
-local CheckSearchArea    = libCommon.CheckSearchArea
-local CreateSRFrame      = libCommon.CreateSRFrame
-local DisplaySearchState = libCommon.DisplaySearchState
-local GetSearchAreas     = libCommon.GetSearchAreas
-local IndexToSearchArea  = libCommon.IndexToSearchArea
-local NewUserBreak       = libCommon.NewUserBreak
-local ProcessDialogData  = libCommon.ProcessDialogData
-local SaveCodePageCombo  = libCommon.SaveCodePageCombo
+local CheckMask           = libCommon.CheckMask
+local CheckSearchArea     = libCommon.CheckSearchArea
+local CreateSRFrame       = libCommon.CreateSRFrame
+local DisplaySearchState  = libCommon.DisplaySearchState
+local DisplayReplaceState = libCommon.DisplayReplaceState
+local ErrorMsg            = libCommon.ErrorMsg
+local FormatTime          = libCommon.FormatTime
+local GetSearchAreas      = libCommon.GetSearchAreas
+local GotoEditField       = libCommon.GotoEditField
+local IndexToSearchArea   = libCommon.IndexToSearchArea
+local NewUserBreak        = libCommon.NewUserBreak
+local ProcessDialogData   = libCommon.ProcessDialogData
+local SaveCodePageCombo   = libCommon.SaveCodePageCombo
+local ActivateHighlight   = libEditors.ActivateHighlight
+local SetHighlightPattern = libEditors.SetHighlightPattern
 
 local Excl_Key = "sExcludeDirs"
 
 local F = far.Flags
-local bor, band, bxor = bit64.bor, bit64.band, bit64.bxor
+local KEEP_DIALOG_OPEN = 0
+local bor, band, bxor, lshift = bit64.bor, bit64.band, bit64.bxor, bit64.lshift
+local clock = os.clock
+local strbyte, strgsub = string.byte, string.gsub
+local Utf32, Utf8 = win.Utf8ToUtf32, win.Utf32ToUtf8
 local MultiByteToWideChar = win.MultiByteToWideChar
 
 local dirsep = package.config:sub(1,1)
@@ -43,9 +57,229 @@ local KEY_INS     = F.KEY_INS
 local KEY_NUMPAD0 = F.KEY_NUMPAD0
 local KEY_SPACE   = F.KEY_SPACE
 
+local function MsgCannotOpenFile (name)
+  ErrorMsg(M.MCannotOpenFile.."\n"..name)
+end
+
 local function SwapEndian (str)
   return (string.gsub(str, "(.)(.)(.)(.)", "%4%3%2%1"))
 end
+
+local function MaskGenerator (mask, skippath)
+  if not CheckMask(mask) then
+    return false
+  elseif skippath then
+    return function(name) return far.ProcessName("PN_CMPNAMELIST", mask, name, "PN_SKIPPATH") end
+  else
+    return function(name) return far.ProcessName("PN_CMPNAMELIST", mask, name, 0) end
+  end
+end
+
+-- used code by Kein-Hong Man
+-- //this function should move to some library//
+local function CheckUtf8 (str)
+  local pos, len = 1, 0
+  while pos <= #str do
+    local ext, c, min
+    local v = strbyte(str, pos)
+    if v <= 0x7F then ext, c, min = 0, v, 0
+    elseif v <= 0xC1 then return false -- bad sequence
+    elseif v <= 0xDF then ext, c, min = 1, band(v, 0x1F), 0x80
+    elseif v <= 0xEF then ext, c, min = 2, band(v, 0x0F), 0x800
+    elseif v <= 0xF4 then ext, c, min = 3, band(v, 0x07), 0x10000
+    else return false -- can't fit
+    end
+    if pos + ext > #str then return false end -- incomplete last character
+    pos, len = pos+1, len+1
+    -- verify extended sequence
+    for _ = 1, ext do
+      v = strbyte(str, pos)
+      if v < 0x80 or v > 0xBF then return false end -- bad sequence
+      c = bor(lshift(c, 6), band(v, 0x3F))
+      pos = pos + 1
+    end
+    if c < min then return false end -- bad sequence
+  end
+	return len
+end
+
+-- Lines iterator: returns a line at a time.
+-- When codepage of the file is 1201 (UTF-16BE), the returned lines are encoded
+-- in UTF-16LE but the returned EOLs are still in UTF-16BE. This is by design,
+-- to minimize number of conversions needed.
+-- //this function should move to some library//
+local function Lines (aFile, aCodePage, userbreak)
+  local aPattern = "([^\r\n]*)(\r?\n?)"
+  local BLOCKSIZE = 8*1024
+  local start, chunk, posInner, posOuter
+
+  local CHARSIZE, EMPTY, CR, LF, CRLF, find
+  if aCodePage == 1200 or aCodePage == 1201 then
+    CHARSIZE, EMPTY, CR, LF, CRLF = 2, Utf16"", Utf16"\r", Utf16"\n", Utf16"\r\n"
+    find = regex.findW
+  else
+    CHARSIZE, EMPTY, CR, LF, CRLF = 1, "", "\r", "\n", "\r\n"
+    find = string.find
+  end
+
+  local read = (aCodePage == 1201) and
+    function(size)
+      local portion = aFile:read(size)
+      if portion then portion = SwapEndian(portion) end
+      return portion
+    end or
+    function(size) return aFile:read(size) end
+
+  return function()
+    if start == nil then
+      -- first run
+      start = 1
+      posOuter = aFile:seek("cur")
+      chunk = read(BLOCKSIZE) or "" -- default value "" lets us process empty files
+      posInner = aFile:seek("cur")
+    end
+
+    local line, eol, tb
+    aFile:seek("set", posInner)
+    while chunk do
+      local fr, to
+      fr, to, line, eol = find(chunk, aPattern, start)
+      if eol ~= EMPTY then
+        if eol == CR and to == #chunk/CHARSIZE then
+          chunk = read(CHARSIZE)
+          if chunk then
+            if chunk == LF then
+              eol, chunk = CRLF, EMPTY
+            end
+            start = 1
+          end
+        else
+          start = to + 1
+        end
+        break
+      else
+        if userbreak and userbreak:fInterrupt() then
+          aFile:seek("set", posOuter)
+          return nil
+        end
+        start, chunk = 1, read(BLOCKSIZE)
+        if chunk then
+          tb = tb or {}
+          tb[#tb+1] = line
+        end
+      end
+    end
+    if tb or line then
+      if tb then
+        tb[#tb+1] = line
+        line = table.concat(tb)
+      end
+      posInner = aFile:seek("cur")
+      posOuter = posOuter + #line + #eol
+      aFile:seek("set", posOuter)
+      if aCodePage == 1201 then eol = SwapEndian(eol) end
+      return line, eol
+    end
+    aFile:seek("set", posOuter)
+    return nil
+  end
+end
+
+local function GetDirFilterFunctions (aData)
+  local fDirMask = function() return true end
+  local fDirExMask = function() return false end
+  if aData.bUseDirFilter then
+    local sDirMask, sDirExMask = aData.sDirMask, aData.sDirExMask
+    if sDirMask and sDirMask~="" and sDirMask~="*" and sDirMask~="*.*" then
+      fDirMask = MaskGenerator(sDirMask, not aData.bDirMask_ProcessPath)
+    end
+    if sDirExMask and sDirExMask~="" then
+      fDirExMask = MaskGenerator(sDirExMask, not aData.bDirExMask_ProcessPath)
+    end
+  end
+  return fDirMask, fDirExMask
+end
+
+----------------------------------------------------------------------------------------------------
+-- @param InitDir       : starting directory to search its contents recursively
+-- @param UserFunc      : function to call when a file/subdirectory is found
+-- @param Flags         : table that can have boolean fields 'symlinks' and 'recurse'
+-- @param FileFilter    : userdata object having a method 'IsFileInFilter'
+-- @param fFileMask     : function that checks the current item's name
+-- @param fDirMask      : function that determines whether to search in a given directory
+-- @param fDirExMask    : function that determines whether to skip a directory with all its subtree
+-- @param tRecurseGuard : table (set) for preventing repeated scanning of the same directories
+----------------------------------------------------------------------------------------------------
+local function RecursiveSearch (sInitDir, UserFunc, Flags, FileFilter,
+                                fFileMask, fDirMask, fDirExMask, tRecurseGuard)
+
+  local bSymLinks = Flags and Flags.symlinks
+  local bRecurse = Flags and Flags.recurse
+
+  local function Recurse (InitDir)
+    local bSearchInThisDir = fDirMask(InitDir)
+
+    local findspec = InitDir.."/*"
+    local SlashInitDir = InitDir:find("/$") and InitDir or InitDir.."/"
+
+    far.RecursiveSearch(InitDir, "*",
+      function(fdata, fullpath)
+        if fdata.FileName ~= "." and fdata.FileName ~= ".." then
+          local fullname = SlashInitDir .. fdata.FileName
+          if not FileFilter or FileFilter:IsFileInFilter(fdata) then
+            local param = bSearchInThisDir and fFileMask(fdata.FileName) and fdata or "display_state"
+            if UserFunc(param,fullname) == "break" then
+              return true
+            end
+            if bRecurse and fdata.FileAttributes:find("d") and not fDirExMask(fullname) then
+              local realDir = far.GetReparsePointInfo(fullname) or fullname
+              if not tRecurseGuard[realDir] then
+                if bSymLinks or not fdata.FileAttributes:find("e") then
+                  tRecurseGuard[realDir] = true
+                  if Recurse(realDir) then
+                    return true
+                  end
+                end
+              end
+            end
+          else
+            if UserFunc("display_state",fullname) == "break" then
+              return true
+            end
+          end
+        end
+      end)
+    return false
+  end
+
+  local realDir = far.GetReparsePointInfo(sInitDir) or sInitDir
+  tRecurseGuard[realDir] = true
+  Recurse(realDir)
+end
+
+local BomPatterns = {
+  ["^\255\254"] = 1200,
+  ["^\254\255"] = 1201,
+  ["^\239\187\191"] = 65001,
+  ["^%+/v[89+/]"] = 65000,
+}
+
+local function GetFileFormat (file, nBytes)
+  -- Try BOMs
+  file:seek("set", 0)
+  local sTemp = file:read(8)
+  if sTemp then
+    for pattern, codepage in pairs(BomPatterns) do
+      local bom = string.match(sTemp, pattern)
+      if bom then
+        file:seek("set", #bom)
+        return codepage, bom
+      end
+    end
+  end
+  return 65001, nil
+end
+
 
 local function ConfigDialog()
   local aData = _Plugin.History["tmppanel"]
@@ -208,32 +442,65 @@ local function PanelDialog  (aOp, aData, aScriptCall)
   local W = 35
   local Items = {
     width = 2*W+6;
-    help = "OperInPanels";
+    help = aOp=="grep" and "PanelGrep" or "OperInPanels";
     guid = aOp=="search" and searchGuid or aOp=="replace" and replaceGuid or grepGuid;
   }
-  local Frame = CreateSRFrame(Items, aData, false)
+  local Frame = CreateSRFrame(Items, aData, false, aScriptCall)
   ------------------------------------------------------------------------------
-  insert(Items, { tp="dbox"; text=M.MTitleSearch; })
-  insert(Items, { tp="text"; text=M.MDlgFileMask; })
-  insert(Items, { tp="edit"; name="sFileMask"; hist="Masks"; uselasthistory=1; })
-  ------------------------------------------------------------------------------
+  local title = aOp=="search" and M.MTitleSearch or aOp=="replace" and M.MTitleReplace or M.MTitleGrep
+  insert(Items, { tp="dbox"; text=title; })
   Frame:InsertInDialog(true, aOp)
   ------------------------------------------------------------------------------
   local X2 = W+5 + M.MDlgUseFileFilter:gsub("&",""):len() + 5
   insert(Items, { tp="sep"; })
+if aOp == "search" then
   insert(Items, { tp="text"; text=M.MDlgCodePages; })
   insert(Items, { tp="combobox"; name="cmbCodePage"; list=GetCodePages(aData); dropdownlist=1; noauto=1; })
+end
   insert(Items, { tp="text"; text=M.MDlgSearchArea; })
   insert(Items, { tp="combobox"; name="cmbSearchArea"; list=GetSearchAreas(aData); x2=W+1; dropdownlist=1; noauto=1; })
   insert(Items, { tp="butt";  name="btnDirFilter";    text=M.MBtnDirFilter;  btnnoclose=1; })
-  insert(Items, { tp="chbox"; name="bSearchFolders";  text=M.MDlgSearchFolders; ystep=-2; x1=W+5; })
-  insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MDlgSearchSymLinks;          x1=""; })
-  insert(Items, { tp="chbox"; name="bUseFileFilter";  text=M.MDlgUseFileFilter;           x1=""; })
-  insert(Items, { tp="butt";  name="btnFileFilter";   text=M.MDlgBtnFileFilter; x1=X2; y1=""; btnnoclose=1; })
+if aOp == "search" then
+  insert(Items, { tp="chbox"; name="bSearchFolders";  text=M.MDlgSearchFolders;  ystep=-2; x1=W+5; })
+  insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MDlgSearchSymLinks;           x1=W+5; })
+else
+  insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MDlgSearchSymLinks; ystep=-2; x1=W+5; })
+end
+  insert(Items, { tp="chbox"; name="bUseFileFilter";  text=M.MDlgUseFileFilter;            x1=W+5; })
+  insert(Items, { tp="butt";  name="btnFileFilter";   text=M.MDlgBtnFileFilter;  y1="";    x1=X2; btnnoclose=1; })
   insert(Items, { tp="sep"; })
+
+if aOp == "replace" then
+  local regpath = _Plugin.RegPath
+  local HIST_INITFUNC   = regpath .. "InitFunc"
+  local HIST_FINALFUNC  = regpath .. "FinalFunc"
+  insert(Items, { tp="chbox"; name="bAdvanced";    text=M.MDlgAdvanced; })
+  insert(Items, { tp="text";  name="labInitFunc";  text=M.MDlgInitFunc; })
+  insert(Items, { tp="edit";  name="sInitFunc";    x2=W+1; hist=HIST_INITFUNC; ext="lua"; })
+  insert(Items, { tp="text";  name="labFinalFunc"; x1=W+4; text=M.MDlgFinalFunc; ystep=-1; })
+  insert(Items, { tp="edit";  name="sFinalFunc";   x1=""; hist=HIST_FINALFUNC; ext="lua"; })
+  insert(Items, { tp="sep"; })
+end
+
+if aOp=="grep" then
+  insert(Items, { tp="chbox"; name="bGrepShowLineNumbers"; text=M.MDlgGrepShowLineNumbers; })
+  insert(Items, { tp="chbox"; name="bGrepHighlight";       text=M.MDlgGrepHighlight;       })
+  insert(Items, { tp="chbox"; name="bGrepInverseSearch";   text=M.MDlgGrepInverseSearch;   })
+  insert(Items, { tp="text";    x1=W+5;  ystep=-2;         text=M.MDlgGrepContextBefore;   })
+  insert(Items, { tp="fixedit"; name="sGrepLinesBefore"; x1=W+31; ystep=0; mask="99999"; val="0"; })
+  insert(Items, { tp="text";    x1=W+5;                    text=M.MDlgGrepContextAfter;    })
+  insert(Items, { tp="fixedit"; name="sGrepLinesAfter";  x1=W+31; ystep=0; mask="99999"; val="0"; })
+  insert(Items, { tp="sep"; ystep=2; })
+end
+
   insert(Items, { tp="butt"; centergroup=1; text=M.MOk; default=1; name="btnOk"; nohilite=1;       })
+if aOp == "grep" then
+  insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnCount;   name="btnCount"; })
+end
   insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnPresets; name="btnPresets";   btnnoclose=1; })
+if aOp == "search" then
   insert(Items, { tp="butt"; centergroup=1; text=M.MDlgBtnConfig;  name="btnConfig";    btnnoclose=1; })
+end
   insert(Items, { tp="butt"; centergroup=1; text=M.MCancel; cancel=1; nohilite=1; })
   ------------------------------------------------------------------------------
   local dlg = sd.New(Items)
@@ -249,12 +516,14 @@ local function PanelDialog  (aOp, aData, aScriptCall)
     --------------------------------------------------------------------------------------
     if msg == F.DN_INITDIALOG then
       SetBtnFilterText(hDlg)
-      hDlg:SetComboboxEvent(Pos.cmbCodePage, F.CBET_KEY)
-      local t = {}
-      for i,v in ipairs(Elem.cmbCodePage.list) do
-        if v.CodePage then
-          t.Index, t.Data = i, v.CodePage
-          hDlg:ListSetData(Pos.cmbCodePage, t)
+      if Pos.cmbCodePage then
+        hDlg:SetComboboxEvent(Pos.cmbCodePage, F.CBET_KEY)
+        local t = {}
+        for i,v in ipairs(Elem.cmbCodePage.list) do
+          if v.CodePage then
+            t.Index, t.Data = i, v.CodePage
+            hDlg:ListSetData(Pos.cmbCodePage, t)
+          end
         end
       end
       hDlg:SetText  (Pos.sFileMask,       aData.sFileMask or "")
@@ -300,29 +569,35 @@ local function PanelDialog  (aOp, aData, aScriptCall)
       end
     --------------------------------------------------------------------------------------
     elseif msg == F.DN_CLOSE then
-      if param1 == Pos.btnOk then
-        if not hDlg:GetText(Pos.sFileMask):find("%S") then
-          far.Message(M.MInvalidFileMask, M.MError, ";Ok", "w")
-          return 0
-        end
-        ------------------------------------------------------------------------
-        local pos = hDlg:ListGetCurPos(Pos.cmbCodePage)
-        aData.iSelectedCodePage = Elem.cmbCodePage.list[pos.SelectPos].CodePage
-        ------------------------------------------------------------------------
-        pos = hDlg:ListGetCurPos(Pos.cmbSearchArea)
-        aData.sSearchArea = IndexToSearchArea(pos.SelectPos)
-        ------------------------------------------------------------------------
-        aData.sFileMask       = hDlg:GetText(Pos.sFileMask)
-        aData.bSearchFolders  = hDlg:GetCheck(Pos.bSearchFolders)
-        aData.bSearchSymLinks = hDlg:GetCheck(Pos.bSearchSymLinks)
-        aData.bUseFileFilter  = hDlg:GetCheck(Pos.bUseFileFilter)
+      if Pos.btnConfig and param1 == Pos.btnConfig then
+        hDlg:ShowDialog(0)
+        ConfigDialog()
+        hDlg:ShowDialog(1)
+        hDlg:SetFocus(Pos.btnOk)
+        return KEEP_DIALOG_OPEN
       end
-      --------------------------------------------------------------------------
+
+      local ok_or_count = (Pos.btnOk and param1==Pos.btnOk) or
+                          (Pos.btnCount and param1==Pos.btnCount)
+      if ok_or_count then
+        if not CheckMask(hDlg:GetText(Pos.sFileMask)) then
+          GotoEditField(hDlg, Pos.sFileMask)
+          return KEEP_DIALOG_OPEN
+        end
+        if (aOp=="replace" or aOp=="grep") and hDlg:GetText(Pos.sSearchPat) == "" then
+          ErrorMsg(M.MSearchFieldEmpty)
+          GotoEditField(hDlg, Pos.sSearchPat)
+          return KEEP_DIALOG_OPEN
+        end
+        aData.sSearchArea = IndexToSearchArea(hDlg:ListGetCurPos(Pos.cmbSearchArea).SelectPos)
+        aData.bUseDirFilter = hDlg:GetCheck(Pos.bUseDirFilter)
+        aData.bUseFileFilter = hDlg:GetCheck(Pos.bUseFileFilter)
+      end
       -- store selected code pages no matter what user pressed: OK or Esc.
       if Pos.cmbCodePage then
-        SaveCodePageCombo(hDlg, Pos.cmbCodePage, Elem.cmbCodePage.list, aData, param1==Pos.btnOk)
+        SaveCodePageCombo(hDlg, Pos.cmbCodePage, Elem.cmbCodePage.list, aData, ok_or_count)
       end
-      --------------------------------------------------------------------------
+    --------------------------------------------------------------------------------------
     end
     if NeedCallFrame then
       return Frame:DlgProc(hDlg, msg, param1, param2)
@@ -335,49 +610,60 @@ local function PanelDialog  (aOp, aData, aScriptCall)
   end
   dlg:AssignHotKeys()
   dlg:LoadData(aData)
-  Frame:OnDataLoaded(aData, false)
-  return dlg:Run() and Frame.close_params
+  Frame:OnDataLoaded(aData)
+
+  local out, ret = dlg:Run()
+  if out then
+    if aOp == "search" then
+      return (ret == Pos.btnOk) and Frame.close_params
+    elseif aOp == "replace" then
+      if ret == Pos.btnOk then return "replace", Frame.close_params; end
+    elseif aOp == "grep" then
+      if     ret == Pos.btnOk    then return "grep", Frame.close_params
+      elseif ret == Pos.btnCount then return "count", Frame.close_params
+      end
+    end
+  end
 end
 
 local function MakeItemList (panelInfo, searchArea)
+  local itemList, flags = {}, {recurse=true}
   local bRealNames = (band(panelInfo.Flags, F.PFLAGS_REALNAMES) ~= 0)
-  local panelDir = panel.GetPanelDirectory(1) or ""
-  local itemList, flags = {}, F.FRS_RECUR
+  local bPlugin = panelInfo.Plugin
+  local sPanelDir = panel.GetPanelDirectory(1) or ""
 
   if searchArea == "FromCurrFolder" or searchArea == "OnlyCurrFolder" then
     if bRealNames then
-      if panelInfo.Plugin then
+      if bPlugin then
         for i=1, panelInfo.ItemsNumber do
-          local name = panel.GetPanelItem(1, i).FileName
+          local name = panel.GetPanelItem(1,i).FileName
           if name ~= ".." and name ~= "." then
             itemList[#itemList+1] = name
           end
         end
       else
-        itemList[1] = panelDir
+        itemList[1] = sPanelDir
       end
       if searchArea == "OnlyCurrFolder" then
-        flags = 0
+        flags = {}
       end
     end
-
   elseif searchArea == "SelectedItems" then
     if bRealNames then
-      local curdir_slash = panelInfo.Plugin and "" or panelDir:gsub(dirsep.."?$", dirsep, 1)
+      local curdir_slash = bPlugin and "" or sPanelDir:gsub("\\?$","\\",1)
       for i=1, panelInfo.SelectedItemsNumber do
         local item = panel.GetSelectedPanelItem(1, i)
         itemList[#itemList+1] = curdir_slash .. item.FileName
       end
     end
-
   elseif searchArea == "RootFolder" then
-    itemList[1] = panelDir:match("/[^/]*")
-
+    itemList[1] = sPanelDir:sub(1,3)
   elseif searchArea == "PathFolders" then
-    flags = 0
+    flags = {}
     local path = win.GetEnv("PATH")
-    if path then path:gsub("[^:]+", function(c) itemList[#itemList+1]=c end) end
+    if path then path:gsub("[^;]+", function(c) itemList[#itemList+1]=c end) end
   end
+
   return itemList, flags
 end
 
@@ -431,7 +717,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   local panelInfo = panel.GetPanelInfo(1)
   local area = CheckSearchArea(aData.sSearchArea) -- can throw error
   local itemList, flags = MakeItemList(panelInfo, area)
-  local bRecurse = band(flags, F.FRS_RECUR) ~= 0
+  local bRecurse = flags.recurse
   local bSymLinks = aData.bSearchSymLinks
 
   -----------------------------------------------------------------------------
@@ -612,8 +898,389 @@ local function InitTmpPanel()
   end
 end
 
+local DisplayListState do
+  local lastclock = 0
+  local WIDTH = 60
+  local s = (" "):rep(WIDTH).."\n" -- preserve constant width of the message box
+  DisplayListState = function (cnt, userbreak)
+    local newclock = win.Clock()
+    if newclock >= lastclock then
+      lastclock = newclock + 0.2 -- period = 0.2 sec
+      far.Message(s..cnt..M.MPanelFilelistText, M.MPanelFilelistTitle, "")
+      return userbreak and userbreak:ConfirmEscape()
+    end
+  end
+end
+
+local function CollectAllItems (aData, tParams, fFileMask, fDirMask, fDirExMask, userbreak)
+  local FileFilter = tParams.FileFilter
+  if FileFilter then FileFilter:StartingToFilter() end
+
+  local panelInfo = panel.GetPanelInfo(1)
+  local bPlugin = panelInfo.Plugin
+  local area = CheckSearchArea(aData.sSearchArea)
+  local itemList, flags = MakeItemList(panelInfo, area)
+  if aData.bSearchSymLinks then
+    flags.symlinks = true
+  end
+
+  local fileList = {}
+  local tRecurseGuard = {}
+  DisplayListState(0)
+  for _, item in ipairs(itemList) do
+    local filedata = win.GetFileInfo(item)
+    -- note: filedata can be nil for root directories
+    local isFile = filedata and not filedata.FileAttributes:find("d")
+    ---------------------------------------------------------------------------
+    if isFile or ((area == "FromCurrFolder" or area == "OnlyCurrFolder") and bPlugin) then
+      fileList[#fileList+1] = filedata
+      fileList[#fileList+1] = item
+    end
+    if not isFile and not (area == "OnlyCurrFolder" and bPlugin) then
+      RecursiveSearch(item,
+        function(fdata, fullname)
+          if fdata == "display_state" then
+            return DisplayListState(#fileList/2, userbreak)
+          end
+          if not fdata.FileAttributes:find("d") then
+            local n = #fileList
+            fileList[n+1] = fdata
+            fileList[n+2] = fullname
+            if n%20 == 0 then
+              if DisplayListState(n/2, userbreak) then return "break"; end
+            end
+          end
+        end, flags, FileFilter, fFileMask, fDirMask, fDirExMask, tRecurseGuard)
+    end
+    if userbreak.fullcancel then break end
+  end
+  return fileList
+end
+
+-- Note: function MultiByteToWideChar, in Windows older than Vista, does not
+--       check UTF-8 characters reliably. That is the reason for using
+--       function CheckUtf8.
+local function Replace_GetConvertors (bWideCharRegex, nCodePage)
+  local Identical = function(str) return str end
+  local Convert, Reconvert
+  if bWideCharRegex then
+    if nCodePage == 1200 then
+      Convert, Reconvert = Identical, Identical
+    elseif nCodePage == 1201 then
+      Convert, Reconvert = Identical, SwapEndian
+    else
+      if nCodePage == 65001 then
+        Convert = function(str) return CheckUtf8(str) and MultiByteToWideChar(str, nCodePage, "e") end
+      else
+        Convert = function(str) return MultiByteToWideChar(str, nCodePage, "e") end
+      end
+      Reconvert = function(str) return (WideCharToMultiByte(str, nCodePage)) end
+    end
+  else
+    if nCodePage == 65001 then
+      Convert = function(str) return CheckUtf8(str) and str end
+      Reconvert = Identical
+    elseif nCodePage == 1200 then
+      Convert, Reconvert = Utf8, Utf16
+    elseif nCodePage == 1201 then
+      Convert = Utf8
+      Reconvert = function(str) return SwapEndian(Utf16(str)) end
+    else
+      Convert = function(str) local s=MultiByteToWideChar(str, nCodePage, "e");return s and Utf8(s);end
+      Reconvert = function(str) return (WideCharToMultiByte(Utf16(str), nCodePage)) end
+    end
+  end
+  return Convert, Reconvert
+end
+
+-- cdata.sOp: operation - either "grep" or "count"
+local function Grep_ProcessFile (fdata, fullname, cdata)
+  local fp = io.open(fullname,"rb") or io.open([[\\?\]]..fullname,"rb")
+  if not fp then
+    MsgCannotOpenFile(fullname)
+    return
+  end
+  cdata.nFilesProcessed = cdata.nFilesProcessed + 1
+  ---------------------------------------------------------------------------
+  local nCodePageDetected = GetFileFormat(fp)
+  local nCodePage = nCodePageDetected or win.GetACP() -- GetOEMCP() ?
+  ---------------------------------------------------------------------------
+  local bWideCharRegex, Regex, ufind_method = cdata.bWideCharRegex, cdata.Regex, cdata.ufind_method
+  local userbreak = cdata.userbreak
+  local nMatches = 0
+  local numline = 0
+
+  local len = bWideCharRegex and win.lenW or string.len
+  local grepBefore, grepAfter = cdata.tGrep.nBefore, cdata.tGrep.nAfter
+  local grepInverse = not not cdata.tGrep.bInverse -- convert to boolean
+  local tGrep, qLinesBefore, numline_match
+  if cdata.sOp=="grep" then
+    tGrep = { FileName=fullname }
+    table.insert(cdata.tGrep, tGrep)
+    qLinesBefore = grepBefore > 0 and libCqueue.new(grepBefore)
+  end
+
+  local Convert = Replace_GetConvertors (bWideCharRegex, nCodePage)
+  local lines_iter = --[[cdata.bFileAsLine and Lines2 or]] Lines
+  for line, eol in lines_iter(fp, nCodePage, userbreak) do
+    numline = numline + 1
+    -------------------------------------------------------------------------
+    local Line = Convert(line)
+    if Line then
+      -- iterate on current line
+      local x = 1
+      local linelen = len(Line)
+      while true do
+        local bFound
+        local fr, to, collect = ufind_method(Regex, Line, x)
+        if fr then
+          if not (cdata.sOp == "grep" and cdata.tGrep.bSkip and collect[1]) then
+            bFound = true
+            nMatches = nMatches+1
+          end
+        end
+        ----------------------------------------------------------------------
+        if cdata.sOp == "grep" then
+          if (not bFound) == grepInverse then -- 'not' needed for conversion to boolean
+            if qLinesBefore then
+              local size = qLinesBefore:size()
+              for k=1, size do
+                tGrep[#tGrep+1] = -(numline - size + k - 1)
+                tGrep[#tGrep+1] = qLinesBefore:get(k)
+              end
+              qLinesBefore:clear()
+            end
+            numline_match = numline
+            tGrep[#tGrep+1] = numline
+            tGrep[#tGrep+1] = Line
+          else
+            if numline_match and numline-numline_match <= grepAfter then
+              tGrep[#tGrep+1] = -numline
+              tGrep[#tGrep+1] = Line
+            elseif qLinesBefore then
+              qLinesBefore:push(Line)
+            end
+          end
+          break
+        end
+        ----------------------------------------------------------------------
+        if not fr then break end
+        ----------------------------------------------------------------------
+        if to >= x then
+          x = to + 1
+        else
+          x = x + 1
+        end
+        ----------------------------------------------------------------------
+        if x > linelen then break end
+      end -- iterate on current line
+    end -- if Line
+    if fdata.FileSize >= 1e6 and numline%100 == 0 then
+      local pos = fp:seek("cur")
+      DisplayReplaceState(fullname, cdata.nFilesProcessed-1, pos/fdata.FileSize)
+    end
+  end -- for line, eol in lines_iter(...)
+  if nMatches > 0 then
+    cdata.nMatchesTotal = cdata.nMatchesTotal + nMatches
+    cdata.nFilesWithMatches = cdata.nFilesWithMatches + 1
+  end
+  fp:close()
+end
+
+-- @param aOp: either "replace" or "grep"
+local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
+  local sOp, tParams
+  if aWithDialog then
+    sOp, tParams = PanelDialog(aOp, aData, aScriptCall)
+    if sOp and not aScriptCall then _Plugin.SaveSettings() end
+  else
+    sOp, tParams = aOp, ProcessDialogData(aData, true, false)
+  end
+  if not (sOp and tParams) then return end
+  ----------------------------------------------------------------------------
+  if sOp=="replace" and aData.bAdvanced then tParams.InitFunc() end
+  ----------------------------------------------------------------------------
+  local fFileMask = MaskGenerator(aData.sFileMask)
+  if not fFileMask then return end
+  local fDirMask, fDirExMask = GetDirFilterFunctions(aData)
+  if not (fDirMask and fDirExMask) then return end
+  -----------------------------------------------------------------------------
+  -- Collect all items
+  -----------------------------------------------------------------------------
+  local last_clock = clock()
+  local userbreak = NewUserBreak()
+  userbreak.time = 0
+  local fileList = CollectAllItems(aData, tParams, fFileMask, fDirMask, fDirExMask, userbreak)
+  if userbreak.fullcancel then
+    far.AdvControl("ACTL_REDRAWALL")
+    return ReplaceOrGrep(aOp, aData, aWithDialog, aScriptCall)
+  end
+  local timeSearch = clock() - last_clock - userbreak.time
+
+  -----------------------------------------------------------------------------
+  -- Search and replace in files: prepare data
+  -----------------------------------------------------------------------------
+  local bWideCharRegex = tParams.Regex.ufindW and true
+  local cdata = { -- common data
+    bFileAsLine = tParams.bFileAsLine,                                -- in
+    bMakeBackupCopy = aData.bMakeBackupCopy,                          -- in
+    bReplaceAll = not aData.bConfirmReplace,                          -- in/out
+    bWideCharRegex = bWideCharRegex,                                     -- in
+    ufind_method = tParams.Regex.ufindW or tParams.Regex.ufind,          -- in
+    fReplace = aOp=="replace" and GetReplaceFunction(tParams.ReplacePat, bWideCharRegex), -- in
+    nFilesModified = 0,                                                  -- out
+    nFilesProcessed = 0,                                                 -- out
+    nFilesWithMatches = 0,                                               -- out
+    nMatchesTotal = 0,                                                   -- out
+    nRepsTotal = 0,                                                      -- out
+    sOp = sOp,                                                           -- in
+    Regex = tParams.Regex,                                               -- in
+    userbreak = userbreak,                                               -- out
+    fUserChoiceFunc = aData.fUserChoiceFuncP,                            -- in
+    bWasError = false,                                                   -- out
+    tGrep = {                                                            -- in/out
+      nBefore = tonumber(aData.sGrepLinesBefore) or 0;
+      nAfter  = tonumber(aData.sGrepLinesAfter) or 0;
+      bInverse = aData.bGrepInverseSearch;
+      bSkip = tParams.bSkip;
+    },
+  }
+
+  -----------------------------------------------------------------------------
+  -- Search and replace in files: run
+  -----------------------------------------------------------------------------
+  cdata.last_clock = clock()
+  userbreak.time = 0
+  local sProcessReadonly
+  DisplayReplaceState("", 0, 0)
+  for k=1,#fileList,2 do
+    if userbreak:ConfirmEscape() then break end
+    local fdata, fullname = fileList[k], fileList[k+1]
+    local bCanProcess = true
+    if sOp == "replace" and fdata.FileAttributes:find("r") then
+      if sProcessReadonly == "none" then
+        bCanProcess = false
+      elseif sProcessReadonly ~= "all" then
+        local currclock = clock()
+        local res = far.Message(
+          M.MPanelRO_Readonly..fullname..M.MPanelRO_Question,
+          M.MWarning, M.MPanelRO_Buttons, "w")
+        cdata.last_clock = cdata.last_clock + clock() - currclock
+        if res == 1 then -- do nothing
+        elseif res == 2 then sProcessReadonly="all"
+        elseif res == 3 then bCanProcess=false
+        elseif res == 4 then bCanProcess=false; sProcessReadonly="none"
+        else                 bCanProcess=false; userbreak.fullcancel=true
+        end
+      end
+    end
+    if bCanProcess then
+--local n=cdata.nFilesWithMatches
+      cdata.userbreak.cancel = nil
+      DisplayReplaceState(fullname, cdata.nFilesProcessed, 0)
+      if sOp == "replace" then
+        Replace_ProcessFile(fdata, fullname, cdata)
+      else
+        Grep_ProcessFile(fdata, fullname, cdata)
+      end
+      if cdata.bWasError then break end
+--if n==cdata.nFilesWithMatches then far.Message(fullname) end
+    end
+    if userbreak.fullcancel then break end
+  end
+  -----------------------------------------------------------------------------
+  if sOp=="replace" and aData.bAdvanced then tParams.FinalFunc() end
+  -----------------------------------------------------------------------------
+  local timeProcess = clock() - cdata.last_clock - userbreak.time
+  far.AdvControl("ACTL_REDRAWALL")
+
+  -----------------------------------------------------------------------------
+  -- Statistics, etc.
+  -----------------------------------------------------------------------------
+  if (not aScriptCall) and (sOp=="replace" or sOp=="count") then
+    if #fileList > 0 then
+      local items = {}
+      ----------------------------------------------------------------------------------------------
+      table.insert(items, { M.MPanelFin_FilesFound,       #fileList/2 })
+      table.insert(items, { M.MPanelFin_FilesProcessed,   cdata.nFilesProcessed })
+      table.insert(items, { M.MPanelFin_FilesWithMatches, cdata.nFilesWithMatches })
+      if sOp == "replace" then
+        table.insert(items, { M.MPanelFin_FilesModified, cdata.nFilesModified })
+      end
+      table.insert(items, { separator=1 })
+      ----------------------------------------------------------------------------------------------
+      table.insert(items, { M.MPanelFin_MatchesTotal,     cdata.nMatchesTotal })
+      if sOp == "replace" then
+        table.insert(items, { M.MPanelFin_RepsTotal, cdata.nRepsTotal })
+      end
+      table.insert(items, { separator=1 })
+      table.insert(items, { M.MPanelFin_TimeSearch,       FormatTime(timeSearch) .. " s" })
+      table.insert(items, { M.MPanelFin_TimeProcess,      FormatTime(timeProcess) .. " s" })
+      ----------------------------------------------------------------------------------------------
+      libMessage.TableBox(items, M.MMenuTitle)
+    else
+      if userbreak.fullcancel or 1==far.Message(M.MNoFilesFound,M.MMenuTitle,M.MButtonsNewSearch) then
+        return ReplaceOrGrep(aOp, aData, aWithDialog, aScriptCall)
+      end
+    end
+  end
+
+  if sOp == "grep" then
+    local fp
+    local insert_empty_lines = cdata.tGrep.nBefore>0 or cdata.tGrep.nAfter>0
+    local fname = far.MkTemp()
+    local numfile = 0
+    for _,v in ipairs(cdata.tGrep) do
+      if v[1] then
+        numfile = numfile + 1
+        fp = fp or assert(io.open(fname, "wb"))
+        fp:write("[", tostring(numfile), "] ", v.FileName, "\r\n")
+        local last_numline = -1
+        for m=1,#v,2 do
+          local lnum, line = v[m], v[m+1]
+          local abs_numline = math.abs(lnum)
+          if insert_empty_lines then
+            if abs_numline - last_numline > 1 then fp:write("\r\n") end
+            last_numline = abs_numline
+          end
+          if aData.bGrepShowLineNumbers then
+            fp:write(tostring(abs_numline), lnum>0 and ":" or "-")
+          end
+          if tParams.Regex.ufindW then line=Utf8(line) end
+          fp:write(line, "\r\n")
+        end
+        fp:write("\r\n")
+      end
+    end
+    if fp then
+      fp:close()
+      local flags = {EF_DELETEONLYFILEONCLOSE=1,EF_NONMODAL=1,EF_IMMEDIATERETURN=1,EF_DISABLEHISTORY=1}
+      if editor.Editor(fname,nil,nil,nil,nil,nil,flags,nil,nil,65001) == F.EEC_MODIFIED then
+        if aData.bGrepHighlight then
+          SetHighlightPattern(tParams.Regex, true, aData.bGrepShowLineNumbers, tParams.bSkip)
+          ActivateHighlight(true)
+        end
+      end
+    else
+      if userbreak.fullcancel or 1==far.Message(M.MNoFilesFound,M.MMenuTitle,M.MButtonsNewSearch) then
+        return ReplaceOrGrep(aOp, aData, aWithDialog, aScriptCall)
+      end
+    end
+  end
+end
+
+local function ReplaceFromPanel (aData, aWithDialog, aScriptCall)
+  return ReplaceOrGrep("replace", aData, aWithDialog, aScriptCall)
+end
+
+local function GrepFromPanel (aData, aWithDialog, aScriptCall)
+  return ReplaceOrGrep("grep", aData, aWithDialog, aScriptCall)
+end
+
 return {
-  CreateTmpPanel  = CreateTmpPanel;
-  InitTmpPanel    = InitTmpPanel;
-  SearchFromPanel = SearchFromPanel;
+  SearchFromPanel   = SearchFromPanel;
+  ReplaceFromPanel  = ReplaceFromPanel;
+  GrepFromPanel     = GrepFromPanel;
+  InitTmpPanel      = InitTmpPanel;
+  CreateTmpPanel    = CreateTmpPanel;
 }

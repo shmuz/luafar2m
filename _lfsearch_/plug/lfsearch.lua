@@ -150,6 +150,8 @@ local function OpenFromPanels (userItems)
 
   local items = {
     {text=M.MMenuFind,     action="find"},
+--- {text=M.MMenuReplace,  action="replace"},
+    {text=M.MMenuGrep,     action="grep"},
     {text=M.MMenuRename,   action="rename"},
     {text=M.MMenuTmpPanel, action="tmppanel"},
   }
@@ -165,6 +167,10 @@ local function OpenFromPanels (userItems)
   if pos <= nOwnItems then
     if item.action == "find" then
       return GUI_SearchFromPanels(hMain)
+    elseif item.action == "replace" then
+      Panels.ReplaceFromPanel(hMain, true, false)
+    elseif item.action == "grep" then
+      Panels.GrepFromPanel(hMain, true, false)
     elseif item.action == "rename" then
       Rename.main()
     elseif item.action == "tmppanel" then
@@ -178,6 +184,7 @@ end
 
 local function OpenFromMacro (args)
   local Op, Where, Cmd = unpack(args)
+
   if Op=="own" then
     local area = far.MacroGetArea()
     local data = History["main"]
@@ -201,11 +208,15 @@ local function OpenFromMacro (args)
         if Cmd == "search" then
           local pan = GUI_SearchFromPanels(data)
           return pan and { pan, type="panel" }
-        elseif Cmd=="rename" then
+        elseif Cmd == "replace" then
+          Panels.ReplaceFromPanel(data, true, false)
+        elseif Cmd == "grep" then
+          Panels.GrepFromPanel(data, true, false)
+        elseif Cmd == "rename" then
           Rename.main()
         elseif Cmd == "panel" then
           local pan = Panels.CreateTmpPanel(_Plugin.FileList or {}, _Plugin.History["tmppanel"])
-          return { pan; type="panel" }
+          return { [1]=pan; type="panel" }
         end
       end
     end

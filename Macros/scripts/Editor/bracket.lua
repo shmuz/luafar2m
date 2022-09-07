@@ -14,7 +14,6 @@ local function FindBracket()
   local tForward  = { ["("]=")", ["{"]="}", ["["]="]", ["<"]=">", }
   local tBackward = { [")"]="(", ["}"]="{", ["]"]="[", [">"]="<", }
   for k=0,1 do -- test cursor position and left-to-cursor position
-    if k==1 and CurPos==1 then return end
     Bracket = line:sub (CurPos-k, CurPos-k)
     if tForward[Bracket] then
       Direction, Match = 1, tForward[Bracket]
@@ -23,7 +22,7 @@ local function FindBracket()
       Direction, Match = -1, tBackward[Bracket];
       CurPos = CurPos - k
       break
-    elseif k==1 then
+    elseif k==1 or CurPos==1 then
       return
     end
   end
