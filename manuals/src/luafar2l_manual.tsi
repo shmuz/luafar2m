@@ -8296,6 +8296,34 @@ nm=win.wcscmp
 </article>
 </node>
 <node>
+id=500
+lv=3
+dt=Text
+nm=win.WideCharToMultiByte
+ctime=3871827136
+mtime=3871827165
+<article>
+#_str_out = win.WideCharToMultiByte (str_in, codepage [, flags])
+#_
+#_**Parameters:**
+#_  str_in   : string in UTF-16LE encoding
+#_  codepage : integer
+#_  flags    : string, a combination of 0 or more of the following
+#_             characters:
+#_               'c' -> WC_COMPOSITECHECK
+#_               'd' -> WC_DISCARDNS
+#_               's' -> WC_SEPCHARS
+#_               'f' -> WC_DEFAULTCHAR
+#_
+#_**Returns:**
+#_  str_out  : string in *codepage* encoding.
+#_
+#_**Windows API used:**
+#_  WideCharToMultiByte
+#_
+</article>
+</node>
+<node>
 id=422
 lv=2
 dt=Text

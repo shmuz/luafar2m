@@ -418,6 +418,7 @@ local luafar = {
         "GetVirtualKeys", "IsProcess64bit", "lenW", "MoveFile", "MultiByteToWideChar", "OemToUtf8",
         "RemoveDir", "RenameFile", "SetCurrentDir", "SetEnv", "SetFileAttr", "Sleep", "subW",
         "SystemTimeToFileTime", "Utf32ToUtf8", "Utf8ToOem", "Utf8ToUtf32", "Uuid", "wcscmp",
+        "WideCharToMultiByte",
       };
     };
 

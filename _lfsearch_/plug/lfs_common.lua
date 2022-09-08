@@ -22,12 +22,6 @@ local function FormatInt (num)
   return tostring(num):reverse():gsub("...", "%1,"):gsub(",$", ""):reverse()
 end
 
-local function FormatTime (tm)
-  if tm < 0 then tm = 0 end
-  local fmt = (tm < 10) and "%.2f" or (tm < 100) and "%.1f" or "%.0f"
-  return fmt:format(tm)
-end
-
 local function GotoEditField (hDlg, id)
   local len = hDlg:GetText(id):len()
   hDlg:SetFocus(id)
@@ -235,7 +229,7 @@ local function EditorConfigDialog()
       end
 
     elseif msg == F.DN_CTLCOLORDLGITEM then
-      if param1 == Pos.labHighlight then param2 = hColor0; return param2; end
+      if param1 == Pos.labHighlight then return hColor0; end
     end
   end
 
@@ -503,17 +497,17 @@ end
 
 local function ProcessDialogData (aData, bReplace, bInEditor, bUseMultiPatterns, bSkip)
   local params = {}
-  params.bFileAsLine = aData.bFileAsLine
-  params.bInverseSearch = aData.bInverseSearch
-  params.bConfirmReplace = aData.bConfirmReplace
-  params.bWrapAround = aData.bWrapAround
-  params.bSearchBack = aData.bSearchBack
-  params.bDelEmptyLine = aData.bDelEmptyLine
+  params.bFileAsLine      = aData.bFileAsLine
+  params.bInverseSearch   = aData.bInverseSearch
+  params.bConfirmReplace  = aData.bConfirmReplace
+  params.bWrapAround      = aData.bWrapAround
+  params.bSearchBack      = aData.bSearchBack
+  params.bDelEmptyLine    = aData.bDelEmptyLine
   params.bDelNonMatchLine = aData.bDelNonMatchLine
-  params.bHighlight = aData.bHighlight
-  params.sOrigin = aData.sOrigin
-  params.sSearchPat = aData.sSearchPat or ""
-  params.FileFilter = aData.bUseFileFilter and aData.FileFilter
+  params.bHighlight       = aData.bHighlight
+  params.sOrigin          = aData.sOrigin
+  params.sSearchPat       = aData.sSearchPat or ""
+  params.FileFilter       = aData.bUseFileFilter and aData.FileFilter
   ---------------------------------------------------------------------------
   params.Envir = setmetatable({}, {__index=_G})
   params.Envir.dofile = function(fname)
@@ -626,21 +620,20 @@ function SRFrame:InsertInDialog (aPanelsDialog, aOp)
   ------------------------------------------------------------------------------
   if aPanelsDialog and aOp == "grep" then
     insert(Items, { tp="text";  text=M.MDlgSkipPat; })
-    insert(Items, { tp="edit";  name="sSkipPat";      hist="SkipText"; })
+    insert(Items, { tp="edit";  name="sSkipPat";  hist="SkipText"; })
   end
   ------------------------------------------------------------------------------
   if aOp == "replace" then
     insert(Items, { tp="text";  text=M.MDlgReplacePat; })
-    insert(Items, { tp="edit";  name="sReplacePat";      hist="ReplaceText"; })
+    insert(Items, { tp="edit";  name="sReplacePat"; hist="ReplaceText"; })
+    insert(Items, { tp="chbox"; name="bRepIsFunc";         x1=7;         text=M.MDlgRepIsFunc; })
     if aPanelsDialog then
-      insert(Items, { tp="chbox"; name="bRepIsFunc";      x1=7,         text=M.MDlgRepIsFunc; })
-      insert(Items, { tp="chbox"; name="bMakeBackupCopy"; x1=27, y1=""; text=M.MDlgMakeBackupCopy; })
-      insert(Items, { tp="chbox"; name="bConfirmReplace"; x1=48, y1=""; text=M.MDlgConfirmReplace; })
+      insert(Items, { tp="chbox"; name="bMakeBackupCopy";  x1=27, y1=""; text=M.MDlgMakeBackupCopy; })
+      insert(Items, { tp="chbox"; name="bConfirmReplace";  x1=48, y1=""; text=M.MDlgConfirmReplace; })
     else
-    insert(Items, { tp="chbox"; name="bRepIsFunc";       x1=7,         text=M.MDlgRepIsFunc; })
-    insert(Items, { tp="chbox"; name="bDelEmptyLine";    x1=md, y1=""; text=M.MDlgDelEmptyLine; })
-    insert(Items, { tp="chbox"; name="bConfirmReplace";  x1=7,         text=M.MDlgConfirmReplace; })
-    insert(Items, { tp="chbox"; name="bDelNonMatchLine"; x1=md, y1=""; text=M.MDlgDelNonMatchLine; })
+      insert(Items, { tp="chbox"; name="bDelEmptyLine";    x1=md, y1=""; text=M.MDlgDelEmptyLine; })
+      insert(Items, { tp="chbox"; name="bConfirmReplace";  x1=7,         text=M.MDlgConfirmReplace; })
+      insert(Items, { tp="chbox"; name="bDelNonMatchLine"; x1=md, y1=""; text=M.MDlgDelNonMatchLine; })
     end
   end
   ------------------------------------------------------------------------------
@@ -874,7 +867,8 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
       end
       Data.sRegexLib = lib
       ------------------------------------------------------------------------
-      self.close_params = ProcessDialogData(Data, bReplace, bInEditor, Pos.bMultiPatterns and Data.bMultiPatterns)
+      local bSkip = out.sSkipPat and out.sSkipPat ~= ""
+      self.close_params = ProcessDialogData(Data, bReplace, bInEditor, out.bMultiPatterns, bSkip)
       if not self.close_params then
         return KEEP_DIALOG_OPEN
       end

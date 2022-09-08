@@ -37,8 +37,7 @@ local clock = os.clock
 local strbyte, strgsub = string.byte, string.gsub
 local Utf32, Utf8 = win.Utf8ToUtf32, win.Utf32ToUtf8
 local MultiByteToWideChar = win.MultiByteToWideChar
-
-local dirsep = package.config:sub(1,1)
+local WideCharToMultiByte = win.WideCharToMultiByte
 
 local TmpPanelDefaults = {
   CopyContents             = 0,
@@ -114,15 +113,15 @@ local function Lines (aFile, aCodePage, userbreak)
   local start, chunk, posInner, posOuter
 
   local CHARSIZE, EMPTY, CR, LF, CRLF, find
-  if aCodePage == 1200 or aCodePage == 1201 then
-    CHARSIZE, EMPTY, CR, LF, CRLF = 2, Utf16"", Utf16"\r", Utf16"\n", Utf16"\r\n"
+  if aCodePage == 61200 or aCodePage == 61201 then
+    CHARSIZE, EMPTY, CR, LF, CRLF = 4, Utf32"", Utf32"\r", Utf32"\n", Utf32"\r\n"
     find = regex.findW
   else
     CHARSIZE, EMPTY, CR, LF, CRLF = 1, "", "\r", "\n", "\r\n"
     find = string.find
   end
 
-  local read = (aCodePage == 1201) and
+  local read = (aCodePage == 61201) and
     function(size)
       local portion = aFile:read(size)
       if portion then portion = SwapEndian(portion) end
@@ -177,7 +176,7 @@ local function Lines (aFile, aCodePage, userbreak)
       posInner = aFile:seek("cur")
       posOuter = posOuter + #line + #eol
       aFile:seek("set", posOuter)
-      if aCodePage == 1201 then eol = SwapEndian(eol) end
+      if aCodePage == 61201 then eol = SwapEndian(eol) end
       return line, eol
     end
     aFile:seek("set", posOuter)
@@ -277,6 +276,7 @@ local function GetFileFormat (file, nBytes)
       end
     end
   end
+  file:seek("set", 0)
   return 65001, nil
 end
 
@@ -964,9 +964,9 @@ local function Replace_GetConvertors (bWideCharRegex, nCodePage)
   local Identical = function(str) return str end
   local Convert, Reconvert
   if bWideCharRegex then
-    if nCodePage == 1200 then
+    if nCodePage == 61200 then
       Convert, Reconvert = Identical, Identical
-    elseif nCodePage == 1201 then
+    elseif nCodePage == 61201 then
       Convert, Reconvert = Identical, SwapEndian
     else
       if nCodePage == 65001 then
@@ -980,14 +980,14 @@ local function Replace_GetConvertors (bWideCharRegex, nCodePage)
     if nCodePage == 65001 then
       Convert = function(str) return CheckUtf8(str) and str end
       Reconvert = Identical
-    elseif nCodePage == 1200 then
-      Convert, Reconvert = Utf8, Utf16
-    elseif nCodePage == 1201 then
+    elseif nCodePage == 61200 then
+      Convert, Reconvert = Utf8, Utf32
+    elseif nCodePage == 61201 then
       Convert = Utf8
-      Reconvert = function(str) return SwapEndian(Utf16(str)) end
+      Reconvert = function(str) return SwapEndian(Utf32(str)) end
     else
       Convert = function(str) local s=MultiByteToWideChar(str, nCodePage, "e");return s and Utf8(s);end
-      Reconvert = function(str) return (WideCharToMultiByte(Utf16(str), nCodePage)) end
+      Reconvert = function(str) return (WideCharToMultiByte(Utf32(str), nCodePage)) end
     end
   end
   return Convert, Reconvert
