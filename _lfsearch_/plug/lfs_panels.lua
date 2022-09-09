@@ -256,11 +256,13 @@ local function RecursiveSearch (sInitDir, UserFunc, Flags, FileFilter,
   Recurse(realDir)
 end
 
-local BomPatterns = {
-  ["^\255\254"] = 1200,
-  ["^\254\255"] = 1201,
-  ["^\239\187\191"] = 65001,
-  ["^%+/v[89+/]"] = 65000,
+local BOMs = {
+  { codepage=61200; pattern="^\255\254%z%z"; },
+  { codepage= 1200; pattern="^\255\254";     }, -- 1200 must be tested after 61200 as the first 2 bytes are the same
+  { codepage=61201; pattern="^%z%z\254\255"; },
+  { codepage= 1201; pattern="^\254\255";     },
+  { codepage=65001; pattern="^\239\187\191"; },
+  { codepage=65000; pattern="^%+/v[89+/]";   },
 }
 
 local function GetFileFormat (file, nBytes)
@@ -268,11 +270,11 @@ local function GetFileFormat (file, nBytes)
   file:seek("set", 0)
   local sTemp = file:read(8)
   if sTemp then
-    for pattern, codepage in pairs(BomPatterns) do
-      local bom = string.match(sTemp, pattern)
+    for _, item in ipairs(BOMs) do
+      local bom = string.match(sTemp, item.pattern)
       if bom then
         file:seek("set", #bom)
-        return codepage, bom
+        return item.codepage, bom
       end
     end
   end
@@ -381,10 +383,12 @@ local function GetCodePages (aData)
     { CodePage = win.GetACP() },
     ---------------------------------------------------------------------------
     { Text = M.MUnicodeCodePages, Flags = F.LIF_SEPARATOR },
-    { CodePage = 61200, Text = makeline(61200, "UTF-32 (Little endian)") },
-    { CodePage = 61201, Text = makeline(61201, "UTF-32 (Big endian)") },
-    { CodePage = 65000 },
-    { CodePage = 65001 },
+    { CodePage = 1200;  Text = makeline(1200,  "UTF-16 (little endian)" ); },
+    { CodePage = 1201;  Text = makeline(1201,  "UTF-16 (big endian)"    ); },
+    { CodePage = 61200; Text = makeline(61200, "UTF-32 (little endian)" ); },
+    { CodePage = 61201; Text = makeline(61201, "UTF-32 (big endian)"    ); },
+    { CodePage = 65000; },
+    { CodePage = 65001; },
     ---------------------------------------------------------------------------
     { Text = M.MOtherCodePages,   Flags = F.LIF_SEPARATOR },
   }
@@ -681,11 +685,11 @@ end
 
 local function CheckBoms (str)
   if str then
-    local find = string.find
-    if     find(str, "^%z%z\254\255") then return { 61201 }, 4 -- UTF32BE
-    elseif find(str, "^\255\254%z%z") then return { 61200 }, 4 -- UTF32LE
-    elseif find(str, "^%+/v[89+/]")   then return { 65000 }, 4 -- UTF7
-    elseif find(str, "^\239\187\191") then return { 65001 }, 3 -- UTF8
+    for _, item in ipairs(BOMs) do
+      local bom = string.match(str, item.pattern)
+      if bom then
+        return { item.codepage }, #bom
+      end
     end
   end
 end
