@@ -128,12 +128,14 @@ static int Reader_openfile (lua_State *L)
 {
   int ret = 0;
   TReader *ud = CheckReader(L, 1);
-  const char *fname = luaL_checkstring(L, 2);
 
-  FILE *fp = fopen(fname, "rb");
-  if (fp) {
-    if (ud->fp) fclose(ud->fp);
-    ud->fp = fp;
+  if (ud->fp) {
+    fclose(ud->fp);
+    ud->fp = NULL;
+  }
+
+  ud->fp = fopen(luaL_checkstring(L, 2), "rb");
+  if (ud->fp) {
     ud->top = 0;
     ret = 1;
   }

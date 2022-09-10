@@ -680,7 +680,7 @@ local function GetActiveCodePages (aData)
       if t and t[1] then return t end
     end
   end
-  return { win.GetOEMCP(), win.GetACP(), 61200, 61201, 65000, 65001 }
+  return { 65001, win.GetOEMCP(), win.GetACP(), 1200, 61200, 1201, 61201, 65000 }
 end
 
 local function CheckBoms (str)
@@ -688,7 +688,7 @@ local function CheckBoms (str)
     for _, item in ipairs(BOMs) do
       local bom = string.match(str, item.pattern)
       if bom then
-        return { item.codepage }, #bom
+        return item.codepage, #bom
       end
     end
   end
@@ -753,14 +753,20 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     if not bTextSearch then table.insert(tFoundFiles, fullname) end
     if DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, 0, userbreak) then return "break" end
     if not bTextSearch then return end
-    if not reader:openfile(fullname) then return end
     ---------------------------------------------------------------------------
+    if not reader:openfile(fullname) then return end
     local str = reader:get_next_overlapped_chunk()
-    local currCodePages, len = CheckBoms(str)
-    if currCodePages then
-      str = string.sub(str, len+1)
-    else
-      currCodePages = activeCodePages
+    local currCodePages = activeCodePages
+    local page, len = CheckBoms(str)
+    if page then -- search in this file only if its codepage is listed in activeCodePages
+      for _,cp in ipairs(activeCodePages) do
+        if cp == page then
+          currCodePages = { page }
+          str = string.sub(str, len+1)
+          break
+        end
+      end
+      if currCodePages==activeCodePages then return; end
     end
     ---------------------------------------------------------------------------
     local found, stop
@@ -773,7 +779,6 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
 
     while str do
       if userbreak:ConfirmEscape("in_file") then
-        reader:closefile()
         return userbreak.fullcancel and "break"
       end
       for _, cp in ipairs(currCodePages) do
@@ -831,7 +836,6 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     if not found ~= not tParams.bInverseSearch then
       table.insert(tFoundFiles, fullname)
     end
-    reader:closefile()
   end
 
   local hScreen = far.SaveScreen()
@@ -854,6 +858,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     if userbreak.fullcancel then break end
   end
 
+  if reader then reader:closefile() end
   far.RestoreScreen(hScreen)
   return tFoundFiles, userbreak.fullcancel
 end
