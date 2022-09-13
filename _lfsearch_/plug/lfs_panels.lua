@@ -19,6 +19,7 @@ local DisplaySearchState  = libCommon.DisplaySearchState
 local DisplayReplaceState = libCommon.DisplayReplaceState
 local ErrorMsg            = libCommon.ErrorMsg
 local FormatTime          = libCommon.FormatTime
+local GetReplaceFunction  = libCommon.GetReplaceFunction
 local GetSearchAreas      = libCommon.GetSearchAreas
 local GotoEditField       = libCommon.GotoEditField
 local IndexToSearchArea   = libCommon.IndexToSearchArea
@@ -615,6 +616,8 @@ end
         ConfigDialog()
         hDlg:ShowDialog(1)
         hDlg:SetFocus(Pos.btnOk)
+      else
+        NeedCallFrame = true
       end
     --------------------------------------------------------------------------------------
     end
@@ -669,18 +672,18 @@ local function MakeItemList (panelInfo, searchArea)
     end
   elseif searchArea == "SelectedItems" then
     if bRealNames then
-      local curdir_slash = bPlugin and "" or sPanelDir:gsub("\\?$","\\",1)
+      local curdir_slash = bPlugin and "" or sPanelDir:gsub("/?$","/",1)
       for i=1, panelInfo.SelectedItemsNumber do
         local item = panel.GetSelectedPanelItem(1, i)
         itemList[#itemList+1] = curdir_slash .. item.FileName
       end
     end
   elseif searchArea == "RootFolder" then
-    itemList[1] = sPanelDir:sub(1,3)
+    itemList[1] = sPanelDir:match("/[^/]*")
   elseif searchArea == "PathFolders" then
     flags = {}
     local path = win.GetEnv("PATH")
-    if path then path:gsub("[^;]+", function(c) itemList[#itemList+1]=c end) end
+    if path then path:gsub("[^:]+", function(c) itemList[#itemList+1]=c end) end
   end
 
   return itemList, flags
@@ -990,6 +993,39 @@ local function CollectAllItems (aData, tParams, fFileMask, fDirMask, fDirExMask,
   return fileList
 end
 
+local function Replace_CreateOutputFile (fullname, numlines, codepage, bom, userbreak)
+  local fOut, tmpname
+  for k = 0,999 do
+    local name = ("%s.%03d.tmp"):format(fullname, k)
+    if win.GetFileAttr(name) == nil then tmpname=name; break; end
+  end
+  if tmpname ~= nil then
+    if numlines <= 0 then
+      fOut = io.open(tmpname, "wb")
+      if bom then fOut:write(bom) end
+    else
+      local fIn = io.open(fullname, "rb")
+      if fIn then
+        fOut = io.open(tmpname, "wb")
+        if fOut then
+          if bom then
+            fIn:seek("set", #bom)
+            fOut:write(bom)
+          end
+          for line, eol in Lines(fIn, codepage, userbreak) do
+            if codepage == 1201 then line = SwapEndian(line) end
+            fOut:write(line, eol)
+            numlines = numlines - 1
+            if numlines == 0 then break end
+          end
+        end
+        fIn:close()
+      end
+    end
+  end
+  return fOut, tmpname
+end
+
 -- Note: function MultiByteToWideChar, in Windows older than Vista, does not
 --       check UTF-8 characters reliably. That is the reason for using
 --       function CheckUtf8.
@@ -1024,6 +1060,251 @@ local function Replace_GetConvertors (bWideCharRegex, nCodePage)
     end
   end
   return Convert, Reconvert
+end
+
+-- ??? All arguments must be in UTF-8.
+local function GetReplaceChoice(
+  Line, from, to,
+  sReplace,
+  bWideCharRegex,
+  filename,
+  numline,
+  nCodePageDetected,
+  nCodePage
+)
+  local bReplace = sReplace~=true
+  local len, sub
+  if bWideCharRegex then len, sub = win.lenW, win.subW
+  else len, sub = string.len, string.sub
+  end
+
+  local linelen = len(Line)
+  local color = libMessage.GetInvertedColor("COL_DIALOGTEXT")
+
+  -- show some context around the match
+  local left, right = 0, 0
+  local maxchars = libMessage.GetMaxChars()
+  local extra = maxchars - (to-from+1)
+  if extra > 0 then
+    left = math.ceil(extra / 2)
+    right = extra - left
+    if from-left < 1 then
+      left = from - 1
+      right = extra - left
+    elseif to+right > linelen then
+      right = linelen - to
+      left = extra - right
+      if from-left < 1 then left = from - 1 end
+    end
+  end
+  --================================================================
+  local currclock = clock()
+  local extract = bWideCharRegex and
+    function(i1,i2) return Utf8(sub(Line,i1,i2)) end or
+    function(i1,i2) return sub(Line,i1,i2) end
+
+  local callback = function (heights, maxlines, lines)
+    if lines <= maxlines then return end
+    local avail = maxlines
+    for i,h in ipairs(heights) do
+      if i~=9 and i~=13 then avail = avail-h end
+    end
+    avail = avail + 1 -- compensate for newline heights[11]
+    local half = math.floor(avail / 2)
+    if heights[9] <= half then
+      heights[13] = avail - (heights[9] + 2)
+    elseif heights[13] <= half then
+      heights[9] = avail - (heights[13] + 2)
+    else
+      heights[9], heights[13] = half - 1, avail - half - 1
+    end
+    return true
+  end
+
+  local msg = {
+      filename,"\n",
+      ("%s:%d, %s:%d, %s:%d"):format(M.MPanelUC_Line, numline,
+          M.MPanelUC_Position, from, M.MPanelUC_Length, to-from+1),"\n",
+      M.MPanelUC_Codepage:format(nCodePageDetected or M.MPanelUC_NoCodepage, nCodePage),"\n",
+      { separator=1, text=bReplace and M.MUserChoiceReplace or M.MUserChoiceDeleteLine},
+      extract(from-left, from-1), {text=extract(from,to), color=color}, extract(to+1, to+right),
+      bReplace and "\n" or nil,
+      bReplace and { separator=1, text=M.MUserChoiceWith } or nil,
+      bReplace and { text=bWideCharRegex and Utf8(sReplace) or sReplace, color=color } or nil,
+      callback = callback,
+  }
+
+  local Choice = libMessage.Message(
+    msg,
+    M.MMenuTitle,
+    bReplace and M.MPanelUC_Buttons or M.MPanelUC_Buttons2,
+    "cl",         -- flags
+    nil,          -- help topic
+    win.Uuid("f93c6128-52b7-4173-9779-55bf84dd133d") -- id
+  )
+  Choice = ({"yes","fAll","all","no","fCancel","cancel"})[Choice] or "cancel"
+  return Choice, clock() - currclock
+end
+
+local function Replace_ProcessFile (fdata, fullname, cdata)
+--local ExtendedName = [[\\?\]] .. fullname
+  local ExtendedName = fullname
+  local fp = io.open(ExtendedName, "rb")
+  if not fp then
+    MsgCannotOpenFile(fullname)
+    return
+  end
+  cdata.nFilesProcessed = cdata.nFilesProcessed + 1
+  ---------------------------------------------------------------------------
+  local nCodePageDetected, sBom = GetFileFormat(fp, ExtendedName)
+  local nCodePage = nCodePageDetected or win.GetACP() -- GetOEMCP() ?
+  ---------------------------------------------------------------------------
+  local fReplace = cdata.fReplace
+  local fChoice = cdata.fUserChoiceFunc or GetReplaceChoice
+  local bWideCharRegex, Regex, ufind_method = cdata.bWideCharRegex, cdata.Regex, cdata.ufind_method
+  local bReplaceAll, userbreak = cdata.bReplaceAll, cdata.userbreak
+  local bSkipAll = false
+  local fout, tmpname
+  local nMatches, nReps = 0, 0
+  local numline = 0
+
+  local len, sub
+  if bWideCharRegex then len, sub = win.lenW, win.subW
+  else len, sub = string.len, string.sub
+  end
+
+  local Convert, Reconvert = Replace_GetConvertors (bWideCharRegex, nCodePage)
+  local lines_iter = --[[cdata.bFileAsLine and Lines2 or]] Lines
+  for line, eol in lines_iter(fp, nCodePage, userbreak) do
+    if bSkipAll then
+      fout:write(line, eol)
+    else
+      numline = numline + 1
+      -------------------------------------------------------------------------
+      local Line = Convert(line)
+      if not Line then
+        if fout then fout:write(line, eol) end
+      else
+        -- iterate on current line
+        local x = 1
+        local linelen = len(Line)
+        local bDeleteLine
+        while true do
+          local fr, to, collect = ufind_method(Regex, Line, x)
+          if not fr then break end
+          nMatches = nMatches + 1
+          -----------------------------------------------------------------------
+          local sCurMatch = sub(Line, fr, to)
+          collect[0] = sCurMatch
+          local ok, sRepFinal, bStop = pcall(fReplace, collect, nMatches, nReps, numline)
+          bSkipAll = bStop and bReplaceAll
+          if not ok then
+            fp:close()
+            if fout then
+              fout:close()
+              win.DeleteFile(tmpname)
+            end
+            cdata.bWasError = true
+            ErrorMsg(sRepFinal)
+            return
+          end
+          if sRepFinal then
+            local sUserChoice, nElapsed
+            if not bReplaceAll then
+              sUserChoice, nElapsed = fChoice(
+                  Line, fr, to, sRepFinal, bWideCharRegex, fullname,
+                  numline, nCodePageDetected, nCodePage)
+              cdata.last_clock = cdata.last_clock + (nElapsed or 0)
+              if     sUserChoice == "yes"     then -- luacheck:ignore
+              elseif sUserChoice == "fAll"    then bReplaceAll = true
+              elseif sUserChoice == "all"     then bReplaceAll,cdata.bReplaceAll = true,true
+              elseif sUserChoice == "no"      then -- luacheck:ignore                   -- "skip"
+              elseif sUserChoice == "fCancel" then bSkipAll = true                      -- "skip in this file"
+              else                            bSkipAll,userbreak.fullcancel = true,true -- "cancel"
+              end
+            end
+            ----------------------------------------------------------------------
+            if bReplaceAll or sUserChoice=="yes" then
+              nReps = nReps + 1
+              bDeleteLine = sRepFinal==true
+              if not fout then
+                fout, tmpname = Replace_CreateOutputFile(ExtendedName, numline-1, nCodePage, sBom, userbreak)
+                if not fout or userbreak.cancel then
+                  cdata.nMatchesTotal = cdata.nMatchesTotal + nMatches
+                  cdata.nFilesWithMatches = cdata.nFilesWithMatches + 1
+                  fp:close()
+                  if fout then
+                    fout:close()
+                    win.DeleteFile(tmpname)
+                  end
+                  ErrorMsg(M.MErrorCreateOutputFile)
+                  return
+                end
+                if not bDeleteLine then
+                  fout:write(Reconvert(sub(Line, 1, x-1)))
+                end
+              end
+              if bDeleteLine then break end
+              fout:write(Reconvert(sub(Line, x, fr-1)), Reconvert(sRepFinal))
+            else
+              if fout then fout:write(Reconvert(sub(Line, x, fr-1)), Reconvert(sCurMatch)) end
+            end
+          else -- if not sRepFinal:
+            if fout then fout:write(Reconvert(sub(Line, x, fr-1)), Reconvert(sCurMatch)) end
+          end
+          ----------------------------------------------------------------------
+          if to >= x then
+            x = to + 1
+          else
+            if fout then fout:write(Reconvert(sub(Line, x, x))) end
+            x = x + 1
+          end
+          ----------------------------------------------------------------------
+          if x > linelen then break end
+          if bSkipAll then break end
+        end -- iterate on current line
+        if fout then
+          if not bDeleteLine then
+            fout:write(Reconvert(sub(Line, x)), eol)
+          end
+        else
+          if bSkipAll then break end
+        end
+      end -- if Line
+    end -- if not bSkipAll
+    if fdata.FileSize >= 1e6 and numline%100 == 0 then
+      local pos = fp:seek("cur")
+      DisplayReplaceState(fullname, cdata.nFilesProcessed-1, pos/fdata.FileSize)
+    end
+  end -- for line, eol in lines_iter(...)
+  if nMatches > 0 then
+    cdata.nMatchesTotal = cdata.nMatchesTotal + nMatches
+    cdata.nFilesWithMatches = cdata.nFilesWithMatches + 1
+  end
+  fp:close()
+  if fout then
+    fout:close()
+    if userbreak.cancel then
+      win.DeleteFile(tmpname)
+    else
+      if cdata.bMakeBackupCopy then
+        local name, num = regex.match(ExtendedName, [[^(.*)\.(\d+)\.bak$]], nil, "i")
+        if not name then name, num = ExtendedName, 0 end
+        num = tonumber(num)
+        for k = num+1, 999 do
+          local bakname = ("%s.%03d.bak"):format(name, k)
+          if win.RenameFile(ExtendedName, bakname) then break end
+        end
+      else
+        win.SetFileAttr(ExtendedName, "")
+        win.DeleteFile(ExtendedName)
+      end
+      win.RenameFile(tmpname, ExtendedName)
+      win.SetFileAttr(ExtendedName, fdata.FileAttributes)
+      cdata.nFilesModified = cdata.nFilesModified + 1
+      cdata.nRepsTotal = cdata.nRepsTotal + nReps
+    end
+  end
 end
 
 -- cdata.sOp: operation - either "grep" or "count"

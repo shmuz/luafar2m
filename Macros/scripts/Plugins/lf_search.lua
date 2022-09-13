@@ -56,6 +56,12 @@ Macro {
 }
 
 Macro {
+  description="LF Search: Panel Replace";
+  area="Shell QView Tree Info"; key="CtrlShiftG";
+  action = function() LFS_Panels "replace" end;
+}
+
+Macro {
   description="LF Search: Panel Grep";
   area="Shell QView Tree Info"; key="CtrlShiftH";
   action = function() LFS_Panels "grep" end;

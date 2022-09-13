@@ -150,7 +150,7 @@ local function OpenFromPanels (userItems)
 
   local items = {
     {text=M.MMenuFind,     action="find"},
---- {text=M.MMenuReplace,  action="replace"},
+    {text=M.MMenuReplace,  action="replace"},
     {text=M.MMenuGrep,     action="grep"},
     {text=M.MMenuRename,   action="rename"},
     {text=M.MMenuTmpPanel, action="tmppanel"},

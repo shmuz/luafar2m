@@ -684,12 +684,14 @@ function SRFrame:CheckAdvancedEnab (hDlg)
   local Pos = self.Pos
   if Pos.bAdvanced then
     local bEnab = hDlg:GetCheck(Pos.bAdvanced)
-    hDlg:Enable(Pos.labFilterFunc, bEnab)
-    hDlg:Enable(Pos.sFilterFunc  , bEnab)
-    hDlg:Enable(Pos.labInitFunc  , bEnab)
-    hDlg:Enable(Pos.sInitFunc    , bEnab)
-    hDlg:Enable(Pos.labFinalFunc , bEnab)
-    hDlg:Enable(Pos.sFinalFunc   , bEnab)
+    hDlg:Enable(Pos.labInitFunc,   bEnab)
+    hDlg:Enable(Pos.sInitFunc,     bEnab)
+    hDlg:Enable(Pos.labFinalFunc,  bEnab)
+    hDlg:Enable(Pos.sFinalFunc,    bEnab)
+    if Pos.sFilterFunc then
+      hDlg:Enable(Pos.labFilterFunc, bEnab)
+      hDlg:Enable(Pos.sFilterFunc,   bEnab)
+    end
   end
 end
 
@@ -742,14 +744,14 @@ function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
       hDlg:Enable(Pos.rScopeBlock, false)
     else
       local bScopeBlock
-      local bForceBlock = _Plugin.History.config.bForceScopeToBlock
+      local bForceBlock = _Plugin.History["config"]..bForceScopeToBlock
       if bScript or not bForceBlock then
         bScopeBlock = (Data.sScope == "block")
       else
         local line = editor.GetString(EI.BlockStartLine+1) -- test the 2-nd selected line
         bScopeBlock = line and line.SelStart>0
       end
-      hDlg:SetCheck(bScopeBlock and Pos.rScopeBlock or Pos.rScopeGlobal, true)
+      hDlg:SetCheck(Pos[bScopeBlock and "rScopeBlock" or "rScopeGlobal"], true)
     end
 
     -- Set origin
@@ -791,34 +793,12 @@ end
 
 function SRFrame:DlgProc (hDlg, msg, param1, param2)
   local Pos = self.Pos
-  self.Pos = Pos
   local Data, bInEditor = self.Data, self.bInEditor
   local bReplace = Pos.sReplacePat
   ----------------------------------------------------------------------------
   if msg == F.DN_INITDIALOG then
     assert(self.Dlg, "self.Dlg not set; probably Frame:SetDialogObject was not called")
-    if bInEditor then
-      local EI = editor.GetInfo()
-      if EI.BlockType == F.BTYPE_NONE then
-        hDlg:SetCheck (Pos.rScopeGlobal, 1)
-        hDlg:Enable   (Pos.rScopeBlock, 0)
-      else
-        local bScopeBlock
-        local bForceBlock = _Plugin.History["config"].bForceScopeToBlock
-        if self.bScriptCall or not bForceBlock then
-          bScopeBlock = (Data.sScope == "block")
-        else
-          local line = editor.GetString(EI.BlockStartLine+1) -- test the 2-nd selected line
-          bScopeBlock = line and line.SelStart>0
-        end
-        local name = bScopeBlock and "rScopeBlock" or "rScopeGlobal"
-        hDlg:SetCheck(Pos[name], true)
-      end
-      local name = (Data.sOrigin=="scope") and "rOriginScope" or "rOriginCursor"
-      hDlg:SetCheck(Pos[name], true)
-      self:CheckAdvancedEnab(hDlg)
-    end
-    self:CheckRegexInit(hDlg, self.Data)
+    self:CompleteLoadData(hDlg, Data, false)
   ----------------------------------------------------------------------------
   elseif msg == F.DN_BTNCLICK then
     if param1==Pos.bRegExpr then
@@ -827,7 +807,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
       if bInEditor then
         self:CheckWrapAround(hDlg)
       end
-      if param1==Pos.bAdvanced then
+      if Pos.bAdvanced and param1==Pos.bAdvanced then
         self:CheckAdvancedEnab(hDlg)
       end
     end
