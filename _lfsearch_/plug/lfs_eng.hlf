@@ -24,8 +24,6 @@ $ #LuaFAR Search (version 2.4)#
    ~PCRE~@PCRE@
 
 ^#LIBRARIES USED BY THE PLUGIN#
- #Lua 5.1#   : lua5.1.dll
- #LuaFAR#    : luafarw.dll
  #Oniguruma# : onig.dll (optional)
  #PCRE#      : pcre.dll (optional)
 
@@ -283,14 +281,19 @@ in the list. The search is performed using the checked code pages.
    #*# In all local drives
    #*# In PATH folders
 
+ #[x] Directory filter#  #[ Tune ]#
+ Enable use of directory filter.
+ Show ~Directory filter dialog~@DirectoryFilter@.
+
+ #[x] File filter#       #[ Tune ]#
+ Enable use of file filter.
+ Show ~Filters Menu~@:FiltersMenu@.
+
  #Search for folders#
  Specify whether folders should be found or not.
 
  #Search in symbolic links#
  Specify whether to search in symbolic links or not.
-
- #D-filter#
- Envoke ~Directories filter~@DirFilter@ dialog.
 
  ~Contents~@Contents@
 
@@ -1139,11 +1142,30 @@ pcre(3).
 
  ~Contents~@Contents@
 
-@DirFilter
-$ #Directories filter#
- The search will not be conducted in the listed here directories
-and their subdirectories. In case no directory should be excluded
-then leave the input field empty.
+@DirectoryFilter
+$ #Directory filter#
+^#Dialog settings#
+
+ #Directory search mask#
+ The search of files for inclusion in the list and processing will be done
+only within those directories whose names match the given mask.
+ (If this field is left empty then the search will be done in all directories).
+
+   #[x] Process path#
+   If this option is set then the given mask will be matched against
+   the full directory path otherwise against the directory name only.
+
+ #Directory exclude mask#
+ If a directory matches the given mask then the directory contents (files
+and subdirectories of any nesting depth) will not be included in the list
+and will not be processed.
+ (If the given field is left empty then directories will not be excluded).
+
+   #[x] Process path#
+   If this option is set then the given mask will be matched against
+   the full directory path otherwise against the directory name only.
+
+ The syntax of masks is identical to Far-style ~file masks~@:FileMasks@.
 
  ~Contents~@Contents@
 

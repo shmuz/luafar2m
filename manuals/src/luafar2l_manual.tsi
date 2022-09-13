@@ -6326,6 +6326,33 @@ mtime=3870923762
 </article>
 </node>
 <node>
+id=501
+lv=2
+dt=Text
+nm=far.GetFileFormat
+ctime=3872013561
+mtime=3872014403
+<article>
+#_codepage = far.GetFileFormat (FileName)
+#_
+#_**Parameters:**
+#_  FileName:   string
+#_
+#_**Returns:**
+#_  codepage:   integer (or nil)
+#_
+#_**Note:**
+#_  If Far2L was built with **-DUSEUCD=no** option then
+#_  the detection accuracy would be greatly reduced.
+#_
+#_**Far API used:**
+#_  FSF.GetFileFormat
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=476
 lv=2
 dt=Text

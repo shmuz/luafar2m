@@ -28,8 +28,6 @@ local SaveCodePageCombo   = libCommon.SaveCodePageCombo
 local ActivateHighlight   = libEditors.ActivateHighlight
 local SetHighlightPattern = libEditors.SetHighlightPattern
 
-local Excl_Key = "sExcludeDirs"
-
 local F = far.Flags
 local KEEP_DIALOG_OPEN = 0
 local bor, band, bxor, lshift = bit64.bor, bit64.band, bit64.bxor, bit64.lshift
@@ -221,7 +219,7 @@ local function RecursiveSearch (sInitDir, UserFunc, Flags, FileFilter,
     local findspec = InitDir.."/*"
     local SlashInitDir = InitDir:find("/$") and InitDir or InitDir.."/"
 
-    far.RecursiveSearch(InitDir, "*",
+    local ret = far.RecursiveSearch(InitDir, "*",
       function(fdata, fullpath)
         if fdata.FileName ~= "." and fdata.FileName ~= ".." then
           local fullname = SlashInitDir .. fdata.FileName
@@ -248,7 +246,7 @@ local function RecursiveSearch (sInitDir, UserFunc, Flags, FileFilter,
           end
         end
       end)
-    return false
+    return ret
   end
 
   local realDir = far.GetReparsePointInfo(sInitDir) or sInitDir
@@ -265,21 +263,23 @@ local BOMs = {
   { codepage=65000; pattern="^%+/v[89+/]";   },
 }
 
-local function GetFileFormat (file, nBytes)
+local function GetFileFormat (fp, fname)
   -- Try BOMs
-  file:seek("set", 0)
-  local sTemp = file:read(8)
+  fp:seek("set", 0)
+  local sTemp = fp:read(8)
   if sTemp then
     for _, item in ipairs(BOMs) do
       local bom = string.match(sTemp, item.pattern)
       if bom then
-        file:seek("set", #bom)
+        fp:seek("set", #bom)
         return item.codepage, bom
       end
     end
   end
-  file:seek("set", 0)
-  return 65001, nil
+  -- Try far.GetFileFormat (that uses uchardet)
+  fp:seek("set", 0)
+  local cp = far.GetFileFormat(fname) or 20127 -- US-ASCII
+  return cp, nil
 end
 
 
@@ -331,30 +331,6 @@ local function ConfigDialog()
   local out = dlg:Run()
   if out then
     dlg:SaveData (out, aData)
-    return true
-  end
-end
-
-local function DirFilterDialog (aData)
-  local Items = {
-    guid = "92E8DEC3-ACE2-4E1F-B6A5-AF447EDE21B8";
-    help = "DirFilter";
-    width = 76;
-    --help = "SearchResultsPanel";
-    { tp="dbox"; text=M.MDirFilterTitle; },
-    { tp="text"; text=M.MExcludeDirsLabel; },
-    { tp="edit"; name=Excl_Key; hist="LFS_Excl_Dirs"},
-    { tp="sep"; },
-    { tp="butt"; text=M.MOk; default=1; centergroup=1; },
-    { tp="butt"; text=M.MCancel; cancel=1; centergroup=1; },
-  }
-  local dlg = sd.New(Items)
-  dlg:LoadData(aData)
-  local out = dlg:Run()
-  if out then
-    local s = out[Excl_Key]:match("^%s*(.-)%s*$")
-    out[Excl_Key] = (s ~= "") and s -- false is OK, nil is not as it does not erase the existing value
-    dlg:SaveData(out, aData)
     return true
   end
 end
@@ -437,6 +413,44 @@ local function GetCodePages (aData)
   return items
 end
 
+local function DirectoryFilterDialog (aData)
+  local Items = {
+    guid = "276DAB4E-8D58-487D-A3FF-E99681B38C1B";
+    help = "DirectoryFilter";
+    width = 76;
+    { tp="dbox";  text=M.MDirFilterTitle;                 },
+    { tp="text";  text=M.MDlgDirMask;                     },
+    { tp="edit";  name="sDirMask";   hist="DirMasks";     },
+    { tp="chbox"; name="bDirMask_ProcessPath";   text=M.MDirFilterProcessPath;   x1=7; },
+
+    { tp="text";  text=M.MDlgDirExMask; ystep=2;          },
+    { tp="edit";  name="sDirExMask"; hist="DirExMasks";   },
+    { tp="chbox"; name="bDirExMask_ProcessPath"; text=M.MDirFilterProcessPathEx; x1=7; },
+    { tp="sep";                                           },
+    { tp="butt"; default=1; text=M.MOk;    centergroup=1; },
+    { tp="butt"; cancel=1; text=M.MCancel; centergroup=1; },
+  }
+  local Dlg = sd.New(Items)
+  local Pos = Dlg:Indexes()
+
+  function Items.closeaction (hDlg, param1, tOut)
+    local mask1 = tOut.sDirMask -- this mask is allowed to be empty
+    if not (mask1 == "" or CheckMask(mask1)) then
+      GotoEditField(hDlg, Pos.sDirMask)
+      return KEEP_DIALOG_OPEN
+    end
+    local mask2 = tOut.sDirExMask -- this mask is allowed to be empty
+    if not (mask2 == "" or CheckMask(mask2)) then
+      GotoEditField(hDlg, Pos.sDirExMask)
+      return KEEP_DIALOG_OPEN
+    end
+  end
+
+  Dlg:LoadData(aData)
+  local out = Dlg:Run()
+  if out then Dlg:SaveData(out, aData) end
+end
+
 local searchGuid  = "3CD8A0BB-8583-4769-BBBC-5B6667D13EF9"
 local replaceGuid = "F7118D4A-FBC3-482E-A462-0167DF7CC346"
 local grepGuid    = "74D7F486-487D-40D0-9B25-B2BB06171D86"
@@ -463,15 +477,18 @@ if aOp == "search" then
 end
   insert(Items, { tp="text"; text=M.MDlgSearchArea; })
   insert(Items, { tp="combobox"; name="cmbSearchArea"; list=GetSearchAreas(aData); x2=W+1; dropdownlist=1; noauto=1; })
-  insert(Items, { tp="butt";  name="btnDirFilter";    text=M.MBtnDirFilter;  btnnoclose=1; })
 if aOp == "search" then
-  insert(Items, { tp="chbox"; name="bSearchFolders";  text=M.MDlgSearchFolders;  ystep=-2; x1=W+5; })
-  insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MDlgSearchSymLinks;           x1=W+5; })
+  insert(Items, { tp="chbox"; name="bSearchFolders";  text=M.MDlgSearchFolders;  ystep=-1; x1=W+5; })
+  insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MDlgSearchSymLinks; ystep=1;  x1=W+5; })
 else
-  insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MDlgSearchSymLinks; ystep=-2; x1=W+5; })
+  insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MDlgSearchSymLinks; ystep=0;  x1=W+5; })
 end
-  insert(Items, { tp="chbox"; name="bUseFileFilter";  text=M.MDlgUseFileFilter;            x1=W+5; })
-  insert(Items, { tp="butt";  name="btnFileFilter";   text=M.MDlgBtnFileFilter;  y1="";    x1=X2; btnnoclose=1; })
+  local X1 =   5 + M.MDlgUseDirFilter:gsub("&",""):len()  + 5
+  local X2 = W+5 + M.MDlgUseFileFilter:gsub("&",""):len() + 5
+  insert(Items, { tp="chbox"; name="bUseDirFilter";  text=M.MDlgUseDirFilter;                       })
+  insert(Items, { tp="butt";  name="btnDirFilter";   text=M.MDlgBtnDirFilter; btnnoclose=1; x1=X1;  y1=""; })
+  insert(Items, { tp="chbox"; name="bUseFileFilter";  text=M.MDlgUseFileFilter;             x1=W+5; y1=""; })
+  insert(Items, { tp="butt";  name="btnFileFilter";   text=M.MDlgBtnFileFilter;  y1="";     x1=X2; btnnoclose=1; })
   insert(Items, { tp="sep"; })
 
 if aOp == "replace" then
@@ -511,15 +528,12 @@ end
   local Pos,Elem = dlg:Indexes()
   Frame:SetDialogObject(dlg,Pos,Elem)
 
-  local function SetBtnFilterText(hDlg)
-    hDlg:SetText(Pos.btnDirFilter, M.MBtnDirFilter..(aData[Excl_Key] and "*" or ""))
-  end
-
   function Items.proc (hDlg, msg, param1, param2)
     local NeedCallFrame = true
     --------------------------------------------------------------------------------------
     if msg == F.DN_INITDIALOG then
-      SetBtnFilterText(hDlg)
+      hDlg:Enable(Pos.btnDirFilter,  hDlg:GetCheck(Pos.bUseDirFilter))
+      hDlg:Enable(Pos.btnFileFilter, hDlg:GetCheck(Pos.bUseFileFilter))
       if Pos.cmbCodePage then
         hDlg:SetComboboxEvent(Pos.cmbCodePage, F.CBET_KEY)
         local t = {}
@@ -529,34 +543,6 @@ end
             hDlg:ListSetData(Pos.cmbCodePage, t)
           end
         end
-      end
-      hDlg:SetText  (Pos.sFileMask,       aData.sFileMask or "")
-      hDlg:SetCheck (Pos.bSearchFolders,  aData.bSearchFolders)
-      hDlg:SetCheck (Pos.bSearchSymLinks, aData.bSearchSymLinks)
-      hDlg:SetCheck (Pos.bUseFileFilter,  aData.bUseFileFilter)
-      hDlg:Enable   (Pos.btnFileFilter,   aData.bUseFileFilter)
-    --------------------------------------------------------------------------------------
-    elseif msg == F.DN_BTNCLICK then
-      if param1 == Pos.bUseFileFilter then
-        hDlg:Enable(Pos.btnFileFilter, hDlg:GetCheck(Pos.bUseFileFilter))
-      elseif param1 == Pos.btnFileFilter then
-        local filter = far.CreateFileFilter(1, "FFT_FINDFILE")
-        if filter and filter:OpenFiltersMenu() then aData.FileFilter = filter end
-      elseif param1 == Pos.btnPresets then
-        Frame:DoPresets(hDlg)
-        hDlg:SetFocus(Pos.btnOk)
-      elseif param1 == Pos.btnDirFilter then
-        hDlg:ShowDialog(0)
-        if DirFilterDialog(aData) then
-          SetBtnFilterText(hDlg)
-        end
-        hDlg:ShowDialog(1)
-        hDlg:SetFocus(Pos.btnOk)
-      elseif param1 == Pos.btnConfig then
-        hDlg:ShowDialog(0)
-        ConfigDialog()
-        hDlg:ShowDialog(1)
-        hDlg:SetFocus(Pos.btnOk)
       end
     --------------------------------------------------------------------------------------
     elseif msg == F.DN_KEY then
@@ -600,6 +586,35 @@ end
       -- store selected code pages no matter what user pressed: OK or Esc.
       if Pos.cmbCodePage then
         SaveCodePageCombo(hDlg, Pos.cmbCodePage, Elem.cmbCodePage.list, aData, ok_or_count)
+      end
+    --------------------------------------------------------------------------------------
+    elseif msg == F.DN_BTNCLICK then
+      NeedCallFrame = false
+      if param1 == Pos.btnPresets then
+        Frame:DoPresets(hDlg)
+        hDlg:SetFocus(Pos.btnOk)
+
+      elseif param1 == Pos.bUseDirFilter then
+        hDlg:Enable(Pos.btnDirFilter, hDlg:GetCheck(Pos.bUseDirFilter))
+
+      elseif param1 == Pos.btnDirFilter then
+        hDlg:ShowDialog(0)
+        DirectoryFilterDialog(aData)
+        hDlg:ShowDialog(1)
+        hDlg:SetFocus(Pos.btnOk)
+
+      elseif param1 == Pos.bUseFileFilter then
+        hDlg:Enable(Pos.btnFileFilter, hDlg:GetCheck(Pos.bUseFileFilter))
+
+      elseif param1 == Pos.btnFileFilter then
+        local filter = far.CreateFileFilter(1, "FFT_FINDFILE")
+        if filter and filter:OpenFiltersMenu() then aData.FileFilter = filter end
+
+      elseif param1 == Pos.btnConfig then
+        hDlg:ShowDialog(0)
+        ConfigDialog()
+        hDlg:ShowDialog(1)
+        hDlg:SetFocus(Pos.btnOk)
       end
     --------------------------------------------------------------------------------------
     end
@@ -703,7 +718,11 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   end
   if not tParams then return end
   ----------------------------------------------------------------------------
-
+  local fFileMask = MaskGenerator(aData.sFileMask)
+  if not fFileMask then return end
+  local fDirMask, fDirExMask = GetDirFilterFunctions(aData)
+  if not (fDirMask and fDirExMask) then return end
+  ----------------------------------------------------------------------------
   -- take care of the future "repeat" operations in the Editor
   aData.sLastOp = "search"
   aData.bSearchBack = false
@@ -715,44 +734,26 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   local Find = Regex.findW or Regex.find
   local bTextSearch = (tParams.tMultiPatterns and tParams.tMultiPatterns.NumPatterns > 0) or
                       (not tParams.tMultiPatterns and tParams.sSearchPat ~= "")
-  local bAcceptFolders = aData.bSearchFolders and not bTextSearch
+  local bNoTextSearch = not bTextSearch
+  local bNoFolders = bTextSearch or not aData.bSearchFolders
   local reader = bTextSearch and assert(libReader.new(4*1024*1024)) -- (default = 4 MiB)
 
-  local panelInfo = panel.GetPanelInfo(1)
-  local area = CheckSearchArea(aData.sSearchArea) -- can throw error
-  local itemList, flags = MakeItemList(panelInfo, area)
-  local bRecurse = flags.recurse
-  local bSymLinks = aData.bSearchSymLinks
-
-  -----------------------------------------------------------------------------
-  local function Search_ProcessFile(fdata, fullname, file_filter, mask_files, mask_dirs)
-    ---------------------------------------------------------------------------
-    if file_filter and not file_filter:IsFileInFilter(fdata) then return end
-    ---------------------------------------------------------------------------
-    local mask_ok = far.ProcessName(F.PN_CMPNAMELIST, mask_files, fdata.FileName, F.PN_SKIPPATH)
-    ---------------------------------------------------------------------------
-    if fdata.FileAttributes:find("d") then
-      if mask_ok and bAcceptFolders then
-        nTotalFiles = nTotalFiles + 1
-        table.insert(tFoundFiles, fullname)
-      end
-
-      if bRecurse then
-        local skip = mask_dirs and far.ProcessName(F.PN_CMPNAMELIST, mask_dirs, fdata.FileName, F.PN_SKIPPATH)
-                     or not bSymLinks and fdata.FileAttributes:find("e")
-        if not skip then
-          return far.RecursiveSearch(fullname, "*", Search_ProcessFile, 0, file_filter, mask_files, mask_dirs)
-        end
-      end
-
+  local function Search_ProcessFile (fdata, fullname)
+    if fdata == "display_state" then
       return DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, 0, userbreak) and "break"
     end
     ---------------------------------------------------------------------------
-    if not mask_ok then return end
+    local isFolder = fdata.FileAttributes:find("d")
+    if isFolder and bNoFolders then return end
+    ---------------------------------------------------------------------------
     nTotalFiles = nTotalFiles + 1
-    if not bTextSearch then table.insert(tFoundFiles, fullname) end
-    if DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, 0, userbreak) then return "break" end
-    if not bTextSearch then return end
+    if isFolder or bNoTextSearch then
+      tFoundFiles[#tFoundFiles+1] = fullname
+      return DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, 0, userbreak) and "break"
+    end
+    if DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, 0, userbreak) then
+      return "break"
+    end
     ---------------------------------------------------------------------------
     if not reader:openfile(fullname) then return end
     local str = reader:get_next_overlapped_chunk()
@@ -834,32 +835,55 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
       found = found or not (stop or next(tPlus) or uUsual)
     end
     if not found ~= not tParams.bInverseSearch then
-      table.insert(tFoundFiles, fullname)
+      tFoundFiles[#tFoundFiles+1] = fullname
     end
   end
 
+  local area = CheckSearchArea(aData.sSearchArea) -- can throw error
   local hScreen = far.SaveScreen()
   DisplaySearchState("", 0, 0, 0)
+--local t1=os.clock()
 
-  local FileFilter = tParams.FileFilter
-  if FileFilter then FileFilter:StartingToFilter() end
-  for _, item in ipairs(itemList) do
-    local fdata = win.GetFileInfo(item)
-    -- note: fdata can be nil for root directories
-    local isFile = fdata and not fdata.FileAttributes:find("d")
-    ---------------------------------------------------------------------------
-    if isFile or ((area=="FromCurrFolder" or area=="OnlyCurrFolder") and panelInfo.Plugin) then
-      Search_ProcessFile(fdata, item, FileFilter, "*")
+  do -- was: "Search_ProcessAllItems (aData, userbreak, Search_ProcessFile)"
+    local FileFilter = tParams.FileFilter
+    if FileFilter then FileFilter:StartingToFilter() end
+    local panelInfo = panel.GetPanelInfo(1)
+    local bPlugin = panelInfo.Plugin
+    local itemList, flags = MakeItemList(panelInfo, area)
+    if aData.bSearchSymLinks then
+      flags.symlinks = true
     end
-    if not isFile and not (area == "OnlyCurrFolder" and panelInfo.Plugin) then
-      far.RecursiveSearch(item, "*", Search_ProcessFile, 0, FileFilter, aData.sFileMask, aData[Excl_Key])
+
+    local tRecurseGuard = {}
+    for _, item in ipairs(itemList) do
+      local filedata = win.GetFileInfo(item)
+      -- note: filedata can be nil for root directories
+      local isFile = filedata and not filedata.FileAttributes:find("d")
+      ---------------------------------------------------------------------------
+      if isFile or ((area == "FromCurrFolder" or area == "OnlyCurrFolder") and bPlugin and filedata) then
+        if not FileFilter or FileFilter:IsFileInFilter(filedata) then
+          if fFileMask(filedata.FileName) then
+            Search_ProcessFile(filedata, item)
+          end
+        end
+      end
+      if not isFile and not (area == "OnlyCurrFolder" and bPlugin) then
+        RecursiveSearch(item, Search_ProcessFile, flags, FileFilter, fFileMask, fDirMask,
+                        fDirExMask, tRecurseGuard)
+      end
+      ---------------------------------------------------------------------------
+      if userbreak.fullcancel then break end
     end
-    ---------------------------------------------------------------------------
-    if userbreak.fullcancel then break end
   end
 
   if reader then reader:closefile() end
   far.RestoreScreen(hScreen)
+  if tFoundFiles[1] then
+    far.Message(M.MFilesFound..#tFoundFiles.."/"..nTotalFiles, M.MSearchIsOver, "")
+  end
+  if reader then reader:delete() end
+--far.Message(os.clock()-t1)
+  far.AdvControl("ACTL_REDRAWALL")
   return tFoundFiles, userbreak.fullcancel
 end
 
@@ -1011,7 +1035,7 @@ local function Grep_ProcessFile (fdata, fullname, cdata)
   end
   cdata.nFilesProcessed = cdata.nFilesProcessed + 1
   ---------------------------------------------------------------------------
-  local nCodePageDetected = GetFileFormat(fp)
+  local nCodePageDetected = GetFileFormat(fp, fullname)
   local nCodePage = nCodePageDetected or win.GetACP() -- GetOEMCP() ?
   ---------------------------------------------------------------------------
   local bWideCharRegex, Regex, ufind_method = cdata.bWideCharRegex, cdata.Regex, cdata.ufind_method
