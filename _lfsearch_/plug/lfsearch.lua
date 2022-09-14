@@ -322,6 +322,11 @@ function lfsearch.SearchFromPanel (data, bWithDialog)
 end
 
 
+function lfsearch.ReplaceFromPanel (data, bWithDialog)
+  return Panels.ReplaceFromPanel(data, bWithDialog, true)
+end
+
+
 do
   Panels.InitTmpPanel()
 end

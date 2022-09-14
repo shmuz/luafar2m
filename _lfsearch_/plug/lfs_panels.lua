@@ -470,7 +470,6 @@ local function PanelDialog  (aOp, aData, aScriptCall)
   insert(Items, { tp="dbox"; text=title; })
   Frame:InsertInDialog(true, aOp)
   ------------------------------------------------------------------------------
-  local X2 = W+5 + M.MDlgUseFileFilter:gsub("&",""):len() + 5
   insert(Items, { tp="sep"; })
 if aOp == "search" then
   insert(Items, { tp="text"; text=M.MDlgCodePages; })
@@ -1075,7 +1074,7 @@ local function GetReplaceChoice(
   local bReplace = sReplace~=true
   local len, sub
   if bWideCharRegex then len, sub = win.lenW, win.subW
-  else len, sub = string.len, string.sub
+  else len, sub = ("").len, ("").sub
   end
 
   local linelen = len(Line)
@@ -1170,7 +1169,7 @@ local function Replace_ProcessFile (fdata, fullname, cdata)
 
   local len, sub
   if bWideCharRegex then len, sub = win.lenW, win.subW
-  else len, sub = string.len, string.sub
+  else len, sub = ("").len, ("").sub
   end
 
   local Convert, Reconvert = Replace_GetConvertors (bWideCharRegex, nCodePage)

@@ -15,7 +15,7 @@ end
 
 local function CloseHelperEditor()
   editor.Quit()
-  actl.Commit()
+  far.AdvControl("ACTL_COMMIT")
 end
 
 local function ProtectedError(msg, level)
@@ -41,6 +41,7 @@ local function SetEditorText(str)
   for _=1, editor.GetInfo().TotalLines do
     editor.DeleteString()
   end
+  str = str:gsub("\n", "\r")
   editor.InsertText(str)
 end
 
@@ -78,7 +79,7 @@ local function RunEditorAction (lib, op, data, refFound, refReps)
 end
 
 local function test_Switches (lib)
-  SetEditorText("line1\rline2\rline3\rline4\r")
+  SetEditorText("line1\nline2\nline3\nline4\n")
   local dt = { CurLine=2, CurPos=2 }
 
   for k1=0,1    do dt.bCaseSens   = (k1==1)
@@ -129,7 +130,7 @@ local function test_bug_20220618 (lib)
 end
 
 local function test_LineFilter (lib)
-  SetEditorText("line1\rline2\rline3\r")
+  SetEditorText("line1\nline2\nline3\n")
   local dt = { sSearchPat="line" }
 
   RunEditorAction(lib, "test:search", dt, 1, 0)
@@ -171,7 +172,7 @@ end
 local function test_Replace (lib)
   for k=0,1 do
   -- test "user choice function"
-    SetEditorText("line1\rline2\rline3\r")
+    SetEditorText("line1\nline2\nline3\n")
     local dt = { sSearchPat=".", sReplacePat="$0", bRegExpr=true,
       bConfirmReplace=true, bSearchBack = (k==1), sOrigin = "scope" }
     for _,ch in ipairs {"yes","all","no","cancel"} do
@@ -187,28 +188,28 @@ local function test_Replace (lib)
     -- test empty replace
     dt = { sSearchPat="l", sReplacePat="", bSearchBack = (k==1),
       sOrigin = "scope" }
-    SetEditorText("line1\rline2\rline3\r")
+    SetEditorText("line1\nline2\nline3\n")
     RunEditorAction(lib, "test:replace", dt, 3, 3)
     AssertEditorText("ine1\nine2\nine3\n")
 
     -- test empty replace with cyrillic characters
     dt = { sSearchPat="с", sReplacePat="", bSearchBack = (k==1),
       sOrigin = "scope" }
-    SetEditorText("строка1\rстрока2\rстрока3\r")
+    SetEditorText("строка1\nстрока2\nстрока3\n")
     RunEditorAction(lib, "test:replace", dt, 3, 3)
     AssertEditorText("трока1\nтрока2\nтрока3\n")
 
     -- test replace of empty match
     dt = { sSearchPat=".*?", sReplacePat="-", bSearchBack = (k==1),
       sOrigin = "scope", bRegExpr=true }
-    SetEditorText("строка1\rстрока2\r")
+    SetEditorText("строка1\nстрока2\n")
     RunEditorAction(lib, "test:replace", dt, 17, 17)
     AssertEditorText("-с-т-р-о-к-а-1-\n-с-т-р-о-к-а-2-\n-")
 
     -- test non-empty replace
     dt = { sSearchPat="l", sReplacePat="LL", bSearchBack = (k==1),
       sOrigin = "scope" }
-    SetEditorText("line1\rline2\rline3\r")
+    SetEditorText("line1\nline2\nline3\n")
     RunEditorAction(lib, "test:replace", dt, 3, 3)
     AssertEditorText("LLine1\nLLine2\nLLine3\n")
 
@@ -218,7 +219,7 @@ local function test_Replace (lib)
     -- [*] The hanging occured in function IsChar() in file lfs_replib.lua.
     -- [*] LFS version 3.43.7 must work with _all_ Far Manager versions >= 3.0.4878.
     dt = { sSearchPat="l", sReplacePat="абвгд", bRegExpr=true; bSearchBack = (k==1), sOrigin = "scope" }
-    SetEditorText("line1\r")
+    SetEditorText("line1\n")
     RunEditorAction(lib, "test:replace", dt, 1, 1)
     AssertEditorText("абвгдine1\n")
 
@@ -226,7 +227,7 @@ local function test_Replace (lib)
     dt = { sSearchPat="l", sReplacePat="LL", CurLine=2, CurPos=2, bSearchBack = (k==1) }
     for m=1,2 do
       dt.bWrapAround = (m==2)
-      SetEditorText("line1\rline2\rline3\r")
+      SetEditorText("line1\nline2\nline3\n")
       if dt.bSearchBack then
         RunEditorAction(lib, "test:replace", dt, m==1 and 2 or 3, m==1 and 2 or 3)
         AssertEditorText(m==1 and "LLine1\nLLine2\nline3\n" or "LLine1\nLLine2\nLLine3\n")
@@ -239,7 +240,7 @@ local function test_Replace (lib)
     -- test replace with wrap-around when replacing string is shorter than search string
     dt = { sSearchPat="li", sReplacePat="", CurLine=2, CurPos=2, bSearchBack = (k==1) }
     dt.bWrapAround = true
-    SetEditorText("line1\rline2\rline3\r")
+    SetEditorText("line1\nline2\nline3\n")
     RunEditorAction(lib, "test:replace", dt, 3, 3)
     AssertEditorText("ne1\nne2\nne3\n")
 
@@ -247,7 +248,7 @@ local function test_Replace (lib)
     dt = { sSearchPat="l", sReplacePat="A\nB", CurLine=2, CurPos=2, bSearchBack = (k==1) }
     for m=1,2 do
       dt.bWrapAround = (m==2)
-      SetEditorText("line1\rline2\rline3\r")
+      SetEditorText("line1\nline2\nline3\n")
       if dt.bSearchBack then
         RunEditorAction(lib, "test:replace", dt, m==1 and 2 or 3, m==1 and 2 or 3)
         AssertEditorText(m==1 and "A\nBine1\nA\nBine2\nline3\n" or "A\nBine1\nA\nBine2\nA\nBine3\n")
@@ -300,7 +301,7 @@ local function test_Replace (lib)
     dt = { sSearchPat=".+", sReplacePat=[[\D{$ \n date is %Y-%m-%d : }$0]], bRegExpr=true }
     dt.bSearchBack = (k==1)
     dt.sOrigin = "scope"
-    SetEditorText("line1\rline2\r")
+    SetEditorText("line1\nline2\n")
     RunEditorAction(lib, "test:replace", dt, 2, 2)
     local ref = ("$ \\n date is %d%d%d%d%-%d%d%-%d%d : line%d\n"):rep(2)
     ProtectedAssert(GetEditorText():match(ref))
@@ -326,29 +327,29 @@ local function test_Replace (lib)
 
   -- test counter
   dt = { sSearchPat=".+", sReplacePat=[[\R$0]], bRegExpr=true }
-  SetEditorText("a\rb\rc\rd\re\rf\rg\rh\ri\rj\r")
+  SetEditorText("a\nb\nc\nd\ne\nf\ng\nh\ni\nj\n")
   RunEditorAction(lib, "test:replace", dt, 10, 10)
   AssertEditorText("1a\n2b\n3c\n4d\n5e\n6f\n7g\n8h\n9i\n10j\n")
   --------
   dt.sReplacePat=[[\R{-5}$0]]
-  SetEditorText("a\rb\rc\rd\re\rf\rg\rh\ri\rj\r")
+  SetEditorText("a\nb\nc\nd\ne\nf\ng\nh\ni\nj\n")
   RunEditorAction(lib, "test:replace", dt, 10, 10)
   AssertEditorText("-5a\n-4b\n-3c\n-2d\n-1e\n0f\n1g\n2h\n3i\n4j\n")
   --------
   dt.sReplacePat=[[\R{5,3}$0]]
-  SetEditorText("a\rb\rc\rd\re\rf\rg\rh\ri\rj\r")
+  SetEditorText("a\nb\nc\nd\ne\nf\ng\nh\ni\nj\n")
   RunEditorAction(lib, "test:replace", dt, 10, 10)
   AssertEditorText("005a\n006b\n007c\n008d\n009e\n010f\n011g\n012h\n013i\n014j\n")
 
   -- test replace in selection
   dt = { sSearchPat="in", sReplacePat="###", sScope="block" }
-  SetEditorText("line1\rline2\rline3\rline4\r")
+  SetEditorText("line1\nline2\nline3\nline4\n")
   editor.Select("BTYPE_STREAM",2,1,-1,2)
   RunEditorAction(lib, "test:replace", dt, 2, 2)
   AssertEditorText("line1\nl###e2\nl###e3\nline4\n")
   --------
   dt = { sSearchPat=".+", sReplacePat="###", sScope="block", bRegExpr=true }
-  SetEditorText("line1\rline2\rline3\rline4\r")
+  SetEditorText("line1\nline2\nline3\nline4\n")
   editor.Select("BTYPE_COLUMN",2,2,2,2)
   RunEditorAction(lib, "test:replace", dt, 2, 2)
   AssertEditorText("line1\nl###e2\nl###e3\nline4\n")
@@ -357,7 +358,7 @@ local function test_Replace (lib)
   dt = { sSearchPat="\\w+", bRepIsFunc=true, bRegExpr=true,
          sReplacePat=[[return M~=2 and ("%d.%d.%d. %s;"):format(LN, M, R, T[0])]]
        }
-  SetEditorText("\r\rгруша\rяблоко\rслива вишня\r")
+  SetEditorText("\n\nгруша\nяблоко\nслива вишня\n")
   RunEditorAction(lib, "test:replace", dt, 4, 3)
   AssertEditorText("\n\n3.1.1. груша;\nяблоко\n5.3.2. слива; 5.4.3. вишня;\n")
   --------
@@ -388,7 +389,7 @@ local function test_Replace (lib)
   dt = { sSearchPat="\\D+", bRepIsFunc=true, bRegExpr=true,
          sReplacePat=[[return R==2 or "string"]]
        }
-  SetEditorText("line1\rline2\rline3\r")
+  SetEditorText("line1\nline2\nline3\n")
   RunEditorAction(lib, "test:replace", dt, 3, 3)
   AssertEditorText("string1\nstring3\n")
 
@@ -396,7 +397,7 @@ local function test_Replace (lib)
   dt = { sSearchPat="\\D+", bRepIsFunc=true, bRegExpr=true,
          sReplacePat=[[return "string", R==2]]
        }
-  SetEditorText("line1\rline2\rline3\r")
+  SetEditorText("line1\nline2\nline3\n")
   RunEditorAction(lib, "test:replace", dt, 2, 2)
   AssertEditorText("string1\nstring2\nline3\n")
 
@@ -405,7 +406,7 @@ local function test_Replace (lib)
   dt.sOrigin = "scope"
   for k=0,1 do
     dt.bSearchBack = (k==1)
-    SetEditorText("L1\rL2\r")
+    SetEditorText("L1\nL2\n")
     RunEditorAction(lib, "test:replace", dt, 4, 4)
     AssertEditorText("a\nba\nb\na\nba\nb\n")
   end
@@ -416,20 +417,20 @@ local function test_Replace (lib)
   dt.bDelEmptyLine = true
   for k=0,1 do
     dt.bSearchBack = (k==1)
-    SetEditorText("foo1\rbar1\rfoo2\rbar2\rfoo3\rbar3\r")
+    SetEditorText("foo1\nbar1\nfoo2\nbar2\nfoo3\nbar3\n")
     RunEditorAction(lib, "test:replace", dt, 3, 3)
     AssertEditorText("foo1\nfoo2\nfoo3\n")
   end
   for k=0,1 do
     dt.bSearchBack = (k==1)
-    SetEditorText("bar1\rbar2\rbar3\r")
+    SetEditorText("bar1\nbar2\nbar3\n")
     RunEditorAction(lib, "test:replace", dt, 3, 3)
     AssertEditorText("")
   end
   dt.sScope = "block"
   for k=0,1 do
     dt.bSearchBack = (k==1)
-    SetEditorText("foo1\rbar1\rfoo2\rbar2\rfoo3\rbar3\rfoo4\rbar4\r")
+    SetEditorText("foo1\nbar1\nfoo2\nbar2\nfoo3\nbar3\nfoo4\nbar4\n")
     editor.Select("BTYPE_STREAM",3,1,-1,4)
     RunEditorAction(lib, "test:replace", dt, 2, 2)
     AssertEditorText("foo1\nbar1\nfoo2\nfoo3\nfoo4\nbar4\n")
@@ -441,7 +442,7 @@ local function test_Replace (lib)
   dt.bDelEmptyLine = true
   for k=0,1 do
     dt.bSearchBack = (k==1)
-    SetEditorText("foo1\rfoo2\rfoo3\r")
+    SetEditorText("foo1\nfoo2\nfoo3\n")
     RunEditorAction(lib, "test:replace", dt, 3, 3)
     AssertEditorText("foo1\n\nfoo2\n\nfoo3\n\n")
   end
@@ -452,20 +453,20 @@ local function test_Replace (lib)
   dt.bDelNonMatchLine = true
   for k=0,1 do
     dt.bSearchBack = (k==1)
-    SetEditorText("foo1\rbar1\rfoo2\rbar2\rfoo3\rbar3\r")
+    SetEditorText("foo1\nbar1\nfoo2\nbar2\nfoo3\nbar3\n")
     RunEditorAction(lib, "test:replace", dt, 3, 7)
     AssertEditorText("bar1\nbar2\nbar3\n")
   end
   for k=0,1 do
     dt.bSearchBack = (k==1)
-    SetEditorText("foo1\rfoo2\rfoo3\r")
+    SetEditorText("foo1\nfoo2\nfoo3\n")
     RunEditorAction(lib, "test:replace", dt, 0, 4)
     AssertEditorText("")
   end
   dt.sScope = "block"
   for k=0,1 do
     dt.bSearchBack = (k==1)
-    SetEditorText("foo1\rbar1\rfoo2\rbar2\rfoo3\rbar3\rfoo4\rbar4\r")
+    SetEditorText("foo1\nbar1\nfoo2\nbar2\nfoo3\nbar3\nfoo4\nbar4\n")
     editor.Select("BTYPE_STREAM",3,1,-1,4)
     RunEditorAction(lib, "test:replace", dt, 2, 4)
     AssertEditorText("foo1\nbar1\nbar2\nbar3\nfoo4\nbar4\n")
@@ -499,7 +500,7 @@ end
 local function test_bug_20090208 (lib)
   local dt = { bRegExpr=true, sReplacePat="\n$0", sScope="block" }
   dt.sSearchPat = "\\w+"
-  SetEditorText(("my table\r"):rep(5))
+  SetEditorText(("my table\n"):rep(5))
   editor.Select("BTYPE_STREAM",2,1,-1,2)
   RunEditorAction(lib, "test:replace", dt, 4, 4)
   AssertEditorText("my table\n\nmy \ntable\n\nmy \ntable\nmy table\nmy table\n")
@@ -510,12 +511,12 @@ local function test_bug_20100802 (lib)
   for k = 0, 1 do
     dt.bSearchBack = (k == 1)
 
-    SetEditorText("line1\rline2\r")
+    SetEditorText("line1\nline2\n")
     dt.sSearchPat = "^."
     RunEditorAction(lib, "test:replace", dt, 2, 2)
     AssertEditorText("ine1\nine2\n")
 
-    SetEditorText("line1\rline2\r")
+    SetEditorText("line1\nline2\n")
     dt.sSearchPat = ".$"
     RunEditorAction(lib, "test:replace", dt, 2, 2)
     AssertEditorText("line\nline\n")
@@ -525,19 +526,19 @@ end
 local function test_EmptyMatch (lib)
   local dt = { bRegExpr=true, sReplacePat="-" }
   dt.sSearchPat = ".*?"
-  SetEditorText(("line1\rline2\r"))
+  SetEditorText(("line1\nline2\n"))
   RunEditorAction(lib, "test:replace", dt, 13, 13)
   AssertEditorText("-l-i-n-e-1-\n-l-i-n-e-2-\n-")
 
   dt.sSearchPat, dt.sReplacePat = ".*", "1. $0"
-  SetEditorText(("line1\rline2\r"))
+  SetEditorText(("line1\nline2\n"))
   RunEditorAction(lib, "test:replace", dt, 3, 3)
   AssertEditorText("1. line1\n1. line2\n1. ")
 end
 
 local function test_Anchors (lib)
   local dt = { bRegExpr=true, sOrigin="scope" }
-  SetEditorText("line\rline\r")
+  SetEditorText("line\nline\n")
   for k1 = 0, 1 do dt.sSearchPat = (k1 == 0) and "^." or ".$"
   for k2 = 0, 1 do dt.bSearchBack = (k2 == 1)
     RunEditorAction(lib, "test:count", dt, 2, 0)
@@ -596,7 +597,7 @@ local function test_bug_20120301 (lib)
 end
 
 local function test_FindWordUnderCursor (lib)
-  SetEditorText("abc\rabc\rabc\rabc")
+  SetEditorText("abc\nabc\nabc\nabc")
   local dt = { sSearchPat="1234" }
   for k=1,3 do
     if k==2 then dt.KeepCurPos=true end
@@ -608,7 +609,7 @@ end
 -- При полностью выделенных N строках, не должна захватываться (N+1)-я строка.
 local function test_bug_20161108 (lib)
   for k=1,2 do
-    SetEditorText("line1\rline2\r")
+    SetEditorText("line1\nline2\n")
     local dt = { sSearchPat="$", sReplacePat="-", sScope="block", sOrigin="scope", bRegExpr=true }
     dt.bSearchBack = (k==2)
     editor.Select("BTYPE_STREAM", 1, 1, 0, 3)
@@ -668,7 +669,7 @@ local function RunEditorAction (lib, op, data, refFound, refReps)
 end
 
 local function test_Switches (lib)
-  SetEditorText("line1\rline2\rline3\rline4\r")
+  SetEditorText("line1\nline2\nline3\nline4\n")
   local dt = {}
 
   for k1=0,1    do dt.bCaseSens   = (k1==1)
@@ -720,13 +721,13 @@ end
 local function test_Replace (lib)
   -- test empty replace
   local dt = { sSearchPat="l", sReplacePat="" }
-  SetEditorText("line1\rline2\rline3\r")
+  SetEditorText("line1\nline2\nline3\n")
   RunEditorAction(lib, "replace", dt, 3, 3)
   AssertEditorText("ine1\nine2\nine3\n")
 
   -- test non-empty replace
   dt = { sSearchPat="l", sReplacePat="LL" }
-  SetEditorText("line1\rline2\rline3\r")
+  SetEditorText("line1\nline2\nline3\n")
   RunEditorAction(lib, "replace", dt, 3, 3)
   AssertEditorText("LLine1\nLLine2\nLLine3\n")
 
@@ -757,7 +758,7 @@ local function test_Replace (lib)
 
   -- test replace in selection
   dt = { sSearchPat="in", sReplacePat="###", sScope="block" }
-  SetEditorText("line1\rline2\rline3\rline4\r")
+  SetEditorText("line1\nline2\nline3\nline4\n")
   editor.Select("BTYPE_STREAM",2,1,-1,2)
   RunEditorAction(lib, "replace", dt, 2, 2)
   AssertEditorText("line1\nl###e2\nl###e3\nline4\n")
@@ -765,13 +766,13 @@ local function test_Replace (lib)
   -- test replace patterns containing \n or \r
   local dt = { sSearchPat=".", sReplacePat="a\nb", bRegExpr=true }
   dt.sOrigin = "scope"
-  SetEditorText("L1\rL2\r")
+  SetEditorText("L1\nL2\n")
   RunEditorAction(lib, "replace", dt, 4, 4)
   AssertEditorText("a\nba\nb\na\nba\nb\n")
 
   -- test date/time insertion
   dt = { sSearchPat=".+", sReplacePat=[[\D{$ \n date is %Y-%m-%d : }$0]], bRegExpr=true }
-  SetEditorText("line1\rline2\r")
+  SetEditorText("line1\nline2\n")
   RunEditorAction(lib, "replace", dt, 2, 2)
   local ref = ("$ \\n date is %d%d%d%d%-%d%d%-%d%d : line%d\n"):rep(2)
   ProtectedAssert(GetEditorText():match(ref))
@@ -780,7 +781,7 @@ local function test_Replace (lib)
   dt = { sSearchPat=".+", bRepIsFunc=true, bRegExpr=true,
          sReplacePat=[[return M~=2 and ("%d.%d. %s"):format(M, R, T[0])]]
        }
-  SetEditorText("line1\rline2\rline3\r")
+  SetEditorText("line1\nline2\nline3\n")
   RunEditorAction(lib, "replace", dt, 3, 2)
   AssertEditorText("1.1. line1\nline2\n3.2. line3\n")
   --------
@@ -807,7 +808,7 @@ local function test_Replace (lib)
   dt = { sSearchPat="[^\\d\\s]+", bRepIsFunc=true, bRegExpr=true,
          sReplacePat=[[return "string", R==2]]
        }
-  SetEditorText("line1\rline2\rline3\r")
+  SetEditorText("line1\nline2\nline3\n")
   RunEditorAction(lib, "replace", dt, 2, 2)
   AssertEditorText("string1\nstring2\nline3\n")
   ------------------------------------------------------------------------------
@@ -839,7 +840,7 @@ end
 local function test_bug_20090208 (lib)
   local dt = { bRegExpr=true, sReplacePat="\n$0" }
   dt.sSearchPat = "\\w+"
-  SetEditorText(("my table\r"):rep(5))
+  SetEditorText(("my table\n"):rep(5))
   editor.Select("BTYPE_STREAM",2,1,-1,2)
   RunEditorAction(lib, "replace", dt, 4, 4)
   AssertEditorText("my table\n\nmy \ntable\n\nmy \ntable\nmy table\nmy table\n")
@@ -847,12 +848,12 @@ end
 
 local function test_bug_20100802 (lib)
   local dt = { bRegExpr=true, sReplacePat="", bMultiLine=true }
-  SetEditorText("line1\rline2\r")
+  SetEditorText("line1\nline2\n")
   dt.sSearchPat = "^."
   RunEditorAction(lib, "replace", dt, 2, 2)
   AssertEditorText("ine1\nine2\n")
 
-  SetEditorText("line1\rline2\r")
+  SetEditorText("line1\nline2\n")
   dt.sSearchPat = ".$"
   RunEditorAction(lib, "replace", dt, 2, 2)
   AssertEditorText("line\nline\n")
@@ -861,12 +862,12 @@ end
 local function test_EmptyMatch (lib)
   local dt = { bRegExpr=true, sSearchPat=".*?", sReplacePat="-" }
   dt.sSearchPat = ".*?"
-  SetEditorText(("line1\rline2\r"))
+  SetEditorText(("line1\nline2\n"))
   RunEditorAction(lib, "replace", dt, 13, 13)
   AssertEditorText("-l-i-n-e-1-\n-l-i-n-e-2-\n-")
 
   dt.sSearchPat, dt.sReplacePat = ".*", "1. $0"
-  SetEditorText(("line1\rline2\r"))
+  SetEditorText(("line1\nline2\n"))
   RunEditorAction(lib, "replace", dt, 3, 3)
   AssertEditorText("1. line1\n1. line2\n1. ")
 end
@@ -910,7 +911,7 @@ local function RemoveTree(dir)
         assert(win.DeleteFile(fullpath))
       end
     end,
-    "FRS_RECUR")
+    0) -- don't use flag FRS_RECUR here, it won't work
   assert(win.RemoveDir(dir))
 end
 
@@ -1066,7 +1067,7 @@ local function test_replace (lib)
   local function MyTest (dt, common_ref)
     for _,f in ipairs(files) do
       local ref = common_ref or (f:gsub(dt.sSearchPat,refReplacePat).."\n"):rep(4)
-      PrAssert(ref == ReadFile(TestDir.."\\"..f))
+      PrAssert(ref == ReadFile(TestDir.."/"..f))
     end
   end
 
@@ -1110,7 +1111,7 @@ local function test_replace (lib)
     lfsearch.ReplaceFromPanel(dt)
     for _,f in ipairs(files) do
       local ref = (f.."\n"):rep(4)
-      PrAssert(ref == ReadFile(TestDir.."\\"..f))
+      PrAssert(ref == ReadFile(TestDir.."/"..f))
     end
   end
 
@@ -1125,11 +1126,11 @@ local function test_replace (lib)
 end
 
 local function test_dir_filter()
-  local root_dir = TestDir.."\\dir_filter"
-  CreateTree(root_dir..[[\dir1\subdir1]])
-  CreateTree(root_dir..[[\dir1\subdir2]])
-  CreateTree(root_dir..[[\dir2\subdir1]])
-  CreateTree(root_dir..[[\dir2\subdir2]])
+  local root_dir = TestDir.."/dir_filter"
+  CreateTree(root_dir..[[/dir1/subdir1]])
+  CreateTree(root_dir..[[/dir1/subdir2]])
+  CreateTree(root_dir..[[/dir2/subdir1]])
+  CreateTree(root_dir..[[/dir2/subdir2]])
   far.RecursiveSearch(TestDir, "*", function(item, fullpath)
     if item.FileAttributes:find"d" then
       AddFile(fullpath, "file1.txt")
@@ -1177,9 +1178,9 @@ function selftest.test_panels_search_replace (lib_list)
   test_masks()
   for _,lib in ipairs(lib_list) do
     test_search(lib)
-    --### test_replace(lib)
+    test_replace(lib)
   end
-  --### test_dir_filter()
+  test_dir_filter()
   panel.SetPanelDirectory(1, CurDir)
   RemoveTree()
 end
@@ -1195,7 +1196,7 @@ function selftest.test_all()
     selftest.test_editor_multiline_replace(lib)
   end
   selftest.test_panels_search_replace(lib_list)
-  actl.RedrawAll()
+  far.AdvControl("ACTL_REDRAWALL")
 end
 
 -- use as a script (rather than a module)

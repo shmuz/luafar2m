@@ -827,31 +827,28 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
        Pos.btnCount   and param1 == Pos.btnCount    or
        Pos.btnShowAll and param1 == Pos.btnShowAll
     then
-      local out = self.Dlg:GetDialogState(hDlg)
-      for k,v in pairs(out) do Data[k] = v; end
-      ------------------------------------------------------------------------
       if bInEditor then
-        if Data.sSearchPat == "" then
+        if hDlg:GetText(Pos.sSearchPat) == "" then
           ErrorMsg(M.MSearchFieldEmpty)
+          GotoEditField(hDlg, Pos.sSearchPat)
           return KEEP_DIALOG_OPEN
         end
-        Data.sScope  = hDlg:GetCheck(Pos.rScopeGlobal)  and "global" or "block"
-        Data.sOrigin = hDlg:GetCheck(Pos.rOriginCursor) and "cursor" or "scope"
       end
-      ------------------------------------------------------------------------
-      local lib = self:GetLibName(hDlg)
-      local ok, err = pcall(GetRegexLib, lib)
-      if not ok then
-        (export.OnError or ErrorMsg)(err)
+      local tmpdata, key = {}
+      for k,v in pairs(Data) do tmpdata[k]=v end
+      self:SaveDataDyn(hDlg, tmpdata)
+      local bSkip = Pos.sSkipPat and tmpdata.sSkipPat ~= ""
+      self.close_params, key = ProcessDialogData(tmpdata, bReplace, bInEditor, Pos.bMultiPatterns, bSkip)
+      if self.close_params then
+        for k,v in pairs(tmpdata) do Data[k]=v end
+        hDlg:AddHistory(Pos.sSearchPat, Data.sSearchPat)
+        if Pos.sReplacePat then hDlg:AddHistory(Pos.sReplacePat, Data.sReplacePat) end
+        if Pos.sSkipPat    then hDlg:AddHistory(Pos.sSkipPat,    Data.sSkipPat)    end
+      else
+        if key and Pos[key] then GotoEditField(hDlg, Pos[key]) end
         return KEEP_DIALOG_OPEN
       end
-      Data.sRegexLib = lib
-      ------------------------------------------------------------------------
-      local bSkip = out.sSkipPat and out.sSkipPat ~= ""
-      self.close_params = ProcessDialogData(Data, bReplace, bInEditor, out.bMultiPatterns, bSkip)
-      if not self.close_params then
-        return KEEP_DIALOG_OPEN
-      end
+
     end
   end
 end
