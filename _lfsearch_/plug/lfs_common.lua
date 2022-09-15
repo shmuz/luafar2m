@@ -642,7 +642,7 @@ function SRFrame:InsertInDialog (aPanelsDialog, aOp)
   insert(Items, { tp="chbox"; name="bRegExpr";                         text=M.MDlgRegExpr;  })
   insert(Items, { tp="text";                         y1=""; x1=md;     text=M.MDlgRegexLib; })
   local x1 = md + M.MDlgRegexLib:gsub("&",""):len() + 1;
-  insert(Items, { tp="combobox"; name="cmbRegexLib"; y1=""; x1=x1; width=14; dropdownlist=1; noauto=1;
+  insert(Items, { tp="combobox"; name="cmbRegexLib"; y1=""; x1=x1; width=14; dropdownlist=1; noload=1;
            list = { {Text="Far regex"}, {Text="Oniguruma"}, {Text="PCRE"} };  })
   ------------------------------------------------------------------------------
   insert(Items, { tp="chbox"; name="bCaseSens";                        text=M.MDlgCaseSens; })
@@ -744,7 +744,7 @@ function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
       hDlg:Enable(Pos.rScopeBlock, false)
     else
       local bScopeBlock
-      local bForceBlock = _Plugin.History["config"]..bForceScopeToBlock
+      local bForceBlock = _Plugin.History["config"].bForceScopeToBlock
       if bScript or not bForceBlock then
         bScopeBlock = (Data.sScope == "block")
       else
@@ -770,20 +770,25 @@ end
 
 function SRFrame:SaveDataDyn (hDlg, Data)
   local Pos = self.Pos
+  local state = self.Dlg:GetDialogState(hDlg)
+  ------------------------------------------------------------------------
+  for k,v in pairs(state) do Data[k]=v end
   ------------------------------------------------------------------------
   if self.bInEditor then
-    Data.sScope  = hDlg:GetCheck(Pos.rScopeGlobal) and "global" or "block"
-    Data.sOrigin = hDlg:GetCheck(Pos.rOriginCursor) and "cursor" or "scope"
+    Data.sScope = state.rScopeGlobal and "global" or "block"
+    Data.sOrigin = state.rOriginCursor and "cursor" or "scope"
 
     if not self.bScriptCall then
       local key = Data.sScope == "global" and "sOriginInGlobal" or "sOriginInBlock"
       Data[key] = Data.sOrigin -- to be passed to execution
     end
   else
-    Data.sSearchArea = IndexToSearchArea(hDlg:ListGetCurPos(Pos.cmbSearchArea).SelectPos)
+    Data.sSearchArea = IndexToSearchArea(state.cmbSearchArea)
   end
   ------------------------------------------------------------------------
-  Data.sRegexLib = self.Libs[ hDlg:ListGetCurPos(Pos.cmbRegexLib).SelectPos ]
+  Data.sRegexLib = self.Libs[ state.cmbRegexLib ]
+  --far.Show(state.cmbRegexLib, Data.sRegexLib)
+  require "far2.lua_explorer" (state, "state")
 end
 
 function SRFrame:GetLibName (hDlg)

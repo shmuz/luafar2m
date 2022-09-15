@@ -1,8 +1,8 @@
+-- lfsearch.lua
 -- luacheck: globals lfsearch _Plugin
 
 local F = far.Flags
 local MenuFlags = bit64.bor(F.FMENU_WRAPMODE, F.FMENU_AUTOHIGHLIGHT)
-local ReqLuafarVersion = "2.9"
 _G.lfsearch = {}
 
 local RegPath       = "LuaFAR\\LF Search\\"
@@ -25,34 +25,29 @@ local function NormDataOnFirstRun()
   data.bUseDirFilter      = false
   data.bUseFileFilter     = false
   data.sSearchArea        = "FromCurrFolder"
-  --------------------------------
-  --data = _Plugin.History["panels"] or {}       --TODO
-  --data.sSearchArea        = "FromCurrFolder"   --TODO
 end
 
 
 local function FirstRunActions()
-  local Sett  = require "far2.settings"
-  local hist = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
-  local config = Sett.field(hist, "config")
-  Sett.field(hist, "main")
-  Sett.field(hist, "menu")
-  Sett.field(hist, "presets")
-  Sett.field(hist, "rename")
-  Sett.field(hist, "tmppanel")
-  Sett.field(hist, "panels.menu")
+  local Sett = require "far2.settings"
+  local history = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
+  for _,key in ipairs {"main","menu","presets","rename","tmppanel","panels.menu"} do
+    Sett.field(history, key)
+   end
 
-  config.EditorHighlightColor    = config.EditorHighlightColor    or 0xCF
-  config.GrepLineNumMatchColor   = config.GrepLineNumMatchColor   or 0xA0
-  config.GrepLineNumContextColor = config.GrepLineNumContextColor or 0x80
+  local cfg = Sett.field(history, "config")
+  local s
+  s = "EditorHighlightColor";    cfg[s] = cfg[s] or 0xCF
+  s = "GrepLineNumMatchColor";   cfg[s] = cfg[s] or 0xA0
+  s = "GrepLineNumContextColor"; cfg[s] = cfg[s] or 0x80
 
   _Plugin = {
-    DialogHistoryPath = "LuaFAR Search\\";
-    ModuleDir = far.PluginStartupInfo().ModuleDir;
-    OriginalRequire = require;
-    History = hist;
-    Repeat = {};
-    RegPath = RegPath;
+    DialogHistoryPath = "LuaFAR Search\\",
+    OriginalRequire = require,
+    History = history,
+    Repeat = {},
+    FileList = nil,
+    RegPath = RegPath,
   }
   NormDataOnFirstRun()
 end
@@ -63,19 +58,17 @@ if FirstRun then FirstRunActions() end
 
 
 local libUtils   = require "far2.utils"
-local Sett       = require "far2.settings"
+local Common     = require "lfs_common"
 local EditMain   = require "lfs_editmain"
 local Editors    = require "lfs_editors"
 local M          = require "lfs_message"
 local MReplace   = require "lfs_mreplace"
 local Panels     = require "lfs_panels"
 local Rename     = require "lfs_rename"
-local _          = require "lfs_common"
-local _          = require "lfs_editengine"
+local Sett       = require "far2.settings"
 
-local History      = _Plugin.History
-local ModuleDir    = _Plugin.ModuleDir
-local EditorAction = EditMain.EditorAction
+local History = _Plugin.History
+local ModuleDir = far.PluginStartupInfo().ModuleDir
 
 
 local function SaveSettings()
@@ -103,26 +96,54 @@ local function ForcedRequire (name)
 end
 
 
-local function MakeMenuItems (aUserMenuFile)
+local function OpenFromEditor()
+  local hMenu = History["menu"]
   local items = {
-    {text=M.MMenuFind,             action="search";   save=true; },
-    {text=M.MMenuReplace,          action="replace";  save=true; },
-    {text=M.MMenuRepeat,           action="repeat";              },
-    {text=M.MMenuRepeatRev,        action="repeat_rev";          },
-    {text=M.MMenuMultilineReplace, action="mreplace"; save=true; },
-    {text=M.MMenuToggleHighlight,  action="togglehighlight";     },
-    {text=M.MMenuConfig,           action="config";              },
+    { text=M.MMenuFind,             action="search",         save=true  },
+    { text=M.MMenuReplace,          action="replace",        save=true  },
+    { text=M.MMenuRepeat,           action="repeat",         save=false },
+    { text=M.MMenuRepeatRev,        action="repeat_rev",     save=false },
+    { text=M.MMenuFindWord,         action="searchword",     save=false },
+    { text=M.MMenuFindWordRev,      action="searchword_rev", save=false },
+    { text=M.MMenuMultilineReplace, action="mreplace",       save=true  },
+    { text=M.MMenuToggleHighlight,  action="togglehighlight",save=false },
+    { text=M.MMenuConfig,           action="config",         save=true  },
   }
   for i,v in ipairs(items) do
     v.text = "&"..i..". "..v.text
   end
+  local aUserMenuFile = ModuleDir.."_usermenu.lua"
   local Info = win.GetFileInfo(aUserMenuFile)
   if Info and not Info.FileAttributes:find("d") then
     local f = assert(loadfile(aUserMenuFile))
     local env = setmetatable( {AddToMenu=MakeAddToMenu(items)}, {__index=_G} )
     setfenv(f, env)()
   end
-  return items
+  local ret, pos = far.Menu( {
+    Flags = {FMENU_WRAPMODE=1, FMENU_AUTOHIGHLIGHT=1},
+    Title = M.MMenuTitle,
+    HelpTopic = "Contents",
+    SelectIndex = hMenu.position,
+  }, items)
+  if ret then
+    hMenu.position = pos
+    if ret.action then
+      local data = History["main"]
+      data.fUserChoiceFunc = nil
+      if ret.action == "togglehighlight" then
+        Editors.ToggleHighlight()
+      elseif ret.action == "mreplace" then
+        MReplace.ReplaceWithDialog(data, true)
+      else
+        EditMain.EditorAction (ret.action, data, false)
+      end
+    elseif ret.filename then
+      assert(loadfile(ret.filename))(ret.param1, ret.param2)
+    end
+    if ret.save then
+      SaveSettings()
+    end
+  end
 end
 
 
@@ -145,8 +166,8 @@ end
 
 
 local function OpenFromPanels (userItems)
-  local hMain = _Plugin.History["main"]
-  local hMenu = _Plugin.History.panels.menu
+  local hMain = History["main"]
+  local hMenu = History.panels.menu
 
   local items = {
     {text=M.MMenuFind,     action="find"},
@@ -174,7 +195,7 @@ local function OpenFromPanels (userItems)
     elseif item.action == "rename" then
       Rename.main()
     elseif item.action == "tmppanel" then
-      return Panels.CreateTmpPanel(_Plugin.FileList or {}, _Plugin.History["tmppanel"])
+      return Panels.CreateTmpPanel(_Plugin.FileList or {}, History["tmppanel"])
     end
   --### else
   --###   libUtils.RunUserItem(item, item.arg)
@@ -193,9 +214,9 @@ local function OpenFromMacro (args)
     if Where=="editor" then
       if area == F.MACROAREA_EDITOR then
         if Cmd=="search" or Cmd=="searchword" or Cmd=="searchword_rev" or Cmd=="replace" or Cmd=="config" then
-          return EditorAction(Cmd, data, false) and true
+          return EditMain.EditorAction(Cmd, data, false) and true
         elseif Cmd=="repeat" or Cmd=="repeat_rev" then
-          return EditorAction(Cmd, data, false) and false
+          return EditMain.EditorAction(Cmd, data, false) and false
         elseif Cmd=="mreplace" then
           return MReplace.ReplaceWithDialog(data, true) and true
         end
@@ -215,7 +236,7 @@ local function OpenFromMacro (args)
         elseif Cmd == "rename" then
           Rename.main()
         elseif Cmd == "panel" then
-          local pan = Panels.CreateTmpPanel(_Plugin.FileList or {}, _Plugin.History["tmppanel"])
+          local pan = Panels.CreateTmpPanel(_Plugin.FileList or {}, History["tmppanel"])
           return { [1]=pan; type="panel" }
         end
       end
@@ -230,10 +251,6 @@ export.ProcessEditorEvent = Editors.ProcessEditorEvent
 
 
 function export.OpenPlugin (aFrom, aItem)
-  if not libUtils.CheckLuafarVersion(ReqLuafarVersion, M.MMenuTitle) then
-    return
-  end
-
   if aFrom == F.OPEN_FROMMACRO then
     local val = OpenFromMacro(aItem)
     if val then
@@ -243,33 +260,7 @@ function export.OpenPlugin (aFrom, aItem)
   end
 
   if aFrom == F.OPEN_EDITOR then
-    local hMenu = History["menu"]
-    local items = MakeMenuItems(ModuleDir.."_usermenu.lua")
-    local ret, pos = far.Menu( {
-      Flags = {FMENU_WRAPMODE=1, FMENU_AUTOHIGHLIGHT=1},
-      Title = M.MMenuTitle,
-      HelpTopic = "Contents",
-      SelectIndex = hMenu.position,
-    }, items)
-    if ret then
-      hMenu.position = pos
-      if ret.action then
-        local data = History["main"]
-        data.fUserChoiceFunc = nil
-        if ret.action == "togglehighlight" then
-          Editors.ToggleHighlight()
-        elseif ret.action == "mreplace" then
-          MReplace.ReplaceWithDialog(data, true)
-        else
-          EditorAction (ret.action, data, false)
-        end
-      elseif ret.filename then
-        assert(loadfile(ret.filename))(ret.param1, ret.param2)
-      end
-      if ret.save then
-        SaveSettings()
-      end
-    end
+    OpenFromEditor() 
 
   elseif aFrom == F.OPEN_COMMANDLINE then
     local _, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
@@ -300,7 +291,7 @@ function lfsearch.EditorAction (aOp, aData, aSaveData)
   local newdata = {}; for k,v in pairs(aData) do newdata[k] = v end
   local nFound, nReps = EditMain.EditorAction(aOp, newdata, true)
   if aSaveData and nFound then
-    _Plugin.History.main = newdata
+    History.main = newdata
   end
   return nFound, nReps
 end
