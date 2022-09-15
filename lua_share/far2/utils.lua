@@ -114,7 +114,6 @@ end
 local function LoadName (str)
   local f = LoadEmbeddedScript(str)
   if f then return f end
-  str = str:gsub("[.]", "/")
   for part in package.path:gmatch("[^;]+") do
     local name = part:gsub("%?", str)
     local attr = win.GetFileAttr(name)

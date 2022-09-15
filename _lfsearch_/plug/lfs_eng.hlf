@@ -1312,6 +1312,39 @@ Each line in the list contains an editor line where the search succeeded.
 
  ~Contents~@Contents@
 
+@Configuration
+$ #Configuration#
+ #[x] Use Far history#
+ Which history to use in "Search for" and "Replace with" fields.
+Either Far history or this plugin's separate history can be used.
+
+ #Log file name#
+ Specify name of the log file, created by the ~Rename~@Rename@ utility.
+The name can contain a date-time template #\D{...}# - see its description
+in the ~Syntax of Replace pattern~@SyntaxReplace@ section.
+
+ #[x] Process selected text if it exists#
+ On invoking editor search or replace dialog, automatically set #Scope#
+to #Selected text# if the editor contains selection.
+
+ #[x] Select found text#
+ Select found text in the editor.
+
+ #[x] Show operation time#
+ Show time taken by the operation
+
+ #Pick search string from:#
+ This setting determines how the #Search# field is initialized when the
+Search or Replace dialog is opened. There are 3 options:
+    #(•) Editor#        Word above cursor.
+    #( ) History#       Search string taken from Far dialog history.
+    #( ) Don't pick#    Search field is left empty.
+
+ #Highlight Color#
+ Select a highlight color for using with search option #Highlight All#.
+
+ ~Contents~@Contents@
+
 @Presets
 $ #Presets#
 

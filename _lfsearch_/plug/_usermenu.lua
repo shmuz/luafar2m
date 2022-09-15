@@ -1,2 +1,2 @@
-AddToMenu (":sep:")
-AddToMenu ("=== Self-test ===", "scripts/test_lfsearch.lua", "run")
+AddToMenu ("ep", ":sep:")
+AddToMenu ("ep", "=== Self-test ===", nil, "scripts/test_lfsearch", "run")

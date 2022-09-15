@@ -96,7 +96,7 @@ local function ForcedRequire (name)
 end
 
 
-local function OpenFromEditor()
+local function OpenFromEditor (userItems)
   local hMenu = History["menu"]
   local items = {
     { text=M.MMenuFind,             action="search",         save=true  },
@@ -109,40 +109,34 @@ local function OpenFromEditor()
     { text=M.MMenuToggleHighlight,  action="togglehighlight",save=false },
     { text=M.MMenuConfig,           action="config",         save=true  },
   }
-  for i,v in ipairs(items) do
-    v.text = "&"..i..". "..v.text
-  end
-  local aUserMenuFile = ModuleDir.."_usermenu.lua"
-  local Info = win.GetFileInfo(aUserMenuFile)
-  if Info and not Info.FileAttributes:find("d") then
-    local f = assert(loadfile(aUserMenuFile))
-    local env = setmetatable( {AddToMenu=MakeAddToMenu(items)}, {__index=_G} )
-    setfenv(f, env)()
-  end
-  local ret, pos = far.Menu( {
-    Flags = {FMENU_WRAPMODE=1, FMENU_AUTOHIGHLIGHT=1},
-    Title = M.MMenuTitle,
-    HelpTopic = "Contents",
-    SelectIndex = hMenu.position,
-  }, items)
-  if ret then
-    hMenu.position = pos
-    if ret.action then
-      local data = History["main"]
-      data.fUserChoiceFunc = nil
-      if ret.action == "togglehighlight" then
-        Editors.ToggleHighlight()
-      elseif ret.action == "mreplace" then
-        MReplace.ReplaceWithDialog(data, true)
-      else
-        EditMain.EditorAction (ret.action, data, false)
-      end
-    elseif ret.filename then
-      assert(loadfile(ret.filename))(ret.param1, ret.param2)
+  for k,v in ipairs(items) do v.text = "&"..k..". "..v.text end
+
+  local nOwnItems = #items
+  libUtils.AddMenuItems(items, userItems, M)
+  local item, pos = far.Menu(
+    { Title=M.MMenuTitle, HelpTopic="EditorMenu", SelectIndex=hMenu.position, Flags=MenuFlags}, items)
+  if not item then return end
+  hMenu.position = pos
+
+  if pos <= nOwnItems then
+    local data = History["main"]
+    data.fUserChoiceFunc = nil
+    local ret
+
+    if item.action == "togglehighlight" then
+      Editors.ToggleHighlight()
+    elseif item.action == "mreplace" then
+      ret = MReplace.ReplaceWithDialog(data, true)
+    else
+      ret = EditMain.EditorAction(item.action, data, false)
     end
-    if ret.save then
+
+    if ret and item.save then
       SaveSettings()
     end
+  else
+    libUtils.RunUserItem(item, item.arg)
+    SaveSettings()
   end
 end
 
@@ -179,7 +173,7 @@ local function OpenFromPanels (userItems)
   for k,v in ipairs(items) do v.text=k..". "..v.text end
 
   local nOwnItems = #items
-  --### libUtils.AddMenuItems(items, userItems, M)
+  libUtils.AddMenuItems(items, userItems, M)
   local item, pos = far.Menu(
     { Title=M.MMenuTitle, HelpTopic="OperInPanels", SelectIndex=hMenu.position, Flags=MenuFlags }, items)
   if not item then return end
@@ -197,8 +191,8 @@ local function OpenFromPanels (userItems)
     elseif item.action == "tmppanel" then
       return Panels.CreateTmpPanel(_Plugin.FileList or {}, History["tmppanel"])
     end
-  --### else
-  --###   libUtils.RunUserItem(item, item.arg)
+  else
+    libUtils.RunUserItem(item, item.arg)
   end
 end
 
@@ -251,33 +245,57 @@ export.ProcessEditorEvent = Editors.ProcessEditorEvent
 
 
 function export.OpenPlugin (aFrom, aItem)
-  if aFrom == F.OPEN_FROMMACRO then
+  local userItems, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
+  if     aFrom == F.OPEN_PLUGINSMENU then return OpenFromPanels(userItems.panels)
+  elseif aFrom == F.OPEN_EDITOR      then OpenFromEditor(userItems.editor)
+  elseif aFrom == F.OPEN_COMMANDLINE then return libUtils.OpenCommandLine(aItem, commandTable, nil)
+  elseif aFrom == F.OPEN_FROMMACRO then
     local val = OpenFromMacro(aItem)
     if val then
       SaveSettings()
       return val
     end
   end
-
-  if aFrom == F.OPEN_EDITOR then
-    OpenFromEditor() 
-
-  elseif aFrom == F.OPEN_COMMANDLINE then
-    local _, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
-    return libUtils.OpenCommandLine(aItem, commandTable, nil)
-
-  elseif aFrom == F.OPEN_PLUGINSMENU then
-    return OpenFromPanels(nil)
-  end
 end
 
 
 function export.GetPluginInfo()
   return {
-    Flags = F.PF_EDITOR;
-    PluginMenuStrings = { M.MMenuTitle };
-    CommandPrefix = "lfs";
+    CommandPrefix = "lfs",
+    Flags = F.PF_EDITOR,
+    PluginMenuStrings = { M.MMenuTitle },
+    PluginConfigStrings = { M.MMenuTitle },
   }
+end
+
+
+function export.Configure (Guid) -- luacheck: no unused args
+  local properties = {
+    Flags = MenuFlags,
+    Title = M.MConfigMenuTitle,
+    HelpTopic = "Contents",
+  }
+  local items = {
+    { text=M.MConfigTitleCommon },
+    { text=M.MConfigTitleEditor },
+    { text=M.MConfigTitleTmpPanel },
+  }
+  local userItems = libUtils.LoadUserMenu("_usermenu.lua")
+  libUtils.AddMenuItems(items, userItems.config, M)
+  while true do
+    local item, pos = far.Menu(properties, items)
+    if not item then break end
+    if pos == 1 then
+      Common.ConfigDialog()
+    elseif pos == 2 then
+      Common.EditorConfigDialog()
+    elseif pos == 3 then
+      Panels.ConfigDialog()
+    else
+      libUtils.RunUserItem(item, item.arg)
+    end
+    properties.SelectIndex = pos
+  end
 end
 
 

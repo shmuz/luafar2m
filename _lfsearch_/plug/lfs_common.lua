@@ -787,8 +787,6 @@ function SRFrame:SaveDataDyn (hDlg, Data)
   end
   ------------------------------------------------------------------------
   Data.sRegexLib = self.Libs[ state.cmbRegexLib ]
-  --far.Show(state.cmbRegexLib, Data.sRegexLib)
-  require "far2.lua_explorer" (state, "state")
 end
 
 function SRFrame:GetLibName (hDlg)
@@ -1061,6 +1059,44 @@ local function TransformLogFilePat (aStr)
 end
 
 
+local function ConfigDialog()
+  local HIST_LOG = _Plugin.DialogHistoryPath .. "LogFileName"
+  local X1 = 5 + (M.MRenameLogFileName):len()
+
+  local Items = {
+    guid="6C2BC7AF-8739-499E-BFA2-7E967B0BDDA9";
+    help="Configuration";
+    { tp="dbox";  text=M.MConfigTitleCommon;                            },
+    { tp="chbox"; text=M.MUseFarHistory; name="bUseFarHistory";         },
+    { tp="text";  text=M.MRenameLogFileName; ystep=2;                   },
+    { tp="edit";  hist=HIST_LOG; uselasthistory=1; name="sLogFileName";
+                  text=DefaultLogFileName; y1=""; x1=X1;                },
+    { tp="sep";   ystep=2;                                              },
+    { tp="butt";  centergroup=1; text=M.MOk;     default=1;             },
+    { tp="butt";  centergroup=1; text=M.MCancel; cancel=1;              },
+  }
+  ----------------------------------------------------------------------------
+  local Dlg = sdialog.New(Items)
+
+  function Items.closeaction (hDlg, param1, state)
+    local ok, errmsg = TransformLogFilePat(state.sLogFileName)
+    if not ok then
+      ErrorMsg(errmsg, "Log file name")
+      return KEEP_DIALOG_OPEN
+    end
+  end
+
+  local Data = _Plugin.History["config"]
+  Dlg:LoadData(Data)
+  local state = Dlg:Run()
+  if state then
+    Dlg:SaveData(state, Data)
+    _Plugin.SaveSettings()
+    return true
+  end
+end
+
+
 local function GetReplaceFunction (aReplacePat, is_wide)
   local fSame = function(s) return s end
   local U8 = is_wide and Utf8 or fSame
@@ -1108,6 +1144,7 @@ return {
   EditorConfigDialog  = EditorConfigDialog;
   CheckMask           = CheckMask;
   CheckSearchArea     = CheckSearchArea;
+  ConfigDialog        = ConfigDialog;
   CreateSRFrame       = CreateSRFrame;
   DefaultLogFileName  = DefaultLogFileName;
   DisplaySearchState  = DisplaySearchState;

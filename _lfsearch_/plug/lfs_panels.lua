@@ -1596,4 +1596,5 @@ return {
   GrepFromPanel     = GrepFromPanel;
   InitTmpPanel      = InitTmpPanel;
   CreateTmpPanel    = CreateTmpPanel;
+  ConfigDialog      = ConfigDialog;
 }
