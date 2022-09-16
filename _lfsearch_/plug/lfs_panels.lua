@@ -476,7 +476,7 @@ if aOp == "search" then
   insert(Items, { tp="combobox"; name="cmbCodePage"; list=GetCodePages(aData); dropdownlist=1; noauto=1; })
 end
   insert(Items, { tp="text"; text=M.MDlgSearchArea; })
-  insert(Items, { tp="combobox"; name="cmbSearchArea"; list=GetSearchAreas(aData); x2=W+1; dropdownlist=1; noauto=1; })
+  insert(Items, { tp="combobox"; name="cmbSearchArea"; list=GetSearchAreas(aData); x2=W+1; dropdownlist=1; noload=1; })
 if aOp == "search" then
   insert(Items, { tp="chbox"; name="bSearchFolders";  text=M.MDlgSearchFolders;  ystep=-1; x1=W+5; })
   insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MDlgSearchSymLinks; ystep=1;  x1=W+5; })
@@ -492,9 +492,8 @@ end
   insert(Items, { tp="sep"; })
 
 if aOp == "replace" then
-  local regpath = _Plugin.RegPath
-  local HIST_INITFUNC   = regpath .. "InitFunc"
-  local HIST_FINALFUNC  = regpath .. "FinalFunc"
+  local HIST_INITFUNC   = _Plugin.DialogHistoryPath .. "InitFunc"
+  local HIST_FINALFUNC  = _Plugin.DialogHistoryPath .. "FinalFunc"
   insert(Items, { tp="chbox"; name="bAdvanced";    text=M.MDlgAdvanced; })
   insert(Items, { tp="text";  name="labInitFunc";  text=M.MDlgInitFunc; })
   insert(Items, { tp="edit";  name="sInitFunc";    x2=W+1; hist=HIST_INITFUNC; ext="lua"; })

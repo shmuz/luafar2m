@@ -1,13 +1,11 @@
 -- lfsearch.lua
 -- luacheck: globals lfsearch _Plugin
 
+local SETTINGS_KEY  = "shmuz"
+local SETTINGS_NAME = "plugin_lfsearch"
 local F = far.Flags
 local MenuFlags = bit64.bor(F.FMENU_WRAPMODE, F.FMENU_AUTOHIGHLIGHT)
 _G.lfsearch = {}
-
-local RegPath       = "LuaFAR\\LF Search\\"
-local SETTINGS_KEY  = "shmuz"
-local SETTINGS_NAME = "plugin_lfsearch"
 
 
 -- Set the defaults: prioritize safety and "least surprise".
@@ -31,11 +29,11 @@ end
 local function FirstRunActions()
   local Sett = require "far2.settings"
   local history = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
-  for _,key in ipairs {"main","menu","presets","rename","tmppanel","panels.menu"} do
+  for _,key in ipairs {"config","main","menu","panels.menu","presets","rename","tmppanel"} do
     Sett.field(history, key)
-   end
+  end
 
-  local cfg = Sett.field(history, "config")
+  local cfg = history["config"]
   local s
   s = "EditorHighlightColor";    cfg[s] = cfg[s] or 0xCF
   s = "GrepLineNumMatchColor";   cfg[s] = cfg[s] or 0xA0
@@ -47,7 +45,6 @@ local function FirstRunActions()
     History = history,
     Repeat = {},
     FileList = nil,
-    RegPath = RegPath,
   }
   NormDataOnFirstRun()
 end
@@ -55,6 +52,7 @@ end
 
 local FirstRun = not _Plugin
 if FirstRun then FirstRunActions() end
+local History = _Plugin.History
 
 
 local libUtils   = require "far2.utils"
@@ -67,27 +65,11 @@ local Panels     = require "lfs_panels"
 local Rename     = require "lfs_rename"
 local Sett       = require "far2.settings"
 
-local History = _Plugin.History
-local ModuleDir = far.PluginStartupInfo().ModuleDir
-
 
 local function SaveSettings()
   Sett.msave(SETTINGS_KEY, SETTINGS_NAME, History)
 end
 _Plugin.SaveSettings = SaveSettings
-
-
-local function MakeAddToMenu (Items)
-  return function (aItemText, aFileName, aParam1, aParam2)
-    local SepText = type(aItemText)=="string" and aItemText:match("^:sep:(.*)")
-    if SepText then
-      table.insert(Items, { text=SepText, separator=true })
-    elseif type(aFileName)=="string" then
-      table.insert(Items, { text=tostring(aItemText),
-        filename=ModuleDir..aFileName, param1=aParam1, param2=aParam2 })
-    end
-  end
-end
 
 
 local function ForcedRequire (name)
@@ -109,7 +91,7 @@ local function OpenFromEditor (userItems)
     { text=M.MMenuToggleHighlight,  action="togglehighlight",save=false },
     { text=M.MMenuConfig,           action="config",         save=true  },
   }
-  for k,v in ipairs(items) do v.text = "&"..k..". "..v.text end
+  for k,v in ipairs(items) do v.text=k..". "..v.text end
 
   local nOwnItems = #items
   libUtils.AddMenuItems(items, userItems, M)
@@ -149,7 +131,6 @@ local function GUI_SearchFromPanels (data)
       SaveSettings()
       return panel
     else -- no files were found
-      actl.RedrawAll()
       if bCancel or 1==far.Message(M.MNoFilesFound,M.MMenuTitle,M.MButtonsNewSearch) then
         return GUI_SearchFromPanels(data)
       end
@@ -197,14 +178,17 @@ local function OpenFromPanels (userItems)
 end
 
 
-local function OpenFromMacro (args)
+local function OpenFromMacro (args, commandTable)
   local Op, Where, Cmd = unpack(args)
 
-  if Op=="own" then
+  if Op=="code" or Op=="file" or Op=="command" then
+    return libUtils.OpenMacro(args, commandTable, nil, M.MMenuTitle)
+
+  elseif Op=="own" then
     local area = far.MacroGetArea()
     local data = History["main"]
     data.fUserChoiceFunc = nil
-    ----------------------------------------------------------------------------
+
     if Where=="editor" then
       if area == F.MACROAREA_EDITOR then
         if Cmd=="search" or Cmd=="searchword" or Cmd=="searchword_rev" or Cmd=="replace" or Cmd=="config" then
@@ -215,7 +199,7 @@ local function OpenFromMacro (args)
           return MReplace.ReplaceWithDialog(data, true) and true
         end
       end
-    ----------------------------------------------------------------------------
+
     elseif Where=="panels" then
       if area==F.MACROAREA_SHELL or area==F.MACROAREA_TREEPANEL or
          area==F.MACROAREA_QVIEWPANEL or area==F.MACROAREA_INFOPANEL
@@ -235,7 +219,7 @@ local function OpenFromMacro (args)
         end
       end
     end
-    ----------------------------------------------------------------------------
+
   end
 end
 
@@ -248,9 +232,9 @@ function export.OpenPlugin (aFrom, aItem)
   local userItems, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
   if     aFrom == F.OPEN_PLUGINSMENU then return OpenFromPanels(userItems.panels)
   elseif aFrom == F.OPEN_EDITOR      then OpenFromEditor(userItems.editor)
-  elseif aFrom == F.OPEN_COMMANDLINE then return libUtils.OpenCommandLine(aItem, commandTable, nil)
+  elseif aFrom == F.OPEN_COMMANDLINE then return libUtils.OpenCommandLine(aItem, commandTable, nil, M.MMenuTitle)
   elseif aFrom == F.OPEN_FROMMACRO then
-    local val = OpenFromMacro(aItem)
+    local val = OpenFromMacro(aItem, commandTable)
     if val then
       SaveSettings()
       return val
@@ -309,7 +293,7 @@ function lfsearch.EditorAction (aOp, aData, aSaveData)
   local newdata = {}; for k,v in pairs(aData) do newdata[k] = v end
   local nFound, nReps = EditMain.EditorAction(aOp, newdata, true)
   if aSaveData and nFound then
-    History.main = newdata
+    History["main"] = newdata
   end
   return nFound, nReps
 end

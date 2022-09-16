@@ -7,14 +7,13 @@ local M          = require "lfs_message"
 
 local libDialog  = require "far2.simpledialog"
 local libMessage = require "far2.message"
-local Sett       = require "far2.settings"
 
 local AppName = "LF Rename"
 local RegPath = "LuaFAR\\"..AppName.."\\"
 
 local F = far.Flags
 local KEEP_DIALOG_OPEN = 0
-local HistData = Sett.field(_Plugin.History, "rename")
+local HistData = _Plugin.History["rename"]
 local GsubMB = Common.GsubMB
 local Rex = Common.GetRegexLib("far")
 
@@ -588,7 +587,7 @@ local function DoAction (Params, aDir, aLog)
 end
 
 local function GetLogFileName()
-  local config = Sett.field(_Plugin.History, "config")
+  local config = _Plugin.History["config"]
   local name = config.sLogFileTemplate or Common.DefaultLogFileName
   local tReplace = Common.TransformLogFilePat(name)
   local fReplace = GetReplaceFunction(tReplace)

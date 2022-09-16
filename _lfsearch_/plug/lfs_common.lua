@@ -769,7 +769,6 @@ function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
 end
 
 function SRFrame:SaveDataDyn (hDlg, Data)
-  local Pos = self.Pos
   local state = self.Dlg:GetDialogState(hDlg)
   ------------------------------------------------------------------------
   for k,v in pairs(state) do Data[k]=v end
@@ -1067,7 +1066,6 @@ local function ConfigDialog()
     guid="6C2BC7AF-8739-499E-BFA2-7E967B0BDDA9";
     help="Configuration";
     { tp="dbox";  text=M.MConfigTitleCommon;                            },
-    { tp="chbox"; text=M.MUseFarHistory; name="bUseFarHistory";         },
     { tp="text";  text=M.MRenameLogFileName; ystep=2;                   },
     { tp="edit";  hist=HIST_LOG; uselasthistory=1; name="sLogFileName";
                   text=DefaultLogFileName; y1=""; x1=X1;                },

@@ -330,8 +330,8 @@ local function AddMenuItems (trg, src, msgtable)
   return trg
 end
 
-local function CommandSyntaxMessage (tCommands)
-  local info = export.GetPluginInfo()
+local function CommandSyntaxMessage (tCommands, sTitle)
+  local pluginInfo = export.GetPluginInfo()
   local syn = [[
 Command line syntax:
   %s: [<options>] <command>|-r<filename> [<arguments>]
@@ -342,12 +342,16 @@ Options:
   -l <lib>    load library <lib>
 
 Macro call syntax:
-  CallPlugin(0x%X, <command>)
+  (Id = 0x%08X)
+  Plugin.Call(Id, "code",    <code>     [,<arguments>])
+  Plugin.Call(Id, "file",    <filename> [,<arguments>])
+  Plugin.Call(Id, "command", <command>  [,<arguments>])
+  Plugin.Call(Id, "own",     <command>  [,<arguments>])
 
 Available commands:
 ]]
 
-  syn = syn:format(info.CommandPrefix, far.GetPluginId())
+  syn = syn:format(pluginInfo.CommandPrefix, far.GetPluginId())
   if tCommands and next(tCommands) then
     local arr = {}
     for k in pairs(tCommands) do arr[#arr+1] = k end
@@ -356,7 +360,7 @@ Available commands:
   else
     syn = syn .. "  <no commands available>"
   end
-  far.Message(syn, info.PluginMenuStrings[1], ";Ok", "l")
+  far.Message(syn, sTitle, ";Ok", "l")
 end
 
 -- Split command line into separate arguments.
@@ -446,10 +450,10 @@ local function ExecuteCommandLine (tActions, tCommands, sFrom, fConfig)
   if not ok then export.OnError(res) end
 end
 
-local function OpenCommandLine (sCommandLine, tCommands, fConfig)
+local function OpenCommandLine (sCommandLine, tCommands, fConfig, sTitle)
   local tActions = CompileCommandLine(sCommandLine, tCommands)
   if not tActions[1] then
-    CommandSyntaxMessage(tCommands)
+    CommandSyntaxMessage(tCommands, sTitle)
   elseif tActions.async then
     ---- autocomplete:good; Escape response:bad when timer period < 20;
     far.Timer(30,
@@ -462,12 +466,50 @@ local function OpenCommandLine (sCommandLine, tCommands, fConfig)
   end
 end
 
+local function OpenMacro (Args, CommandTable, fConfig, sTitle)
+  local op = Args[1]
+  if op=="command" then
+    if type(Args[2]) == "string" then
+      local fileobject = CommandTable[Args[2]]
+      if fileobject then
+        local oldConfig = fConfig and fConfig()
+        local map = {
+          [F.MACROAREA_SHELL]  = "panels", [F.MACROAREA_EDITOR] = "editor",
+          [F.MACROAREA_VIEWER] = "viewer", [F.MACROAREA_DIALOG] = "dialog",
+        }
+        local wrapfunc = function()
+          return RunUserItem(fileobject, { From=map[far.MacroGetArea()] }, unpack(Args,3,Args.n))
+        end
+        local retfunc = function (ok, ...)
+          if fConfig then fConfig(oldConfig) end
+          if ok then return ... end
+          export.OnError(...)
+          return true
+        end
+        return retfunc(xpcall(wrapfunc, function(msg) return debug.traceback(msg, 3) end))
+      else
+        CommandSyntaxMessage(CommandTable, sTitle)
+      end
+    end
+  elseif op=="code" or op=="file" then
+    if type(Args[2]) == "string" then
+      local chunk = op=="file" and assert(loadfile((Args[2]:gsub("%%(.-)%%",win.GetEnv))))
+                                or assert(loadstring(Args[2]))
+      local env = setmetatable({}, { __index=_G })
+      setfenv(chunk, env)
+      return chunk(unpack(Args,3,Args.n))
+    end
+  end
+  return false
+end
+
 return {
-  CheckLuafarVersion = CheckLuafarVersion,
-  OnError = OnError,
-  AddMenuItems = AddMenuItems,
-  LoadUserMenu = LoadUserMenu,
-  OpenCommandLine = OpenCommandLine,
-  RunInternalScript = RunInternalScript,
-  RunUserItem = RunUserItem,
+  AddMenuItems       = AddMenuItems;
+  CheckLuafarVersion = CheckLuafarVersion;
+  LoadUserMenu       = LoadUserMenu;
+  OnError            = OnError;
+  OpenCommandLine    = OpenCommandLine;
+  OpenMacro          = OpenMacro;
+  RunInternalScript  = RunInternalScript;
+  RunUserItem        = RunUserItem;
 }

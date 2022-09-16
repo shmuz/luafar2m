@@ -16,8 +16,8 @@ local KEEP_DIALOG_OPEN = 0
 local RegexLibs = {"far", "oniguruma", "pcre"}
 
 local function ReplaceDialog (Data)
-  local HIST_INITFUNC   = _Plugin.RegPath .. "InitFunc"
-  local HIST_FINALFUNC  = _Plugin.RegPath .. "FinalFunc"
+  local HIST_INITFUNC   = _Plugin.DialogHistoryPath .. "InitFunc"
+  local HIST_FINALFUNC  = _Plugin.DialogHistoryPath .. "FinalFunc"
 
   local WID = 38
   local X2 = WID + 1

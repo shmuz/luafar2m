@@ -29,16 +29,15 @@ local function UnlockEditor (Title, EI)
 end
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-local searchGuid  = win.Uuid("0b81c198-3e20-4339-a762-ffcbbc0c549c")
-local replaceGuid = win.Uuid("fe62aeb9-e0a1-4ed3-8614-d146356f86ff")
+local searchGuid  = "0B81C198-3E20-4339-A762-FFCBBC0C549C"
+local replaceGuid = "FE62AEB9-E0A1-4ED3-8614-D146356F86FF"
 
 local function EditorDialog (aData, aReplace, aScriptCall)
   local insert = table.insert
   local sTitle = aReplace and M.MTitleReplace or M.MTitleSearch
-  local regpath = _Plugin.RegPath
-  local HIST_INITFUNC   = regpath .. "InitFunc"
-  local HIST_FINALFUNC  = regpath .. "FinalFunc"
-  local HIST_FILTERFUNC = regpath .. "FilterFunc"
+  local HIST_INITFUNC   = _Plugin.DialogHistoryPath .. "InitFunc"
+  local HIST_FINALFUNC  = _Plugin.DialogHistoryPath .. "FinalFunc"
+  local HIST_FILTERFUNC = _Plugin.DialogHistoryPath .. "FilterFunc"
   ------------------------------------------------------------------------------
   local Items = {
     width = 76;

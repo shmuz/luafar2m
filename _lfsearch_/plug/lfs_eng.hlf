@@ -1,90 +1,130 @@
-.Language=English,English
+﻿.Language=English,English
 .PluginContents=LuaFAR Search
-.Options CtrlStartPosChar=^<wrap>
+.Options CtrlStartPosChar=¦
 
 @Contents
-$ #LuaFAR Search (version 2.4)#
+$ #LuaFAR Search (version 3.45.3)#
 ^#FEATURES#
  * Search and replace in the editor.
- * Search files from the panels.
- * Regular expressions (several libraries to choose from).
+ * Search and replace from the panels.
+ * Regular expressions (4 libraries to choose from).
  * User scripts in Lua language, with access to LuaFAR library,
    the regular expression libraries and to the plugin's API.
  * Plugin menus can be extended with user's items that may include
    "presets", test scripts, etc.
 
-   ~Operation in Editor~@OperInEditor@
-   ~Operation in Panels~@OperInPanels@
-   ~Rename files~@Rename@
+ #Editor#
+   ~Menu~@EditorMenu@
+   ~Search and replace~@OperInEditor@
+   ~Multi-Line Replace~@MReplace@
 
- For details on regular exressions, consult their documentation:
+ #Panels#
+   ~Menu~@PanelMenu@
+   ~Search and Replace~@OperInPanels@
+   ~Grep~@PanelGrep@
+   ~Rename~@Rename@
+   ~Panel~@TmpPanel@
+
+ #Other#
+   ~Configuration~@Configuration@
+   ~Presets~@Presets@
+   ~User Scripts~@UserScripts@
+
+ #Details on regular expression libraries#
    ~Far regular expressions~@:RegExp@
-   ~Lua regular expressions~@LuaStringPatterns@
    ~Oniguruma~@Oniguruma@
    ~PCRE~@PCRE@
+   ~Syntax of Replace pattern~@SyntaxReplace@
 
 ^#LIBRARIES USED BY THE PLUGIN#
- #Oniguruma# : onig.dll (optional)
- #PCRE#      : pcre.dll (optional)
+ #Lrexlib#                    : rex_onig.so, rex_pcre.so (optional)
+ #Oniguruma#                  : onig.so (optional)
+ #PCRE#                       : pcre.so (optional)
 
- In order to be found by the plugin, each of these libraries must be located
-on %PATH%.
+@EditorMenu
+$ #Plugin's menu in the Editor#
+^#Menu items#
+
+ #Find#                               ¦Find text using settings specified in the ~dialog~@OperInEditor@.
+
+ #Replace#                            ¦Replace text using settings specified in the ~dialog~@OperInEditor@.
+
+ #Repeat#                             ¦Repeat the last #Find# or #Replace# operation.
+
+ #Repeat (reverse search)#            ¦Repeat the last #Find# or #Replace# operation, in the opposite direction.
+
+ #Find word under cursor#             ¦Find the word under cursor, case insensitive.
+
+ #Find word under cursor (reverse)#   ¦Find the word under cursor, case insensitive, in the opposite direction.
+
+ #Multi-Line Replace#                 ¦See ~Multi-Line Replace in Editor~@MReplace@
+
+ #Toggle Highlight#                   ¦If the plugin highlighted parts of editor text then that highlighting will be turned on/off.
+
+
+ ~Contents~@Contents@
 
 @OperInEditor
-^#Operation in Editor#
-
+$ #Operation in Editor#
 ^#Dialog settings#
  #Search for#
  The search pattern. If "Reg. Expression" option is checked then it is
 interpreted as a regular expression, otherwise as a literal string.
 
  #[x] Case sensitive#
- Toggles case sensitivity.
-
- #[x] Whole words#
- Search for whole words.
+ Toggle case sensitivity.
 
  #[x] Reg. Expression#
  If checked, then the string to search is treated as a regular expression,
 otherwise as a literal string.
 
+ #Regexp. Library#
+ Select a regular expression library that will perform the search.
+ One library (~Far regex~@:RegExp@) is embedded in Far Manager and is always available.
+ The other libraries (~Oniguruma~@Oniguruma@ and ~PCRE~@PCRE@)
+ need the following files to be present (either on %PATH% or on %FARHOME%):
+
+   Oniguruma  : onig.so
+        PCRE  : pcre.so
+
+ #[x] Whole words#
+ Search for whole words.
+
  #[x] Ignore spaces#
  All literal whitespace in the search pattern is deleted before the search
 begins. Escape the whitespace with #\# if it is an integral part of the
-pattern. (If Lua regex is used, the escaping character is #%#).
-
- #Regexp library#
- Select a regular expression library to be used in search operations.
+pattern.
 
  #Scope# (where the search is conducted):
-       #(•) Global search# - the scope is the whole editor buffer.
-       #(•) Selected text# - the scope is the selected region.
+   #(•) Global search# - the scope is the whole editor buffer.
+   #( ) Selected text# - the scope is the selected region.
 
  #Origin# (where the search begins):
-       #(•) From cursor# - search from cursor to the scope border.
-       #(•) Whole scope# - search between the scope borders.
+   #(•) From cursor# - search from cursor to the scope border.
+   #( ) Whole scope# - search between the scope borders.
+
+ #[x] Wrap around#
+ Wrap search around the scope. #[?]# means: ask the user.
 
  #[x] Reverse search#
  Search in reverse direction (right to left, bottom to top).
 
+ #[x] Highlight All#
+ Highlight all matches in the entire editor.
+
  #Replace with#
- #[x] Function Mode#
+ #[x] Function mode#
  See ~Syntax of Replace pattern~@SyntaxReplace@.
 
- #[x] Delete empty line#
+ #[x] Delete empty lines#
  If some editor line becomes empty as a result of replace operation,
 it will be deleted.
 
- #[x] Reverse Search#
- Search in reverse direction.
+ #[x] Delete non-matched lines#
+ If no match is found in a line then that line will be deleted.
 
- #Library#
- Select a regular expression library that will perform the search.
-Two libraries (#Far regex# and #Lua regex#) are embedded in LuaFAR and thus
-always available. The libraries #Oniguruma# and #PCRE# need additionally
-the following files to be present in the system:
-   Oniguruma : onig.dll (on PATH)
-        PCRE : pcre.dll (on PATH)
+ #[x] Confirm replacement#
+ Ask user before making a replacement.
 
  #[x] Advanced#
  Enable the advanced features: Line Filter, Initial Code and Final Code.
@@ -112,24 +152,16 @@ the following files to be present in the system:
  Lua code that executes after the search process ends. It can be used for
 closing a file that was opened by the "Initial" code.
 
- #Count#
+ #[ Presets ]#
+ A menu for operation with ~presets~@Presets@ is shown.
+
+ #[ Count ]#
  Do search and count all occurrences of the found text.
 
- #Show All#
+ #[ Show All ]#
  Do search and show the list with all lines containing the found text.
 Each line in the list contains an editor line where the search succeeded.
-    *  #Enter#      go to the selected line in the editor.
-    *  #F6#         show different parts of long lines.
-    *  #F7#         show the selected line in a message box.
-    *  #Ctrl-C#     copy the selected line to the clipboard.
-
-^#CONFIGURATION#
- #Pick search string from:#
- This setting determines how the #Search# field is initialized when the
-Search or Replace dialog is opened. There are 3 options:
-    *  #Editor#            Word above cursor.
-    *  #History#           Search string taken from Far dialog history.
-    *  #Don't pick#        Search field is left empty.
+See ~more details~@EditorShowAll@.
 
 ^#LIMITATIONS#
  The search is done on per-line basis. Thus, if matching text is spread
@@ -140,60 +172,114 @@ across multiple lines, it will not be found.
 
  ~Contents~@Contents@
 
+@EditorShowAll
+$ #"Show All" operation#
+ Do search and show the list with all lines containing the found text.
+Each line in the list contains an editor line where the search succeeded.
+
+    #Enter#            Go to the selected line in the editor.
+    #F6#               Show different parts of long lines.
+    #F7#               Show the selected line in a message box.
+    #F8#               Close the list and reopen the Search Dialog.
+    #Ctrl-C#           Copy the selected line to the clipboard.
+    #Ctrl-Up#, #Ctrl-Down#, #Ctrl-Home#, #Ctrl-End#
+                     Scroll the editor not closing the list.
+    #Ctrl-Num0#        Restore editor position after scrolling.
+
+ ~Contents~@Contents@
+
+@Configuration
+$ #Configuration#
+ #Log file name#
+ Specify name of the log file, created by the ~Rename~@Rename@ utility.
+The name can contain a date-time template #\D{...}# - see its description
+in the ~Syntax of Replace pattern~@SyntaxReplace@ section.
+
+ #[x] Process selected text if it exists#
+ On invoking editor search or replace dialog, automatically set #Scope#
+to #Selected text# if the editor contains selection.
+
+ #[x] Select found text#
+ Select found text in the editor.
+
+ #[x] Show operation time#
+ Show time taken by the operation
+
+ #Pick search string from:#
+ This setting determines how the #Search# field is initialized when the
+Search or Replace dialog is opened. There are 3 options:
+    #(•) Editor#        Word above cursor.
+    #( ) History#       Search string taken from Far dialog history.
+    #( ) Don't pick#    Search field is left empty.
+
+ #Highlight Color#
+ Select a highlight color for using with search option #Highlight All#.
+
+ ~Contents~@Contents@
+
+@Presets
+$ #Presets#
+
+ Pressing the #Presets# button from the Search or Replace dialog invokes a menu
+for handling presets: create, load, rename and delete them.
+
+ #Del#    - delete a preset
+ #Enter#  - load the selected preset into the dialog
+ #Esc#    - close the menu and return to the dialog
+ #F2#     - save the loaded preset under the same name
+ #F6#     - rename a preset
+ #Ins#    - save the current dialog settings as a new preset
+ #Ctrl+O# - import presets from a file
+ #Ctrl+S# - export presets to a file
+
+ ~Contents~@Contents@
+
 @UserScripts
-^#USER SCRIPTS#
-
- The plugin can execute Lua scripts added by the user. Create a file
-named #_usermenu.lua# in the plugin directory and place there calls
-`AddToMenu' passing in the name of the script.
-
-^#AddToMenu (#Text, File [, Param1 [, Param2]]#)#
-
- #Text# - text that should appear in the menu. To add a separator, specify
-a string beginning with #":sep:"# following by optional text, e.g.
-":sep:Block commands".
-
- #File# - name of a Lua script file to run upon this item activation
-(its path is relative to the plugin's directory).
-
- #Param1# (optional) - first value that will be passed to user script.
-It can be any Lua type.
-
- #Param2# (optional) - second value that will be passed to user script.
-It can be any Lua type.
-
-^#Examples:#
-      AddToMenu ("Count words", "countw.lua")
-      AddToMenu ("Count letters", "countl.lua")
-      AddToMenu ("Search", "search.lua", "search")
+$ #User Scripts#
+ The plugin can execute Lua scripts added by the user. For details,
+ see the chapter "User's utilities" of the plugin #LuaFAR for Editor#
+ manual.
 
 ^#WHAT'S AVAILABLE TO USER SCRIPTS#
 
-  Libraries (no need to call `require'):
+  #LIBRARIES:#
     *  The standard Lua libraries
-    *  LuaFAR (namespaces #far#, #bit# and #unicode#)
-    *  history (namespace #history#, same as in LuaFAR for Editor)
-    *  dialog  (namespace #far2.simpledialog#, same as in LuaFAR for Editor)
+    *  LuaFAR libraries
+    *  #dialog#  (require "far2.dialog" , same as in LuaFAR for Editor)
+    *  #history# (require "far2.history", same as in LuaFAR for Editor)
+    *  #message# (require "far2.message", same as in LuaFAR for Editor)
 
-  Functions:
-    *  #lfsearch.EditorAction# (the main plugin function; see description below)
+  #FUNCTIONS:#
+   ~lfsearch.EditorAction~@FuncEditorAction@
+   ~lfsearch.MReplaceEditorAction~@FuncMReplaceEditorAction@
+   ~lfsearch.SearchFromPanel~@FuncSearchFromPanel@
+   ~lfsearch.ReplaceFromPanel~@FuncReplaceFromPanel@
+   ~lfsearch.SetDebugMode~@FuncSetDebugMode@
 
-^#nFound, nReps = lfsearch.EditorAction (Operation, Data)#
+
+ ~Contents~@Contents@
+
+@FuncEditorAction
+$ #lfsearch.EditorAction#
+ #nFound, nReps = lfsearch.EditorAction (Operation, Data, SaveData)#
 
  #Operation# - one of predefined strings.
  The following operations correspond to the plugin menu items:
 
-       "search"       :  search operation, with its dialog
-       "replace"      :  replace operation, with its dialog
-       "repeat"       :  repeat last operation (Data.sLastOp)
-       "config"       :  call Configuration Dialog
+       "search"         :  search operation, with its dialog
+       "replace"        :  replace operation, with its dialog
+       "repeat"         :  repeat last operation
+       "repeat_rev"     :  repeat last operation (reverse direction)
+       "searchword"     :  search a word under cursor
+       "searchword_rev" :  search a word under cursor (reverse)
+       "config"         :  call Configuration Dialog
 
  The following operations do not display dialogs and the final message:
 
-       "test:search"  :  search operation
-       "test:count"   :  count matches in the text
-       "test:showall" :  show all matches
-       "test:replace" :  replace operation
+       "test:search"    :  search operation
+       "test:count"     :  count matches in the text
+       "test:showall"   :  show all matches
+       "test:replace"   :  replace operation
 
  #Data# - a table with predefined fields. If a field is not present,
         its default value is used. The default value for booleans is
@@ -204,70 +290,256 @@ It can be any Lua type.
        "sSearchPat"      : search pattern
        "sReplacePat"     : replace pattern
        "sRegexLib"       : regular expression library, either of:
-                           "far" (default), "lua", "oniguruma" or "pcre"
+                           "far" (default), "oniguruma" or "pcre"
        "sScope"          : search scope: "global" (default) or "block"
        "sOrigin"         : search origin: "cursor" (default) or "scope"
+       "bWrapAround"     : wrap search around the scope;
+                           it is taken into account only if
+                           sScope=="global" and sOrigin=="cursor"
 
        "bCaseSens"       : case sensitive search
        "bRegExpr"        : regular expression mode
        "bWholeWords"     : whole word search
        "bExtended"       : ignore whitespace in regexp
        "bSearchBack"     : search in reverse direction
+       "bHighlight"      : highlight all matches in the editor
 
        "bRepIsFunc"      : Function mode
        "bDelEmptyLine"   : delete empty line after replacement
        "bDelNonMatchLine": delete line with no matches found
-       "bConfirmReplace" : call fUserChoiceFunc to confirm replacement
+       "bConfirmReplace" : call fUserChoiceFunc to confirm
+                           replacement
 
-       "bFilterFunc"     : Line filter is on
+       "bAdvanced"       : enable Line filter, Initial function
+                           and Final function
+
        "sFilterFunc"     : Line filter function
 
        "sInitFunc"       : Initial function
        "sFinalFunc"      : Final function
 
-       "sLastOp"         : last operation
-
        "fUserChoiceFunc" :
          A function called by the program when a match is found
-         and a user decision is needed.
+         and a user decision is needed. The function is called only
+         when bConfirmReplace is true.
          The parameters are (all are strings): sTitle, sFound, sReps.
          The valid return value is either of:
              "yes", "all", "no", "cancel".
          If the function is not supplied, the default user choice
          dialog is displayed.
 
+ #SaveData# - put #Data# in the Search/Replace dialog histories.
+
+ #nFound, nReps# - numbers of matches found and replacements made,
+                 respectively.
+ If the search or replace dialog is invoked and cancelled by the user
+ then the function returns nil.
+
+ ~Contents~@Contents@
+
+@FuncMReplaceEditorAction
+$ #lfsearch.MReplaceEditorAction#
+ #nFound, nReps = lfsearch.MReplaceEditorAction (Operation, Data)#
+
+ #Operation# - one of predefined strings.
+
+       "replace"        :  replace operation
+       "count"          :  count matches in the text
+
+ #Data# - a table with predefined fields. If a field is not present,
+        its default value is used. The default value for booleans is
+        `false'; for strings - an empty string. The value type can be
+        deduced by from the 1-st letter of its name: b=boolean;
+        f=function; n=number; s=string.
+
+       "sSearchPat"      : search pattern
+       "sReplacePat"     : replace pattern
+       "sRegexLib"       : regular expression library, either of:
+                           "far" (default), "oniguruma" or "pcre"
+
+       "bCaseSens"       : case sensitive search
+       "bRegExpr"        : regular expression mode
+       "bWholeWords"     : whole word search
+       "bExtended"       : ignore whitespace in regexp
+
+       "bFileAsLine"     : "." matches any character including "\n"
+       "bMultiLine"      : "^" and "$" match respectively beginning
+                           and end in every line
+
+       "bRepIsFunc"      : Function mode
+
+       "bAdvanced"       : enable Initial function and Final function
+       "sInitFunc"       : Initial function
+       "sFinalFunc"      : Final function
+
  #nFound, nReps# - numbers of matches found and replacements made,
                  respectively.
 
  ~Contents~@Contents@
 
-@OperInPanels
-^#Operation in Panels#
+@FuncSearchFromPanel
+$ #lfsearch.SearchFromPanel
+ #tFound = lfsearch.SearchFromPanel (Data, bWithDialog)#
 
+ #Data# - a table with predefined fields. If a field is not present,
+        its default value is used. The default value for booleans is
+        `false'; for strings - an empty string. The value type can be
+        deduced by from the 1-st letter of its name: b=boolean;
+        f=function; n=number; s=string.
+
+       "sFileMask"       : file mask
+       "sSearchPat"      : search pattern
+       "sRegexLib"       : regular expression library, either of:
+                           "far" (default), "oniguruma" or "pcre"
+
+       "bRegExpr"        : regular expression mode
+       "bCaseSens"       : case sensitive search
+       "bWholeWords"     : whole word search
+       "bMultiPatterns"  : multiple patterns mode
+       "bExtended"       : ignore whitespace in regexp
+       "bFileAsLine"     : file as a line
+       "bInverseSearch"  : inverse search
+       "bSearchFolders"  : search for folders
+       "bSearchSymLinks" : search in symbolic links
+
+       "sSearchArea"     : either of: "FromCurrFolder", "OnlyCurrFolder",
+                           "SelectedItems", "RootFolder", "NonRemovDrives",
+                           "LocalDrives", "PathFolders"
+
+ #bWithDialog# - whether the dialog should be invoked.
+
+ #tFound# - a table (array) with names of the found files.
+
+
+ ~Contents~@Contents@
+
+@FuncReplaceFromPanel
+$ #lfsearch.ReplaceFromPanel
+ #lfsearch.ReplaceFromPanel (Data, bWithDialog)#
+
+ #Data# - a table with predefined fields. If a field is not present,
+        its default value is used. The default value for booleans is
+        `false'; for strings - an empty string. The value type can be
+        deduced by from the 1-st letter of its name: b=boolean;
+        f=function; n=number; s=string.
+
+       "sFileMask"       : file mask
+       "sSearchPat"      : search pattern
+       "sReplacePat"     : replace pattern
+       "sRegexLib"       : regular expression library, either of:
+                           "far" (default), "oniguruma" or "pcre"
+
+       "bRepIsFunc"      : function mode
+       "bMakeBackupCopy" : make backup copy
+       "bConfirmReplace" : confirm replacement
+       "bRegExpr"        : regular expression mode
+       "bCaseSens"       : case sensitive search
+       "bWholeWords"     : whole word search
+       "bExtended"       : ignore whitespace in regexp
+       "bSearchSymLinks" : search in symbolic links
+
+       "sSearchArea"     : either of: "FromCurrFolder", "OnlyCurrFolder",
+                           "SelectedItems", "RootFolder", "NonRemovDrives",
+                           "LocalDrives", "PathFolders"
+
+       "bAdvanced"       : Enable Initial function and Final function
+       "sInitFunc"       : Initial function
+       "sFinalFunc"      : Final function
+
+ #bWithDialog# - whether the dialog should be invoked.
+
+ #returns:# nothing.
+
+
+ ~Contents~@Contents@
+
+@FuncSetDebugMode
+$ #lfsearch.SetDebugMode#
+^#lfsearch.SetDebugMode (On)#
+
+ The function turns debug mode on or off.
+ When debug mode is on:
+ - The main plugin Lua file is reloaded prior to every #export.Open()#
+   call.
+ - Function #require# works without cache.
+
+
+ ~Contents~@Contents@
+
+@PanelMenu
+$ #Plugin's menu in Panels#
+^#Menu items#
+
+ #Find#                         ¦Find text according to ~dialog~@OperInPanels@.
+
+ #Replace#                      ¦Replace text according to ~dialog~@OperInPanels@.
+
+ #Grep#                         ¦Find all text occurrences according to ~dialog~@PanelGrep@ and place results in a file.
+
+ #Rename#                       ¦Rename files and directories according to ~dialog~@Rename@.
+
+ #Panel#                        ¦Open the ~temporary panel~@TmpPanel@ of the plugin.
+
+
+ ~Contents~@Contents@
+
+@OperInPanels
+$ #Search and Replace in Panels#
 ^#Dialog settings#
  #File mask#
- Far-style ~file masks~@:FileMasks@.
+ The syntax is identical to Far-style ~file masks~@:FileMasks@.
 
- #Search for#
- #Case sensitive#
- #Whole words#
- #Reg. Expression#
- #Ignore spaces#
- #Regexp library#
+ #* Search for#
+ #* Replace with#
+ #* Function mode#
+ #* Confirm replacement#
+ #* Case sensitive#
+ #* Whole words#
+ #* Regular Expression#
+ #* Ignore spaces#
+ #* Regexp library#
+ #* Initial code#
+ #* Final code#
  These settings are the same as in ~Operation in Editor~@OperInEditor@.
+
+ #[x] Make backup copy# (only in "Replace" dialog)
+ If a file was modified as a result of the replace operation,
+ the backup of the original file is created.
+
+ #[x] Multiple patterns# (only in "Find" dialog)
+ Several patterns can be specified at once in the "Search for" field.
+   #*# The patterns are separated with spaces.
+   #*# If a pattern contains spaces or begins with either of
+     #+#, #-# or #"# then it should be enclosed in double quotes,
+     and any double quote that is part of the pattern should be
+     doubled.
+   #*# If a pattern MUST match in a file add a prefix #+# to it.
+   #*# If a pattern MUST NOT match in a file add a prefix #-# to it.
+   #*# From all the patterns having no prefix: at least one of them
+     must match in a file.
+   #*# Example:
+       foo bar -foobar +"my school" -123 +456
+
+ #[x] File as a line# (only in "Find" dialog)
+ When this option is active, a dot ("#.#") in the search pattern
+ matches line feeds and carriage returns as any other characters.
+
+ #[x] Inverse search# (only in "Find" dialog)
+ If a text search pattern is specified then only files containing
+ no matches will be listed.
 
  #Encodings# (only in "Find" dialog)
  Choose the code page or pages for searching in the text.
  There are 3 possibilities:
 
-   #*# ^<wrap>Some code page from the list is selected: the search is performed using
+   #*# Some code page from the list is selected: the search is performed using
 only that code page.
 
-   #*# ^<wrap>"Default code pages" is selected.
+   #*# "Default code pages" is selected.
 The search is performed using the predefined set of code pages:
 { OEM, ANSI, 1200, 1201, 65000, 65001 }.
 
-   #*# ^<wrap>"Checked code pages" is selected and some code pages are checked
+   #*# "Checked code pages" is selected and some code pages are checked
 in the list. The search is performed using the checked code pages.
 (A page can be checked in the list by pressing Space or Ins).
 
@@ -289,21 +561,21 @@ in the list. The search is performed using the checked code pages.
  Enable use of file filter.
  Show ~Filters Menu~@:FiltersMenu@.
 
- #Search for folders#
+ #[x] Search for folders# (only in "Find" dialog)
  Specify whether folders should be found or not.
 
- #Search in symbolic links#
+ #[x] Search in symbolic links#
  Specify whether to search in symbolic links or not.
+
+ #[ Configuration ]# (only in "Find" dialog)
+ Envoke ~configuration dialog~@SearchResultsPanel@ for search results panel.
 
  ~Contents~@Contents@
 
 @SearchResultsPanel
-^#Search results panel#
-
- The plugin uses the standard #TmpPanel# plugin for displaying its search
-results. Some settings of the temporary panel are overridden just before
-displaying the panel. After the panel is displayed, the original settings of
-TmpPanel are restored.
+$ #Search results panel#
+ The plugin uses an embedded temporary panel for displaying its search results.
+The settings of the temporary panel can be tuned in the configuration dialog.
 
 ^#Dialog settings#
  #Column types#
@@ -311,114 +583,15 @@ TmpPanel are restored.
  #Status line column types#
  #Status line column widths#
  #Full screen mode#
- Read about these settings in the help file of TmpPanel plugin.
+ Read about these settings in the help file of standard TmpPanel plugin.
 
- ~Contents~@Contents@
+ #Sort mode and order#
+ Specify the sort mode (0...15; 0=default sort mode) then comma then the sort
+order (0=direct order, 1=inverse order).
 
-@LuaStringPatterns
-$ #Lua 5.1 Regular Expressions#
-#Character Class:#
-
- A character class is used to represent a set of characters. The following
-combinations are allowed in describing a character class:
-
-    #x#  (where x is not one of the magic characters ^$()%.[]*+-?)
-       represents the character x itself.
-    #.#  (a dot) represents all characters.
-    #%a# represents all letters.
-    #%c# represents all control characters.
-    #%d# represents all digits.
-    #%l# represents all lowercase letters.
-    #%p# represents all punctuation characters.
-    #%s# represents all space characters.
-    #%u# represents all uppercase letters.
-    #%w# represents all alphanumeric characters.
-    #%x# represents all hexadecimal digits.
-    #%z# represents the character with representation 0.
-    #%x# (where x is any non-alphanumeric character) represents
-       the character x. This is the standard way to escape the magic
-       characters. Any  punctuation character  (even the  non magic)
-       can be preceded by a '%' when used to  represent itself  in a
-       pattern.
-    #[set]# represents the class which is the union of all characters
-       in set. A range of characters can be specified  by separating
-       the end characters of the range  with a  '-'. All  classes %x
-       described above can also be  used as  components in  set. All
-       other characters  in set  represent themselves.  For example,
-       [%w_] (or [_%w]) represents all alphanumeric  characters plus
-       the  underscore,  [0-7]  represents  the  octal  digits,  and
-       [0-7%l%-]  represents  the  octal  digits plus  the lowercase
-       letters plus the '-' character.
-
-       The interaction between  ranges and  classes is  not defined.
-       Therefore, patterns like  [%a-z] or  [a-%%] have  no meaning.
-
-    #[^set]# represents the complement of set, where set is interpreted
-       as above.
-
- For all classes represented by single letters (%a, %c, etc.),
-the corresponding uppercase letter represents the complement of
-the class. For instance, %S represents all non-space characters.
-
- The definitions of letter, space, and other character groups depend on
-the current locale. In particular, the class [a-z] may not be equivalent to %l.
-
-#Pattern Item:#
-
-A pattern item can be
-
-    * a single character class, which  matches any  single character
-      in the class;
-    * a single character class followed by '*',  which matches  0 or
-      more repetitions of characters in the class.  These repetition
-      items  will  always  match  the  longest   possible  sequence;
-
-    * a single character class followed by '+',  which matches  1 or
-      more repetitions of characters in the class.  These repetition
-      items  will  always  match  the  longest   possible  sequence;
-
-    * a single character class followed by '-', which also matches 0
-      or more repetitions of  characters in  the class.  Unlike '*',
-      these repetition items will always match the shortest possible
-      sequence;
-
-    * a single character class followed by '?', which matches 0 or 1
-      occurrence of a character in the class;
-
-    * %n, for n between 1 and 9; such item matches a substring equal
-      to the n-th captured string (see below);
-
-    * %bxy, where x  and y  are two  distinct characters;  such item
-      matches strings that start with x, end with y, and where the x
-      and y are balanced. This means that, if  one reads  the string
-      from left to right, counting +1 for an x and -1  for a  y, the
-      ending  y  is  the  first  y  where the  count reaches  0. For
-      instance,  the  item  %b()  matches expressions  with balanced
-      parentheses.
-
-#Pattern:#
-
- A pattern is a sequence of pattern items. A '^' at the beginning
-of a pattern anchors the match at the beginning of the subject string.
-A '$' at the end of a pattern anchors the match at the end of the subject
-string. At other positions, '^' and '$' have no special meaning and represent
-themselves.
-
-#Captures:#
-
- A pattern can contain sub-patterns enclosed in parentheses; they describe
-captures. When a match succeeds, the substrings of the subject string that
-match captures are stored (captured) for future use. Captures are numbered
-according to their left parentheses. For instance, in the pattern
-"(a*(.)%w(%s*))", the part of the string matching "a*(.)%w(%s*)" is stored
-as the first capture (and therefore has number 1); the character matching
-"." is captured with number 2, and the part matching "%s*" has number 3.
-
- As a special case, the empty capture () captures the current string position
-(a number). For instance, if we apply the pattern "()aa()" on the string
-"flaaap", there will be two captures: 3 and 5.
-
- A pattern cannot contain embedded zeros. Use %z instead.
+ #Preserve contents#
+ Remember the panel contents on closing the panel. When it is opened later
+its contents is restored.
 
  ~Contents~@Contents@
 
@@ -1142,30 +1315,97 @@ pcre(3).
 
  ~Contents~@Contents@
 
-@DirectoryFilter
-$ #Directory filter#
-^#Dialog settings#
+@SyntaxReplace
+$ #Syntax of Replace pattern#
+ If Regular Expression option is checked then:
+    *  #$1#-#$9# and #$A#-#$Z# are used for specifying submatches (groups).
+       #$0# stands for the whole match.
+    *  #${name}# is used for specifying named groups
+       (supported only with Oniguruma and PCRE libraries).
+    *  Literal dollar signs (#$#) and backslashes (#\#) must be escaped
+       with #\#
+    *  Other punctuation marks may or may not be escaped with #\#
 
- #Directory search mask#
- The search of files for inclusion in the list and processing will be done
-only within those directories whose names match the given mask.
- (If this field is left empty then the search will be done in all directories).
+    *  The following escape sequences can be used as they are easier
+       to put into a dialog field than their character equivalents:
+       #\a#        alarm (hex 07)
+       #\e#        escape (hex 1B)
+       #\f#        formfeed (hex 0C)
+       #\n#        linefeed (hex 0A)
+       #\r#        carriage return (hex 0D)
+       #\t#        tab (hex 09)
+       #\xhhhh#    character with hex code #hhhh#
 
-   #[x] Process path#
-   If this option is set then the given mask will be matched against
-   the full directory path otherwise against the directory name only.
+    *  The following escape sequences control text case:
+       #\L#        turn the following text into lower case
+       #\U#        turn the following text into upper case
+       #\E#        end the scope of the last \L or \U
+       #\l#        turn the next character into lower case
+       #\u#        turn the next character into upper case
 
- #Directory exclude mask#
- If a directory matches the given mask then the directory contents (files
-and subdirectories of any nesting depth) will not be included in the list
-and will not be processed.
- (If the given field is left empty then directories will not be excluded).
+       \L and \U elements can be nested. Their scope extends till
+       a matching \E (or till the end of the replace pattern).
 
-   #[x] Process path#
-   If this option is set then the given mask will be matched against
-   the full directory path otherwise against the directory name only.
+    *  The following escape sequences insert numbering:
+       #\R#           insert count: current number of replacements
+       #\R{#offset#}#   as above, but incremented by specified offset,
+                    e.g. \R{20} or \R{-10}
+       #\R{#offset#,#width#}# as above, but inserted with the specified
+                    width (zeros are added at the beginning),
+                    e.g. \R{20,4} or \R{-10,4}
 
- The syntax of masks is identical to Far-style ~file masks~@:FileMasks@.
+    *  The following sequence inserts current date and/or time:
+       #\D{#format#}#   Format should correspond to the syntax
+                    of argument of Lua-function os.date,
+                    e.g. \D{%Y-%m-%d}
+
+    *  The following works only in ~Rename~@Rename@ utility.
+       #\N#           File name, without extension
+       #\X#           File extension (the dot not included)
+
+ If the Function mode option is selected, then the text in this field is
+treated as the body of a Lua function (see below).
+
+ #[x] Function mode#
+ *  The replace pattern is treated as the #body# of a Lua function
+    (so the keyword 'function', parameter list and the keyword 'end'
+    must be omitted). The function is called whenever a match occurs.
+
+ *  The function can use the following preset variables:
+       #T#   - a table containing captured submatches
+          #T[0]#          - whole match
+          #T[1], ...#     - numbered submatches
+          #T[name1], ...# - named submatches
+       #M#   - number of the current match (1-based)
+       #R#   - number of the current replacement (1-based)
+       #LN#  - line number in editor or file (1-based)
+       #rex# - regex library loaded
+
+ *  The function can set and modify global variables and use them
+    during its current and future invocations (within the current
+    search).
+
+ *  Let's assume the function returned two values: #ret1# and #ret2#.
+    These values are processed as follows:
+
+    In all utilities:
+    *  #type(ret1)=="string" or type(ret1)=="number"# :
+       ret1 is used as the substituting text.
+    *  #ret1==nil or ret1==false#  : no replacement is done.
+    *  undocumented type of #ret1# : no replacement is done.
+
+    In per-line replacing utilities from editor and panels:
+    *  #ret1==true#: the line along with end-of-line is deleted.
+         - not relevant for "multi-line replace" and "rename"
+           utilities.
+         - when replacing from panels, deleted is only that part of
+           the line that was yet not placed into the output file.
+
+    In replacing utilities from editor and panels:
+    *  #ret2==true#: immediate termination of the current search and
+                   replace operation.
+         - only in automatic mode (with no user's confirmation).
+         - not relevant for "rename" utility.
 
  ~Contents~@Contents@
 
@@ -1215,150 +1455,6 @@ including \r and \n.
  #[x] Multiline mode#
  If checked then #^# and #$# in regular expressions match correspondingly
 beginnings and ends of every line.
-
- ~Contents~@Contents@
-
-@SyntaxReplace
-$ #Syntax of Replace pattern#
- If Regular Expression option is checked then:
-    *  #$1#-#$9# and #$A#-#$Z# are used for specifying submatches (groups).
-       #$0# stands for the whole match.
-    *  #${name}# is used for specifying named groups
-       (supported only with Oniguruma and PCRE libraries).
-    *  Literal dollar signs (#$#) and backslashes (#\#) must be escaped
-       with #\#
-    *  Other punctuation marks may or may not be escaped with #\#
-
-    *  The following escape sequences can be used as they are easier
-       to put into a dialog field than their character equivalents:
-       #\a#        alarm (hex 07)
-       #\e#        escape (hex 1B)
-       #\f#        formfeed (hex 0C)
-       #\n#        linefeed (hex 0A)
-       #\r#        carriage return (hex 0D)
-       #\t#        tab (hex 09)
-       #\xhhhh#    character with hex code #hhhh#
-
-    *  The following escape sequences control text case:
-       #\L#        turn the following text into lower case
-       #\U#        turn the following text into upper case
-       #\E#        end the scope of the last \L or \U
-       #\l#        turn the next character into lower case
-       #\u#        turn the next character into upper case
-
-       \L and \U elements can be nested. Their scope extends till
-       a matching \E (or till the end of the replace pattern).
-
-    *  The following escape sequences insert numbering:
-       #\R#           insert count: current number of replacements
-       #\R{#offset#}#   as above, but incremented by specified offset,
-                    e.g. \R{20} or \R{-10}
-       #\R{#offset#,#width#}# as above, but inserted with the specified
-                    width (zeros are added at the beginning),
-                    e.g. \R{20,4} or \R{-10,4}
-
-    *  The following sequence inserts current date and/or time:
-       #\D{#format#}#   Format should correspond to the syntax
-                    of argument of Lua-function os.date,
-                    e.g. \D{%Y-%m-%d}
-
- If the Function mode option is selected, then the text in this field is
-treated as the body of a Lua function (see below).
-
- #[x] Function mode#
- *  The replace pattern is treated as the #body# of a Lua function
-    (so the keyword 'function', parameter list and the keyword 'end'
-    must be omitted). The function is called whenever a match occurs.
-
- *  The function can use the following preset variables:
-       #T#   - a table containing captured submatches
-          #T[0]#          - whole match
-          #T[1], ...#     - numbered submatches
-          #T[name1], ...# - named submatches
-       #M#   - number of the current match (1-based)
-       #R#   - number of the current replacement (1-based)
-       #LN#  - line number in editor or file (1-based)
-       #rex# - regex library loaded
-
- *  The function can set and modify global variables and use them
-    during its current and future invocations (within the current
-    search).
-
- *  Let's assume the function returned the value #ret1#.
-    This value is processed as follows:
-
-    *  #type(ret1)=="string" or type(ret1)=="number"# :
-       ret1 is used as the substituting text.
-    *  #ret1==true#: the line along with end-of-line is deleted.
-         - not relevant for "multi-line replace" utility.
-    *  #ret1==nil or ret1==false#  : no replacement is done.
-    *  undocumented type of #ret1# : no replacement is done.
-
- ~Contents~@Contents@
-
-@EditorShowAll
-$ #"Show All" operation#
- Do search and show the list with all lines containing the found text.
-Each line in the list contains an editor line where the search succeeded.
-
-    #Enter#            Go to the selected line in the editor.
-    #F6#               Show different parts of long lines.
-    #F7#               Show the selected line in a message box.
-    #F8#               Close the list and reopen the Search Dialog.
-    #Ctrl-C#           Copy the selected line to the clipboard.
-    #Ctrl-Up#, #Ctrl-Down#, #Ctrl-Home#, #Ctrl-End#
-                     Scroll the editor not closing the list.
-    #Ctrl-Num0#        Restore editor position after scrolling.
-
- ~Contents~@Contents@
-
-@Configuration
-$ #Configuration#
- #[x] Use Far history#
- Which history to use in "Search for" and "Replace with" fields.
-Either Far history or this plugin's separate history can be used.
-
- #Log file name#
- Specify name of the log file, created by the ~Rename~@Rename@ utility.
-The name can contain a date-time template #\D{...}# - see its description
-in the ~Syntax of Replace pattern~@SyntaxReplace@ section.
-
- #[x] Process selected text if it exists#
- On invoking editor search or replace dialog, automatically set #Scope#
-to #Selected text# if the editor contains selection.
-
- #[x] Select found text#
- Select found text in the editor.
-
- #[x] Show operation time#
- Show time taken by the operation
-
- #Pick search string from:#
- This setting determines how the #Search# field is initialized when the
-Search or Replace dialog is opened. There are 3 options:
-    #(•) Editor#        Word above cursor.
-    #( ) History#       Search string taken from Far dialog history.
-    #( ) Don't pick#    Search field is left empty.
-
- #Highlight Color#
- Select a highlight color for using with search option #Highlight All#.
-
- ~Contents~@Contents@
-
-@Presets
-$ #Presets#
-
- Pressing the #Presets# button from the Search or Replace dialog invokes a menu
-for handling presets: create, load, rename and delete them.
-
- #Del#    - delete a preset
- #Enter#  - load the selected preset into the dialog
- #Esc#    - close the menu and return to the dialog
- #F2#     - save the loaded preset under the same name
- #F6#     - rename a preset
- #Ins#    - save the current dialog settings as a new preset
- #Ctrl+O# - import presets from a file
- #Ctrl+S# - export presets to a file
 
  ~Contents~@Contents@
 
@@ -1412,5 +1508,72 @@ previous names, i.e. it reverts the renaming done by the plugin.
       #lfs: -r<logfile>#
  or (equivalently)
       #lua: @@<logfile>#
+
+ ~Contents~@Contents@
+
+@PanelGrep
+$ #Grep#
+ Perform a search in accordance to specified parameters and then output results to a file.
+The file is automatically opened in the editor after the search is finished.
+
+ Most dialog elements have the same functions as in ~search and replace~@OperInPanels@ dialogs.
+
+ The dialog elements listed below are specific for this dialog:
+
+ #Skip#
+ This is a pattern that specifies what text to skip during the operation.
+ This feature is turned off when the field is empty.
+     For example:
+ We want to find the word #new# in the C++ code but not in comments like this: #//...new...#.
+ To achieve that we specify pattern #\bnew\b# as the search pattern
+and pattern #\/\/.*# as the skip pattern.
+
+ #[x] Show line numbers#
+ Each output line contains line number it has in the searched file.
+
+ #[x] Highlight matches#
+ Line numbers and found matches are colored. The colors can be selected in the configuration dialog.
+
+ #[x] Inverse search#
+ Find lines that does not contain the given search pattern.
+
+ #Context Lines Before#
+ Output the specified number of lines in the searched file preceding a matched line.
+
+ #Context Lines After#
+ Output the specified number of lines in the searched file following a matched line.
+
+ ~Contents~@Contents@
+
+@TmpPanel
+$ #Panel#
+ Open a panel similar to that of standard TmpPanel plugin.
+
+ ~Contents~@Contents@
+
+@DirectoryFilter
+$ #Directory filter#
+^#Dialog settings#
+
+ #Directory search mask#
+ The search of files for inclusion in the list and processing will be done
+only within those directories whose names match the given mask.
+ (If this field is left empty then the search will be done in all directories).
+
+   #[x] Process path#
+   If this option is set then the given mask will be matched against
+   the full directory path otherwise against the directory name only.
+
+ #Directory exclude mask#
+ If a directory matches the given mask then the directory contents (files
+and subdirectories of any nesting depth) will not be included in the list
+and will not be processed.
+ (If the given field is left empty then directories will not be excluded).
+
+   #[x] Process path#
+   If this option is set then the given mask will be matched against
+   the full directory path otherwise against the directory name only.
+
+ The syntax of masks is identical to Far-style ~file masks~@:FileMasks@.
 
  ~Contents~@Contents@
