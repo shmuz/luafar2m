@@ -14,7 +14,6 @@ local Sett       = require "far2.settings"
 local M          = require "lfh_message"
 local F          = far.Flags
 local Field      = Sett.field
-local band, bor  = bit64.band, bit64.bor
 
 local DefaultCfg = {
   bDynResize  = true,
@@ -366,37 +365,43 @@ local function get_history (aConfig)
 
   local file = far.GetConfigDir() .. "/history/" .. aConfig.FarFileName
   local ini = IniFile.New(file, "nocomment")
-  local far_lines, far_times = {}, {}
+  if ini then
+    local far_lines, far_times = {}, {}
 
-  local lines = ini:GetString(aConfig.FarHistoryType, "Lines")
-  lines = lines:gsub("(\\.)", { ["\\\\"]="\\"; ["\\n"]="\n"; })
-  for text in (lines.."\n"):gmatch("(.-)\n") do
-    if text ~= "" then table.insert(far_lines, text) end
-  end
-
-  local i = 0
-  local times = ini:GetString(aConfig.FarHistoryType, "Times")
-  for a,b,c,d,e,f,g,h in times:gmatch("(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)") do
-    i = i + 1
-    if far_lines[i] == nil then break end
-    local low  = tonumber(d..c..b..a, 16)
-    local high = tonumber(h..g..f..e, 16)
-    local time = math.floor((low + 2^32*high) / 10000)
-    table.insert(far_times, time)
-  end
-
-  for i,name in ipairs(far_lines) do
-    local fartime = far_times[i] or 0
-    local item = map[name]
-    if item then
-      if item.time < fartime then
-        item.time = fartime
+    local lines = ini:GetString(aConfig.FarHistoryType, "Lines")
+    if lines then
+      lines = lines:gsub("(\\.)", { ["\\\\"]="\\"; ["\\n"]="\n"; })
+      for text in (lines.."\n"):gmatch("(.-)\n") do
+        if text ~= "" then table.insert(far_lines, text) end
       end
-    else
-      if fartime >= last_time then
-        item = { text=name; time=fartime; }
-        table.insert(menu_items, item)
-        map[name] = item
+    end
+
+    local times = ini:GetString(aConfig.FarHistoryType, "Times")
+    if times then
+      local i = 0
+      for a,b,c,d,e,f,g,h in times:gmatch("(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)") do
+        i = i + 1
+        if far_lines[i] == nil then break end
+        local low  = tonumber(d..c..b..a, 16)
+        local high = tonumber(h..g..f..e, 16)
+        local time = math.floor((low + 2^32*high) / 10000)
+        table.insert(far_times, time)
+      end
+    end
+
+    for i,name in ipairs(far_lines) do
+      local fartime = far_times[i] or 0
+      local item = map[name]
+      if item then
+        if item.time < fartime then
+          item.time = fartime
+        end
+      else
+        if fartime >= last_time then
+          item = { text=name; time=fartime; }
+          table.insert(menu_items, item)
+          map[name] = item
+        end
       end
     end
   end
@@ -526,7 +531,7 @@ end
 
 local function export_GetPluginInfo()
   return {
-    Flags = bor(F.PF_EDITOR, F.PF_VIEWER),
+    Flags = bit64.bor(F.PF_EDITOR, F.PF_VIEWER),
     PluginConfigStrings = { M.mPluginTitle },
     PluginMenuStrings = { M.mPluginTitle },
   }

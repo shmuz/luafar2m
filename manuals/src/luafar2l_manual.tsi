@@ -3260,6 +3260,30 @@ mtime=3854221352
 </article>
 </node>
 <node>
+id=502
+lv=2
+dt=Text
+nm=editor.InsertTextW
+ctime=3872589307
+mtime=3872589620
+<article>
+#_result = editor.InsertTextW (text [, redraw])
+#_
+#_**Parameters:**
+#_  text:    string (in UTF-32LE encoding)
+#_  redraw:  boolean (default=false)
+#_
+#_**Returns:**
+#_  result:  boolean
+#_
+#_**Far API used:**
+#_  EditorControl, ECTL_INSERTTEXT
+#_
+#_@@@
+#_
+</article>
+</node>
+<node>
 id=227
 lv=2
 dt=Text

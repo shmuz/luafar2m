@@ -384,14 +384,13 @@ local luafar = {
 
     ["editor"] = {
       fields = {
-        "AddColor", "AddStackBookmark", "ClearStackBookmarks", "DeleteBlock",
-        "DeleteChar", "DeleteStackBookmark", "DeleteString", "Editor", "ExpandTabs",
-        "GetBookmarks", "GetColor", "GetFileName", "GetInfo", "GetSelection",
-        "GetStackBookmarks", "GetString", "GetStringW", "InsertString", "InsertText",
-        "NextStackBookmark", "PrevStackBookmark", "ProcessInput", "ProcessKey", "Quit",
-        "ReadInput", "RealToTab", "Redraw", "SaveFile", "Select", "SetKeyBar", "SetParam",
-        "SetPosition", "SetString", "SetStringW", "SetTitle", "TabToReal", "TurnOffMarkingBlock",
-        "UndoRedo",
+        "AddColor", "AddStackBookmark", "ClearStackBookmarks", "DeleteBlock", "DeleteChar",
+        "DeleteStackBookmark", "DeleteString", "Editor", "ExpandTabs", "GetBookmarks", "GetColor",
+        "GetFileName", "GetInfo", "GetSelection", "GetStackBookmarks", "GetString", "GetStringW",
+        "InsertString", "InsertText", "InsertTextW", "NextStackBookmark", "PrevStackBookmark",
+        "ProcessInput", "ProcessKey", "Quit", "ReadInput", "RealToTab", "Redraw", "SaveFile",
+        "Select", "SetKeyBar", "SetParam", "SetPosition", "SetString", "SetStringW", "SetTitle",
+        "TabToReal", "TurnOffMarkingBlock", "UndoRedo",
       };
     };
 
