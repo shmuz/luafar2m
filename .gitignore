@@ -1,0 +1,21 @@
+### put here from far2 build
+luafar2l.so
+luamacro/
+
+### binaries
+*.o
+*.far-plug-wide
+*.so
+
+### auto-generated
+*.lng
+lf4ed_message.lua
+lfh_message.lua
+lfs_message.lua
+tmpp_message.lua
+**/modules/string_rc.lua
+
+### misc
+*.session
+assa.diff
+**/scripts/cclike.lua

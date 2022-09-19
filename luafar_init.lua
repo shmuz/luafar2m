@@ -1,4 +1,4 @@
-local mdir = far.PluginStartupInfo().ModuleDir
+local mdir = far.PluginStartupInfo().ShareDir
 local path1 = mdir .. "?.lua"
 local path2 = mdir:gsub("[^/]+/[^/]+/$", "lua_share/?.lua") -- don't use ../..
 

@@ -76,7 +76,7 @@ local function main()
   if not _Plugin then
     export.OnError = Utils.OnError
     _Plugin = {}
-    _Plugin.ModuleDir = far.PluginStartupInfo().ModuleDir
+    _Plugin.ShareDir = far.PluginStartupInfo().ShareDir
     _Plugin.History = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
   end
   InitUpvalues(_Plugin)

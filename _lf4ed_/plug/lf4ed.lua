@@ -37,7 +37,7 @@ local SetExportFunctions -- forward declaration
 
 local _Cfg
 local _History
-local _ModuleDir
+local _ShareDir
 
 local function ErrMsg(msg, buttons, flags)
   return far.Message(msg, "Error", buttons, flags or "w")
@@ -102,7 +102,7 @@ local function RunFile (filespec, ...)
       local ok, func = pcall(require, file) -- embedded file
       if ok then return func(...) end
     else
-      local func = loadfile(_ModuleDir .. file) -- disk file
+      local func = loadfile(_ShareDir .. file) -- disk file
       if func then return func(...) end
     end
   end
@@ -294,7 +294,7 @@ local function MakeAddUserFile (aEnv, aItems)
   local function AddUserFile (filename)
     uDepth = uDepth + 1
     if filename:sub(1,1) ~= "/" then
-      filename = _ModuleDir .. filename
+      filename = _ShareDir .. filename
     end
     if uDepth == 1 then
       -- if top-level _usermenu.lua doesn't exist, it isn't error
@@ -327,7 +327,7 @@ local function MakeAutoInstall (AddUserFile)
   local function AutoInstall (startpath)
     assert(type(startpath)=="string", "bad arg. #1 to AutoInstall")
     if startpath:sub(1,1) ~= "/" then
-      startpath = _ModuleDir..startpath
+      startpath = _ShareDir..startpath
     end
     far.RecursiveSearch(startpath, "*",
       function(item, fullpath)
@@ -795,7 +795,7 @@ SetExportFunctions = function()
 end
 
 local function InitUpvalues (_Plugin)
-  _ModuleDir = _Plugin.ModuleDir
+  _ShareDir = _Plugin.ShareDir
   _History = _Plugin.History
   _Cfg = field(_History, "Settings")
   setmetatable(_Cfg, { __index=DefaultCfg })
@@ -805,8 +805,8 @@ local function main()
   if FirstRun then
     export.OnError = Utils.OnError
     _Plugin = {}
-    _Plugin.ModuleDir = far.PluginStartupInfo().ModuleDir
-    local repvalue = (";%sscripts%s?.lua;"):format(_Plugin.ModuleDir, dirsep)
+    _Plugin.ShareDir = far.PluginStartupInfo().ShareDir
+    local repvalue = (";%sscripts%s?.lua;"):format(_Plugin.ShareDir, dirsep)
     _Plugin.PackagePath = package.path:gsub(";", repvalue, 1)
     _Plugin.OriginalRequire = require
     _Plugin.History = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}

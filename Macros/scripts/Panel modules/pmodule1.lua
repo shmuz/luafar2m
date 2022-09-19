@@ -10,6 +10,8 @@ mod.Info = {
 
 local function FileToObject(FileName)
   FileName = far.ConvertPath(FileName, "CPM_FULL")
+  local attr = win.GetFileAttr(FileName)
+  if not attr or attr:find("d") then return end -- in Linux fopen may "open" a directory
   local fp = io.open(FileName)
   if fp then
     local obj = { HostFile=FileName; List={} }
