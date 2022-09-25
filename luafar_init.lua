@@ -1,7 +1,8 @@
-local mdir = far.PluginStartupInfo().ShareDir
-local path1 = mdir .. "?.lua"
-local path2 = mdir:gsub("[^/]+/[^/]+/$", "lua_share/?.lua") -- don't use ../..
+local inf = far.PluginStartupInfo()
+local sdir = inf.ShareDir
+local path1 = sdir .. "?.lua"
+local path2 = sdir:gsub("[^/]+/[^/]+/$", "lua_share/?.lua") -- don't use ../..
 
 package.path = ("%s;%s;%s"):format(path1, path2, package.path)
-package.cpath = mdir .."?.so;".. package.cpath
+package.cpath = inf.ModuleDir.."?.so;".. package.cpath
 

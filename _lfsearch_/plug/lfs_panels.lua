@@ -760,15 +760,9 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     local str = reader:get_next_overlapped_chunk()
     local currCodePages = activeCodePages
     local page, len = CheckBoms(str)
-    if page then -- search in this file only if its codepage is listed in activeCodePages
-      for _,cp in ipairs(activeCodePages) do
-        if cp == page then
-          currCodePages = { page }
-          str = string.sub(str, len+1)
-          break
-        end
-      end
-      if currCodePages==activeCodePages then return; end
+    if page then
+      currCodePages = { page }
+      str = string.sub(str, len+1)
     end
     ---------------------------------------------------------------------------
     local found, stop
