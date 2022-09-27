@@ -799,16 +799,16 @@ function mypanel:FillKeyBar (trg, src)
   trg.ShiftTitles={}
   trg.AltTitles={}
   trg.CtrlTitles={}
-	for k=1,8 do
-		trg.Titles[k]      = src.nomods[k]
-		trg.ShiftTitles[k] = src.shift[k]
-		trg.AltTitles[k]   = src.alt[k]
-		trg.CtrlTitles[k]  = src.ctrl[k]
-	end
-	for k=9,12 do
-		trg.CtrlTitles[k] = ""
-	end
-	local txt = self._multi_db and "MainDB" or "MultiDB"
+  for k=1,8 do
+    trg.Titles[k]      = src.nomods[k]
+    trg.ShiftTitles[k] = src.shift[k]
+    trg.AltTitles[k]   = src.alt[k]
+    trg.CtrlTitles[k]  = src.ctrl[k]
+  end
+  for k=9,12 do
+    trg.CtrlTitles[k] = ""
+  end
+  local txt = self._multi_db and "MainDB" or "MultiDB"
   trg.AltShiftTitles = { [6]=txt; }
 end
 
