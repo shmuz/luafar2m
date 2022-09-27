@@ -35,7 +35,7 @@ local function OnEnter()
     local line1, line2 = curline:sub(1,info.CurPos-1), curline:sub(info.CurPos)
     local indent = curline:match("^%s*")
     if conf.pat:find(line1) then
-      indent = conf.indent .. indent
+      indent = (indent:sub(1,1)=="\t" and "\t" or conf.indent) .. indent
     end
     editor.UndoRedo("EUR_BEGIN")
     editor.InsertString()
@@ -53,12 +53,12 @@ local function OnBackSpace()
   if conf then
     local info = editor.GetInfo()
     if info.CurPos > 2 then
-      local line = editor.GetString(info.CurLine, 2)
+      local line = editor.GetString(info.CurLine, 3)
       local pos = line:find("%S")
       if not (pos and pos < info.CurPos) then
         local stop = math.max(1, info.CurLine-1000) -- limit search at 1000 lines above the current
         for k=info.CurLine-1,stop,-1 do
-          local ln = editor.GetString(k, 2)
+          local ln = editor.GetString(k, 3)
           pos = ln:find("%S")
           if pos and pos < info.CurPos then
             editor.SetString(info.CurLine, ln:sub(1,pos-1)..line:sub(info.CurPos))

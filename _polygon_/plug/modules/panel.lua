@@ -792,31 +792,24 @@ local function GetKeybarStrings(panelmode)
   end
 end
 
-local Keybar_mods = {
-  nomods = 0;
-  shift  = F.SHIFT_PRESSED;
-  alt    = F.LEFT_ALT_PRESSED + F.RIGHT_ALT_PRESSED;
-  ctrl   = F.LEFT_CTRL_PRESSED + F.RIGHT_CTRL_PRESSED;
-}
-
 
 function mypanel:FillKeyBar (trg, src)
   src = GetKeybarStrings(src)
-  for mod,cks in pairs(Keybar_mods) do
-    for vk=VK.F1,VK.F8 do
-      local txt = src[mod][vk-VK.F1+1]
-      if txt then
-        table.insert(trg, { Text=txt; LongText=txt; VirtualKeyCode=vk; ControlKeyState=cks })
-      end
-    end
-  end
-  for vk=VK.F9,VK.F12 do
-    table.insert(trg, { Text=""; LongText=""; VirtualKeyCode=vk;
-                        ControlKeyState=F.LEFT_CTRL_PRESSED + F.RIGHT_CTRL_PRESSED })
-  end
-  local txt = self._multi_db and "MainDB" or "MultiDB"
-  table.insert(trg, { Text=txt; LongText=txt; VirtualKeyCode=VK.F6;
-                      ControlKeyState=F.LEFT_ALT_PRESSED + F.RIGHT_ALT_PRESSED + F.SHIFT_PRESSED })
+  trg.Titles={}
+  trg.ShiftTitles={}
+  trg.AltTitles={}
+  trg.CtrlTitles={}
+	for k=1,8 do
+		trg.Titles[k]      = src.nomods[k]
+		trg.ShiftTitles[k] = src.shift[k]
+		trg.AltTitles[k]   = src.alt[k]
+		trg.CtrlTitles[k]  = src.ctrl[k]
+	end
+	for k=9,12 do
+		trg.CtrlTitles[k] = ""
+	end
+	local txt = self._multi_db and "MainDB" or "MultiDB"
+  trg.AltShiftTitles = { [6]=txt; }
 end
 
 
