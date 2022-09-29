@@ -198,22 +198,31 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
   local pat_close
   local ID = ei.EditorID
 
-  local openbracket, bstack, bpattern, opattern, params
+  local openbracket, bstack, bpattern, opattern, params, posbracket
   if Syn.bracketmatch then
-    local char = editor.GetString(nil, 3):sub(ei.CurPos, ei.CurPos)
-    openbracket = char=="(" or char=="[" or char=="{"
-    local closebracket = char==")" or char=="]" or char=="}"
-    bstack = openbracket and 0 or closebracket and {}
-    if bstack then
-      if char=="(" or char==")" then
-        bpattern, opattern = rex.new("([()])"), "(\0\0\0"
-      elseif char=="[" or char=="]" then
-        bpattern, opattern = rex.new("([\\[\\]])"), "[\0\0\0"
-      else
-        bpattern, opattern = rex.new("([{}])"), "{\0\0\0"
+    -- Try 2 positions: current and previous to current.
+    -- The current position is checked first.
+    local curstr = editor.GetString(nil, 3)
+    for k=0, ei.CurPos==1 and 0 or 1 do
+      posbracket = ei.CurPos-k
+      local char = curstr:sub(posbracket, posbracket)
+      openbracket = char=="(" or char=="[" or char=="{"
+      local closebracket = char==")" or char=="]" or char=="}"
+      if openbracket or closebracket then
+        bstack = openbracket and 0 or {}
+        if bstack then
+          if char=="(" or char==")" then
+            bpattern, opattern = rex.new("([()])"), "(\0\0\0"
+          elseif char=="[" or char=="]" then
+            bpattern, opattern = rex.new("([\\[\\]])"), "[\0\0\0"
+          else
+            bpattern, opattern = rex.new("([{}])"), "{\0\0\0"
+          end
+          params = {ei.CurLine,posbracket,posbracket,acFlags,Syn.bracketcolor,Priority+1,Owner}
+          --editor.AddColor(ei.CurLine,posbracket,posbracket,acFlags,Syn.bracketcolor,Priority+1,Owner)
+          break
+        end
       end
-      params = {ei.CurLine,ei.CurPos,ei.CurPos,acFlags,Syn.bracketcolor,Priority+1,Owner}
-      --editor.AddColor(ei.CurLine,ei.CurPos,ei.CurPos,acFlags,Syn.bracketcolor,Priority+1,Owner)
     end
   end
 
@@ -294,7 +303,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
     if bstack and need_paint then
       if openbracket then
         if y >= ei.CurLine then
-          local start = (y == ei.CurLine) and ei.CurPos+1 or 1
+          local start = (y == ei.CurLine) and posbracket+1 or 1
           while true do
             local from, to, br = bpattern:findW(str, start)
             if not from then break end
@@ -322,20 +331,21 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
               break
             end
             start = to + 1
-            if y == ei.CurLine and from == ei.CurPos then
-              if bstack[1] then
-                editor.AddColor(bstack[#bstack-1], bstack[#bstack], bstack[#bstack],
+            local N = #bstack
+            if y == ei.CurLine and from == posbracket then
+              if N ~= 0 then
+                editor.AddColor(bstack[N-1], bstack[N], bstack[N],
                                 acFlags, Syn.bracketcolor, Priority+1, Owner)
               end
               bstack = nil
               break
             else
               if br == opattern then
-                bstack[#bstack+1] = y
-                bstack[#bstack+1] = from
-              else
-                bstack[#bstack] = nil
-                bstack[#bstack] = nil
+                bstack[N+1] = y
+                bstack[N+2] = from
+              elseif N ~= 0 then
+                bstack[N]   = nil
+                bstack[N-1] = nil
               end
             end
           end

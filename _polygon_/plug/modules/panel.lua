@@ -123,7 +123,7 @@ function mypanel:set_directory(aHandle, aDir)
   local success = true
   self._tab_filter = {}
   ----------------------------------------------------------------------------------------
-  if aDir == "/" or aDir == "\\" then
+  if aDir == "/" then
     if self._multi_db then
       self:set_root_mode()
     else
@@ -153,12 +153,12 @@ function mypanel:set_directory(aHandle, aDir)
       end
     end
   ----------------------------------------------------------------------------------------
-  else -- any directory except "/", "\\", ".."
-    local g1, g2, g3, g4 = aDir:match [[^(\?)([^\]+)(\?)([^\]*)$]]
-    if g1==nil or (g3=="\\" and g4=="") then
+  else -- any directory except "/", ".."
+    local g1, g2, g3, g4 = aDir:match [[^(/?)([^/]+)(/?)([^/]*)$]]
+    if g1==nil or (g3=="/" and g4=="") then
       return false
     end
-    if g1 == "\\" then -- absolute path
+    if g1 == "/" then -- absolute path
       if self:database_exists(g2) then
         if g4 ~= "" then
           success = self:table_or_view_exists(g2,g4) and self:open_object(aHandle,g2,g4)
@@ -370,7 +370,7 @@ function mypanel:get_open_panel_info(handle)
   end
 
   local CurDir
-  if self._exiting then
+  if self._exiting or (self._panel_mode=="db" and not self._multi_db) then
     CurDir = ""
   else
     CurDir = self._schema
@@ -832,7 +832,7 @@ function mypanel:prepare_panel_info(handle)
   local info = {
     key_bar = {};
     modes   = {};
-    title   = M.title_short .. ": " .. self._filename:match("[^\\/]*$");
+    title   = M.title_short .. ": " .. self._filename:match("[^/]*$");
   }
   self._panel_info = info
   self._language = win.GetEnv("FARLANG")

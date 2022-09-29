@@ -18,4 +18,5 @@ tmpp_message.lua
 ### misc
 *.session
 assa.diff
+SciTEDirectory.properties
 **/scripts/cclike.lua
