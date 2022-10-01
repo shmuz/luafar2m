@@ -24,14 +24,27 @@ else
   JITCFLAG = -DUSE_LUAJIT
 endif
 
-LUA_SHARE   = ../../lua_share
-LUAFARDLL   = luafar2l.so
+SRC_LUAFAR = ../..
+LUA_SHARE  = $(SRC_LUAFAR)/lua_share
+LUAFARDLL  = luafar2l.so
 
-DIRBIT = 64
 CC     = gcc
 CFLAGS = -O2 -Wall -Wno-unused-function -fvisibility=hidden \
          -I$(INC_FAR) -I$(INC_WIN) -I$(INC_LUA) \
-         -m$(DIRBIT) -fPIC $(JITCFLAG) $(MYCFLAGS)
+         -fPIC $(JITCFLAG) $(MYCFLAGS)
 
-# LDFLAGS = -shared -m$(DIRBIT) -fPIC -Wl,-z,defs $(LIB_LUA) $(MYLDFLAGS)
-LDFLAGS = -shared -m$(DIRBIT) -fPIC $(LIB_LUA) $(MYLDFLAGS)
+LDFLAGS = -shared -fPIC $(LIB_LUA) $(MYLDFLAGS)
+
+### Install section
+INSTALL_PREFIX ?= /usr/local
+TRG_LIB   = $(INSTALL_PREFIX)/lib/far2l/Plugins/luafar
+TRG_SHARE = $(INSTALL_PREFIX)/share/far2l/Plugins/luafar
+
+TRG_PLUG_LIB = $(TRG_LIB)/$(PLUGNAME)/plug
+TRG_PLUG_SHARE = $(TRG_SHARE)/$(PLUGNAME)/plug
+
+SRC_LF_INIT = $(SRC_LUAFAR)/luafar_init.lua
+
+SRC_PLUG_LIB ?= $(PLUGNAME).far-plug-wide
+
+SRC_PLUG_SHARE ?= *.lua *.lng *.hlf

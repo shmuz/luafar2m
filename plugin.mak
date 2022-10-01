@@ -5,7 +5,7 @@ include ../../config.mak
 # The following 4 variables should be defined by the including make file
 CONFIG      ?=
 FAR_EXPORTS ?=
-LANG_LUA    ?=
+LANG_GEN    ?=
 PLUGNAME    ?=
 
 C_SOURCE ?= $(FARSOURCE)/luafar/src/luaplug.c
@@ -21,15 +21,10 @@ endif
 LUAC        = luac5.1
 PATH_PLUGIN = ../plug
 GEN_METHOD  = -plain
-MAKE_LANG   = $(LUAEXE) -epackage.path=[[$(LUA_SHARE)/?.lua]] $(LANG_LUA)
+MAKE_LANG   = $(LUAEXE) -epackage.path=[[$(LUA_SHARE)/?.lua]] $(LANG_GEN)
 
-ifeq ($(DIRBIT),64)
-  TRG_N = $(PLUGNAME)-x64.far-plug-wide
-  TRG_E = $(PLUGNAME)_e-x64.far-plug-wide
-else
-  TRG_N = $(PLUGNAME).far-plug-wide
-  TRG_E = $(PLUGNAME)_e.far-plug-wide
-endif
+TRG_N = $(PLUGNAME).far-plug-wide
+TRG_E = $(PLUGNAME)_e.far-plug-wide
 
 ifndef EMBED
   TRG = $(TRG_N)
@@ -70,5 +65,15 @@ luaplug1.o: $(C_SOURCE)
 
 luaplug2.o: $(C_SOURCE)
 	$(CC) -c -o $@ $< $(CFLAGS2)
+
+install:
+	mkdir -p $(TRG_PLUG_LIB) $(TRG_PLUG_SHARE)
+	cd ../plug && cp -f $(SRC_PLUG_LIB) $(TRG_PLUG_LIB)
+	cd ../plug && cp -f $(SRC_PLUG_SHARE) $(TRG_PLUG_SHARE)
+ifdef SRC_PLUG_DIRS
+	cd ../plug && cp -rf $(SRC_PLUG_DIRS) $(TRG_PLUG_SHARE)
+endif
+	cp -rf $(LUA_SHARE) $(TRG_SHARE)
+	cp -f  $(SRC_LF_INIT) $(TRG_SHARE)
 
 .PHONY:

@@ -1,26 +1,30 @@
 # Makefile
 
+ifdef install
+PARAM = install
+endif
+
 all: lf4ed lfsearch lftmp lfhistory polygon luapanel highlight
 
 lf4ed:
-	cd _lf4ed_/build && $(MAKE)
+	cd _lf4ed_/build && $(MAKE) $(PARAM)
 
 lfsearch:
-	cd _lfsearch_/build && $(MAKE)
+	cd _lfsearch_/build && $(MAKE) $(PARAM)
 
 lftmp:
-	cd _lftmp_/build && $(MAKE)
+	cd _lftmp_/build && $(MAKE) $(PARAM)
 
 lfhistory:
-	cd _lfhistory_/build && $(MAKE)
+	cd _lfhistory_/build && $(MAKE) $(PARAM)
 
 polygon:
-	cd _polygon_/build && $(MAKE)
+	cd _polygon_/build && $(MAKE) $(PARAM)
 
 luapanel:
-	cd _luapanel_/build && $(MAKE)
+	cd _luapanel_/build && $(MAKE) $(PARAM)
 
 highlight:
-	cd _highlight_/build && $(MAKE)
+	cd _highlight_/build && $(MAKE) $(PARAM)
 
 .PHONY: all lf4ed lfsearch lftmp lfhistory polygon luapanel highlight

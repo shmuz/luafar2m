@@ -1,6 +1,6 @@
 PLUGNAME = lftmp
 CONFIG   = tmppanel.cfg
-LANG_LUA = tmpp_lang.lua
+LANG_GEN = tmpp_lang.lua
 SYS_ID = 0xE2500D1C
 
 FAR_EXPORTS = \

@@ -1,6 +1,6 @@
 PLUGNAME = lfhistory
 CONFIG   = lfhistory.cfg
-LANG_LUA = lfh_lang.lua
+LANG_GEN = lfh_lang.lua
 SYS_ID   = 0xA745761D
 
 FAR_EXPORTS = CONFIGURE  OPENPLUGIN
