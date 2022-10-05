@@ -23,14 +23,11 @@ PATH_PLUGIN = ../plug
 GEN_METHOD  = -plain
 MAKE_LANG   = $(LUAEXE) -epackage.path=[[$(LUA_SHARE)/?.lua]] $(LANG_GEN)
 
-TRG_N = $(PLUGNAME).far-plug-wide
-TRG_E = $(PLUGNAME)_e.far-plug-wide
-
 ifndef EMBED
-  TRG = $(TRG_N)
+  TRG = $(PLUGNAME).far-plug-wide
   OBJ = luaplug1.o
 else
-  TRG = $(TRG_E)
+  TRG = $(PLUGNAME)_e.far-plug-wide
   OBJ = luaplug2.o linit.o
   FUNC_OPENLIBS ?= luafar_openlibs
 endif

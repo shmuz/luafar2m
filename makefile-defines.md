@@ -4,7 +4,7 @@
 1. [PLUGNAME](#PLUGNAME)
 1. [SYS_ID](#SYS_ID)
 1. [FAR_EXPORTS](#FAR_EXPORTS)
-1. [LANG_LUA](#LANG_LUA)
+1. [LANG_GEN](#LANG_GEN)
 1. [CONFIG](#CONFIG)
 1. [C_SOURCE](#C_SOURCE)
 1. [FUNC_OPENLIBS](#FUNC_OPENLIBS)
@@ -31,11 +31,11 @@
   are always exported, so there's no need to include them in the list.
 - Example: `FAR_EXPORTS = OPENPLUGIN EXITFAR`
 
-## LANG_LUA
+## LANG_GEN
 - Name of a Lua script used for generation of plugin's language files
   out of `*.templ` files
 - Not required if the plugin does not have `*.templ` files
-- Example: `LANG_LUA = polygon_lang.lua`
+- Example: `LANG_GEN = polygon_lang.lua`
 
 ## CONFIG
 - A configuration file (Lua script) used in generating an "embedding"

@@ -36,10 +36,10 @@ local luafar = {
         "Log", "LStricmp", "LStrnicmp", "LuafarVersion", "LUpperBuf", "MacroAdd", "MacroCallFar",
         "MacroCheck", "MacroDelete", "MacroExecute", "MacroGetArea", "MacroGetLastError",
         "MacroGetState", "MacroLoadAll", "MacroPost", "MacroSaveAll", "MakeMenuItems", "Menu",
-        "Message", "MkLink", "MkTemp", "NameToKey", "PasteFromClipboard", "PluginStartupInfo",
-        "ProcessName", "RecursiveSearch", "ReloadDefaultScript", "RestoreScreen", "SaveScreen",
-        "SendDlgMessage", "Show", "ShowHelp", "Text", "Timer", "TruncPathStr", "TruncStr",
-        "UnloadPlugin", "XLat",
+        "Message", "MkLink", "MkTemp", "NameToInputRecord", "NameToKey", "PasteFromClipboard",
+        "PluginStartupInfo", "ProcessName", "RecursiveSearch", "ReloadDefaultScript",
+        "RestoreScreen", "SaveScreen", "SendDlgMessage", "Show", "ShowHelp", "Text", "Timer",
+        "TruncPathStr", "TruncStr", "UnloadPlugin", "XLat",
 
         ["Flags"] = {
           fields = {
