@@ -370,9 +370,9 @@ local function get_history (aConfig)
 
     local lines = ini:GetString(aConfig.FarHistoryType, "Lines")
     if lines then
-      lines = lines:gsub("(\\.)", { ["\\\\"]="\\"; ["\\n"]="\n"; })
-      for text in (lines.."\n"):gmatch("(.-)\n") do
-        if text ~= "" then table.insert(far_lines, text) end
+      lines = lines:gsub("\\(.)", { ["\\"]="\\"; n="\n"; t="\t"; })
+      for text in lines:gmatch("[^\n]+") do
+        table.insert(far_lines, text)
       end
     end
 

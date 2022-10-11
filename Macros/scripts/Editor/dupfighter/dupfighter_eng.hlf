@@ -26,9 +26,9 @@ after some conversion specified by the user).
  
  ╔═══════════════════════ Duplicate Fighter ═══════════════════════╗
  ║                                                                 ║
- ║ (•) 1 Remove duplicates       [ ] Keep empty lines              ║
- ║ ( ) 2 Clear duplicates        [ ] Show statistics               ║
- ║ ( ) 3 Remove non-uniques                                        ║
+ ║ (•) 1 Remove duplicates       [ ] Keep last duplicate           ║
+ ║ ( ) 2 Clear duplicates        [ ] Keep empty lines              ║
+ ║ ( ) 3 Remove non-uniques      [ ] Show statistics               ║
  ║ ( ) 4 Clear non-uniques                                         ║
  ║                                                                 ║
  ║ [x] Use Expression            [ ] Convert to boolean            ║
@@ -45,6 +45,9 @@ after some conversion specified by the user).
    #(•) Remove non-unique# : remove all duplicate lines (including the first one)
    #(•) Clear  non-unique# : clear  all duplicate lines (including the first one)
 
+ #[x] Keep last duplicate#
+   On removing or clearing duplicates keep the last one rather than the first
+ 
  #[x] Keep empty lines#
    If checked then empty lines are skipped (not considered duplicate). The lines consisting entirely
    of whitespace characters are also skipped.
