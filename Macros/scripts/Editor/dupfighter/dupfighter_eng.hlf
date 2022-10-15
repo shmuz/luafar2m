@@ -22,23 +22,8 @@ after some conversion specified by the user).
    b) two lines become identical after stripping white spaces from both their ends.
    c) two lines begin with the same 20 character sequence.
 
- #The dialog#
+^ #The dialog#
  
- ╔═══════════════════════ Duplicate Fighter ═══════════════════════╗
- ║                                                                 ║
- ║ (•) 1 Remove duplicates       [ ] Keep last duplicate           ║
- ║ ( ) 2 Clear duplicates        [ ] Keep empty lines              ║
- ║ ( ) 3 Remove non-uniques      [ ] Show statistics               ║
- ║ ( ) 4 Clear non-uniques                                         ║
- ║                                                                 ║
- ║ [x] Use Expression            [ ] Convert to boolean            ║
- ║ Expression:                                                     ║
- ║ L:lower()                                                      ↓║
- ║                                                                 ║
- ╟─────────────────────────────────────────────────────────────────╢
- ║                        { OK } [ Cancel ]                        ║
- ╚═════════════════════════════════════════════════════════════════╝
-
  #Actions:#
    #(•) Remove duplicates# : remove all duplicate lines except the first one in each group of duplicates
    #(•) Clear  duplicates# : clear  all duplicate lines except the first one in each group of duplicates

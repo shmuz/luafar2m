@@ -4,16 +4,38 @@
 -- Author:                  Shmuel Zeigerman
 -- Published:               2015-10-29 (http://forum.farmanager.com/viewtopic.php?p=133298#p133298)
 -- Language:                Lua 5.1
--- Minimal Far version:     3.0.3300
+-- Minimal Far version:     3.0.3300 (Windows), 2.4 (Linux)
 -- Far plugin:              LuaMacro, LF4Editor, LFSearch, LFHistory (any of them)
 -- Depends on:              Lua modules 'far2.simpledialog' and 'far2.settings'
 ------------------------------------------------------------------------------------------------
 
-local SETTINGS_KEY = "shmuz"
-local SETTINGS_NAME = "duplicate_fighter"
+-- OPTIONS --
+local OptAddToPluginsMenu = true
+local OptUseMacro = true
+-- END OF OPTIONS --
 
+local dirsep = package.config:sub(1,1)
+local FarVer = dirsep == "\\" and 3 or 2
 local F = far.Flags
-local thisDir = (...):match(".*/")
+local SendMsg = far.SendDlgMessage
+
+local thisDir do
+  -- handle the script argument to ensure correct work in both LuaMacro and LF4Ed plugins
+  local arg = ...
+  if type(arg)=="table" then arg = arg[1] end -- old LF4Ed
+  if type(arg)=="string" then thisDir = mf and arg:match(".+"..dirsep) or arg end -- LuaMacro or LF4Ed
+end
+
+local ed = editor
+if FarVer == 3 then
+  ed = setmetatable({}, {__index=
+    function(self,name)
+      return function(...) return editor[name](nil, ...) end
+    end})
+end
+
+local SETTINGS_KEY  = FarVer==3 and "Duplicate Fighter" or "shmuz"
+local SETTINGS_NAME = FarVer==3 and "settings"          or "Duplicate Fighter"
 
 local mEng = {
   OK          = "OK";
@@ -45,8 +67,8 @@ local mRus = {
   CLRDUP      = "&2 Очистить дубликаты";
   REMNONUNIQ  = "&3 Удалить неуникальные";
   CLRNONUNIQ  = "&4 Очистить неуникальные";
-  KEEPLASTDUP = "Сохранять &последний дубликат";
-  KEEPEMPTY   = "&Сохранять пустые строки";
+  KEEPLASTDUP = "&Сохранять последний дубликат";
+  KEEPEMPTY   = "Сохр&анять пустые строки";
   SHOWSTATS   = "&Показывать статистику";
   USEEXPR     = "&Использовать выражение";
   EXPRESSION  = "&Выражение:";
@@ -63,13 +85,13 @@ local function SetLanguage() return win.GetEnv("FARLANG")=="Russian" and mRus or
 local M = SetLanguage()
 
 local function GetDups(keepempty, func, toboolean)
-  local info = editor.GetInfo()
+  local info = ed.GetInfo()
   local isSel = (info.BlockType ~= F.BTYPE_NONE)
   local isColumn = (info.BlockType == F.BTYPE_COLUMN)
   local groups = {}
   local nSkipped = 0
   for lnum = isSel and info.BlockStartLine or 1,info.TotalLines do
-    local S = editor.GetString(lnum)
+    local S = ed.GetString(lnum)
     if not S
       or (isSel and not (S.SelStart>0 and S.SelEnd~=0))
       or (lnum==info.TotalLines and S.StringText=="")
@@ -100,11 +122,11 @@ local function HandleDups(op, keepWhat, keepempty, showstats, func, toboolean)
   local duplines = {}
   for text,grp in pairs(groups) do
     if grp[2] == nil then
-      groups[text]=nil
+      groups[text] = nil
       nUniq = nUniq + 1
     else
-      if keepWhat=="first" or keepWhat=="last" then
-        local N = keepWhat=="first" and 1 or #grp
+      local N = keepWhat=="first" and 1 or keepWhat=="last" and #grp
+      if N then
         grp[N] = -grp[N] -- the minus "marks" a duplicate to keep rather than remove
       end
       for _,lnum in ipairs(grp) do table.insert(duplines, lnum) end
@@ -114,22 +136,22 @@ local function HandleDups(op, keepWhat, keepempty, showstats, func, toboolean)
   table.sort(duplines, function(a,b) return math.abs(a) < math.abs(b) end)
 
 
-  local nClear, nDel = 0,0
-  editor.UndoRedo("EUR_BEGIN")
+  local nClear, nDel = 0, 0
+  ed.UndoRedo("EUR_BEGIN")
   for _,n in ipairs(duplines) do
     if n > 0 then
       if op == "clear" then
-        editor.SetString(math.abs(n), "")
+        ed.SetString(n, "")
         nClear = nClear+1
       elseif op == "delete" then
-        editor.SetPosition(math.abs(n) - nDel)
-        editor.DeleteString()
+        ed.SetPosition(n - nDel)
+        ed.DeleteString()
         nDel = nDel+1
       end
     end
   end
-  editor.UndoRedo("EUR_END")
-  editor.Redraw()
+  ed.UndoRedo("EUR_END")
+  ed.Redraw()
   if showstats then
     local len1 = math.max(M.STAT_DUP:len(), M.STAT_UNIQ:len(), M.STAT_SKIP:len(),
                           M.STAT_DEL:len(), M.STAT_CLEAR:len())
@@ -141,36 +163,29 @@ local function HandleDups(op, keepWhat, keepempty, showstats, func, toboolean)
   end
 end
 
-local STdefault = { -- default settings
-  method     = 1;
-  keepempty  = false;
-  statistics = false;
-  useexpr    = false;
-  toboolean  = true;
-}
-
 local function Main()
   M = SetLanguage()
   local sDialog     = require("far2.simpledialog")
-  local libSettings = require("far2.settings")
-  local ST = libSettings.mload(SETTINGS_KEY, SETTINGS_NAME) or STdefault
+  local libSettings = mf or require("far2.settings")
+  local ST = libSettings.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
 
   local dItems = {
     guid = "85FA90FE-4068-4FFB-962E-F961F46BE867";
+    help = function() far.ShowHelp(thisDir, nil, F.FHELP_CUSTOMPATH) end;
     width = 73;
     -------------------------------------------------------------------------------
     {tp="dbox";  text=M.TITLE;                                                   },
-    {tp="rbutt"; text=M.REMDUP;      name="remdup"; group=1; ystep=2;            },
+    {tp="rbutt"; text=M.REMDUP;      name="remdup"; group=1; ystep=2; val=1;     },
     {tp="rbutt"; text=M.CLRDUP;      name="clrdup";                              },
     {tp="rbutt"; text=M.REMNONUNIQ;  name="remnonuniq";                          },
     {tp="rbutt"; text=M.CLRNONUNIQ;  name="clrnonuniq";                          },
     -------------------------------------------------------------------------------
-    {tp="chbox"; text=M.KEEPLASTDUP; name="cbKeepLast"; x1=35; ystep=-3;         },
-    {tp="chbox"; text=M.KEEPEMPTY;   name="cbEmpty";    x1=35;                   },
-    {tp="chbox"; text=M.SHOWSTATS;   name="cbStat";     x1=35;                   },
+    {tp="chbox"; text=M.KEEPLASTDUP; name="keeplast";   x1=35; ystep=-3;         },
+    {tp="chbox"; text=M.KEEPEMPTY;   name="keepempty";  x1=35;                   },
+    {tp="chbox"; text=M.SHOWSTATS;   name="statistics"; x1=35;                   },
     -------------------------------------------------------------------------------
-    {tp="chbox"; text=M.USEEXPR;     name="cbExpr"; ystep=4;                     },
-    {tp="chbox"; text=M.TOBOOLEAN;   name="cbBool"; ystep=0; x1=35;              },
+    {tp="chbox"; text=M.USEEXPR;     name="useexpr";   ystep=3;                  },
+    {tp="chbox"; text=M.TOBOOLEAN;   name="toboolean"; ystep=0; x1=35;           },
     {tp="text";  text=M.EXPRESSION;  name="lbExpr";                              },
     {tp="edit";  uselasthistory=1;   name="edExpr"; hist="DupFighterExpression"; },
     -------------------------------------------------------------------------------
@@ -182,63 +197,69 @@ local function Main()
   local Pos, Elem = dlg:Indexes()
 
   dItems.initaction = function(hDlg)
-    if not (ST.method>=1 and ST.method<=4) then ST.method=1; end
-    local rb = Pos.remdup + ST.method - 1
-    hDlg:SetCheck(rb, 1)
-    hDlg:SetFocus(rb)
-
-    hDlg:SetCheck(Pos.cbKeepLast, ST.keeplast)
-    hDlg:SetCheck(Pos.cbEmpty,    ST.keepempty)
-    hDlg:SetCheck(Pos.cbStat,     ST.statistics)
-    hDlg:SetCheck(Pos.cbExpr,     ST.useexpr)
-    hDlg:SetCheck(Pos.cbBool,     ST.toboolean)
-    hDlg:Enable  (Pos.cbBool,     ST.useexpr)
-    hDlg:Enable  (Pos.lbExpr,     ST.useexpr)
-    hDlg:Enable  (Pos.edExpr,     ST.useexpr)
+    local val = FarVer==3 and (ST.useexpr and 1 or 0) or ST.useexpr
+    SendMsg(hDlg, F.DM_ENABLE, Pos.toboolean, val)
+    SendMsg(hDlg, F.DM_ENABLE, Pos.lbExpr,    val)
+    SendMsg(hDlg, F.DM_ENABLE, Pos.edExpr,    val)
   end
 
-  Elem.cbExpr.action = function(hDlg, p1, p2)
-    hDlg:Enable(Pos.cbBool, p2)
-    hDlg:Enable(Pos.lbExpr, p2)
-    hDlg:Enable(Pos.edExpr, p2)
+  Elem.useexpr.action = function(hDlg, p1, p2)
+    SendMsg(hDlg, F.DM_ENABLE, Pos.toboolean, p2)
+    SendMsg(hDlg, F.DM_ENABLE, Pos.lbExpr,    p2)
+    SendMsg(hDlg, F.DM_ENABLE, Pos.edExpr,    p2)
   end
 
-  dItems.help = function() far.ShowHelp(thisDir, nil, F.FHELP_CUSTOMPATH) end
+  local function GetFunc(txt)
+    return loadstring("local L=... return "..txt)
+  end
 
   dItems.closeaction = function(hDlg, p1, tOut)
-    if hDlg:GetCheck(Pos.cbExpr) then
-      local expr = "return " .. hDlg:GetText(Pos.edExpr)
-      local f, msg = loadstring(expr)
+    if tOut.useexpr then
+      local f, msg = GetFunc(tOut.edExpr)
+      if f then
+        f, msg = pcall(f,"")
+      end
       if not f then
-        far.Message(msg, M.TITLE, nil, "w"); return 0;
+        far.Message(msg, M.TITLE, nil, "w")
+        return 0
       end
     end
   end
 
+  dlg:LoadData(ST)
   local out = dlg:Run()
   if out then
-    ST.keepempty  = out.cbEmpty
-    ST.keeplast   = out.cbKeepLast
-    ST.statistics = out.cbStat
-    ST.useexpr    = out.cbExpr
-    ST.toboolean  = out.cbBool
-    local op, keepWhat, method
-    if     out.remdup     then op, keepWhat, method = "delete", ST.keeplast and "last" or "first", 1
-    elseif out.clrdup     then op, keepWhat, method = "clear",  ST.keeplast and "last" or "first", 2
-    elseif out.remnonuniq then op, keepWhat, method = "delete", "none" , 3
-    elseif out.clrnonuniq then op, keepWhat, method = "clear",  "none" , 4
+    local op, keepWhat
+    if     out.remdup     then op = "delete"; keepWhat = out.keeplast and "last" or "first"
+    elseif out.clrdup     then op = "clear" ; keepWhat = out.keeplast and "last" or "first"
+    elseif out.remnonuniq then op = "delete"; keepWhat = "none"
+    elseif out.clrnonuniq then op = "clear" ; keepWhat = "none"
     end
     if op then
-      ST.method = method
-      libSettings.msave(SETTINGS_KEY, SETTINGS_NAME, ST)
-      local func = ST.useexpr and loadstring("local L=... return "..out.edExpr)
-      HandleDups(op, keepWhat, ST.keepempty, ST.statistics, func, ST.toboolean)
+      libSettings.msave(SETTINGS_KEY, SETTINGS_NAME, out)
+      local func = out.useexpr and GetFunc(out.edExpr)
+      HandleDups(op, keepWhat, out.keepempty, out.statistics, func, out.toboolean)
     end
   end
 end
 
-Macro {
-  description=mEng.TITLE;
-  area="Editor"; key="CtrlShiftP";
-  action=Main;
-}
+if Macro then
+  if OptUseMacro then
+    Macro {
+      description = M.TITLE;
+      area="Editor"; key="CtrlShiftP"; action=Main;
+    }
+  end
+  if FarVer==3 and OptAddToPluginsMenu and MenuItem then
+    MenuItem {
+      description = M.TITLE;
+      menu   = "Plugins";
+      area   = "Editor";
+      guid   = "D1F37D2D-20F4-4151-820E-236E7B4A42CC";
+      text   = function(menu, area) M = SetLanguage(); return M.TITLE; end;
+      action = function(OpenFrom, Item) mf.postmacro(Main) end;
+    }
+  end
+else
+  Main()
+end

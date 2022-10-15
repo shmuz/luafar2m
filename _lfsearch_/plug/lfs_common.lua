@@ -710,18 +710,21 @@ function SRFrame:OnDataLoaded (aData)
 
   if not self.bScriptCall then
     if bInEditor then
-      local data = _Plugin.History["config"]
-      if data.rPickHistory then
-        Items[Pos.sSearchPat].text = GetDialogHistory("SearchText") or aData.sSearchPat or ""
-      elseif data.rPickNowhere then
-        Items[Pos.sSearchPat].text = ""
-        if Pos.sReplacePat then Items[Pos.sReplacePat].text = ""; end
-      else -- (default) if data.rPickEditor then
-        Items[Pos.sSearchPat].text = GetWordUnderCursor() or ""
+      local config = _Plugin.History["config"]
+      if config.rPickHistory then
+        Items[Pos.sSearchPat].val = GetDialogHistory("SearchText") or aData.sSearchPat or ""
+      elseif config.rPickNowhere then
+        Items[Pos.sSearchPat].val = ""
+        if Pos.sReplacePat then Items[Pos.sReplacePat].val = ""; end
+      else -- (default) if config.rPickEditor then
+        Items[Pos.sSearchPat].val = GetWordUnderCursor() or ""
       end
     else
-      Items[Pos.sSearchPat].text = (aData.sSearchPat == "") and "" or
-        GetDialogHistory("SearchText") or aData.sSearchPat or ""
+      Items[Pos.sSearchPat].val =
+        aData.sSearchPat == "" and ""
+        or GetDialogHistory("SearchText")
+        or aData.sSearchPat
+        or ""
     end
   end
 
