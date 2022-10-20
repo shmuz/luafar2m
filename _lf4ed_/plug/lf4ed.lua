@@ -47,6 +47,10 @@ local function ScriptErrMsg(msg)
   (type(export.OnError)=="function" and export.OnError or ErrMsg)(msg)
 end
 
+local function join(path1, path2)
+  return path1:gsub("/?$", "/", 1) .. path2
+end
+
 local bypass_reload = {
   -- Lua global tables --
   _G=1; coroutine=1; debug=1; io=1; math=1; os=1; package=1; string=1; table=1;
@@ -102,7 +106,7 @@ local function RunFile (filespec, ...)
       local ok, func = pcall(require, file) -- embedded file
       if ok then return func(...) end
     else
-      local func = loadfile(_ShareDir .. file) -- disk file
+      local func = loadfile(join(_ShareDir, file)) -- disk file
       if func then return func(...) end
     end
   end
@@ -294,7 +298,7 @@ local function MakeAddUserFile (aEnv, aItems)
   local function AddUserFile (filename)
     uDepth = uDepth + 1
     if filename:sub(1,1) ~= "/" then
-      filename = _ShareDir .. filename
+      filename = join(_ShareDir, filename)
     end
     if uDepth == 1 then
       -- if top-level _usermenu.lua doesn't exist, it isn't error
@@ -327,7 +331,7 @@ local function MakeAutoInstall (AddUserFile)
   local function AutoInstall (startpath)
     assert(type(startpath)=="string", "bad arg. #1 to AutoInstall")
     if startpath:sub(1,1) ~= "/" then
-      startpath = _ShareDir..startpath
+      startpath = join(_ShareDir, startpath)
     end
     far.RecursiveSearch(startpath, "*",
       function(item, fullpath)
@@ -806,7 +810,7 @@ local function main()
     export.OnError = Utils.OnError
     _Plugin = {}
     _Plugin.ShareDir = far.PluginStartupInfo().ShareDir
-    local repvalue = (";%sscripts%s?.lua;"):format(_Plugin.ShareDir, dirsep)
+    local repvalue = (";%s/scripts/?.lua;"):format(_Plugin.ShareDir)
     _Plugin.PackagePath = package.path:gsub(";", repvalue, 1)
     _Plugin.OriginalRequire = require
     _Plugin.History = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}

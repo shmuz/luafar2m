@@ -49,13 +49,13 @@ end
 local function First_load_actions()
   if not package.loaded.lsqlite3 then
     local info = far.PluginStartupInfo()
-    ReadIniFile(info.ShareDir.."polygon.ini")
+    ReadIniFile(info.ShareDir.."/polygon.ini")
 
     -- Provide priority access to lsqlite3 DLL residing in the plugin's folder
     -- (needed for deployment of the plugin)
-    package.cpath = info.ModuleDir.."?.so;"..package.cpath
+    package.cpath = info.ModuleDir.."/?.so;"..package.cpath
     require "lsqlite3"
-    package.path = info.ShareDir.."?.lua;"..package.path
+    package.path = info.ShareDir.."/?.lua;"..package.path
   end
 end
 

@@ -12,4 +12,3 @@ if not os.getenv("FARHOME"):find("^/usr") then
       far.LoadPlugin("PLT_PATH", fullpath)
     end, "FRS_RECUR")
 end
-

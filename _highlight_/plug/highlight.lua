@@ -797,7 +797,7 @@ local function AddClass (t)
 end
 
 do
-  far.RecursiveSearch(far.PluginStartupInfo().ShareDir.."syntaxes", "*.lua",
+  far.RecursiveSearch(far.PluginStartupInfo().ShareDir.."/syntaxes", "*.lua",
     function (item, fullpath)
       if not item.FileAttributes:find("d") then
         local f, msg = loadfile(fullpath)
