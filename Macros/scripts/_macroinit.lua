@@ -1,13 +1,15 @@
-local path1 = os.getenv("HOME").."/luafar2l"
+local installed = far.PluginStartupInfo().ShareDir:match("^/usr/.-/luafar")
+local luafar = installed or os.getenv("HOME").."/luafar2l"
+local run = select(2, ...)
 
 -- add lua_share to package.path
-if not package.path:find("/lua_share/") then
-  package.path = package.path..";"..path1.."/lua_share/?.lua"
+if run == 1 then
+  package.path = package.path..";"..luafar.."/lua_share/?.lua"
 end
 
 -- load plugins
-if not os.getenv("FARHOME"):find("^/usr") then
-  far.RecursiveSearch(path1, "*.far-plug-wide",
+if run == 1 and not installed then
+  far.RecursiveSearch(luafar, "*.far-plug-wide",
     function(_, fullpath)
       far.LoadPlugin("PLT_PATH", fullpath)
     end, "FRS_RECUR")
