@@ -25,10 +25,8 @@ after some conversion specified by the user).
 ^ #The dialog#
  
  #Actions:#
-   #(•) Remove duplicates# : remove all duplicate lines except the first one in each group of duplicates
-   #(•) Clear  duplicates# : clear  all duplicate lines except the first one in each group of duplicates
-   #(•) Remove non-unique# : remove all duplicate lines (including the first one)
-   #(•) Clear  non-unique# : clear  all duplicate lines (including the first one)
+   #(•) Remove duplicates# : remove all duplicate lines except one in each group of duplicates
+   #(•) Clear  duplicates# : clear  all duplicate lines except one in each group of duplicates
 
  #[x] Keep last duplicate#
    On removing or clearing duplicates keep the last one rather than the first

@@ -28,7 +28,7 @@ end
 
 local ed = editor
 if FarVer == 3 then
-  ed = setmetatable({}, {__index=
+  ed = setmetatable({Editor=editor.Editor}, {__index=
     function(self,name)
       return function(...) return editor[name](nil, ...) end
     end})
@@ -43,8 +43,6 @@ local mEng = {
   TITLE       = "Duplicate Fighter";
   REMDUP      = "&1 Remove duplicates";
   CLRDUP      = "&2 Clear duplicates";
-  REMNONUNIQ  = "&3 Remove non-uniques";
-  CLRNONUNIQ  = "&4 Clear non-uniques";
   KEEPLASTDUP = "Keep &last duplicate";
   KEEPEMPTY   = "&Keep empty lines";
   SHOWSTATS   = "&Show statistics";
@@ -65,8 +63,6 @@ local mRus = {
   TITLE       = "Анти-дубликатор";
   REMDUP      = "&1 Удалить дубликаты";
   CLRDUP      = "&2 Очистить дубликаты";
-  REMNONUNIQ  = "&3 Удалить неуникальные";
-  CLRNONUNIQ  = "&4 Очистить неуникальные";
   KEEPLASTDUP = "&Сохранять последний дубликат";
   KEEPEMPTY   = "Сохр&анять пустые строки";
   SHOWSTATS   = "&Показывать статистику";
@@ -126,15 +122,12 @@ local function HandleDups(op, keepWhat, keepempty, showstats, func, toboolean)
       nUniq = nUniq + 1
     else
       local N = keepWhat=="first" and 1 or keepWhat=="last" and #grp
-      if N then
-        grp[N] = -grp[N] -- the minus "marks" a duplicate to keep rather than remove
-      end
+      grp[N] = -grp[N] -- the minus "marks" a duplicate to keep rather than remove
       for _,lnum in ipairs(grp) do table.insert(duplines, lnum) end
       nDup = nDup + 1
     end
   end
   table.sort(duplines, function(a,b) return math.abs(a) < math.abs(b) end)
-
 
   local nClear, nDel = 0, 0
   ed.UndoRedo("EUR_BEGIN")
@@ -168,24 +161,23 @@ local function Main()
   local sDialog     = require("far2.simpledialog")
   local libSettings = mf or require("far2.settings")
   local ST = libSettings.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
+  local W = 36
 
   local dItems = {
     guid = "85FA90FE-4068-4FFB-962E-F961F46BE867";
     help = function() far.ShowHelp(thisDir, nil, F.FHELP_CUSTOMPATH) end;
-    width = 73;
+    width = 2*W;
     -------------------------------------------------------------------------------
     {tp="dbox";  text=M.TITLE;                                                   },
     {tp="rbutt"; text=M.REMDUP;      name="remdup"; group=1; ystep=2; val=1;     },
     {tp="rbutt"; text=M.CLRDUP;      name="clrdup";                              },
-    {tp="rbutt"; text=M.REMNONUNIQ;  name="remnonuniq";                          },
-    {tp="rbutt"; text=M.CLRNONUNIQ;  name="clrnonuniq";                          },
     -------------------------------------------------------------------------------
-    {tp="chbox"; text=M.KEEPLASTDUP; name="keeplast";   x1=35; ystep=-3;         },
-    {tp="chbox"; text=M.KEEPEMPTY;   name="keepempty";  x1=35;                   },
-    {tp="chbox"; text=M.SHOWSTATS;   name="statistics"; x1=35;                   },
+    {tp="chbox"; text=M.KEEPLASTDUP; name="keeplast";   x1=W; ystep=-1;          },
+    {tp="chbox"; text=M.KEEPEMPTY;   name="keepempty";  x1=W;                    },
+    {tp="chbox"; text=M.SHOWSTATS;   name="statistics"; x1=W;                    },
     -------------------------------------------------------------------------------
-    {tp="chbox"; text=M.USEEXPR;     name="useexpr";   ystep=3;                  },
-    {tp="chbox"; text=M.TOBOOLEAN;   name="toboolean"; ystep=0; x1=35;           },
+    {tp="chbox"; text=M.USEEXPR;     name="useexpr";   ystep=2;                  },
+    {tp="chbox"; text=M.TOBOOLEAN;   name="toboolean"; ystep=0; x1=W;            },
     {tp="text";  text=M.EXPRESSION;  name="lbExpr";                              },
     {tp="edit";  uselasthistory=1;   name="edExpr"; hist="DupFighterExpression"; },
     -------------------------------------------------------------------------------
@@ -229,17 +221,11 @@ local function Main()
   dlg:LoadData(ST)
   local out = dlg:Run()
   if out then
-    local op, keepWhat
-    if     out.remdup     then op = "delete"; keepWhat = out.keeplast and "last" or "first"
-    elseif out.clrdup     then op = "clear" ; keepWhat = out.keeplast and "last" or "first"
-    elseif out.remnonuniq then op = "delete"; keepWhat = "none"
-    elseif out.clrnonuniq then op = "clear" ; keepWhat = "none"
-    end
-    if op then
-      libSettings.msave(SETTINGS_KEY, SETTINGS_NAME, out)
-      local func = out.useexpr and GetFunc(out.edExpr)
-      HandleDups(op, keepWhat, out.keepempty, out.statistics, func, out.toboolean)
-    end
+    local op = out.remdup and "delete" or "clear"
+    local keepWhat = out.keeplast and "last" or "first"
+    libSettings.msave(SETTINGS_KEY, SETTINGS_NAME, out)
+    local func = out.useexpr and GetFunc(out.edExpr)
+    HandleDups(op, keepWhat, out.keepempty, out.statistics, func, out.toboolean)
   end
 end
 
@@ -250,7 +236,7 @@ if Macro then
       area="Editor"; key="CtrlShiftP"; action=Main;
     }
   end
-  if FarVer==3 and OptAddToPluginsMenu and MenuItem then
+  if OptAddToPluginsMenu and MenuItem then
     MenuItem {
       description = M.TITLE;
       menu   = "Plugins";
