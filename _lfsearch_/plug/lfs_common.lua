@@ -191,7 +191,9 @@ end
 
 
 local function EditorConfigDialog()
-  local offset = 5 + M.MBtnHighlightColor:len() + 5
+  local offset = 5 + math.max(M.MBtnHighlightColor:len(),
+                              M.MBtnGrepLineNumMatchedColor:len(),
+                              M.MBtnGrepLineNumContextColor:len()) + 5
   ----------------------------------------------------------------------------
   local Items = {
     width = 76;
@@ -205,9 +207,13 @@ local function EditorConfigDialog()
     {tp="rbutt"; x1=27; name="rPickHistory"; text=M.MOptPickHistory; y1=""; },
     {tp="rbutt"; x1=47; name="rPickNowhere"; text=M.MOptPickNowhere; y1=""; },
 
-    {tp="sep"; ystep=2; },
+    {tp="sep"; ystep=2; text=M.MSepHighlightColors; },
     {tp="butt"; name="btnHighlight"; text=M.MBtnHighlightColor; btnnoclose=1; },
     {tp="text"; name="labHighlight"; text=M.MTextSample; x1=offset; y1=""; width=M.MTextSample:len(); },
+    {tp="butt"; name="btnGrepLNum1"; text=M.MBtnGrepLineNumMatchedColor; btnnoclose=1; },
+    {tp="text"; name="labGrepLNum1"; text=M.MTextSample; x1=offset; y1=""; width=M.MTextSample:len(); },
+    {tp="butt"; name="btnGrepLNum2"; text=M.MBtnGrepLineNumContextColor; btnnoclose=1; },
+    {tp="text"; name="labGrepLNum2"; text=M.MTextSample; x1=offset; y1=""; width=M.MTextSample:len(); },
 
     {tp="sep"; },
     {tp="butt"; centergroup=1; text=M.MOk;    default=1; },
@@ -220,16 +226,26 @@ local function EditorConfigDialog()
   dlg:LoadData(Data)
 
   local hColor0 = Data.EditorHighlightColor
+  local hColor1 = Data.GrepLineNumMatchColor
+  local hColor2 = Data.GrepLineNumContextColor
 
   Items.proc = function(hDlg, msg, param1, param2)
     if msg == F.DN_BTNCLICK then
       if param1 == Pos.btnHighlight then
         local c = far.ColorDialog(hColor0)
         if c then hColor0 = c; hDlg:Redraw(); end
+      elseif param1 == Pos.btnGrepLNum1 then
+        local c = far.ColorDialog(hColor1)
+        if c then hColor1 = c; hDlg:Redraw(); end
+      elseif param1 == Pos.btnGrepLNum2 then
+        local c = far.ColorDialog(hColor2)
+        if c then hColor2 = c; hDlg:Redraw(); end
       end
 
     elseif msg == F.DN_CTLCOLORDLGITEM then
       if param1 == Pos.labHighlight then return hColor0; end
+      if param1 == Pos.labGrepLNum1 then return hColor1; end
+      if param1 == Pos.labGrepLNum2 then return hColor2; end
     end
   end
 
@@ -237,6 +253,8 @@ local function EditorConfigDialog()
   if out then
     dlg:SaveData(out, Data)
     Data.EditorHighlightColor = hColor0
+    Data.GrepLineNumMatchColor = hColor1
+    Data.GrepLineNumContextColor = hColor2
     _Plugin.SaveSettings()
     return true
   end
