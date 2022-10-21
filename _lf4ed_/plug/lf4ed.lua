@@ -584,21 +584,6 @@ local function ProcessCommand (args, sFrom)
   end
 end
 
-local function Redirect(command)
-  local fp = io.popen(command)
-  if fp then
-    local fname = far.MkTemp()
-    local fp2 = io.open(fname, "w")
-    if fp2 then
-      for line in fp:lines() do fp2:write(line,"\n") end
-      fp2:close()
-      fp:close()
-      return fname
-    end
-    fp:close()
-  end
-end
-
 local function export_OpenPlugin (aFrom, aItem)
 
   -- Called from macro
@@ -620,7 +605,6 @@ local function export_OpenPlugin (aFrom, aItem)
   -- Called from command line
   if aFrom == F.OPEN_COMMANDLINE then
     local prefix, command = aItem:match("^(.-):(.*)")
-    local args = SplitCommandLine(command)
     prefix = prefix:lower()
     ----------------------------------------------------------------------------
     if prefix == "lfe" then
@@ -630,47 +614,9 @@ local function export_OpenPlugin (aFrom, aItem)
         local env = setmetatable({}, {__index=_G})
         setfenv(f,env)()
       else
+        local args = SplitCommandLine(command)
         ProcessCommand(args, "panels")
       end
-    ----------------------------------------------------------------------------
-    elseif prefix == "edit" and args[1] then
-      if args[1] == "<" then
-        if args[2] then
-          local cmd = command:match("^%s*<%s+(.+)")
-          local tmpname = Redirect(cmd)
-          if tmpname then
-            local flags = bor(F.EF_NONMODAL, F.EF_IMMEDIATERETURN, F.EF_ENABLE_F6,
-                              F.EF_DELETEONLYFILEONCLOSE, F.EF_DISABLEHISTORY)
-            editor.Editor(tmpname,nil,nil,nil,nil,nil,flags)
-          end
-        end
-      else
-        local flags = bor(F.EF_NONMODAL, F.EF_IMMEDIATERETURN, F.EF_ENABLE_F6)
-        editor.Editor(args[1],nil,nil,nil,nil,nil,flags)
-      end
-    ----------------------------------------------------------------------------
-    elseif prefix == "view" and args[1] then
-      if args[1] == "<" then
-        if args[2] then
-          local cmd = command:match("^%s*<%s+(.+)")
-          local tmpname = Redirect(cmd)
-          if tmpname then
-            local flags = bor(F.VF_NONMODAL, F.VF_IMMEDIATERETURN, F.VF_ENABLE_F6,
-                              F.VF_DELETEONLYFILEONCLOSE, F.VF_DISABLEHISTORY)
-            viewer.Viewer(tmpname,nil,nil,nil,nil,nil,flags)
-          end
-        end
-      else
-        local flags = bor(F.VF_NONMODAL, F.VF_IMMEDIATERETURN, F.VF_ENABLE_F6)
-        viewer.Viewer(args[1],nil,nil,nil,nil,nil,flags)
-      end
-    ----------------------------------------------------------------------------
-    elseif prefix == "load" and args[1] then
-      far.LoadPlugin("PLT_PATH", args[1])
-    ----------------------------------------------------------------------------
-    elseif prefix == "unload" and args[1] then
-      far.UnloadPlugin("PLT_PATH", args[1])
-    ----------------------------------------------------------------------------
     end
     return
   end
@@ -723,7 +669,7 @@ local function export_GetPluginInfo()
     Flags = flags,
     PluginMenuStrings = { M.MPluginName },
     PluginConfigStrings = { M.MPluginName },
-    CommandPrefix = "lfe:edit:view:load:unload",
+    CommandPrefix = "lfe",
   }
 end
 

@@ -7,12 +7,19 @@ $ #LuaFAR Search (version 3.45.3)#
 ^#FEATURES#
  * Search and replace in the editor.
  * Search and replace from the panels.
- * Regular expressions (4 libraries to choose from).
+ * Regular expressions (3 libraries to choose from).
  * User scripts in Lua language, with access to LuaFAR library,
    the regular expression libraries and to the plugin's API.
  * Plugin menus can be extended with user's items that may include
    "presets", test scripts, etc.
 
+^#LIBRARIES USED BY THE PLUGIN (OPTIONAL)#
+ #Oniguruma#                  : libonig.so
+ #PCRE#                       : libpcre.so
+ #Lrexlib-oniguruma#          : sudo luarocks install lrexlib-oniguruma --lua-version 5.1
+ #Lrexlib-PCRE#               : sudo luarocks install lrexlib-pcre --lua-version 5.1
+
+^#TABLE OF CONTENTS#
  #Editor#
    ~Menu~@EditorMenu@
    ~Search and replace~@OperInEditor@
@@ -35,11 +42,6 @@ $ #LuaFAR Search (version 3.45.3)#
    ~Oniguruma~@Oniguruma@
    ~PCRE~@PCRE@
    ~Syntax of Replace pattern~@SyntaxReplace@
-
-^#LIBRARIES USED BY THE PLUGIN#
- #Lrexlib#                    : rex_onig.so, rex_pcre.so (optional)
- #Oniguruma#                  : onig.so (optional)
- #PCRE#                       : pcre.so (optional)
 
 @EditorMenu
 $ #Plugin's menu in the Editor#
