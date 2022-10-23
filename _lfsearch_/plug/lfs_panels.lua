@@ -264,7 +264,7 @@ local BOMs = {
   { codepage=65000; pattern="^%+/v[89+/]";   },
 }
 
-local function GetFileFormat (fp, fname)
+local function GetFileEncoding (fp, fname)
   -- Try BOMs
   fp:seek("set", 0)
   local sTemp = fp:read(8)
@@ -277,9 +277,9 @@ local function GetFileFormat (fp, fname)
       end
     end
   end
-  -- Try far.GetFileFormat (that uses uchardet)
+  -- Try far.GetFileEncoding (that uses uchardet)
   fp:seek("set", 0)
-  local cp = far.GetFileFormat(fname) or 20127 -- US-ASCII
+  local cp = far.GetFileEncoding(fname) or 20127 -- US-ASCII
   return cp, nil
 end
 
@@ -1148,7 +1148,7 @@ local function Replace_ProcessFile (fdata, fullname, cdata)
   end
   cdata.nFilesProcessed = cdata.nFilesProcessed + 1
   ---------------------------------------------------------------------------
-  local nCodePageDetected, sBom = GetFileFormat(fp, ExtendedName)
+  local nCodePageDetected, sBom = GetFileEncoding(fp, ExtendedName)
   local nCodePage = nCodePageDetected or win.GetACP() -- GetOEMCP() ?
   ---------------------------------------------------------------------------
   local fReplace = cdata.fReplace
@@ -1308,7 +1308,7 @@ local function Grep_ProcessFile (fdata, fullname, cdata)
   end
   cdata.nFilesProcessed = cdata.nFilesProcessed + 1
   ---------------------------------------------------------------------------
-  local nCodePageDetected = GetFileFormat(fp, fullname)
+  local nCodePageDetected = GetFileEncoding(fp, fullname)
   local nCodePage = nCodePageDetected or win.GetACP() -- GetOEMCP() ?
   ---------------------------------------------------------------------------
   local bWideCharRegex, Regex, ufind_method = cdata.bWideCharRegex, cdata.Regex, cdata.ufind_method
