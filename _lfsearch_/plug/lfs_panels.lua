@@ -335,6 +335,7 @@ local function ConfigDialog()
     return true
   end
 end
+libTmpPanel.Panel.ConfigFunction = ConfigDialog
 
 local function GetCodePages (aData)
   local Checked = {}
@@ -900,8 +901,17 @@ local function InitTmpPanel()
     if history[k] == nil then history[k] = v end
   end
 
-  libTmpPanel.PutExportedFunctions(export)
-  export.SetFindList = nil
+  for _, name in ipairs {
+    "ClosePlugin",
+    "GetFindData",
+    "GetOpenPluginInfo",
+    "ProcessEvent",
+    "ProcessKey",
+    "PutFiles",
+    "SetDirectory" }
+  do
+    export[name] = libTmpPanel.Panel[name]
+  end
 
   local tpGetOpenPluginInfo = export.GetOpenPluginInfo
   export.GetOpenPluginInfo = function (Panel, Handle)

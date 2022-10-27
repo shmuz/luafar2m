@@ -1,6 +1,5 @@
 -------------------------------------------------------------------------------
--- Requirements: Lua 5.1, FAR 1.70.
--------------------------------------------------------------------------------
+-- luacheck: globals _Plugin
 
 -- CONFIGURATION : keep it at the file top !!
 local Cfg = {
@@ -64,12 +63,24 @@ local function InitUpvalues (_Plugin)
   History = _Plugin.History
   Require = Cfg.ReloadOnRequire and Require or require
   far.ReloadDefaultScript = Cfg.ReloadDefaultScript
-  local tmppanel = Require "far2.tmppanel"
-  tmppanel.SetMessageTable(require "tmpp_message") -- message localization support
-  far.tmppanel = far.tmppanel or tmppanel
-  far.tmppanel.Env = tmppanel.NewEnv (far.tmppanel.Env or field(History, "Env"))
+  local tp = Require "far2.tmppanel"
+  tp.SetMessageTable(require "tmpp_message") -- message localization support
+  far.tmppanel = far.tmppanel or tp
+  far.tmppanel.Env = tp.NewEnv (far.tmppanel.Env or field(History, "Env"))
   Env = far.tmppanel.Env
-  tmppanel.PutExportedFunctions(export)
+  for _, name in ipairs {
+    "ClosePlugin",
+    "GetFindData",
+    "GetOpenPluginInfo",
+    "ProcessEvent",
+    "ProcessKey",
+    "PutFiles",
+    "SetDirectory",
+    "SetFindList" }
+  do
+    export[name] = tp.Panel[name]
+  end
+  tp.Panel.ConfigFunction = export.Configure
 end
 
 local function main()

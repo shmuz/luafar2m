@@ -3,8 +3,6 @@
 
 local sd = require "far2.simpledialog"
 
-local Package = {}
-
 -- The default message table
 local M = {
   MOk                         = "Ok";
@@ -45,7 +43,7 @@ local M = {
 }
 
 -- This function should be called if message localization support is needed
-function Package.SetMessageTable(msg_tbl) M = msg_tbl; end
+local function Mod_SetMessageTable(msg_tbl) M = msg_tbl; end
 
 local F  = far.Flags
 local band, bor = bit64.band, bit64.bor
@@ -138,9 +136,9 @@ end
 
 
 local function ParseParam (str)
-  local parm, str2 = str:match "^%|(.*)%|(.*)"
-  if parm then
-    return parm, LTrim(str2)
+  local p1, p2 = str:match "^%|(.*)%|(.*)"
+  if p1 then
+    return p1, LTrim(p2)
   end
   return nil, str
 end
@@ -164,15 +162,13 @@ local function CheckForCorrect (Name)
 
   if p:find "%S" and not p:find "[?*]" and p ~= "\\" and p ~= ".." then
     local q = p:gsub("/$", "")
-    local PanelItem = win.GetFileInfo(q)
-    if PanelItem then
-      PanelItem.FileName = p
-      PanelItem.PackSize    = PanelItem.FileSize
-      PanelItem.Description = "One of my files"
-      PanelItem.Owner       = "Joe Average"
-    --PanelItem.UserData  = numline
-    --PanelItem.Flags     = { selected=true, }
-      return PanelItem
+    local Item = win.GetFileInfo(q)
+    if Item then
+      Item.FileName = p
+      Item.PackSize    = Item.FileSize
+      Item.Description = "One of my files"
+      Item.Owner       = "Joe Average"
+      return Item
     end
   end
 end
@@ -180,8 +176,7 @@ end
 
 local function IsCurrentFileCorrect (Handle)
   local fname = panel.GetCurrentPanelItem(Handle).FileName
-  local correct = (fname == "..") or (CheckForCorrect(fname) and true)
-  return correct, fname
+  return (fname == ".." or CheckForCorrect(fname)) and fname
 end
 
 
@@ -200,11 +195,6 @@ local function GoToFile (Target, PanelNumber)
       return
     end
   end
-end
-
-
-local function SortListCmp (Item1, Item2)
-  return Item1:upper() < Item2:upper()
 end
 
 
@@ -252,18 +242,8 @@ local function ShowMenuFromFile (FileName)
 end
 
 
-function Package.PutExportedFunctions (tab)
-  for _, name in ipairs {
-        "GetFindData", "GetOpenPluginInfo", "PutFiles", "SetDirectory",
-        "ProcessEvent", "ProcessKey", "SetFindList", "ClosePlugin", }
-  do
-    tab[name] = Panel[name]
-  end
-end
-
-
 -- Создать новое окружение, или воссоздать из истории /?/
-function Package.NewEnv (aEnv)
+local function Mod_NewEnv (aEnv)
   local self = aEnv or {}
 
   -- создать или воссоздать опции для окружения
@@ -363,27 +343,27 @@ end
 
 
 function Env:NewPanel (aOptions)
-  local newpanel = {
+  local pan = {
     Env = self,
     LastOwnersRead = false,
     LastLinksRead = false,
   }
 
-  newpanel.Opt = setmetatable({}, self.OptMeta)
+  pan.Opt = setmetatable({}, self.OptMeta)
   if aOptions then
-    for k,v in pairs(aOptions) do newpanel.Opt[k] = v end
+    for k,v in pairs(aOptions) do pan.Opt[k] = v end
   end
 
   if self.StartupOptCommonPanel then
-    newpanel.Index = self.CurrentCommonPanel
-    newpanel.GetItems = Panel.GetRefItems
-    newpanel.ReplaceFiles = Panel.ReplaceRefFiles
+    pan.Index = self.CurrentCommonPanel
+    pan.GetItems = Panel.GetRefItems
+    pan.ReplaceFiles = Panel.ReplaceRefFiles
   else
-    newpanel.Files = {}
-    newpanel.GetItems = Panel.GetOwnItems
-    newpanel.ReplaceFiles = Panel.ReplaceOwnFiles
+    pan.Files = {}
+    pan.GetItems = Panel.GetOwnItems
+    pan.ReplaceFiles = Panel.ReplaceOwnFiles
   end
-  return setmetatable (newpanel, { __index = Panel })
+  return setmetatable (pan, { __index = Panel })
 end
 
 
@@ -599,8 +579,11 @@ end
 
 
 function Panel:ProcessRemoveKey (Handle)
-  local tb_out, tb_dict = {}, {}
   local PInfo = assert(panel.GetPanelInfo (Handle))
+  if PInfo.SelectedItemsNumber == 0 then
+    return
+  end
+  local tb_out, tb_dict = {}, {}
   for i=1, PInfo.SelectedItemsNumber do
     local item = panel.GetSelectedPanelItem (Handle, i)
     tb_dict[item.FileName] = true
@@ -678,24 +661,22 @@ do
       return true
     end
 
-    if ControlState == bor(A,S) and Key == VK.F9 then
-       if export.Configure then export.Configure(0) end
+    if ControlState == bor(A,S) and Key == VK.F9 then -- AltShiftF9
+       if self.ConfigFunction then self.ConfigFunction() end
        return true
     end
 
-    if ControlState == bor(A,S) and Key == VK.F3 then
-      local Ok, CurFileName = IsCurrentFileCorrect (Handle)
-      if Ok then
-        if CurFileName ~= ".." then
-          local currItem = assert(panel.GetCurrentPanelItem (Handle))
-          if IsDirectory (currItem) then
-            panel.SetPanelDirectory (0, CurFileName)
-          else
-            GoToFile(CurFileName, 0)
-          end
-          panel.RedrawPanel (0)
-          return true
+    if ControlState == bor(A,S) and Key == VK.F3 then -- AltShiftF3
+      local CurFileName = IsCurrentFileCorrect (Handle)
+      if CurFileName and CurFileName ~= ".." then
+        local currItem = assert(panel.GetCurrentPanelItem (Handle))
+        if IsDirectory (currItem) then
+          panel.SetPanelDirectory (0, CurFileName)
+        else
+          GoToFile(CurFileName, 0)
         end
+        panel.RedrawPanel (0)
+        return true
       end
     end
 
@@ -707,13 +688,13 @@ do
     end
 
     if self.Opt.SafeModePanel and ControlState == C and Key == VK.PRIOR then
-      local Ok, CurFileName = IsCurrentFileCorrect(Handle)
-      if Ok and CurFileName ~= ".." then
-        GoToFile(CurFileName, 1)
-        return true
-      end
-      if CurFileName == ".." then
-        panel.ClosePlugin(Handle, ".")
+      local CurFileName = IsCurrentFileCorrect(Handle)
+      if CurFileName then
+        if CurFileName ~= ".." then
+          GoToFile(CurFileName, 1)
+        else
+          panel.ClosePlugin(Handle, ".")
+        end
         return true
       end
     end
@@ -745,17 +726,10 @@ end
 
 
 function Panel:RemoveDuplicates ()
-  local items = self:GetItems()
-  local pat = "[\\/ ]+$"
-  for _,v in ipairs(items) do
---far.Message(type(v))
-    v = v:gsub(pat, "")
-  end
-  table.sort(items, SortListCmp)
-  local RemoveTable = {}
-  for i = 1, #items - 1 do
-    if items[i]:upper() == items[i+1]:upper() then
-      RemoveTable[i] = true
+  local RemoveTable, map = {}, {}
+  for i,v in ipairs(self:GetItems()) do
+    if map[v] then RemoveTable[i] = true
+    else map[v] = true
     end
   end
   self:RemoveMarkedItems(RemoveTable)
@@ -927,8 +901,8 @@ end
 function Panel:SetFindList (Handle, PanelItems)
   local hScreen = self:BeginPutFiles()
   if self.Index and self.Opt.NewPanelForSearchResults then
-    self.Env.CurrentCommonPanel = self.Env:FindSearchResultsPanel()
-    self.Index = self.Env.CurrentCommonPanel
+    self.Index = self.Env:FindSearchResultsPanel()
+    self.Env.CurrentCommonPanel = self.Index
   end
   local newfiles = {}
   for i,v in ipairs(PanelItems) do
@@ -942,12 +916,16 @@ end
 
 function Panel:SwitchToPanel (Handle, Index)
   if Index and Index ~= self.Index then
+    self.Index = Index
     self.Env.CurrentCommonPanel = Index
-    self.Index = self.Env.CurrentCommonPanel
     panel.UpdatePanel(Handle, true)
     panel.RedrawPanel(Handle)
   end
 end
 
 
-return Package
+return {
+  SetMessageTable = Mod_SetMessageTable;
+  NewEnv          = Mod_NewEnv;
+  Panel           = Panel;
+}
