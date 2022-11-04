@@ -73,10 +73,6 @@ end
 -- static struct PluginStartupInfo Info;
 -- static struct FarStandardFunctions FSF;
 
-local ei={}  -- EditorInfo
-local egs={} -- EditorGetString
-local esp={} -- EditorSetPosition
-
 local function FileExists(Name)
   return win.GetFileAttr(Name) ~= nil
 end
@@ -95,17 +91,6 @@ local function ShowHelp(fullfilename, topic, CmdLine, ShowError)
   end
 end
 
--- void WINAPI GetGlobalInfoW(struct GlobalInfo *Info)
--- {
---   Info->StructSize=sizeof(GlobalInfo);
---   Info->MinFarVersion=FARMANAGERVERSION;
---   Info->Version=PLUGIN_VERSION;
---   Info->Guid=MainGuid;
---   Info->Title=PLUGIN_NAME;
---   Info->Description=PLUGIN_DESC;
---   Info->Author=PLUGIN_AUTHOR;
--- }
-
 local function RestorePosition(ei)
   local esp = {}
   esp.CurLine = ei.CurLine
@@ -120,12 +105,9 @@ local function FindTopic (ForwardDirect, RestorePos)
   local ret = nil
   local ei = editor.GetInfo()
 
-  esp = {}
-  egs.StringNumber = nil
-
   local Direct = ForwardDirect and 1 or -1
 
-  esp.CurLine = ei.CurLine
+  local esp = { CurLine=ei.CurLine; }
   while true do
     if ForwardDirect then
       if esp.CurLine > ei.TotalLines then break end
@@ -133,7 +115,7 @@ local function FindTopic (ForwardDirect, RestorePos)
       if esp.CurLine < 1 then break end
     end
     editor.SetPosition(esp)
-    egs = editor.GetString()
+    local egs = editor.GetString()
     local tmp = egs.StringText
 
     -- "Тема": начинается '@', дальше букво-цифры, не содержит '='
@@ -166,27 +148,23 @@ local function IsHlf()
     end
   end
 
-  if CheckedHlf then
-    esp = {}
-    local total = math.min(ei.TotalLines, 3)
+  if CheckedHlf and ei.TotalLines >= 3 then
+    local esp = {}
+    for i=1,3 do
+      esp.CurLine = i
+      editor.SetPosition(esp)
+      local egs = editor.GetString()
 
-    if total > 2 then
-      for i=1,total do
-        esp.CurLine = i
-        editor.SetPosition(esp)
-        egs = editor.GetString()
-
-        if 0 == far.LStrnicmp(".Language=",egs.StringText,10) then
-          -- доп.проверка
-          if FindTopic(true,false) then
-            ret = true
-          end
-          break
+      if 0 == far.LStrnicmp(".Language=",egs.StringText,10) then
+        -- доп.проверка
+        if FindTopic(true,false) then
+          ret = true
         end
+        break
       end
-
-      RestorePosition(ei)
     end
+
+    RestorePosition(ei)
   end
 
   return ret
@@ -217,7 +195,7 @@ end
 local function ShowCurrentHelpTopic()
   local Result = true
   local FileName = editor.GetFileName()
-  ei = editor.GetInfo()
+  local ei = editor.GetInfo()
 
   if Opt.Style == 1 then
     if 0 == bit64.band(ei.CurState, F.ECSTATE_SAVED) then
@@ -258,13 +236,11 @@ function export.OpenPlugin(OpenFrom, Item)
   end
 
   if OpenFrom==F.OPEN_COMMANDLINE then
-    -- static wchar_t cmdbuf[1024], FileName[MAX_PATH], *ptrTopic, *ptrName;
-    local cmdbuf, ptrTopic, ptrName
-
     -- разбор "параметров ком.строки"
-    cmdbuf = Item
+    local cmdbuf = Item
+    local ModuleName = far.PluginStartupInfo().ModuleName
 
-    if cmdbuf ~= "" then
+    if cmdbuf:find("%S") then
       cmdbuf = Trim(cmdbuf)
 
       local ptrName,ptrTopic = cmdbuf:match('"([^"]+)"(.*)')
@@ -274,31 +250,30 @@ function export.OpenPlugin(OpenFrom, Item)
       if ptrName == nil then
         return
       end
-      ptrTopic = ptrTopic:match("%s+%S.*")
 
+      ptrTopic = ptrTopic:match("%S.*")
       if ptrTopic then
         ptrTopic = ptrTopic:gsub("^@", "")
-        ptrTopic = (ptrTopic ~= "") and Trim(ptrTopic) or nil
-      else
-        if ptrName:find('^@') then
-          ptrTopic = ptrName:sub(2)
-          ptrTopic = Trim(ptrTopic)
-          ptrName = nil
-        end
+        ptrTopic = ptrTopic:find("%S") and Trim(ptrTopic)
       end
 
-      local ptrCurDir = nil
+      if not ptrTopic and ptrName:find('^@') then
+        ptrTopic = Trim(ptrName:sub(2))
+        ptrName = nil
+      end
 
       -- Здесь: ptrName - тмя файла/GUID, ptrTopic - имя темы
 
       -- по GUID`у не найдено, пробуем имя файла
-      if true then
+      if not ptrName then
+        far.ShowHelp(ModuleName, ptrTopic, F.FHELP_FARHELP)
+      else
         local TempFileName = ptrName
 
         -- Если имя файла без пути...
-        if nil == ptrName:find("/") then
+        if not ptrName:find("/") then
           -- ...смотрим в текущем каталоге
-          ptrCurDir = far.GetCurrentDirectory()
+          local ptrCurDir = far.GetCurrentDirectory()
 
           if ptrCurDir then
             ptrCurDir = ptrCurDir.."/"..ptrName
@@ -308,7 +283,7 @@ function export.OpenPlugin(OpenFrom, Item)
           end
 
           -- ...в текущем нет...
-          if nil == ptrName:find("/") then
+          if not ptrName:find("/") then
             -- ...смотрим в %FARHOME%
             local ExpFileName = win.GetEnv("FARHOME").."/"..ptrName
             if not FileExists(ExpFileName) then
@@ -328,12 +303,12 @@ function export.OpenPlugin(OpenFrom, Item)
         local FileName = far.ConvertPath(ptrName)
         if not ShowHelp(FileName, ptrTopic, true, ptrTopic and ptrTopic ~= "") then
           -- синтаксис hlf:topic_из_ФАР_хелпа ==> TempFileName
-          far.ShowHelp(far.PluginStartupInfo().ModuleName, TempFileName, F.FHELP_FARHELP)
+          far.ShowHelp(ModuleName, TempFileName, F.FHELP_FARHELP)
         end
       end
     else
       -- параметры не указаны, выводим подсказку по использованию плагина.
-      far.ShowHelp(far.PluginStartupInfo().ModuleName, "cmd", F.FHELP_SELFHELP)
+      far.ShowHelp(ModuleName, "cmd", F.FHELP_SELFHELP)
     end
   end
 
@@ -372,7 +347,7 @@ function export.ProcessEditorInput (Rec)
 
   if Opt.ProcessEditorInput then
     if Rec.EventType==F.KEY_EVENT and Rec.KeyDown and inputrecord_compare(Rec,Opt.RecKey) then
-      ei = editor.GetInfo()
+      local ei = editor.GetInfo()
 
       if IsHlf() or (Opt.CheckMaskFile and CheckExtension(ei.FileName)) then
         Result = ShowCurrentHelpTopic()
