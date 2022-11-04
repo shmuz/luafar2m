@@ -1,0 +1,21 @@
+﻿.Language=English,English
+
+"HlfViewer"
+
+"HlfViewer"
+"HlfViewer: show current help topic"
+
+"Process editor hot&key:"
+"&Check by file mask:"
+
+"Show the HLF-file opened in the editor:"
+"Show &last saved file"
+"Show &modified file"
+"&Save and show modified file"
+
+"Save"
+"Cancel"
+
+"Contents"
+
+"The file opened in the editor is not an HLF file"

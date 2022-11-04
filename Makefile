@@ -4,7 +4,7 @@ ifdef install
 PARAM = install
 endif
 
-all: lf4ed lfsearch lftmp lfhistory polygon luapanel highlight
+all: lf4ed lfsearch lftmp lfhistory polygon luapanel highlight hlfviewer
 
 lf4ed:
 	cd _lf4ed_/build && $(MAKE) $(PARAM)
@@ -30,4 +30,7 @@ luapanel:
 highlight:
 	cd _highlight_/build && $(MAKE) $(PARAM)
 
-.PHONY: all lf4ed lfsearch lftmp lfhistory polygon luapanel highlight
+hlfviewer:
+	cd _hlfviewer_/build && $(MAKE) $(PARAM)
+
+.PHONY: all lf4ed lfsearch lftmp lfhistory polygon luapanel highlight hlfviewer
