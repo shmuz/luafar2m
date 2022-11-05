@@ -25,21 +25,21 @@ local luafar = {
 
     ["far"] = {
       fields = {
-        "AdvControl", "CheckMask", "CmpName", "CmpNameList", "ColorDialog", "Colors", "ConvertPath",
-        "CopyToClipboard", "CPluginStartupInfo", "CreateFileFilter", "CreateUserControl",
-        "DefDlgProc", "Dialog", "DialogFree", "DialogInit", "DialogRun", "Execute",
-        "ExecuteLibrary", "FarMacroCallToLua", "Flags", "ForcedLoadPlugin", "GenerateName",
-        "GetConfigDir", "GetCurrentDirectory", "GetDirList", "GetFileEncoding", "GetFileOwner",
-        "GetMsg", "GetNumberOfLinks", "GetPathRoot", "GetPluginId", "GetPluginDirList",
-        "GetReparsePointInfo", "Guids", "InputBox", "InputRecordToKey", "InputRecordToName", "Keys",
-        "KeyToName", "LIsAlpha", "LIsAlphanum", "LIsLower", "LIsUpper", "LLowerBuf", "LoadPlugin",
-        "Log", "LStricmp", "LStrnicmp", "LuafarVersion", "LUpperBuf", "MacroAdd", "MacroCallFar",
-        "MacroCheck", "MacroDelete", "MacroExecute", "MacroGetArea", "MacroGetLastError",
-        "MacroGetState", "MacroLoadAll", "MacroPost", "MacroSaveAll", "MakeMenuItems", "Menu",
-        "Message", "MkLink", "MkTemp", "NameToInputRecord", "NameToKey", "PasteFromClipboard",
-        "PluginStartupInfo", "ProcessName", "RecursiveSearch", "ReloadDefaultScript",
-        "RestoreScreen", "SaveScreen", "SendDlgMessage", "Show", "ShowHelp", "Text", "Timer",
-        "TruncPathStr", "TruncStr", "UnloadPlugin", "XLat",
+        "AdvControl", "CheckMask", "ClearPluginCache", "CmpName", "CmpNameList", "ColorDialog",
+        "Colors", "ConvertPath", "CopyToClipboard", "CPluginStartupInfo", "CreateFileFilter",
+        "CreateUserControl", "DefDlgProc", "Dialog", "DialogFree", "DialogInit", "DialogRun",
+        "Execute", "ExecuteLibrary", "FarMacroCallToLua", "Flags", "ForcedLoadPlugin",
+        "GenerateName", "GetConfigDir", "GetCurrentDirectory", "GetDirList", "GetFileEncoding",
+        "GetFileOwner", "GetMsg", "GetNumberOfLinks", "GetPathRoot", "GetPluginId",
+        "GetPluginDirList", "GetReparsePointInfo", "Guids", "InputBox", "InputRecordToKey",
+        "InputRecordToName", "Keys", "KeyToName", "LIsAlpha", "LIsAlphanum", "LIsLower", "LIsUpper",
+        "LLowerBuf", "LoadPlugin", "Log", "LStricmp", "LStrnicmp", "LuafarVersion", "LUpperBuf",
+        "MacroAdd", "MacroCallFar", "MacroCheck", "MacroDelete", "MacroExecute", "MacroGetArea",
+        "MacroGetLastError", "MacroGetState", "MacroLoadAll", "MacroPost", "MacroSaveAll",
+        "MakeMenuItems", "Menu", "Message", "MkLink", "MkTemp", "NameToInputRecord", "NameToKey",
+        "PasteFromClipboard", "PluginStartupInfo", "ProcessName", "RecursiveSearch",
+        "ReloadDefaultScript", "RestoreScreen", "SaveScreen", "SendDlgMessage", "Show", "ShowHelp",
+        "Text", "Timer", "TruncPathStr", "TruncStr", "UnloadPlugin", "XLat",
 
         ["Flags"] = {
           fields = {

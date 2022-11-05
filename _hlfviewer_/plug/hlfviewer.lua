@@ -61,17 +61,14 @@ end
 local function GetPluginConfig()
   Opt = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or _DefOpt
 
-	local rec = far.NameToInputRecord(Opt.AssignKeyName)
+  local rec = far.NameToInputRecord(Opt.AssignKeyName)
   if rec then
     Opt.RecKey = rec
   else
-		Opt.AssignKeyName = "F1"
-		Opt.RecKey=_DefKey;
-	end
+    Opt.AssignKeyName = "F1"
+    Opt.RecKey=_DefKey;
+  end
 end
-
--- static struct PluginStartupInfo Info;
--- static struct FarStandardFunctions FSF;
 
 local function FileExists(Name)
   return win.GetFileAttr(Name) ~= nil
@@ -362,15 +359,16 @@ end
 function export.Configure()
   GetPluginConfig()
 
+  local W = 38
   local Items = {
     guid="7A3A74E8-505E-482B-A7F3-2ECE6AC41650";
     help="Config";
-    width=65;
+    width=2*W;
     { tp="dbox";  text=M.MConfig; },
     { tp="chbox"; text=M.MProcessEditorInput; val=Opt.ProcessEditorInput; name="ProcessEditorInput"; },
     { tp="chbox"; text=M.MCheckMaskFile;      val=Opt.CheckMaskFile;      name="CheckMaskFile"; },
-    { tp="edit";  x1=34; width=21; ystep=-1;  val=Opt.AssignKeyName;      name="AssignKeyName"; },
-    { tp="edit";  x1=34; width=21;            val=Opt.MaskFile;           name="MaskFile"; },
+    { tp="edit";  x1=W+5;  ystep=-1;  val=Opt.AssignKeyName;              name="AssignKeyName"; },
+    { tp="edit";  x1=W+5;                     val=Opt.MaskFile;           name="MaskFile"; },
     { tp="sep"; },
     { tp="text";  text=M.MStyle; },
     { tp="rbutt"; text=M.MStr1;               val=Opt.Style==0;           name="Style0"; },
