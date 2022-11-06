@@ -134,6 +134,10 @@ end
 -- это HLF-файл?
 -- первая строка hlf всегда начинается с ".Language="
 local function IsHlf()
+  if far.MacroGetArea() ~= F.MACROAREA_EDITOR then
+    return false
+  end
+
   local ret=false
   local ei = editor.GetInfo()
   local CheckedHlf=true
@@ -217,98 +221,102 @@ local function ShowCurrentHelpTopic()
   return Result
 end
 
-function export.OpenPlugin(OpenFrom, Item)
-  if OpenFrom == F.OPEN_EDITOR or OpenFrom==F.OPEN_FROMMACRO then
-    local MacroResult = nil
-    -- в редакторе проверяем файл на принадлежность к системе помощи Far Manager
-    if IsHlf() then
-      if ShowCurrentHelpTopic() then
-        MacroResult = nil --### INVALID_HANDLE_VALUE
+local function OpenFromCmdLine(cmdbuf)
+  -- разбор "параметров ком.строки"
+  local ModuleName = far.PluginStartupInfo().ModuleName
+
+  if cmdbuf:find("%S") then
+    cmdbuf = Trim(cmdbuf)
+
+    local ptrName,ptrTopic = cmdbuf:match('"([^"]+)"(.*)')
+    if ptrName == nil then
+      ptrName,ptrTopic = cmdbuf:match('(%S+)(.*)')
+    end
+    if ptrName == nil then
+      return
+    end
+
+    ptrTopic = ptrTopic:match("%S.*")
+    if ptrTopic then
+      ptrTopic = ptrTopic:gsub("^@", "")
+      ptrTopic = ptrTopic:find("%S") and Trim(ptrTopic)
+    end
+
+    if not ptrTopic and ptrName:find('^@') then
+      ptrTopic = Trim(ptrName:sub(2))
+      ptrName = nil
+    end
+
+    -- Здесь: ptrName - тмя файла/GUID, ptrTopic - имя темы
+
+    -- по GUID`у не найдено, пробуем имя файла
+    if not ptrName then
+      far.ShowHelp(ModuleName, ptrTopic, F.FHELP_FARHELP)
+    else
+      local TempFileName = ptrName
+
+      -- Если имя файла без пути...
+      if not ptrName:find("/") then
+        -- ...смотрим в текущем каталоге
+        local ptrCurDir = far.GetCurrentDirectory()
+
+        if ptrCurDir then
+          ptrCurDir = ptrCurDir.."/"..ptrName
+          if FileExists(ptrCurDir) then
+            ptrName = ptrCurDir
+          end
+        end
+
+        -- ...в текущем нет...
+        if not ptrName:find("/") then
+          -- ...смотрим в %FARHOME%
+          local ExpFileName = win.GetEnv("FARHOME").."/"..ptrName
+          if not FileExists(ExpFileName) then
+            -- ...в %FARHOME% нет, поищем по путям плагинов.
+            -- if FindPluginHelp(ptrName,ExpFileName) then -- ###
+            --   ptrName=ExpFileName
+            -- end
+          else
+            ptrName=ExpFileName
+          end
+        end
+      else
+        -- ptrName указан с путём.
+        ptrName = ptrName:gsub("%$([%w_]+)", win.GetEnv)
       end
-    elseif OpenFrom ~= F.OPEN_FROMMACRO then
+
+      local FileName = far.ConvertPath(ptrName)
+      if not ShowHelp(FileName, ptrTopic, true, ptrTopic and ptrTopic ~= "") then
+        -- синтаксис hlf:topic_из_ФАР_хелпа ==> TempFileName
+        far.ShowHelp(ModuleName, TempFileName, F.FHELP_FARHELP)
+      end
+    end
+  else
+    -- параметры не указаны, выводим подсказку по использованию плагина.
+    far.ShowHelp(ModuleName, "cmd", F.FHELP_SELFHELP)
+  end
+
+end
+
+function export.OpenPlugin(OpenFrom, Item)
+  if OpenFrom == F.OPEN_EDITOR then
+    if IsHlf() then -- проверяем файл на принадлежность к системе помощи Far Manager
+      ShowCurrentHelpTopic()
+    else
       far.Message(M.MNotAnHLF, M.MTitle, M.MOk)
     end
 
-    return OpenFrom==F.OPEN_FROMMACRO and MacroResult or nil
-  end
-
-  if OpenFrom==F.OPEN_COMMANDLINE then
-    -- разбор "параметров ком.строки"
-    local cmdbuf = Item
-    local ModuleName = far.PluginStartupInfo().ModuleName
-
-    if cmdbuf:find("%S") then
-      cmdbuf = Trim(cmdbuf)
-
-      local ptrName,ptrTopic = cmdbuf:match('"([^"]+)"(.*)')
-      if ptrName == nil then
-        ptrName,ptrTopic = cmdbuf:match('(%S+)(.*)')
+  elseif OpenFrom == F.OPEN_FROMMACRO then
+    if IsHlf() then -- проверяем файл на принадлежность к системе помощи Far Manager
+      if ShowCurrentHelpTopic() then
+        return true
       end
-      if ptrName == nil then
-        return
-      end
-
-      ptrTopic = ptrTopic:match("%S.*")
-      if ptrTopic then
-        ptrTopic = ptrTopic:gsub("^@", "")
-        ptrTopic = ptrTopic:find("%S") and Trim(ptrTopic)
-      end
-
-      if not ptrTopic and ptrName:find('^@') then
-        ptrTopic = Trim(ptrName:sub(2))
-        ptrName = nil
-      end
-
-      -- Здесь: ptrName - тмя файла/GUID, ptrTopic - имя темы
-
-      -- по GUID`у не найдено, пробуем имя файла
-      if not ptrName then
-        far.ShowHelp(ModuleName, ptrTopic, F.FHELP_FARHELP)
-      else
-        local TempFileName = ptrName
-
-        -- Если имя файла без пути...
-        if not ptrName:find("/") then
-          -- ...смотрим в текущем каталоге
-          local ptrCurDir = far.GetCurrentDirectory()
-
-          if ptrCurDir then
-            ptrCurDir = ptrCurDir.."/"..ptrName
-            if FileExists(ptrCurDir) then
-              ptrName = ptrCurDir
-            end
-          end
-
-          -- ...в текущем нет...
-          if not ptrName:find("/") then
-            -- ...смотрим в %FARHOME%
-            local ExpFileName = win.GetEnv("FARHOME").."/"..ptrName
-            if not FileExists(ExpFileName) then
-              -- ...в %FARHOME% нет, поищем по путям плагинов.
-              -- if FindPluginHelp(ptrName,ExpFileName) then -- ###
-              --   ptrName=ExpFileName
-              -- end
-            else
-              ptrName=ExpFileName
-            end
-          end
-        else
-          -- ptrName указан с путём.
-          ptrName = ptrName:gsub("%$([%w_]+)", win.GetEnv)
-        end
-
-        local FileName = far.ConvertPath(ptrName)
-        if not ShowHelp(FileName, ptrTopic, true, ptrTopic and ptrTopic ~= "") then
-          -- синтаксис hlf:topic_из_ФАР_хелпа ==> TempFileName
-          far.ShowHelp(ModuleName, TempFileName, F.FHELP_FARHELP)
-        end
-      end
-    else
-      -- параметры не указаны, выводим подсказку по использованию плагина.
-      far.ShowHelp(ModuleName, "cmd", F.FHELP_SELFHELP)
     end
-  end
 
+  elseif OpenFrom == F.OPEN_COMMANDLINE then
+    OpenFromCmdLine(Item)
+
+  end
 end
 
 function export.GetPluginInfo()
