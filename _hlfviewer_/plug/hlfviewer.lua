@@ -221,6 +221,24 @@ local function ShowCurrentHelpTopic()
   return Result
 end
 
+local function FindPluginHelp(Name)
+  local hPlugins = far.GetPlugins()
+  if not hPlugins then return end
+  for _,hPlug in ipairs(hPlugins) do
+    local Info = far.GetPluginInformation(hPlug)
+    if Info then
+      local dir = Info.ModuleName:match(".*/")
+      local file = far.RecursiveSearch(dir, Name,
+        function(item,fullpath)
+          if not item.FileAttributes:find("d") then
+            return fullpath
+          end
+        end, F.FRS_RECUR+F.FRS_SCANSYMLINK)
+      if file then return file end
+    end
+  end
+end
+
 local function OpenFromCmdLine(cmdbuf)
   -- разбор "параметров ком.строки"
   local ModuleName = far.PluginStartupInfo().ModuleName
@@ -273,9 +291,8 @@ local function OpenFromCmdLine(cmdbuf)
           local ExpFileName = win.GetEnv("FARHOME").."/"..ptrName
           if not FileExists(ExpFileName) then
             -- ...в %FARHOME% нет, поищем по путям плагинов.
-            -- if FindPluginHelp(ptrName,ExpFileName) then -- ###
-            --   ptrName=ExpFileName
-            -- end
+            ExpFileName = FindPluginHelp(ptrName)
+            if ExpFileName then ptrName=ExpFileName end
           else
             ptrName=ExpFileName
           end
