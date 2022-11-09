@@ -223,18 +223,23 @@ end
 
 local function FindPluginHelp(Name)
   local hPlugins = far.GetPlugins()
-  if not hPlugins then return end
-  for _,hPlug in ipairs(hPlugins) do
-    local Info = far.GetPluginInformation(hPlug)
-    if Info then
-      local dir = Info.ModuleName:match(".*/")
-      local file = far.RecursiveSearch(dir, Name,
-        function(item,fullpath)
-          if not item.FileAttributes:find("d") then
-            return fullpath
+  if hPlugins then
+    if not Name:find("%.") then
+      Name = Name..".hlf"
+    end
+    for _,hPlug in ipairs(hPlugins) do
+      local Info = far.GetPluginInformation(hPlug)
+      if Info then
+        local file = Info.ModuleName:match(".*/")..Name
+        if FileExists(file) then
+          return file
+        elseif file:find("^/usr/") then -- is far2l installed?
+          file = file:gsub("^(.-)/lib/", "%1/share/")
+          if FileExists(file) then
+            return file
           end
-        end, F.FRS_RECUR+F.FRS_SCANSYMLINK)
-      if file then return file end
+        end
+      end
     end
   end
 end
