@@ -218,8 +218,8 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
           else
             bpattern, opattern = rex.new("([{}])"), "{\0\0\0"
           end
-          params = {ei.CurLine,posbracket,posbracket,acFlags,Syn.bracketcolor,Priority+1,Owner}
-          --editor.AddColor(ei.CurLine,posbracket,posbracket,acFlags,Syn.bracketcolor,Priority+1,Owner)
+          params = {ei.CurLine,posbracket,posbracket,Syn.bracketcolor,acFlags,Priority+1,Owner}
+          --editor.AddColor(ei.CurLine,posbracket,posbracket,Syn.bracketcolor,acFlags,Priority+1,Owner)
           break
         end
       end
@@ -244,7 +244,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
           end
         end
         if need_paint and color then
-          editor.AddColor(y, from, to, acFlags, color, Priority, Owner)
+          editor.AddColor(y, from, to, color, acFlags, Priority, Owner)
         end
         left = (to >= from and to or from) + 1
 
@@ -273,7 +273,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
           end
 
           if need_paint and old_left <= to then
-            editor.AddColor(y, old_left, to, acFlags, color, Priority, Owner)
+            editor.AddColor(y, old_left, to, color, acFlags, Priority, Owner)
           end
 
           if nextline == nil then
@@ -287,7 +287,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
           local from, to = pat_close:findW(str, left)
           if not from then from, to = PatEndLine:findW(str, left) end
           if need_paint and left <= to then
-            editor.AddColor(y, left, to, acFlags, current.color, Priority, Owner)
+            editor.AddColor(y, left, to, current.color, acFlags, Priority, Owner)
           end
           if from <= to then
             left = to + 1
@@ -314,7 +314,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
               if bstack > 0 then
                 bstack = bstack - 1
               else
-                editor.AddColor(y, from, to, acFlags, Syn.bracketcolor, Priority+1, Owner)
+                editor.AddColor(y, from, to, Syn.bracketcolor, acFlags, Priority+1, Owner)
                 bstack = nil
                 break
               end
@@ -335,7 +335,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
             if y == ei.CurLine and from == posbracket then
               if N ~= 0 then
                 editor.AddColor(bstack[N-1], bstack[N], bstack[N],
-                                acFlags, Syn.bracketcolor, Priority+1, Owner)
+                                Syn.bracketcolor, acFlags, Priority+1, Owner)
               end
               bstack = nil
               break
@@ -361,7 +361,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
         if not from then break end
         start = to>=from and to+1 or from+1
         if to >= from then
-          editor.AddColor(y, from, to, acFlags, extracolor, Priority+2, Owner)
+          editor.AddColor(y, from, to, extracolor, acFlags, Priority+2, Owner)
         end
       end
     end
@@ -388,7 +388,7 @@ local function RedrawExtraPattern (ei, Priority, extrapattern, extracolor)
         if not from then break end
         start = to>=from and to+1 or from+1
         if to >= from then
-          editor.AddColor(y, from, to, acFlags, extracolor, Priority+2, Owner)
+          editor.AddColor(y, from, to, extracolor, acFlags, Priority+2, Owner)
         end
       end
     end
