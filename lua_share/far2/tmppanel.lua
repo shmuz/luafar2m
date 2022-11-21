@@ -51,6 +51,7 @@ local band, bor = bit64.band, bit64.bor
 -- constants
 local COMMONPANELSNUMBER = 10
 local BOM_UTF32LE = "\255\254\0\0"
+local BOM_UTF16LE = "\255\254"
 local BOM_UTF8 = "\239\187\191"
 
 local Opt = {
@@ -96,7 +97,7 @@ end
 
 
 -- File lists are supported in the following formats:
--- (a) UTF-16LE with BOM, (b) UTF-8 with BOM, (c) UTF-8.
+-- (a) UTF-8/16LE/32LE with BOM and (b) UTF-8 w/o BOM.
 local function ListFromFile (aFileName)
   local list = {}
   local hFile = io.open (aFileName, "rb")
@@ -109,6 +110,9 @@ local function ListFromFile (aFileName)
         text = strsub(text, 4)
       elseif strsub(text, 1, 4) == BOM_UTF32LE then
         text = win.Utf32ToUtf8(strsub(text, 5))
+      elseif strsub(text, 1, 2) == BOM_UTF16LE then
+        text = win.MultiByteToWideChar(strsub(text, 3), 1200)
+        text = win.Utf32ToUtf8(text)
       -- else -- default is UTF-8
         -- do nothing
       end
