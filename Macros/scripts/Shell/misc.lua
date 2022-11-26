@@ -31,12 +31,6 @@ Macro {
 }
 
 Macro {
-  description="Plugins configuration menu";
-  area="Shell"; key="ShiftF11";
-  action=function() Keys "AltShiftF9" end;
-}
-
-Macro {
   description="Macro-engine test";
   area="Shell"; key="CtrlShiftF12";
   action = function()
