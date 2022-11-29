@@ -10,9 +10,6 @@ lf4ed:
 	cd _lf4ed_/build && $(MAKE) $(PARAM)
 
 lfsearch:
-ifndef install
-	cd _lfsearch_/reader && $(MAKE)
-endif
 	cd _lfsearch_/build && $(MAKE) $(PARAM)
 
 lftmp:
