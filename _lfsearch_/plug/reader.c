@@ -1,11 +1,13 @@
 // started: 2012-02-05
 #define _FILE_OFFSET_BITS 64
 
+#include <farplug-wide.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <lua.h>
 #include <lauxlib.h>
+#include "luaplug.c"
 
 /* Lua versions: 5.1 to 5.4 */
 #if LUA_VERSION_NUM > 501
@@ -169,14 +171,13 @@ static const luaL_Reg methods[] = {
   { NULL, NULL }
 };
 
-LUALIB_API int luaopen_reader (lua_State *L)
+int luaopen_reader (lua_State *L)
 {
   luaL_newmetatable(L, ReaderType);
   luaL_register(L, NULL, methods);
   lua_pushvalue(L, -1);
   lua_setfield(L, -2, "__index");
 
-  lua_newtable(L);
-  luaL_register(L, NULL, funcs);
-  return 1;
+  luaL_register(L, "lfs_reader", funcs);
+  return 0;
 }

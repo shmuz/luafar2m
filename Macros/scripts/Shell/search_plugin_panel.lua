@@ -326,9 +326,8 @@ local function Find (aData)
         table.insert(freelist,v)
       end
     end
-    local bkeys = {{BreakKey="F3"},{BreakKey="F4"},{BreakKey="C+PRIOR"}}
     while true do
-      local item, pos = far.Menu(props, displaylist, bkeys)
+      local item, pos = far.Menu(props, displaylist, "F3 F4 CtrlPgUp")
       if not (item and pos>0) then break; end -- pos == 0 when all items are filtered out
       props.SelectIndex = pos
       local menuitem = displaylist[pos]
@@ -365,7 +364,7 @@ local function Find (aData)
           panel.UpdatePanel(handle)
           panel.RedrawPanel(handle)
         end
-      elseif item.BreakKey == "C+PRIOR" then -- CtrlPgUp
+      elseif item.BreakKey == "CtrlPgUp" then
         -- Panel.SetPath(0, menuitem.dir, menuitem.item.FileName) -- it works but it's macro-API
         SetPath(handle, menuitem.dir, menuitem.item.FileName)
         break

@@ -4,7 +4,7 @@
 local M          = require "lfs_message"
 local libCommon  = require "lfs_common"
 local libEditors = require "lfs_editors"
-local libReader  = require "reader"
+local libReader  = _G.lfs_reader
 local libCqueue  = require "cqueue"
 local libMessage = require "far2.message"
 local sd         = require "far2.simpledialog"
