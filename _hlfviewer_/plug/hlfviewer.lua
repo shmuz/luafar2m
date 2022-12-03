@@ -187,7 +187,7 @@ local function ShowHelpFromTempFile()
       end
 
       Handle:close()
-      ShowHelp(fname, FindTopic())
+      ShowHelp(fname, FindTopic(false,true))
       win.DeleteFile(fname)
     end
   end
@@ -202,7 +202,7 @@ local function ShowCurrentHelpTopic()
     if 0 == bit64.band(ei.CurState, F.ECSTATE_SAVED) then
       ShowHelpFromTempFile()
     else
-      local Topic = FindTopic(false) or FindTopic(true)
+      local Topic = FindTopic(false,true) or FindTopic(true,true)
       if Topic and Topic ~= "" then
         ShowHelp(FileName, Topic, false)
       else
@@ -215,7 +215,7 @@ local function ShowCurrentHelpTopic()
         editor.SaveFile()
       end
     end
-    ShowHelp(FileName, FindTopic(), false)
+    ShowHelp(FileName, FindTopic(false,true), false)
   end
 
   return Result
