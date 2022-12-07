@@ -164,14 +164,12 @@ local function CheckForCorrect (Name)
     return { FileName = p, FileAttributes = "a" }
   end
 
-  if p:find "%S" and not p:find "[?*]" and p ~= "\\" and p ~= ".." then
+  if p:find "%S" and not p:find "[?*]" and p ~= "/" and p ~= ".." then
     local q = p:gsub("/$", "")
     local Item = win.GetFileInfo(q)
     if Item then
       Item.FileName = p
-      Item.PackSize    = Item.FileSize
-      Item.Description = "One of my files"
-      Item.Owner       = "Joe Average"
+      Item.PackSize = Item.FileSize
       return Item
     end
   end

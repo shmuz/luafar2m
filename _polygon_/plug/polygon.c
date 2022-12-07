@@ -3,6 +3,7 @@
 #include <lua.h>
 #include <luafar.h>
 #include "luaplug.c"
+#include "lsqlite3.c"
 
 #ifndef LUAPLUG
 #define LUAPLUG __attribute__ ((visibility ("default")))
@@ -74,6 +75,11 @@ static int ResetSort(lua_State *L)
 
 int luaopen_polygon (lua_State *L)
 {
+  lua_getglobal(L, "package");
+  lua_getfield(L, -1, "preload");
+  lua_pushcfunction(L, luaopen_lsqlite3);
+  lua_setfield(L, -2, "lsqlite3");
+  lua_pop(L,2);
 #ifdef EMBED
   extern int luafar_openlibs(lua_State*);
   lua_pushcfunction(L, luafar_openlibs);

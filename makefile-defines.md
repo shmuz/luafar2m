@@ -62,6 +62,11 @@
 - Optional
 - Example: `MYCFLAGS = -I$(FARSOURCE)/luafar/src`
 
+## MYLDFLAGS
+- Additional flags or other parameters to be included in a linking command
+- Optional
+- Example: `MYLDFLAGS = -lsqlite3`
+
 ## SRC_PLUG_DIRS
 - A list of directories (relative to plugin's path) to be copied during installation
 - Not needed if all plugin's files are in a single directory
