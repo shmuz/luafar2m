@@ -40,3 +40,22 @@ Macro {
     far.Message("All tests OK", "LuaMacro")
   end;
 }
+
+Macro {
+  description="Edit files in SciTE";
+  area="Shell"; key="AltShiftF4";
+  action=function()
+    local files = {}
+    local info = panel.GetPanelInfo(1)
+    for k=1, info.SelectedItemsNumber do
+      local item = panel.GetSelectedPanelItem(1,k)
+      if not item.FileAttributes:find("d") then
+        files[#files+1] = '"'..item.FileName..'"'
+      end
+    end
+    if files[1] then
+      files = table.concat(files, " ")
+      os.execute("scite "..files.." &")
+    end
+  end;
+}
