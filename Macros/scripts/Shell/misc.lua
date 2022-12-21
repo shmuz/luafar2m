@@ -50,7 +50,7 @@ Macro {
     for k=1, info.SelectedItemsNumber do
       local item = panel.GetSelectedPanelItem(1,k)
       if not item.FileAttributes:find("d") then
-        files[#files+1] = '"'..item.FileName..'"'
+        files[#files+1] = item.FileName:gsub("[ ?*'\"\\]", "\\%0")
       end
     end
     if files[1] then
