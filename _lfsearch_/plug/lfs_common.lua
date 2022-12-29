@@ -160,7 +160,7 @@ local hst_map = { ["\\"]="\\"; n="\n"; r="\r"; t="\t"; }
 
 local function GetDialogHistory (name)
   local value
-  local fname = far.GetConfigDir().."/history/dialogs.hst"
+  local fname = far.InMyConfig("history/dialogs.hst")
   local fp = io.open(fname)
   if fp then
     local head = ("[SavedDialogHistory/%s]"):format(name)
