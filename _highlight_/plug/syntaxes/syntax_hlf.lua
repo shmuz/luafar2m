@@ -33,6 +33,6 @@ local syntax_hlf =
 
 Class {
   name = "Far help file";
-  filemask = "*.hlf,*.hlf.mcr";
+  filemask = "*.hlf,*.hlf.mcr,*.hlf.m4";
   syntax = syntax_hlf;
 }
