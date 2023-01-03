@@ -146,7 +146,9 @@ UpdateDlg=(hDlg,data)->
 HexDlg=(hDlg,Msg,Param1,Param2)->
   data=dialogs[hDlg\rawhandle!]
   if data
-    if Msg==F.DN_CLOSE
+    if Msg==F.DN_GETDIALOGINFO
+      return id
+    elseif Msg==F.DN_CLOSE
       C.WINPORT_CloseHandle data.file
       dialogs[hDlg\rawhandle!]=nil
     elseif Msg==F.DN_CTLCOLORDIALOG
@@ -230,7 +232,7 @@ HexDlg=(hDlg,Msg,Param1,Param2)->
           hDlg\send F.DM_SETFOCUS,data.edit and _edit or _view
         --uchar=(Param2.UnicodeChar\sub 1,1)\byte 1
         uchar=Param2
-        if .edit and .editascii and uchar~=0 and uchar~=9 and uchar~=27
+        if .edit and .editascii and uchar~=0 and uchar~=9 and uchar~=27 and uchar<0x10000
           new=win.WideCharToMultiByte (win.Utf8ToUtf32 utf8.char uchar),.codepage
           .data=(string.sub .data,1,.cursor-1)..new..(string.sub .data,.cursor+string.len new)
           .olddata..=string.rep (string.char 0),(string.len .data)-string.len .olddata
@@ -361,6 +363,7 @@ DoHex=->
           editascii:false
         UpdateDlg hDlg,dialogs[hDlg\rawhandle!]
       far.DialogRun hDlg
+      far.DialogFree hDlg
     else
       C.WINPORT_CloseHandle file
 
