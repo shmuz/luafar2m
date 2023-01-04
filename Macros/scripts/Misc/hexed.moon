@@ -25,6 +25,7 @@ FILE_SHARE_WRITE=2
 FILE_SHARE_DELETE=4
 OPEN_EXISTING=3
 FILE_BEGIN=0
+WSIZE=ffi.sizeof("wchar_t")
 
 HelpText = [[
 F1        Help window
@@ -37,7 +38,7 @@ Esc       Quit Hex Editor]]
 
 ToWChar=(str)->
   str=win.Utf8ToUtf32 str
-  result=ffi.new 'wchar_t[?]',#str/4+1
+  result=ffi.new 'wchar_t[?]',#str/WSIZE+1
   ffi.copy result,str
   result
 
@@ -68,8 +69,8 @@ WC2MB=(txt,codepage)->UnicodeThunk win.WideCharToMultiByte,txt,codepage
 GenerateDisplayText=(txt,codepage)->
   wide=MB2WC txt,codepage
   out=''
-  for ii=1,#wide/4
-    wchar=string.sub wide,ii*4-3,ii*4
+  for ii=1,#wide,WSIZE
+    wchar=string.sub wide,ii,ii-1+WSIZE
     if wchar=='\0\0\0\0' -- DI_USERCONTROL in far2l displays binary zeroes as white rectangles. Prevent that.
       wchar='.\0\0\0'
     out..=(win.WideCharToMultiByte wchar,65001)..string.rep '.',#(WC2MB wchar,codepage)-1
@@ -242,7 +243,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
         uchar=Param2
         if .edit and .editascii and uchar~=0 and uchar~=9 and uchar~=27 and uchar<0x10000
           t={}
-          for k=1,4
+          for k=1,WSIZE
             t[k]=uchar%0x100
             uchar=(uchar-t[k])/0x100
           new=win.WideCharToMultiByte (string.char unpack t),.codepage
