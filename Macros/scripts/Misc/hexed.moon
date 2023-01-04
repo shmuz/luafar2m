@@ -70,16 +70,17 @@ GenerateDisplayData=(data,codepage)->
   wide=MB2WC data,codepage
   out=''
   for ii=1,#wide/4
-    out..=(win.WideCharToMultiByte (string.sub wide,ii*4-3,ii*4),65001)..string.rep '.',(string.len (WC2MB (string.sub wide,ii*4-3,ii*4),codepage))-1
+    wchar=string.sub wide,ii*4-3,ii*4
+    out..=(win.WideCharToMultiByte wchar,65001)..string.rep '.',#(WC2MB wchar,codepage)-1
   out
 
 Read=(data)->
   with data
     C.WINPORT_SetFilePointerEx .file,.offset,ffi.NULL,FILE_BEGIN
     readed=ffi.new'DWORD[1]'
-    data=ffi.new 'uint8_t[?]',16*.height
-    C.WINPORT_ReadFile .file,data,16*.height,readed,ffi.NULL
-    .data=ffi.string data,readed[0]
+    buff=ffi.new 'uint8_t[?]',16*.height
+    C.WINPORT_ReadFile .file,buff,16*.height,readed,ffi.NULL
+    .data=ffi.string buff,readed[0]
     .displaydata=GenerateDisplayData .data,.codepage
 
 Write=(data)->
@@ -108,35 +109,41 @@ _title,_view,_edit=1,2,3
 
 HexDraw=(hDlg,data)->
   DrawStr=(pos,str,textel=data.textel)->
-    for ii=1,str\len!
-      textel.Char=str\byte ii
+    for ii=1,#str
+      textel.Char=string.byte str,ii
       data.buffer[pos+ii-1]=textel
   GetChar=(pos)->
     char=string.format '%02X',string.byte data.data,pos
     char,data.edit and (string.format '%02X',string.byte data.olddata,pos) or char
+  -- Fill buffer with spaces
   data.textel.Char=0x20
   for ii=1,#data.buffer do
     data.buffer[ii]=data.textel
-  len=string.len data.data
-  for ii=0,data.height-1
-    if ii*16<len
-      DrawStr ii*data.width+1,string.format '%010X:',tonumber data.offset+ii*16
+  -- Draw all
+  len=#data.data
+  for row=0,data.height-1
+    -- Draw offsets and vertical line
+    if row*16<len
+      DrawStr row*data.width+1,string.format '%010X:',tonumber data.offset+row*16
       data.textel.Char=0x2502
-      data.buffer[ii*data.width+24+1+12]=data.textel
-    for jj=1,16
-      pos=jj+ii*16
+      data.buffer[row*data.width+24+1+12]=data.textel
+    -- Draw hex data
+    for col=1,16
+      pos=col+row*16
       if pos<=len
         char,oldchar=GetChar pos
-        txtl=pos==data.cursor and not data.edit and data.textel_sel or (char==oldchar and data.textel or data.textel_changed)
-        DrawStr ii*data.width+(jj-1)*3+1+12+(jj>8 and 2 or 0),char,txtl
-        DrawStr ii*data.width+16*3+2+1+12+jj,(data.displaydata\sub pos,pos),txtl
+        txtl=pos==data.cursor and not data.edit and data.textel_sel or
+          (char==oldchar and data.textel or data.textel_changed)
+        DrawStr row*data.width+(col-1)*3+1+12+(col>8 and 2 or 0),char,txtl
+        DrawStr row*data.width+16*3+2+1+12+col,(data.displaydata\sub pos,pos),txtl
   if data.edit
     xx,yy=data.editascii and 63+(data.cursor-1)%16 or (data.cursor-1)%16,1+math.floor (data.cursor-1)/16
     xx=12+xx*3+(xx>7 and 2 or 0)+data.editpos if not data.editascii
     hDlg\send F.DM_SETITEMPOSITION,_edit,{Left:xx,Top:yy,Right:xx,Bottom:yy}
     char,oldchar=GetChar data.cursor
     data.editchanged=char~=oldchar
-    hDlg\send F.DM_SETTEXT,_edit,data.editascii and (data.displaydata\sub data.cursor,data.cursor) or string.sub char,data.editpos+1,data.editpos+1
+    hDlg\send F.DM_SETTEXT,_edit,data.editascii and (data.displaydata\sub data.cursor,data.cursor) or
+      string.sub char,data.editpos+1,data.editpos+1
 
 UpdateDlg=(hDlg,data)->
   if not data.edit then Read data
@@ -300,8 +307,8 @@ HexDlg=(hDlg,Msg,Param1,Param2)->
             when .edit and 'Ins' then nil
             when 'BS'
               if .edit
-                index=.cursor-(0==.editpos and 1 or 0)
-                .data=(string.sub .data,1,index-1)..(string.sub .olddata,index,index)..(string.sub .data,index+1)
+                idx=.cursor-(0==.editpos and 1 or 0)
+                .data=(string.sub .data,1,idx-1)..(string.sub .olddata,idx,idx)..(string.sub .data,idx+1)
                 .displaydata=GenerateDisplayData .data,.codepage
                 DoLeft!
             when 'Tab' then .editascii=.edit and not .editascii
@@ -323,7 +330,8 @@ HexDlg=(hDlg,Msg,Param1,Param2)->
 DoHex=->
   filename=viewer.GetFileName!
   filenameW=ToWChar LongPath filename
-  file=C.WINPORT_CreateFile filenameW,GENERIC_READ,FILE_SHARE_READ+FILE_SHARE_WRITE+FILE_SHARE_DELETE,ffi.NULL,OPEN_EXISTING,0,ffi.NULL
+  file=C.WINPORT_CreateFile filenameW,GENERIC_READ,FILE_SHARE_READ+FILE_SHARE_WRITE+FILE_SHARE_DELETE,
+                            ffi.NULL,OPEN_EXISTING,0,ffi.NULL
   if file~=INVALID_HANDLE_VALUE
     filesize=ffi.new('int64_t[1]')
     if 0~=C.WINPORT_GetFileSizeEx file,filesize
@@ -333,7 +341,7 @@ DoHex=->
       textel_sel=Char:0x20,Attributes:far.AdvControl F.ACTL_GETCOLOR,K.COL_VIEWERSELECTEDTEXT
       textel_changed=Char:0x20,Attributes:far.AdvControl F.ACTL_GETCOLOR,K.COL_VIEWERARROWS
       info=viewer.GetInfo!
-      offset=ffi.new 'int64_t',info.FilePos
+      offset=info.FilePos
       offset-=offset%16
       items={
         {F.DI_TEXT,0,0,0,0,0,0,0,0,filename}
