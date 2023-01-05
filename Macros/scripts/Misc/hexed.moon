@@ -111,8 +111,9 @@ _title,_view,_edit=1,2,3
 
 HexDraw=(hDlg,data)->
   DrawStr=(pos,str,textel=data.textel)->
-    for ii=1,#str
-      textel.Char=string.byte str,ii
+    len=str\len!
+    for ii=1,len
+      textel.Char=utf8.byte str,ii
       data.buffer[pos+ii-1]=textel
   GetChar=(pos)->
     char=string.format '%02X',string.byte data.chunk,pos
@@ -250,7 +251,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
           .chunk=(string.sub .chunk,1,.cursor-1)..new..(string.sub .chunk,.cursor+#new)
           .oldchunk..=string.rep '\0',#.chunk-#.oldchunk
           .displaytext=GenerateDisplayText .chunk,.codepage
-          DoRight!
+          for _=1,#new do DoRight!
         else
           key=far.KeyToName Param2
           switch key
