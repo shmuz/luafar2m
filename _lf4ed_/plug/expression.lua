@@ -66,12 +66,16 @@ end
 
 local function ParamsDialog (aData)
   local HIST_PARAM = "LuaFAR\\LuaScript\\Parameter"
+  local HIST_EXTFILE = "LuaFAR\\LuaScript\\ExternalFile"
   local Items = {
+    guid = "187AFC63-174C-40AA-B0B2-00215FDCADB1";
     width = 56;
     help = "ScriptParams";
-    guid = "D0CDAE16-C402-4E54-9D23-7150A8D87787";
     {tp="dbox";  text=M.MScriptParams;                                      },
-    {tp="text";  text="&1.";           ystep=2; width=2;                    },
+    {tp="chbox"; name="bExternalScript";        text=M.MExternalScript;     },
+    {tp="edit";  name="sExternalScript";              hist=HIST_EXTFILE;    },
+    {tp="sep";   text=M.MParamsSeparator;                                   },
+    {tp="text";  text="&1.";                    width=2;                    },
     {tp="edit";  name="sParam1";       ystep=0; x1=8; hist=HIST_PARAM;      },
     {tp="text";  text="&2.";           ystep=2; width=2;                    },
     {tp="edit";  name="sParam2";       ystep=0; x1=8; hist=HIST_PARAM;      },
@@ -86,12 +90,31 @@ local function ParamsDialog (aData)
     {tp="butt";  text=M.MCancel;    cancel=1;  centergroup=1;               },
   }
   ------------------------------------------------------------------------------
-  Items.closeaction = function(hDlg, par1, out)
-    local ok, msg = pcall(CompileParams, out.sParam1, out.sParam2, out.sParam3, out.sParam4)
-    if not ok then ErrMsg(msg); return 0; end
+  local dlg = sd.New(Items)
+  local Pos = dlg:Indexes()
+  ------------------------------------------------------------------------------
+  local function CheckExternalScript (hDlg)
+    hDlg:Enable(Pos.sExternalScript, hDlg:GetCheck(Pos.bExternalScript))
   end
   ------------------------------------------------------------------------------
-  local dlg = sd.New(Items)
+  Items.proc = function(hDlg, Msg, Param1, Param2)
+    if Msg == F.DN_INITDIALOG then
+      CheckExternalScript(hDlg)
+    elseif Msg == F.DN_BTNCLICK then
+      if Param1 == Pos.bExternalScript then CheckExternalScript(hDlg) end
+    elseif Msg == F.DN_CLOSE then
+      local elem = Items[Param1]
+      if elem and (elem.Run or elem.Store) then
+        local s1 = hDlg:GetText(Pos.sParam1)
+        local s2 = hDlg:GetText(Pos.sParam2)
+        local s3 = hDlg:GetText(Pos.sParam3)
+        local s4 = hDlg:GetText(Pos.sParam4)
+        local ok, msg = pcall(CompileParams, s1, s2, s3, s4)
+        if not ok then ErrMsg(msg); return 0; end
+      end
+    end
+  end
+  ------------------------------------------------------------------------------
   dlg:LoadData(aData)
   local out,pos = dlg:Run()
   if out then
@@ -104,29 +127,42 @@ end
 --   don't change the string literals "selection" and "all text",
 --   since export.OnError relies on them being exactly such.
 local function LuaScript (data)
-  local text, chunkname = GetSelectedText(), "selection"
-  if not text then
-    text, chunkname = GetAllText(), "all text"
-    if text and text:sub(1,1)=="#" then text = "--"..text end
-  end
-  if text then
-    local chunk, msg = loadstring(text, chunkname)
-    if not chunk then error(msg,3) end
-    if data.bParamsEnable then
-      local p1,p2,p3,p4 = CompileParams(data.sParam1, data.sParam2,
-                                        data.sParam3, data.sParam4)
-      p1 = p1(); p2 = p2(); p3 = p3(); p4 = p4()
-      return chunk (p1,p2,p3,p4)
-    else
-      return chunk()
+  local chunk
+  if data.bExternalScript then
+    local fname = data.sExternalScript or ""
+    if not fname:find("^/") then
+      fname = editor.GetFileName():match("^.+/") .. fname
     end
+    chunk = assert(loadfile(fname))
+  else
+    -- WARNING:
+    --   don't change the string literals "selection" and "all text",
+    --   since export.OnError relies on them being exactly such.
+    local text, chunkname = GetSelectedText(), "selection"
+    if not text then
+      text, chunkname = GetAllText(), "all text"
+      if text:sub(1,1)=="#" then text = "--"..text end
+    end
+    chunk = assert(loadstring(text, chunkname))
   end
+  ------------------------------------------------------------------------------
+  local p1,p2,p3,p4
+  if data.bParamsEnable then
+    p1,p2,p3,p4 = CompileParams(data.sParam1, data.sParam2, data.sParam3, data.sParam4)
+    p1 = p1(); p2 = p2(); p3 = p3(); p4 = p4()
+    p1,p2,p3,p4 = chunk (p1,p2,p3,p4)
+  else
+    p1,p2,p3,p4 = chunk()
+  end
+  editor.Redraw()
+  return p1,p2,p3,p4
 end
 
 local function ResultDialog (aHelpTopic, aData, result)
   local Title = (aHelpTopic=="LuaExpression") and M.MExpr or M.MBlockSum
   local XX1 = 5 + M.MResult:gsub("&",""):len() + 1
   local Items = {
+    guid = "D45FDADC-4918-4D47-B34A-311947D241B2";
     width = 46;
     help = aHelpTopic;
     {tp="dbox";  text=Title;                                },

@@ -61,18 +61,22 @@ The script can be invoked with ~parameters~@ScriptParams@.
  ~Contents~@Contents@
 
 @ScriptParams
-$ #Script Parameters#
-   This dialog allows to specify up to 4 parameters that will be stored and
-passed to ~Lua Script~@LuaScript@ when it is invoked.
+$ #Script Parameters dialog#
+   The #External script# option lets specify the file (Lua script) that will
+be run. If the file name does not contain absolute path, it considered to be
+relative to the directory containing the edited file. If this option is not
+checked then either selected or entire editor window text will serve as the
+script, as described in the ~Lua Script~@LuaScript@ section.
 
-   Every parameter is a Lua expression. This means in particular that strings
-must be enclosed in quotes, as it's usual in Lua. An empty parameter line is
-equivalent to nil.
+   The dialog allows to specify up to 4 parameters that will be stored and
+passed to ~Lua Script~@LuaScript@ when it is invoked. Every parameter is a Lua
+expression. This means in particular that strings must be enclosed in quotes,
+as it's usual in Lua. An empty parameter line is equivalent to nil.
 
    The parameters are syntax-checked but their evaluation is delayed until
 the script is actually invoked. Therefore, e.g. expression 47+ would
-immediately raise error, while expression 47+nil would be accepted but raise
-error when the script is invoked.
+immediately raise an error, while expression 47+nil would be accepted but
+would raise an error when the script is invoked.
 
    Parameters are evaluated and passed to the script only if
 #Pass parameters to the script# checkbox is checked.
