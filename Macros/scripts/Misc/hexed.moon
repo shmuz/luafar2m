@@ -113,7 +113,7 @@ HexDraw=(hDlg,data)->
   DrawStr=(pos,str,textel=data.textel)->
     len=str\len!
     for ii=1,len
-      textel.Char=utf8.byte str,ii
+      textel.Char=str\byte ii
       data.buffer[pos+ii-1]=textel
   GetChar=(pos)->
     char=string.format '%02X',string.byte data.chunk,pos
