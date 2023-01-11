@@ -674,7 +674,14 @@ local function DoReplace (
   local nFound, nReps, nLine = 0, 0, 0
   local tInfo, tStartPos = editor.GetInfo(), editor.GetInfo()
   local acc, acc_started
-  local Need_EUR_END
+  local Eur_Begin_Done
+
+  local function BeginUndoRedo()
+    if not Eur_Begin_Done then
+      editor.UndoRedo("EUR_BEGIN")
+      Eur_Begin_Done = true
+    end
+  end
 
   local tBlockInfo = bScopeIsBlock and assert(GetSelectionInfo() or nil, "no selection")
 
@@ -917,7 +924,7 @@ local function DoReplace (
     if sChoice == "all" then
       timing:SetLastClock()
       timing:SetStartTime()
-      do editor.UndoRedo("EUR_BEGIN"); Need_EUR_END = true; end
+      BeginUndoRedo()
       if tBlockInfo then EditorSelect(tBlockInfo) end
     elseif sChoice == "yes" then
       timing:SetStartTime()
@@ -927,8 +934,7 @@ local function DoReplace (
 
   timing:SetLastClock()
   if sChoice=="all" then
-    editor.UndoRedo("EUR_BEGIN")
-    Need_EUR_END = true
+    BeginUndoRedo()
   end
   --===========================================================================
   -- ITERATE ON LINES
@@ -1155,7 +1161,7 @@ local function DoReplace (
     editor.Redraw()
     update_info(nFound, nil)
   end
-  if Need_EUR_END then editor.UndoRedo("EUR_END") end
+  if Eur_Begin_Done then editor.UndoRedo("EUR_END") end
   return nFound, nReps, sChoice, elapsedTime
 end
 
