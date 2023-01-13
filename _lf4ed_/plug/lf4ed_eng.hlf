@@ -69,9 +69,8 @@ checked then either selected or entire editor window text will serve as the
 script, as described in the ~Lua Script~@LuaScript@ section.
 
    The dialog allows to specify up to 4 parameters that will be stored and
-passed to ~Lua Script~@LuaScript@ when it is invoked. Every parameter is a Lua
-expression. This means in particular that strings must be enclosed in quotes,
-as it's usual in Lua. An empty parameter line is equivalent to nil.
+passed to ~Lua Script~@LuaScript@ when it is invoked. Every parameter may contain
+a Lua expression. An empty parameter line is equivalent to nil.
 
    The parameters are syntax-checked but their evaluation is delayed until
 the script is actually invoked. Therefore, e.g. expression 47+ would
