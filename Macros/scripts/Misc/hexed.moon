@@ -3,6 +3,8 @@
 -- Adaptation to far2l: Shmuel Zeigerman
 
 --BACKUP YOUR FILES BEFORE USE
+if not jit then return -- LuaJIT required
+
 F=far.Flags
 ffi=require'ffi'
 C=ffi.C
