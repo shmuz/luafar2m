@@ -14,6 +14,8 @@ local properties = {
   Title="Load/Unload Plugins", Bottom="Enter=load, Ins=force-load, Del=unload",
 }
 
+local last_module
+
 local function Main()
   -- Get space for this script's data. Kept alive between the script's invocations.
   local ScriptId = "263e6208-e5b2-4bf7-8953-59da207279c7"
@@ -52,28 +54,34 @@ local function Main()
       items[#items+1] = {
         text = v.PInfo.PluginMenu[1] or v.PInfo.PluginConfig[1] or v.ModuleName:match("[^/]+$");
         info = v;
-        checked  = loaded and "+" or not v.handle and "-" or nil;
+        checked = loaded and "+" or not v.handle and "-" or nil;
       }
     end
 
     -- Sort menu items alphabetically.
     table.sort(items, function(a,b) return win.CompareString(a.text, b.text, nil, "cS") < 0 end)
 
+    -- Find selection by module name (as item text may change after clearing plugin's cache)
+    for i,v in ipairs(items) do
+      if v.info.ModuleName == last_module then properties.SelectIndex=i; break; end
+    end
+
+    -- Run the menu
     local item, pos = far.Menu(properties, items, breakkeys)
     if not item then break end
 
     local command = item.BreakKey and item.command or "load"
     local mItem = items[pos]
-    properties.SelectIndex = pos
+    last_module = mItem.info.ModuleName
 
     if command == "load" then
-      far.LoadPlugin("PLT_PATH", mItem.info.ModuleName)
+      far.LoadPlugin("PLT_PATH", last_module)
 
     elseif command == "forcedload" then
-      far.ForcedLoadPlugin("PLT_PATH", mItem.info.ModuleName)
+      far.ForcedLoadPlugin("PLT_PATH", last_module)
 
     elseif command == "clearcache" then
-      far.ClearPluginCache("PLT_PATH", mItem.info.ModuleName)
+      far.ClearPluginCache("PLT_PATH", last_module)
 
     elseif command == "unload" then
       if mItem.info.handle then
