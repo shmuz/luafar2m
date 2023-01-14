@@ -49,7 +49,7 @@ local function Main()
     for _,v in pairs(Plugins) do
       local loaded = v.handle and (0 ~= bit64.band(v.Flags, F.FPF_LOADED))
       items[#items+1] = {
-        text = v.PInfo.PluginMenu[1] or v.ModuleName:match("[^/]+$");
+        text = v.PInfo.PluginConfig[1] or v.PInfo.PluginMenu[1] or v.ModuleName:match("[^/]+$");
         info = v;
         checked  = loaded and "+" or not v.handle and "-" or nil;
       }
