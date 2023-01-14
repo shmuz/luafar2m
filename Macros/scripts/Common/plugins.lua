@@ -4,9 +4,10 @@
 local F=far.Flags
 
 local breakkeys = {
-  { BreakKey="RETURN", command="load",       success="Loaded",       fail="Failed to load" },
-  { BreakKey="INSERT", command="forcedload", success="Force-loaded", fail="Failed to force-load" },
-  { BreakKey="DELETE", command="unload",     success="Unloaded",     fail="Failed to unload" },
+  { BreakKey="Enter";    command="load";       },
+  { BreakKey="Ins";      command="forcedload"; },
+  { BreakKey="Del";      command="unload";     },
+  { BreakKey="CtrlDel";  command="clearcache"; },
 }
 
 local properties = {
@@ -56,24 +57,25 @@ local function Main()
     end
 
     -- Sort menu items alphabetically.
-    table.sort(items,
-      function(a,b) return win.CompareString(a.text, b.text, nil, "cS") < 0 end)
+    table.sort(items, function(a,b) return win.CompareString(a.text, b.text, nil, "cS") < 0 end)
 
     local item, pos = far.Menu(properties, items, breakkeys)
     if not item then break end
-    properties.SelectIndex = pos
-    local bItem = item.BreakKey and item or breakkeys[1]
+
+    local command = item.BreakKey and item.command or "load"
     local mItem = items[pos]
-    local result
-    if bItem.command == "load" then
-      mItem.handle = far.LoadPlugin("PLT_PATH", mItem.info.ModuleName)
-      result = mItem.handle and true
-      mItem.grayed = not result
-    elseif bItem.command == "forcedload" then
-      mItem.handle = far.ForcedLoadPlugin("PLT_PATH", mItem.info.ModuleName)
-      result = mItem.handle and true
-      mItem.grayed = not result
-    elseif bItem.command == "unload" then
+    properties.SelectIndex = pos
+
+    if command == "load" then
+      far.LoadPlugin("PLT_PATH", mItem.info.ModuleName)
+
+    elseif command == "forcedload" then
+      far.ForcedLoadPlugin("PLT_PATH", mItem.info.ModuleName)
+
+    elseif command == "clearcache" then
+      far.ClearPluginCache("PLT_PATH", mItem.info.ModuleName)
+
+    elseif command == "unload" then
       if mItem.info.handle then
         if far.GetPluginId() ~= mItem.info.GInfo.SysID then
           far.UnloadPlugin(mItem.info.handle)
@@ -81,6 +83,7 @@ local function Main()
           mf.postmacro(far.Message, "I'm running this script and cannot unload myself !!!", mItem.text, nil, "w")
         end
       end
+
     end
   end
 end
