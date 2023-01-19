@@ -341,8 +341,7 @@ Options:
   -e <str>    execute string <str>
   -l <lib>    load library <lib>
 
-Macro call syntax:
-  (Id = 0x%08X)
+Macro call syntax (Id = 0x%08X):
   Plugin.Call(Id, "code",    <code>     [,<arguments>])
   Plugin.Call(Id, "file",    <filename> [,<arguments>])
   Plugin.Call(Id, "command", <command>  [,<arguments>])

@@ -173,6 +173,10 @@ static const luaL_Reg methods[] = {
 
 int luaopen_reader (lua_State *L)
 {
+#ifdef EMBED
+  int luafar_openlibs(lua_State*);
+  luafar_openlibs(L);
+#endif
   luaL_newmetatable(L, ReaderType);
   luaL_register(L, NULL, methods);
   lua_pushvalue(L, -1);
