@@ -63,8 +63,6 @@
 - Additional C-flags or other parameters to be included in a compilation command
 - Optional
 - Example: `MYCFLAGS = -I$(FARSOURCE)/luafar/src`
-- Note: if `-DSETPACKAGEPATH` is added to MYCFLAGS then the plugin's path
-  and the "lua_share" path are prepended to `package.path`
 
 ## MYLDFLAGS
 - Additional flags or other parameters to be included in a linking command
