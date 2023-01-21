@@ -2,6 +2,7 @@ PLUGNAME = highlight
 CONFIG   = highlight.cfg
 LANG_GEN =
 SYS_ID   = 0xF6138DC9
+SETPACKAGEPATH = 1
 
 SRC_PLUG_DIRS = syntaxes
 SRC_PLUG_SHARE = *.lua *.hlf

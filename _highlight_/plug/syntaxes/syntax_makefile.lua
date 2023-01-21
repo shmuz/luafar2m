@@ -27,6 +27,6 @@ local syntax_makefile =
 
 Class {
   name = "Make file";
-  filemask = "Makefile*;*.mak";
+  filemask = "Makefile;*.mak";
   syntax = syntax_makefile;
 }

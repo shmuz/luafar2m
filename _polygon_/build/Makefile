@@ -6,6 +6,7 @@ MYCFLAGS = -I$(FARSOURCE)/luafar/src
 MYLDFLAGS = -lsqlite3
 FUNC_OPENLIBS = luaopen_polygon
 SYS_ID = 0xD4BC5EA7
+SETPACKAGEPATH = 1
 
 SRC_PLUG_DIRS = modules
 

@@ -27,8 +27,11 @@ LUAFARDLL  = luafar2l.so
 
 CC     = gcc
 CFLAGS = -O2 -Wall -Wno-unused-function -fvisibility=hidden \
-         -I$(INC_FAR) -I$(INC_WIN) -I$(INC_LUA) \
-         -fPIC $(MYCFLAGS)
+         -I$(INC_FAR) -I$(INC_WIN) -I$(INC_LUA) -fPIC $(MYCFLAGS)
+
+ifdef SETPACKAGEPATH
+  CFLAGS += -DSETPACKAGEPATH
+endif
 
 LDFLAGS = -shared -fPIC $(MYLDFLAGS)
 
@@ -39,8 +42,6 @@ TRG_SHARE = $(INSTALL_PREFIX)/share/far2l/Plugins/luafar
 
 TRG_PLUG_LIB = $(TRG_LIB)/$(PLUGNAME)/plug
 TRG_PLUG_SHARE = $(TRG_SHARE)/$(PLUGNAME)/plug
-
-SRC_LF_INIT = $(SRC_LUAFAR)/luafar_init.lua
 
 SRC_PLUG_LIB ?= $(PLUGNAME).far-plug-wide
 

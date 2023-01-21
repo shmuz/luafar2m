@@ -56,6 +56,6 @@ local syntax_tcl =
 
 Class {
   name = "TCL";
-  filemask = "*.tcl,*.cfg";
+  filemask = "*.tcl";
   syntax = syntax_tcl;
 }

@@ -5,6 +5,7 @@ C_SOURCE = ../plug/reader.c
 MYCFLAGS = -I$(FARSOURCE)/luafar/src
 FUNC_OPENLIBS = luaopen_reader
 SYS_ID   = 0x8E11EA75
+SETPACKAGEPATH = 1
 
 FAR_EXPORTS =           \
   CLOSEPLUGIN           \

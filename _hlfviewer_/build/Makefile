@@ -2,6 +2,7 @@ PLUGNAME = hlfviewer
 CONFIG   = hlfviewer.cfg
 LANG_GEN =
 SYS_ID   = 0x1AF0754D
+SETPACKAGEPATH = 1
 
 SRC_PLUG_SHARE = *.lua *.hlf *.lng
 

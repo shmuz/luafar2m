@@ -2,6 +2,7 @@ PLUGNAME = lf4ed
 CONFIG   = lf4ed.cfg
 LANG_GEN = lf4ed_lang.lua
 SYS_ID   = 0x6F332978
+SETPACKAGEPATH = 1
 
 SRC_PLUG_DIRS = scripts
 

@@ -76,6 +76,5 @@ ifdef SRC_PLUG_DIRS
 	cd ../plug && cp -rf $(SRC_PLUG_DIRS) $(TRG_PLUG_SHARE)
 endif
 	cp -rf $(LUA_SHARE) $(TRG_SHARE)
-	cp -f  $(SRC_LF_INIT) $(TRG_SHARE)
 
 .PHONY:
