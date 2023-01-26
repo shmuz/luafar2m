@@ -30,7 +30,7 @@ local syntax_text =
 
 Class {
   name = "My editor";
-  filemask = "*.txt,readme";
+  filemask = "*.txt;readme|CMakeLists.txt";
   syntax = syntax_text;
   fastlines = 0;
   firstline = "text";

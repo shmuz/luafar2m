@@ -6,10 +6,10 @@ local luafar = {
     ["export"] = {
       fields = {
         "ClosePlugin", "Compare", "Configure", "DeleteFiles", "ExitFAR", "GetCustomData",
-        "GetFiles", "GetFindData", "GetOpenPluginInfo", "GetPluginInfo",
-        "GetVirtualFindData", "MakeDirectory", "OnError", "OpenFilePlugin", "OpenPlugin",
-        "ProcessConsoleInput", "ProcessDialogEvent", "ProcessEditorEvent",
-        "ProcessEditorInput", "ProcessEvent", "ProcessHostFile", "ProcessKey",
+        "GetFiles", "GetFindData", "GetOpenPluginInfo", "GetPluginInfo", "GetVirtualFindData",
+        "MakeDirectory", "OnError", "OpenCommandLine", "OpenDialog", "OpenFilePlugin",
+        "OpenFromMacro", "OpenPlugin", "OpenShortcut", "ProcessConsoleInput", "ProcessDialogEvent",
+        "ProcessEditorEvent", "ProcessEditorInput", "ProcessEvent", "ProcessHostFile", "ProcessKey",
         "ProcessViewerEvent", "PutFiles", "SetDirectory", "SetFindList",
       };
     };

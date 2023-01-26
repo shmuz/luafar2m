@@ -529,7 +529,7 @@ local function LocateFile2()
   end
 end
 
-local function export_GetPluginInfo()
+function export.GetPluginInfo()
   return {
     Flags = bit64.bor(F.PF_EDITOR, F.PF_VIEWER),
     PluginConfigStrings = { M.mPluginTitle },
@@ -537,26 +537,23 @@ local function export_GetPluginInfo()
   }
 end
 
-local function export_Configure()
+function export.Configure()
   local dlg = require "lfh_config"
   if dlg(_Plugin.Cfg) then
     Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _Plugin.Cfg)
   end
 end
 
-local function export_Open (From, Item)
-  if From == F.OPEN_FROMMACRO then
-    if     Item[1] == "commands" then commands_history()
-    elseif Item[1] == "view"     then view_history()
-    elseif Item[1] == "folders"  then folders_history()
-    elseif Item[1] == "locate"   then LocateFile2()
-    end
-    return
+function export.OpenFromMacro (Item)
+  if     Item[1] == "commands" then commands_history()
+  elseif Item[1] == "view"     then view_history()
+  elseif Item[1] == "folders"  then folders_history()
+  elseif Item[1] == "locate"   then LocateFile2()
+  end
+end
 
-  elseif From == F.OPEN_COMMANDLINE then
-    return
-
-  elseif From==F.OPEN_PLUGINSMENU or From==F.OPEN_EDITOR or From==F.OPEN_VIEWER then
+function export.OpenPlugin (From, Item)
+  if From==F.OPEN_PLUGINSMENU or From==F.OPEN_EDITOR or From==F.OPEN_VIEWER then
     local properties = {
       Title=M.mPluginTitle, HelpTopic="Contents", Flags="FMENU_WRAPMODE",
     }
@@ -584,18 +581,9 @@ local function export_Open (From, Item)
   end
 end
 
-local function SetExportFunctions()
-  export.Configure     = export_Configure
-  export.GetPluginInfo = export_GetPluginInfo
-  export.OpenPlugin    = export_Open
-end
-
-do
-  if not _Plugin then
-    _Plugin = {}
-    _Plugin.Cfg = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
-    setmetatable(_Plugin.Cfg, {__index = DefaultCfg})
-    export.OnError = Utils.OnError
-  end
-  SetExportFunctions()
+if not _Plugin then
+  _Plugin = {}
+  _Plugin.Cfg = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
+  setmetatable(_Plugin.Cfg, {__index = DefaultCfg})
+  export.OnError = Utils.OnError
 end

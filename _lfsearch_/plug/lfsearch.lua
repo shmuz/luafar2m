@@ -232,13 +232,22 @@ function export.OpenPlugin (aFrom, aItem)
   local userItems, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
   if     aFrom == F.OPEN_PLUGINSMENU then return OpenFromPanels(userItems.panels)
   elseif aFrom == F.OPEN_EDITOR      then OpenFromEditor(userItems.editor)
-  elseif aFrom == F.OPEN_COMMANDLINE then return libUtils.OpenCommandLine(aItem, commandTable, nil, M.MMenuTitle)
-  elseif aFrom == F.OPEN_FROMMACRO then
-    local val = OpenFromMacro(aItem, commandTable)
-    if val then
-      SaveSettings()
-      return val
-    end
+  end
+end
+
+
+function export.OpenCommandLine (aItem)
+  local userItems, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
+  return libUtils.OpenCommandLine(aItem, commandTable, nil, M.MMenuTitle)
+end
+
+
+function export.OpenFromMacro (aItem)
+  local userItems, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
+  local val = OpenFromMacro(aItem, commandTable)
+  if val then
+    SaveSettings()
+    return val
   end
 end
 

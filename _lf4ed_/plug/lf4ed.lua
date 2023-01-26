@@ -31,7 +31,6 @@ local field = Sett.field
 local VK = win.GetVirtualKeys()
 local FirstRun = not _Plugin
 local band, bor, bnot = bit64.band, bit64.bor, bit64.bnot
-local dirsep = package.config:sub(1,1)
 lf4ed = lf4ed or {}
 local SetExportFunctions -- forward declaration
 
@@ -584,42 +583,38 @@ local function ProcessCommand (args, sFrom)
   end
 end
 
+local function export_OpenFromMacro (aItem)
+  local map = {
+    [F.MACROAREA_SHELL]  = "panels",
+    [F.MACROAREA_EDITOR] = "editor",
+    [F.MACROAREA_VIEWER] = "viewer",
+    [F.MACROAREA_DIALOG] = "dialog",
+  }
+  local area = map[far.MacroGetArea()]
+  if area then
+    local args = SplitCommandLine(aItem)
+    ProcessCommand(args, area)
+  end
+end
+
+local function export_OpenCommandLine (aItem)
+  local prefix, command = aItem:match("^(.-):(.*)")
+  prefix = prefix:lower()
+  ----------------------------------------------------------------------------
+  if prefix == "lfe" then
+    local expr = command:match("^%s*=(.*)")
+    if expr then
+      local f = assert(loadstring("far.Show(".. expr..")"))
+      local env = setmetatable({}, {__index=_G})
+      setfenv(f,env)()
+    else
+      local args = SplitCommandLine(command)
+      ProcessCommand(args, "panels")
+    end
+  end
+end
+
 local function export_OpenPlugin (aFrom, aItem)
-
-  -- Called from macro
-  if aFrom == F.OPEN_FROMMACRO then
-    local map = {
-      [F.MACROAREA_SHELL]  = "panels",
-      [F.MACROAREA_EDITOR] = "editor",
-      [F.MACROAREA_VIEWER] = "viewer",
-      [F.MACROAREA_DIALOG] = "dialog",
-    }
-    local area = map[far.MacroGetArea()]
-    if area then
-      local args = SplitCommandLine(aItem)
-      ProcessCommand(args, area)
-    end
-    return
-  end
-
-  -- Called from command line
-  if aFrom == F.OPEN_COMMANDLINE then
-    local prefix, command = aItem:match("^(.-):(.*)")
-    prefix = prefix:lower()
-    ----------------------------------------------------------------------------
-    if prefix == "lfe" then
-      local expr = command:match("^%s*=(.*)")
-      if expr then
-        local f = assert(loadstring("far.Show(".. expr..")"))
-        local env = setmetatable({}, {__index=_G})
-        setfenv(f,env)()
-      else
-        local args = SplitCommandLine(command)
-        ProcessCommand(args, "panels")
-      end
-    end
-    return
-  end
 
   -- Called from a not supported source
   local map = {
@@ -729,6 +724,10 @@ local function export_ProcessDialogEvent (Event, Param)
   end
 end
 
+local function export_OpenDialog(Item)
+  return export_OpenPlugin(F.OPEN_DIALOG, Item)
+end
+
 local function alive(t)
   return t and t[1]
 end
@@ -738,6 +737,9 @@ SetExportFunctions = function()
   export.ExitFAR            = export_ExitFAR
   export.GetPluginInfo      = export_GetPluginInfo
   export.OpenPlugin         = export_OpenPlugin
+  export.OpenCommandLine    = export_OpenCommandLine
+  export.OpenFromMacro      = export_OpenFromMacro
+  export.OpenDialog         = export_OpenDialog
   export.ProcessEditorInput = export_ProcessEditorInput
   export.ProcessEditorEvent = alive(_Plugin.EditorEventHandlers) and export_ProcessEditorEvent
   export.ProcessViewerEvent = alive(_Plugin.ViewerEventHandlers) and export_ProcessViewerEvent

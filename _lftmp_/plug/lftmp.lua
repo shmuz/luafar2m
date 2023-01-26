@@ -27,6 +27,10 @@ local function Require (name)
   return require (name)
 end
 
+function export.OpenCommandLine (Item)
+  return Env:OpenPlugin(F.OPEN_COMMANDLINE, Item)
+end
+
 function export.OpenPlugin (From, Item)
   if From == F.OPEN_PLUGINSMENU then
     return Env:OpenPlugin (From, Item)
@@ -34,8 +38,6 @@ function export.OpenPlugin (From, Item)
   elseif From == F.OPEN_DISKMENU or From == F.OPEN_FINDLIST then
     return Env:NewPanel()
 
-  else
-    return Env:OpenPlugin(From, Item)
   end
 end
 

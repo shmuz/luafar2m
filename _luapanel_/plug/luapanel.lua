@@ -27,18 +27,24 @@ function export.GetPluginInfo()
   }
 end
 
-function export.OpenPlugin(OpenFrom, Item)
+function export.OpenShortcut(Item)
+  return { CurDir="", {table = _G} }
+end
+
+function export.OpenCommandLine(Item)
   local obj = { CurDir="", {table = _G} }
-  if (OpenFrom == F.OPEN_PLUGINSMENU) or (OpenFrom == F.OPEN_SHORTCUT) then
-    return obj
-  elseif OpenFrom == F.OPEN_COMMANDLINE then
-    local str = Item:match("^%s*(.-)%s*$") -- trim whitespace from both sides
-    local v = _G[str]
-    if type(v) == "table" then
-      obj.CurDir = str
-      table.insert(obj, {table = v})
-    end
-    return obj
+  local str = Item:match("^%s*(.-)%s*$") -- trim whitespace from both sides
+  local v = _G[str]
+  if type(v) == "table" then
+    obj.CurDir = str
+    table.insert(obj, {table = v})
+  end
+  return obj
+end
+
+function export.OpenPlugin(OpenFrom, Item)
+  if OpenFrom == F.OPEN_PLUGINSMENU then
+    return { CurDir="", {table = _G} }
   end
 end
 

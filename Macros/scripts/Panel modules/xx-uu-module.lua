@@ -77,10 +77,8 @@ function mod.OpenFilePlugin (Name, Data, OpMode)
   end
 end
 
-function mod.OpenPlugin(OpenFrom, Data)
-  if OpenFrom == F.OPEN_SHORTCUT then
-    return FileToObject(Data)
-  end
+function mod.OpenShortcut(Data)
+  return FileToObject(Data)
 end
 
 function mod.GetFindData(object, handle, OpMode)

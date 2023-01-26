@@ -274,18 +274,6 @@ local function OpenFromCommandLine(str)
 end
 
 
-local function OpenFromPluginsMenu()
-  -- Make sure that current panel item is a real existing file.
-  local info = panel.GetPanelInfo(1)
-  if info and info.PanelType == F.PTYPE_FILEPANEL and band(info.Flags,F.OPIF_REALNAMES) ~= 0 then
-    local item = panel.GetCurrentPanelItem(1)
-    if item and not item.FileAttributes:find("d") then
-      return far.ConvertPath(item.FileName, "CPM_FULL")
-    end
-  end
-end
-
-
 local function ExecuteLuaCode(code, whatpanel)
   local chunk, msg = loadstring(code)
   if chunk then
@@ -334,25 +322,46 @@ local function OpenFromMacro(params)
 end
 
 
-function export.OpenPlugin(OpenFrom, Item)
-  local FileName, Opt = nil, nil
-
-  if OpenFrom == F.OPEN_SHORTCUT then
-    FileName = Item.HostFile
-  elseif OpenFrom == F.OPEN_PLUGINSMENU then
-    FileName = OpenFromPluginsMenu()
-  elseif OpenFrom == F.OPEN_COMMANDLINE then
-    FileName, Opt = OpenFromCommandLine(Item)
-  elseif OpenFrom == F.OPEN_FROMMACRO then
-    if Item[1] == "open" then
-      FileName, Opt = OpenFromMacro(Item)
-    else
-      return OpenFromMacro(Item)
-    end
-  end
-
+function export.OpenCommandLine(Item)
+  local FileName, Opt = OpenFromCommandLine(Item)
   if FileName then
-    return CreatePanel(FileName, Opt, OpenFrom)
+    return CreatePanel(FileName, Opt)
+  end
+end
+
+
+function export.OpenFromMacro(Item)
+  if Item[1] == "open" then
+    local FileName, Opt = OpenFromMacro(Item)
+    if FileName then
+      return CreatePanel(FileName, Opt, F.OPEN_FROMMACRO)
+    end
+  else
+    return OpenFromMacro(Item)
+  end
+end
+
+
+function export.OpenShortcut(Item)
+  if Item.HostFile then
+    return CreatePanel(Item.HostFile)
+  end
+end
+
+
+function export.OpenPlugin(OpenFrom, Item)
+  if OpenFrom == F.OPEN_PLUGINSMENU then
+    -- Make sure that the current panel item is a real existing file.
+    local info = panel.GetPanelInfo(1)
+    if info and info.PanelType == F.PTYPE_FILEPANEL and band(info.Flags,F.OPIF_REALNAMES) ~= 0 then
+      local item = panel.GetCurrentPanelItem(1)
+      if item and not item.FileAttributes:find("d") then
+        local FileName = far.ConvertPath(item.FileName, "CPM_FULL")
+        if FileName then
+          return CreatePanel(FileName, nil, OpenFrom)
+        end
+      end
+    end
   end
 end
 
