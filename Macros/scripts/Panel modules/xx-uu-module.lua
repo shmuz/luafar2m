@@ -70,7 +70,7 @@ end
 
 function mod.OpenFilePlugin (Name, Data, OpMode)
   if Name == nil then -- ShiftF1
-    return -- CreateArchive()
+    return CreateArchive()
   else
     local target = ExtractFileName(Data)
     if target then return FileToObject(Name) end
@@ -216,14 +216,3 @@ function mod.PutFiles(object, handle, Items, Move, OpMode)
 end
 
 PanelModule(mod)
-
-NoMenuItem {
-  description = mod.Info.Title;                     -- string (optional field)
-  menu   = "Plugins";                               -- string
-  area   = "Shell";                                 -- string (optional field)
-  guid   = "10E7E1A7-004C-4239-B06A-AA59FD227BB5";  -- string
-  text   = mod.Info.Title;                          -- string, or function
-  action = function(OpenFrom,Item)                  -- function
-    return mod, FileToObject(APanel.Current)
-  end;
-}

@@ -28,7 +28,18 @@ function export.GetPluginInfo()
 end
 
 function export.OpenShortcut(Item)
-  return { CurDir="", {table = _G} }
+  local obj = { CurDir="", {table = _G} }
+  local curtable = _G
+  for name in Item:gmatch("[^.]+") do
+    curtable = curtable[name]
+    if curtable then
+      obj.CurDir = (obj.CurDir=="") and name or obj.CurDir.."."..name
+      table.insert(obj, {table=curtable})
+    else
+      break
+    end
+  end
+  return obj
 end
 
 function export.OpenCommandLine(Item)
@@ -105,7 +116,7 @@ function export.GetOpenPluginInfo (obj, handle)
     StartPanelMode   = Settings.LastPanelMode,
     StartSortMode    = Settings.LastSortMode,
     StartSortOrder   = Settings.LastSortOrder,
-    ShortcutData     = nil,
+    ShortcutData     = obj.CurDir,
   }
 end
 

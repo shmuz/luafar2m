@@ -343,8 +343,8 @@ end
 
 
 function export.OpenShortcut(Item)
-  if Item.HostFile then
-    return CreatePanel(Item.HostFile)
+  if Item then
+    return CreatePanel(Item)
   end
 end
 

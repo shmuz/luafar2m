@@ -617,39 +617,34 @@ function export.OpenCommandLine (aItem)
 end
 
 local function export_OpenPlugin (aFrom, aItem)
-
-  -- Called from a not supported source
   local map = {
     [F.OPEN_PLUGINSMENU] = "panels",
     [F.OPEN_EDITOR] = "editor",
     [F.OPEN_VIEWER] = "viewer",
     [F.OPEN_DIALOG] = "dialog",
   }
-  if map[aFrom] == nil then
-    return
-  end
-
-  -----------------------------------------------------------------------------
   local sFrom = map[aFrom]
-  local history = field(_History, "Menu", sFrom)
-  local properties, items, keys = MakeMainMenu(sFrom)
-  properties.SelectIndex = history.position
-  while true do
-    local item, pos = far.Menu(properties, items, keys)
-    if not item then break end
+  if sFrom then -- a supported source
+    local history = field(_History, "Menu", sFrom)
+    local properties, items, keys = MakeMainMenu(sFrom)
+    properties.SelectIndex = history.SelectIndex
+    while true do
+      local item, pos = far.Menu(properties, items, keys)
+      if not item then break end
 
-    history.position = pos
-    item.hDlg = (sFrom == "dialog") and aItem or nil
-    local ok, result, bRetToMainMenu = RunMenuItem(item)
-    if not ok then break end
+      history.SelectIndex = pos
+      item.hDlg = (sFrom == "dialog") and aItem or nil
+      local ok, result, bRetToMainMenu = RunMenuItem(item)
+      if not ok then break end
 
-    Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
-    if not (bRetToMainMenu or item.action==Configure) then break end
+      Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
+      if not (bRetToMainMenu or item.action==Configure) then break end
 
-    if item.action==Configure and result=="reloaded" then
-      properties, items, keys = MakeMainMenu(sFrom)
-    else
-      properties.SelectIndex = pos
+      if item.action==Configure and result=="reloaded" then
+        properties, items, keys = MakeMainMenu(sFrom)
+      else
+        properties.SelectIndex = pos
+      end
     end
   end
 end
