@@ -2,6 +2,8 @@
 -- LuaFAR for Editor: main script
 -------------------------------------------------------------------------------
 
+-- luacheck: globals _Plugin lf4ed
+
 local PluginVersion = "2.9.0"
 local SETTINGS_KEY  = "shmuz"
 local SETTINGS_NAME = "plugin_lf4ed"
@@ -409,10 +411,6 @@ local function Configure()
   end
 end
 
-local function export_Configure (ItemNumber)
-  Configure()
-end
-
 local function AddMenuItems (src, trg)
   trg = trg or {}
   local j = trg._NEXT or 1
@@ -583,7 +581,11 @@ local function ProcessCommand (args, sFrom)
   end
 end
 
-local function export_OpenFromMacro (aItem)
+function export.Configure (ItemNumber)
+  Configure()
+end
+
+function export.OpenFromMacro (aItem)
   local map = {
     [F.MACROAREA_SHELL]  = "panels",
     [F.MACROAREA_EDITOR] = "editor",
@@ -597,7 +599,7 @@ local function export_OpenFromMacro (aItem)
   end
 end
 
-local function export_OpenCommandLine (aItem)
+function export.OpenCommandLine (aItem)
   local prefix, command = aItem:match("^(.-):(.*)")
   prefix = prefix:lower()
   ----------------------------------------------------------------------------
@@ -637,7 +639,7 @@ local function export_OpenPlugin (aFrom, aItem)
     if not item then break end
 
     history.position = pos
-    item.hDlg = (sFrom == "dialog") and aItem.hDlg or nil
+    item.hDlg = (sFrom == "dialog") and aItem or nil
     local ok, result, bRetToMainMenu = RunMenuItem(item)
     if not ok then break end
 
@@ -652,7 +654,7 @@ local function export_OpenPlugin (aFrom, aItem)
   end
 end
 
-local function export_GetPluginInfo()
+function export.GetPluginInfo()
   local flags = bor(F.PF_EDITOR, F.PF_DISABLEPANELS, F.PF_FULLCMDLINE)
   local useritems = _Plugin.UserItems
   if useritems then
@@ -668,7 +670,7 @@ local function export_GetPluginInfo()
   }
 end
 
-local function export_ExitFAR()
+function export.ExitFAR()
   RunExitScriptHandlers()
   Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _History)
 end
@@ -724,8 +726,8 @@ local function export_ProcessDialogEvent (Event, Param)
   end
 end
 
-local function export_OpenDialog(Item)
-  return export_OpenPlugin(F.OPEN_DIALOG, Item)
+function export.OpenDialog(ItemNumber, hDlg)
+  return export_OpenPlugin(F.OPEN_DIALOG, hDlg)
 end
 
 local function alive(t)
@@ -733,13 +735,7 @@ local function alive(t)
 end
 
 SetExportFunctions = function()
-  export.Configure          = export_Configure
-  export.ExitFAR            = export_ExitFAR
-  export.GetPluginInfo      = export_GetPluginInfo
   export.OpenPlugin         = export_OpenPlugin
-  export.OpenCommandLine    = export_OpenCommandLine
-  export.OpenFromMacro      = export_OpenFromMacro
-  export.OpenDialog         = export_OpenDialog
   export.ProcessEditorInput = export_ProcessEditorInput
   export.ProcessEditorEvent = alive(_Plugin.EditorEventHandlers) and export_ProcessEditorEvent
   export.ProcessViewerEvent = alive(_Plugin.ViewerEventHandlers) and export_ProcessViewerEvent
