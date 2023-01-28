@@ -1,3 +1,5 @@
+do return end
+
 local F = far.Flags
 local mod = {}
 

@@ -171,7 +171,7 @@ local function EditorAction (aOp, aData, aScriptCall)
 
   elseif aOp == "repeat" or aOp == "repeat_rev" then
     bReplace = (State.sLastOp == "replace")
-      local searchtext = Common.GetDialogHistory("SearchText")
+    local searchtext = _Plugin.sSearchWord or Common.GetDialogHistory("SearchText")
     if searchtext ~= aData.sSearchPat then
       bReplace = false
       aData.bSearchBack = false
@@ -182,8 +182,9 @@ local function EditorAction (aOp, aData, aScriptCall)
     if not tParams then return nil end
 
   elseif aOp == "searchword" or aOp == "searchword_rev" then
-      local searchtext = Common.GetWordUnderCursor(_Plugin.History["config"].bSelectFound)
-    if not searchtext then return end
+    local word = Common.GetWordUnderCursor(_Plugin.History["config"].bSelectFound)
+    if not word then return end
+    _Plugin.sSearchWord = word -- it may be used in further operations
     aData = {
       bAdvanced = false;
       bCaseSens = false;
@@ -192,7 +193,7 @@ local function EditorAction (aOp, aData, aScriptCall)
       bWholeWords = true;
       sOrigin = "cursor";
       sScope = "global";
-      sSearchPat = searchtext;
+      sSearchPat = word;
     }
     bFirstSearch = true
     bReplace = false

@@ -822,6 +822,11 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
   if msg == F.DN_INITDIALOG then
     assert(self.Dlg, "self.Dlg not set; probably Frame:SetDialogObject was not called")
     self:CompleteLoadData(hDlg, Data, false)
+    if _Plugin.sSearchWord and not self.bScriptCall then
+      hDlg:AddHistory(Pos.sSearchPat, _Plugin.sSearchWord)
+      hDlg:SetText(Pos.sSearchPat, _Plugin.sSearchWord)
+      _Plugin.sSearchWord = nil
+    end
   ----------------------------------------------------------------------------
   elseif msg == F.DN_BTNCLICK then
     if param1==Pos.bRegExpr then
