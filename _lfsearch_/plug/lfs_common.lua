@@ -823,8 +823,10 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
     assert(self.Dlg, "self.Dlg not set; probably Frame:SetDialogObject was not called")
     self:CompleteLoadData(hDlg, Data, false)
     if _Plugin.sSearchWord and not self.bScriptCall then
+      if _Plugin.History["config"].rPickHistory then
+        hDlg:SetText(Pos.sSearchPat, _Plugin.sSearchWord)
+      end
       hDlg:AddHistory(Pos.sSearchPat, _Plugin.sSearchWord)
-      hDlg:SetText(Pos.sSearchPat, _Plugin.sSearchWord)
       _Plugin.sSearchWord = nil
     end
   ----------------------------------------------------------------------------
