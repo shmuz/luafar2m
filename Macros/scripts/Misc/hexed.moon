@@ -385,6 +385,7 @@ DoHex=->
       C.WINPORT_CloseHandle file
 
 Macro
+  description:'HEX Editor'
   area:'Viewer'
   key:'CtrlF4'
   action:DoHex

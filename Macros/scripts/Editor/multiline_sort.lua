@@ -1,7 +1,9 @@
--- Started             : 2021-01-20
--- Minimal Far version : 3.0.3300
--- Far plugin          : LuaMacro, LF4Editor, LFSearch, LFHistory (any of them)
--- Dependencies        : Lua modules 'far2.simpledialog' and 'far2.settings'
+-- Started               : 2021-01-20
+-- Minimal Far3 version  : 3.0.3300
+-- Far3 plugin           : LuaMacro, LF4Editor, LFSearch, LFHistory (any of them)
+-- Dependencies          : Lua modules 'far2.simpledialog' and 'far2.settings'
+-- Minimal far2l version : https://github.com/shmuz/far2l
+-- Far2l plugin          : LuaMacro, LF4Editor (any of them)
 
 local MacroKey = "CtrlF2"
 local SETTINGS_KEY    = "shmuz"
@@ -14,7 +16,16 @@ local Info = { --luacheck: no unused
   Started       = "2021-01-20";
   Title         = Title;
 }
+local FarVer = package.config:sub(1,1) == "\\" and 3 or 2
 local F = far.Flags
+
+local Ed = editor
+if FarVer == 3 then
+  Ed = setmetatable({Editor=editor.Editor}, {__index=
+    function(self,name)
+      return function(...) return editor[name](nil, ...) end
+    end})
+end
 
 local function ShowHelp()
   -- Note: the text parts in a line enclosed in ## get highlighted
@@ -117,11 +128,11 @@ local function get_data_from_dialog()
 end
 
 local function GetSelection()
-  local EI = editor.GetInfo()
+  local EI = Ed.GetInfo()
   if EI.BlockType == F.BTYPE_STREAM then
     local tt = {}
     for i=EI.BlockStartLine, math.huge do
-      local s = editor.GetString(i)
+      local s = Ed.GetString(i)
       if s.SelEnd == 0 then break end
       tt[#tt+1] = s.StringText
     end
@@ -131,10 +142,9 @@ local function GetSelection()
 end
 
 local function InsertLine(lnum, text)
-  editor.SetPosition(lnum,1,1)
-  editor.InsertString()
-  editor.SetString(lnum, text)
-  return lnum + 1
+  Ed.SetPosition(lnum,1,1)
+  Ed.InsertString()
+  Ed.SetString(lnum, text)
 end
 
 local function Work(data)
@@ -149,10 +159,11 @@ local function Work(data)
   if data.bFileAsLine   then cflags = cflags.."s" end
   if data.bMultiLine    then cflags = cflags.."m" end
   local chunks, index = {}, 0
-  local blockPat = "("..data.sBlockPat..")" -- the whole block is matched not just the 1st capture
-  local WeightPat = regex.new(data.sWeightPat, cflags)
+  local blockPat =
+    "((?:"..data.sBlockPat..")|(?:.|\n)+)" -- the whole block is matched not just the 1st capture
+  local weightPat = regex.new(data.sWeightPat, cflags)
   for chunk in regex.gmatch(text, blockPat, cflags) do
-    local caps = { WeightPat:find(chunk) }
+    local caps = { weightPat:find(chunk) }
     if caps[1] then
       local fullmatch = chunk:sub(caps[1],caps[2])
       table.remove(caps,2) -- remove "to"
@@ -172,7 +183,7 @@ local function Work(data)
   -- get chunks' weights
   local I = #chunks
   for i,tt in ipairs(chunks) do
-    tt.weight = ff(tt.captures, tt.chunk, i, I) or 0
+    tt.weight = ff(tt.captures, tt.chunk, i, I) or ""
   end
 
   -- the sort is stable due to use of "index"
@@ -189,23 +200,25 @@ local function Work(data)
       end)
 
   -- actions on editor
-  editor.UndoRedo("EUR_BEGIN")
-  editor.DeleteBlock()
-  local lnum = editor.GetInfo().CurLine
+  Ed.UndoRedo("EUR_BEGIN")
+  Ed.DeleteBlock()
+  local lnum = Ed.GetInfo().CurLine
   local delim = data.sOutDelim:gsub("\\(.)", { n="\n";t="\t"; })
   for _,v in ipairs(chunks) do
-    for line in v.chunk:gmatch("([^\n]*)\n?") do
-      if line ~= "" then
-        lnum = InsertLine(lnum, line)
+    for line, eol in v.chunk:gmatch("([^\n]*)(\n?)") do
+      if line ~= "" or eol ~= "" then
+        InsertLine(lnum, line)
+        lnum = lnum + 1
       end
     end
     for line,text in delim:gmatch("(([^\n]*)\n?)") do
       if line ~= "" then
-        lnum = InsertLine(lnum, text)
+        InsertLine(lnum, text)
+        lnum = lnum + 1
       end
     end
   end
-  editor.UndoRedo("EUR_END")
+  Ed.UndoRedo("EUR_END")
 end
 
 if Macro then

@@ -29,7 +29,7 @@ local luafar = {
         "Colors", "ConvertPath", "CopyToClipboard", "CPluginStartupInfo", "CreateFileFilter",
         "CreateUserControl", "DefDlgProc", "Dialog", "DialogFree", "DialogInit", "DialogRun",
         "Execute", "ExecuteLibrary", "MacroCallToLua", "FindPlugin", "Flags", "ForcedLoadPlugin",
-        "GenerateName", "GetCurrentDirectory", "GetDirList", "GetFileEncoding",
+        "FreeScreen", "GenerateName", "GetCurrentDirectory", "GetDirList", "GetFileEncoding",
         "GetFileOwner", "GetMsg", "GetMyHome", "GetNumberOfLinks", "GetPathRoot", "GetPluginId",
         "GetPluginInformation", "GetPluginDirList", "GetPlugins", "GetReparsePointInfo", "Guids",
         "Host", "InMyCache", "InMyConfig", "InMyTemp", "InputBox", "InputRecordToKey",
