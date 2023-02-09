@@ -27,6 +27,7 @@ local function test_library (lib, setfile, printfunc, verbose)
 end
 
 local function main (printfunc, verbose)
+  printfunc = printfunc or function() end
   local libname = "rexfar"
   local test = { "common_sets", "pcre_sets", "pcre_sets2" }
   local nerr = 0

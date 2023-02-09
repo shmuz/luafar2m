@@ -18,6 +18,7 @@ local Info = { --luacheck: no unused
 }
 local FarVer = package.config:sub(1,1) == "\\" and 3 or 2
 local F = far.Flags
+local KEEP_DIALOG_OPEN = 0
 
 local Ed = editor
 if FarVer == 3 then
@@ -30,9 +31,12 @@ end
 local function ShowHelp()
   -- Note: the text parts in a line enclosed in ## get highlighted
   local msg = [[
-#Block regular expression:#
-  - matches a single block (sorting unit)
-  - the text for search is all selected lines concatenated with \n
+#Split by:#
+  - How the text is split into multi-line chunks:
+    either by the 1-st line, the last line or a delimiter line
+  - The adjacent edit control specifies a regular expression
+    for that line
+  The text for search is all selected lines concatenated with \n
 #Weight regular expression:#
   - captures the block parts needed for sorting
 #Lua weight function:#
@@ -62,67 +66,73 @@ end
 
 local function get_data_from_dialog()
   local sdialog = require "far2.simpledialog"
-  local settings = require "far2.settings"
+  local settings = mf or require "far2.settings"
 
   local items = {
     guid="453DF58C-D19B-4EAC-AFA9-A9125FA7C7C4";
     help=ShowHelp;
-    ------------------------------------------------------------------
-    {tp="dbox"; text=Title;                                   },
-    ------------------------------------------------------------------
-    {tp="text"; text="&Block regular expression:"             },
-    {tp="edit"; name="sBlockPat";                             },
-    ------------------------------------------------------------------
-    {tp="text"; text="&Weight regular expression:"            },
-    {tp="edit"; name="sWeightPat";                            },
-    ------------------------------------------------------------------
-    {tp="chbox"; name="bCaseSens";   text="&Case sensitive";  },
-    {tp="chbox"; name="bFileAsLine"; text="&File as a line";  },
+    ----------------------------------------------------------------------
+    {tp="dbox"; text=Title;                                              },
+    ----------------------------------------------------------------------
+    {tp="rbutt"; text="&1-st line";          x1=18; name="rb1st"; val=1; },
+    {tp="rbutt"; text="&Last line";   y1=""; x1=33; name="rbLast";       },
+    {tp="rbutt"; text="&Delimiter";   y1=""; x1=48; name="rbDelim";      },
+    {tp="text";  text="&Split by:";   y1=""; width=10;                   },
+    {tp="edit";  name="sBlockPat";    focus=1;                           },
+    ----------------------------------------------------------------------
+    {tp="text";  text="&Weight regular expression:"                      },
+    {tp="edit";  name="sWeightPat";                                      },
+    ----------------------------------------------------------------------
+    {tp="chbox"; name="bCaseSens";   text="&Case sensitive";             },
+    {tp="chbox"; name="bFileAsLine"; text="&File as a line";             },
     {tp="chbox"; name="bMultiLine";  text="&Multi-line mode"; ystep=0; x1=26; },
-    {tp="sep"                                                 },
-    ------------------------------------------------------------------
-    {tp="text"; text="&Lua weight function:"                  },
-    {tp="edit"; name="sWeightCode"; ext="lua";                },
-    ------------------------------------------------------------------
-    {tp="text"; text="&Output parts delimiter:"               },
-    {tp="edit"; name="sOutDelim";                             },
-    ------------------------------------------------------------------
-    {tp="chbox"; name="bReverse"; text="&Reverse sort order"; },
-    {tp="sep"                                                 },
-    ------------------------------------------------------------------
-    {tp="butt"; text="OK";     centergroup=1; default=1;      },
-    {tp="butt"; text="Cancel"; centergroup=1; cancel=1;       },
+    {tp="sep"                                                            },
+    ----------------------------------------------------------------------
+    {tp="text";  text="Lua &Weight function:"                            },
+    {tp="edit";  name="sWeightCode"; ext="lua";                          },
+    ----------------------------------------------------------------------
+    {tp="text";  text="&Output parts delimiter:"                         },
+    {tp="edit";  name="sOutDelim";                                       },
+    ----------------------------------------------------------------------
+    {tp="chbox"; name="bReverse"; text="&Reverse sort order";            },
+    {tp="sep"                                                            },
+    ----------------------------------------------------------------------
+    {tp="butt";  text="OK";     centergroup=1; default=1;                },
+    {tp="butt";  text="Save";   centergroup=1; Save=1;                   },
+    {tp="butt";  text="Cancel"; centergroup=1; cancel=1;                 },
   }
   ---- callback on dialog close (data validity checking)
   items.closeaction = function(hDlg, Par1, tOut)
-    local _, msg
-    if tOut.sBlockPat == ""                      then msg = "Empty Block regular expression"
-    elseif not pcall(regex.new, tOut.sBlockPat)  then msg = "Invalid Block regular expression"
-    elseif tOut.sWeightPat == ""                 then msg = "Empty Weight regular expression"
-    elseif not pcall(regex.new, tOut.sWeightPat) then msg = "Invalid Weight regular expression"
-    else _, msg = loadstring(tOut.sWeightCode, "Lua weight function")
-    end
-    if msg then
-      far.Message(msg, Title, nil, "w"); return 0;
+    if items[Par1].Save then
+      settings.msave(SETTINGS_KEY, SETTINGS_SUBKEY, tOut)
+      return KEEP_DIALOG_OPEN
+    else
+      local _, msg
+      if tOut.sBlockPat == ""                      then msg = "Empty Block regular expression"
+      elseif not pcall(regex.new, tOut.sBlockPat)  then msg = "Invalid Block regular expression"
+      elseif tOut.sWeightPat == ""                 then msg = "Empty Weight regular expression"
+      elseif not pcall(regex.new, tOut.sWeightPat) then msg = "Invalid Weight regular expression"
+      else _, msg = loadstring(tOut.sWeightCode, "Lua weight function")
+      end
+      if msg then
+        far.Message(msg, Title, nil, "w")
+        return KEEP_DIALOG_OPEN
+      end
     end
   end
-  ---- load settings
-  local data = settings.mload(SETTINGS_KEY, SETTINGS_SUBKEY) or {}
+
   for _,v in ipairs(items) do
     if v.tp=="edit" and v.name then
       v.hist = "multilinesort_"..v.name
-      v.uselasthistory = true
     end
-    if v.tp=="chbox" then v.val = data[v.name]; end
   end
-  ---- run the dialog
-  local out = sdialog.New(items):Run()
-  ---- save settings
+
+  local data = settings.mload(SETTINGS_KEY, SETTINGS_SUBKEY) or {}
+  local dlg = sdialog.New(items)
+  dlg:LoadData(data)
+  local out = dlg:Run()
   if out then
-    for _,v in ipairs(items) do
-      if v.tp=="chbox" then data[v.name] = out[v.name]; end
-    end
-    settings.msave(SETTINGS_KEY, SETTINGS_SUBKEY, data)
+    settings.msave(SETTINGS_KEY, SETTINGS_SUBKEY, out)
   end
   return out
 end
@@ -147,10 +157,67 @@ local function InsertLine(lnum, text)
   Ed.SetString(lnum, text)
 end
 
+local function SplitBy1stLine(aText, aPatt)
+  local chunks = {}
+  local curr
+  for line in aText:gmatch("[^\n]*\n?") do
+    local last = line==""
+    local ok = aPatt:match(line)
+    if ok or last then
+      if curr then      -- save the current chunk
+        table.insert(chunks,curr)
+      end
+      curr = { line }
+    else
+      if curr then      -- add to the current chunk
+        table.insert(curr,line)
+      else
+        curr = { line } -- create a new chunk, despite the pattern didn't match
+      end
+    end
+  end
+  return chunks
+end
+
+local function SplitByLastLine(aText, aPatt)
+  local chunks = {}
+  local curr
+  for line in aText:gmatch("[^\n]*\n?") do
+    local last = line==""
+    local ok = aPatt:match(line)
+    curr = curr or {}
+    table.insert(curr, line)
+    if ok or last then
+      table.insert(chunks, curr)
+      curr = nil
+    end
+  end
+  return chunks
+end
+
+local function SplitByDelimiter(aText, aPatt)
+  local chunks = {}
+  local curr
+  for line in aText:gmatch("[^\n]*\n?") do
+    local last = line==""
+    local ok = aPatt:match(line)
+    if ok or last then
+      if curr then
+        table.insert(chunks, curr)
+        curr = nil
+      end
+    else
+      curr = curr or {}
+      table.insert(curr, line)
+    end
+  end
+  return chunks
+end
+
 local function Work(data)
   local text = GetSelection()
   if not text then
-    far.Message("No stream-type selection found", Title, nil, "w"); return;
+    far.Message("BTYPE_STREAM selection not found", Title, nil, "w"); return;
   end
 
   -- extract all chunks/blocks into a table for future sorting
@@ -158,11 +225,14 @@ local function Work(data)
   if not data.bCaseSens then cflags = cflags.."i" end
   if data.bFileAsLine   then cflags = cflags.."s" end
   if data.bMultiLine    then cflags = cflags.."m" end
-  local chunks, index = {}, 0
-  local blockPat =
-    "((?:"..data.sBlockPat..")|(?:.|\n)+)" -- the whole block is matched not just the 1st capture
+  local blockPat = regex.new(data.sBlockPat, cflags)
+  local chunks = (data.rb1st and SplitBy1stLine or data.rbLast  and SplitByLastLine or
+                  data.rbDelim and SplitByDelimiter)(text, blockPat)
+
+  local index = 0
   local weightPat = regex.new(data.sWeightPat, cflags)
-  for chunk in regex.gmatch(text, blockPat, cflags) do
+  for _, chunk in ipairs(chunks) do
+    chunk = table.concat(chunk)
     local caps = { weightPat:find(chunk) }
     if caps[1] then
       local fullmatch = chunk:sub(caps[1],caps[2])
@@ -219,16 +289,19 @@ local function Work(data)
     end
   end
   Ed.UndoRedo("EUR_END")
+  Ed.Redraw()
 end
 
 if Macro then
   Macro {
     description=Title;
     area="Editor"; key=MacroKey;
-    action=function()
+    condition=function()
       local data = get_data_from_dialog()
       if data then Work(data) end
+      return true
     end;
+    action=function() end;
   }
 else
   local w = far.AdvControl("ACTL_GETWINDOWTYPE")
