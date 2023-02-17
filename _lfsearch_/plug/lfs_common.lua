@@ -955,7 +955,7 @@ function SRFrame:DoPresets (hDlg)
     elseif item.BreakKey == "F2" or item.BreakKey == "INSERT" then
       local pure_save_name = item.BreakKey == "F2" and self.PresetName
       local name = pure_save_name or
-        far.InputBox(M.MSavePreset, M.MEnterPresetName, HistPresetNames,
+        far.InputBox(nil, M.MSavePreset, M.MEnterPresetName, HistPresetNames,
                      self.PresetName, nil, nil, F.FIB_NOUSELASTHISTORY)
       if name then
         if pure_save_name or not presets[name] or
@@ -989,7 +989,7 @@ function SRFrame:DoPresets (hDlg)
     ----------------------------------------------------------------------------
     elseif item.BreakKey == "F6" and items[1] then
       local oldname = items[pos].text
-      local name = far.InputBox(M.MRenamePreset, M.MEnterPresetName, HistPresetNames, oldname)
+      local name = far.InputBox(nil, M.MRenamePreset, M.MEnterPresetName, HistPresetNames, oldname)
       if name and name ~= oldname then
         if not presets[name] or far.Message(M.MPresetOverwrite, M.MConfirm, M.MBtnYesNo, "w") == 1 then
           if self.PresetName == oldname then
@@ -1001,7 +1001,7 @@ function SRFrame:DoPresets (hDlg)
       end
     ----------------------------------------------------------------------------
     elseif item.BreakKey == "C+S" and items[1] then
-      local fname = far.InputBox(M.MPresetExportTitle, M.MPresetExportPrompt)
+      local fname = far.InputBox(nil, M.MPresetExportTitle, M.MPresetExportPrompt)
       if fname then
         fname = far.ConvertPath(fname)
         if not win.GetFileAttr(fname) or 1==far.Message(
@@ -1019,7 +1019,7 @@ function SRFrame:DoPresets (hDlg)
       end
     ----------------------------------------------------------------------------
     elseif item.BreakKey == "C+O" then
-      local fname = far.InputBox(M.MPresetImportTitle, M.MPresetImportPrompt)
+      local fname = far.InputBox(nil, M.MPresetImportTitle, M.MPresetImportPrompt)
       if fname then
         local func, msg = loadfile(far.ConvertPath(fname))
         if func then

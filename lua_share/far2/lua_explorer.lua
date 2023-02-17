@@ -185,7 +185,7 @@ end
 editValue = function(obj, key, title, callback)
   local v, t = valfmt(obj[key], true)
   if t == 'table' or t == 'function' then v = '' end
-  local sval = far.InputBox('EDIT: ' .. title,
+  local sval = far.InputBox(nil, 'EDIT: ' .. title,
     ('%s is a %s, type new value as Lua code'):format(valfmt(key), t:upper()), 'edit.' .. title, v)
   if sval and #sval > 0 then
     local val = loadstring('return ' .. sval)()
@@ -197,7 +197,7 @@ end
 
 -- add new element to obj
 insertValue = function(obj, title, callback)
-  local args = far.InputBox('INSERT: ' .. title,
+  local args = far.InputBox(nil, 'INSERT: ' .. title,
     'type the key and value comma separated as Lua code', 'insert.' .. title)
   if args and #args > 0 then
     local k, v = loadstring('return ' .. args)()
@@ -219,7 +219,7 @@ process = function(obj, title, callback)
 
   -- functions can be called
   if otype == 'function' then
-    local args = far.InputBox('CALL: ' .. title .. '(...)',
+    local args = far.InputBox(nil, 'CALL: ' .. title .. '(...)',
       'Type arguments as Lua code or leave empty:', 'args.' .. title)
     if args then
       -- overwrite the function object with its return values

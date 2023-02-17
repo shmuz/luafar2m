@@ -637,7 +637,7 @@ function Panel:ProcessSaveListKey (Handle)
     ListPath = ListPath .. ext
   end
 
-  ListPath = far.InputBox (M.MTempPanel, M.MListFilePath,
+  ListPath = far.InputBox (nil, M.MTempPanel, M.MListFilePath,
       "TmpPanel.SaveList", ListPath, nil, nil, F.FIB_BUTTONS)
   if ListPath then
     self:SaveListFile (ListPath)

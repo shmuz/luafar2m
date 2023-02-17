@@ -14,7 +14,7 @@ end
 
 local function GetFileName (aTitle, aPrompt, aDefault)
   while true do
-    local fname = far.InputBox(aTitle, aPrompt, nil, aDefault)
+    local fname = far.InputBox(nil, aTitle, aPrompt, nil, aDefault)
     if not fname then
       return
     end

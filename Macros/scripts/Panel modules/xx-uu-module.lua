@@ -126,7 +126,7 @@ function mod.GetFiles(object, handle, PanelItems, Move, DestPath, OpMode)
   local fname = PanelItems[1].FileName
 
   if bit64.band(OpMode, F.OPM_SILENT) == 0 then -- confirmation needed
-    target = far.InputBox("Extract", "Extract \""..fname.."\" to:",nil,DestPath)
+    target = far.InputBox(nil, "Extract", "Extract \""..fname.."\" to:",nil,DestPath)
     if not target then return 0; end
   end
 

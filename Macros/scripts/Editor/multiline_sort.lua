@@ -97,10 +97,17 @@ local function get_data_from_dialog()
     {tp="chbox"; name="bReverse"; text="&Reverse sort order";            },
     {tp="sep"                                                            },
     ----------------------------------------------------------------------
-    {tp="butt";  text="OK";     centergroup=1; default=1;                },
-    {tp="butt";  text="Save";   centergroup=1; Save=1;                   },
-    {tp="butt";  text="Cancel"; centergroup=1; cancel=1;                 },
+    {tp="butt";  text="OK";       centergroup=1; default=1;              },
+    {tp="butt";  text="&Presets"; centergroup=1; name="Presets"; btnnoclose=1; },
+    {tp="butt";  text="Save";     centergroup=1; Save=1;                 },
+    {tp="butt";  text="Cancel";   centergroup=1; cancel=1;               },
   }
+
+  local dlg = sdialog.New(items)
+  local _, Elem = dlg:Indexes()
+  local data = settings.mload(SETTINGS_KEY, SETTINGS_SUBKEY) or {}
+  dlg:LoadData(data)
+
   ---- callback on dialog close (data validity checking)
   items.closeaction = function(hDlg, Par1, tOut)
     if items[Par1].Save then
@@ -121,15 +128,19 @@ local function get_data_from_dialog()
     end
   end
 
+  function Elem.Presets.action (hDlg,Par1,Par2)
+    local ff = require "far2.presets"
+    data.presets = data.presets or {}
+    local Save = function() settings.msave(SETTINGS_KEY, SETTINGS_SUBKEY, data) end
+    ff (dlg, hDlg, data.presets, "temp123", "Contents", Save)
+  end
+
   for _,v in ipairs(items) do
     if v.tp=="edit" and v.name then
       v.hist = "multilinesort_"..v.name
     end
   end
 
-  local data = settings.mload(SETTINGS_KEY, SETTINGS_SUBKEY) or {}
-  local dlg = sdialog.New(items)
-  dlg:LoadData(data)
   local out = dlg:Run()
   if out then
     settings.msave(SETTINGS_KEY, SETTINGS_SUBKEY, out)

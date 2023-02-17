@@ -158,16 +158,15 @@ function mod:SetDialogState(hDlg, Data)
         local tp = elem.tp
 
         if tp=="chbox" then
-          if FarVer == 2 then val = val
-          else                val = (val==2 or val==0) and val or (val and 1) or 0
+          if FarVer == 3 then
+            val = (val==2 or val==0) and val or (val and 1) or 0
           end
           Send(hDlg, "DM_SETCHECK", pos, val)
 
         elseif tp=="rbutt" then
-          if FarVer == 2 then val = val
-          else                val = val and 1 or 0
+          if val then
+            Send(hDlg, "DM_SETCHECK", pos, 1)
           end
-          Send(hDlg, "DM_SETCHECK", pos, val)
 
         elseif tp=="edit" or tp=="fixedit" or tp=="pswedit" then
           Send(hDlg, "DM_SETTEXT", pos, val or "")
