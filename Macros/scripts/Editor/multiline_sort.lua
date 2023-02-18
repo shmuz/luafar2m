@@ -18,6 +18,7 @@ local Info = { --luacheck: no unused
 }
 local FarVer = package.config:sub(1,1) == "\\" and 3 or 2
 local F = far.Flags
+local Send = far.SendDlgMessage
 local KEEP_DIALOG_OPEN = 0
 
 local Ed = editor
@@ -52,13 +53,13 @@ local function ShowHelp()
 
   if far.CreateUserControl then -- since Far 3.0.3590
     local sd = require ("far2.simpledialog")
-    local dlg = sd.New {
+    local Dlg = sd.New {
       {tp="dbox"; text=Title.." Help";                 },
       {tp="user2"; text=msg;                           },
       {tp="sep";                                       },
       {tp="butt"; text="OK"; centergroup=1; default=1; },
     }
-    dlg:Run()
+    Dlg:Run()
   else
     far.Message(msg:gsub("#",""), Title.." Help", nil, "l")
   end
@@ -72,67 +73,65 @@ local function get_data_from_dialog()
     guid="453DF58C-D19B-4EAC-AFA9-A9125FA7C7C4";
     help=ShowHelp;
     ----------------------------------------------------------------------
-    {tp="dbox"; text=Title;                                              },
+    {tp="dbox"; text=Title;                                                    },
     ----------------------------------------------------------------------
-    {tp="rbutt"; text="&1-st line";          x1=18; name="rb1st"; val=1; },
-    {tp="rbutt"; text="&Last line";   y1=""; x1=33; name="rbLast";       },
-    {tp="rbutt"; text="&Delimiter";   y1=""; x1=48; name="rbDelim";      },
-    {tp="text";  text="&Split by:";   y1=""; width=10;                   },
-    {tp="edit";  name="sBlockPat";    focus=1;                           },
+    {tp="rbutt"; text="&1-st line";          x1=18; name="rb1st"; val=1;       },
+    {tp="rbutt"; text="&Last line";   y1=""; x1=33; name="rbLast";             },
+    {tp="rbutt"; text="&Delimiter";   y1=""; x1=48; name="rbDelim";            },
+    {tp="text";  text="&Split by:";   y1=""; width=10;                         },
+    {tp="edit";  name="sBlockPat";    focus=1;                                 },
     ----------------------------------------------------------------------
-    {tp="text";  text="&Weight regular expression:"                      },
-    {tp="edit";  name="sWeightPat";                                      },
+    {tp="text";  text="&Weight regular expression:"                            },
+    {tp="edit";  name="sWeightPat";                                            },
     ----------------------------------------------------------------------
-    {tp="chbox"; name="bCaseSens";   text="&Case sensitive";             },
-    {tp="chbox"; name="bFileAsLine"; text="&File as a line";             },
-    {tp="chbox"; name="bMultiLine";  text="&Multi-line mode"; ystep=0; x1=26; },
-    {tp="sep"                                                            },
+    {tp="chbox"; name="bCaseSens";   text="&Case sensitive";                   },
+    {tp="chbox"; name="bFileAsLine"; text="&File as a line";                   },
+    {tp="chbox"; name="bMultiLine";  text="&Multi-line mode"; ystep=0; x1=26;  },
+    {tp="sep"                                                                  },
     ----------------------------------------------------------------------
-    {tp="text";  text="Lua &Weight function:"                            },
-    {tp="edit";  name="sWeightCode"; ext="lua";                          },
+    {tp="text";  text="Lua &Weight function:"                                  },
+    {tp="edit";  name="sWeightCode"; ext="lua";                                },
     ----------------------------------------------------------------------
-    {tp="text";  text="&Output parts delimiter:"                         },
-    {tp="edit";  name="sOutDelim";                                       },
+    {tp="text";  text="&Output parts delimiter:"                               },
+    {tp="edit";  name="sOutDelim";                                             },
     ----------------------------------------------------------------------
-    {tp="chbox"; name="bReverse"; text="&Reverse sort order";            },
-    {tp="sep"                                                            },
+    {tp="chbox"; name="bReverse"; text="&Reverse sort order";                  },
+    {tp="sep"                                                                  },
     ----------------------------------------------------------------------
-    {tp="butt";  text="OK";       centergroup=1; default=1;              },
-    {tp="butt";  text="&Presets"; centergroup=1; name="Presets"; btnnoclose=1; },
-    {tp="butt";  text="Save";     centergroup=1; Save=1;                 },
-    {tp="butt";  text="Cancel";   centergroup=1; cancel=1;               },
+    {tp="butt";  text="OK";       centergroup=1; default=1;    name="btnOK";   },
+    {tp="butt";  text="&Presets"; centergroup=1; btnnoclose=1; name="Presets"; },
+    {tp="butt";  text="Cancel";   centergroup=1; cancel=1;                     },
   }
 
-  local dlg = sdialog.New(items)
-  local _, Elem = dlg:Indexes()
-  local data = settings.mload(SETTINGS_KEY, SETTINGS_SUBKEY) or {}
-  dlg:LoadData(data)
+  local Dlg = sdialog.New(items)
+  local Pos, Elem = Dlg:Indexes()
+  local Data = settings.mload(SETTINGS_KEY, SETTINGS_SUBKEY) or {}
+  Dlg:LoadData(Data)
 
-  ---- callback on dialog close (data validity checking)
+  ---- callback on dialog close (Data validity checking)
   items.closeaction = function(hDlg, Par1, tOut)
-    if items[Par1].Save then
-      settings.msave(SETTINGS_KEY, SETTINGS_SUBKEY, tOut)
+    local _, msg
+    if tOut.sBlockPat == ""                      then msg = "Empty Block regular expression"
+    elseif not pcall(regex.new, tOut.sBlockPat)  then msg = "Invalid Block regular expression"
+    elseif tOut.sWeightPat == ""                 then msg = "Empty Weight regular expression"
+    elseif not pcall(regex.new, tOut.sWeightPat) then msg = "Invalid Weight regular expression"
+    else _, msg = loadstring(tOut.sWeightCode, "Lua weight function")
+    end
+    if msg then
+      far.Message(msg, Title, nil, "w")
       return KEEP_DIALOG_OPEN
-    else
-      local _, msg
-      if tOut.sBlockPat == ""                      then msg = "Empty Block regular expression"
-      elseif not pcall(regex.new, tOut.sBlockPat)  then msg = "Invalid Block regular expression"
-      elseif tOut.sWeightPat == ""                 then msg = "Empty Weight regular expression"
-      elseif not pcall(regex.new, tOut.sWeightPat) then msg = "Invalid Weight regular expression"
-      else _, msg = loadstring(tOut.sWeightCode, "Lua weight function")
-      end
-      if msg then
-        far.Message(msg, Title, nil, "w")
-        return KEEP_DIALOG_OPEN
-      end
     end
   end
 
   function Elem.Presets.action (hDlg,Par1,Par2)
-    local ff = require "far2.presets"
-    data.presets = data.presets or {}
-    local Save = function() settings.msave(SETTINGS_KEY, SETTINGS_SUBKEY, data) end
-    ff (dlg, hDlg, data.presets, "temp123", "Contents", Save)
+    local PrMenu = require "far2.presets"
+    Send(hDlg, F.DM_SHOWDIALOG, 0)
+    Data.presets = Data.presets or {}
+    PrMenu (Dlg, hDlg, Data.presets,
+      function() settings.msave(SETTINGS_KEY, SETTINGS_SUBKEY, Data) end,
+      "presets_multiline_sort")
+    Send(hDlg, F.DM_SHOWDIALOG, 1)
+    Send(hDlg, F.DM_SETFOCUS, Pos.btnOK)
   end
 
   for _,v in ipairs(items) do
@@ -141,7 +140,7 @@ local function get_data_from_dialog()
     end
   end
 
-  local out = dlg:Run()
+  local out = Dlg:Run()
   if out then
     settings.msave(SETTINGS_KEY, SETTINGS_SUBKEY, out)
   end
