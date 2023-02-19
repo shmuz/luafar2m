@@ -1,9 +1,7 @@
 -- luacheck: globals far win
 
-local _    = require "far2.simpledialog"
 local sett = require "far2.settings"
 local F = far.Flags
-local Send = far.SendDlgMessage
 local MFlags = F.FIB_BUTTONS + F.FIB_NOAMPERSAND
 
 local ENG = {
@@ -115,11 +113,10 @@ local function Import (aPresets, M)
 end
 
 local function DoPresets (
-  Dlg,             -- simple dialog instance
-  hDlg,            -- dialog handle
-  Presets,         -- _Plugin.History:field("Presets")
-  SaveHistory,     -- function
-  HistPresetNames  -- e.g. "presets_multiline_sort"
+  Params,          -- IN/OUT table with 'PresetName' field
+  Presets,         -- IN/OUT table indexed by preset names
+  GetDialogState,  -- IN     function
+  HistPresetNames  -- IN     e.g. "presets_multiline_sort"
 )
   local M = win.GetEnv("FARLANG")=="Russian" and RUS or ENG
   ErrorMsg = function(msg) far.Message(msg, M.ErrorTitle, nil, "w") end
@@ -134,13 +131,14 @@ local function DoPresets (
     { action="import" ; BreakKey="C+O"    ; },
     { action="help"   ; BreakKey="F1"     ; },
   }
+  local isModified = false
 
   while true do
     local items = {}
     for name, preset in pairs(Presets) do
       local t = { text=name, preset=preset }
       items[#items+1] = t
-      if name == Dlg.PresetName then t.selected,t.checked = true,true; end
+      if name == Params.PresetName then t.selected,t.checked = true,true; end
     end
     table.sort(items, function(a,b) return win.CompareString(a.text,b.text,nil,"cS") < 0; end)
     ----------------------------------------------------------------------------
@@ -148,18 +146,17 @@ local function DoPresets (
     if not item then break end
     ----------------------------------------------------------------------------
     if item.preset then
-      Dlg.PresetName = item.text
-      Dlg:SetDialogState(hDlg, item.preset)
-      break
+      Params.PresetName = item.text
+      return item.preset, true
 
     elseif item.action == "save" then
-      local name = Dlg.PresetName or far.InputBox(nil, M.SavePreset, M.EnterPresetName,
+      local name = Params.PresetName or far.InputBox(nil, M.SavePreset, M.EnterPresetName,
                    HistPresetNames, nil, nil, nil, MFlags+F.FIB_NOUSELASTHISTORY)
       if name then
-        Presets[name] = Dlg:GetDialogState(hDlg)
-        Dlg.PresetName = name
-        SaveHistory()
-        if Dlg.PresetName then
+        Presets[name] = GetDialogState()
+        Params.PresetName = name
+        isModified = true
+        if Params.PresetName then
           far.Message(M.PresetWasSaved, M.TitlePresets)
           break
         end
@@ -167,12 +164,12 @@ local function DoPresets (
 
     elseif item.action == "saveas" then
       local name = far.InputBox(nil, M.SavePreset, M.EnterPresetName, HistPresetNames,
-                   Dlg.PresetName, nil, nil, MFlags+F.FIB_NOUSELASTHISTORY)
+                   Params.PresetName, nil, nil, MFlags+F.FIB_NOUSELASTHISTORY)
       if name then
         if not Presets[name] or far.Message(M.PresetOverwrite, M.Confirm, M.BtnYesNo, "w") == 1 then
-          Presets[name] = Dlg:GetDialogState(hDlg)
-          Dlg.PresetName = name
-          SaveHistory()
+          Presets[name] = GetDialogState()
+          Params.PresetName = name
+          isModified = true
         end
       end
 
@@ -180,11 +177,11 @@ local function DoPresets (
       local name = items[pos].text
       local msg = ('%s "%s"?'):format(M.DeletePreset, name)
       if far.Message(msg, M.Confirm, M.BtnYesNo, "w") == 1 then
-        if Dlg.PresetName == name then
-          Dlg.PresetName = nil
+        if Params.PresetName == name then
+          Params.PresetName = nil
         end
         Presets[name] = nil
-        SaveHistory()
+        isModified = true
       end
 
     elseif item.action == "rename" and items[1] then
@@ -192,11 +189,11 @@ local function DoPresets (
       local name = far.InputBox(nil, M.RenamePreset, M.EnterPresetName, HistPresetNames, oldname)
       if name and name ~= oldname then
         if not Presets[name] or far.Message(M.PresetOverwrite, M.Confirm, M.BtnYesNo, "w") == 1 then
-          if Dlg.PresetName == oldname then
-            Dlg.PresetName = name
+          if Params.PresetName == oldname then
+            Params.PresetName = name
           end
           Presets[name], Presets[oldname] = Presets[oldname], nil
-          SaveHistory()
+          isModified = true
         end
       end
 
@@ -205,7 +202,7 @@ local function DoPresets (
 
     elseif item.action == "import" then
       if Import(Presets, M) then
-        SaveHistory()
+        isModified = true
       end
 
     elseif item.action == "help" then
@@ -213,6 +210,7 @@ local function DoPresets (
 
     end
   end
+  return nil, isModified
 end
 
 return DoPresets

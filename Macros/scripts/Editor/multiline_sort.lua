@@ -103,6 +103,7 @@ local function get_data_from_dialog()
     {tp="butt";  text="Cancel";   centergroup=1; cancel=1;                     },
   }
 
+  local PresetParams = { PresetName=nil; }
   local Dlg = sdialog.New(items)
   local Pos, Elem = Dlg:Indexes()
   local Data = settings.mload(SETTINGS_KEY, SETTINGS_SUBKEY) or {}
@@ -125,11 +126,20 @@ local function get_data_from_dialog()
 
   function Elem.Presets.action (hDlg,Par1,Par2)
     local PrMenu = require "far2.presets"
-    Send(hDlg, F.DM_SHOWDIALOG, 0)
     Data.presets = Data.presets or {}
-    PrMenu (Dlg, hDlg, Data.presets,
-      function() settings.msave(SETTINGS_KEY, SETTINGS_SUBKEY, Data) end,
+    Send(hDlg, F.DM_SHOWDIALOG, 0)
+
+    local preset, modified = PrMenu(PresetParams, Data.presets,
+      function() return Dlg:GetDialogState(hDlg) end,
       "presets_multiline_sort")
+
+    if preset then
+      Dlg:SetDialogState(hDlg, preset)
+    end
+    if modified then
+      settings.msave(SETTINGS_KEY, SETTINGS_SUBKEY, Data)
+    end
+
     Send(hDlg, F.DM_SHOWDIALOG, 1)
     Send(hDlg, F.DM_SETFOCUS, Pos.btnOK)
   end
