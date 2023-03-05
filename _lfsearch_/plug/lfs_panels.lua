@@ -1356,7 +1356,7 @@ local function Grep_ProcessFile (fdata, fullname, cdata)
           end
         end
         ----------------------------------------------------------------------
-        if cdata.sOp == "grep" then
+        if cdata.sOp == "grep" and x == 1 then
           if (not bFound) == grepInverse then -- 'not' needed for conversion to boolean
             if qLinesBefore then
               local size = qLinesBefore:size()
@@ -1377,7 +1377,6 @@ local function Grep_ProcessFile (fdata, fullname, cdata)
               qLinesBefore:push(Line)
             end
           end
-          break
         end
         ----------------------------------------------------------------------
         if not fr then break end
@@ -1397,6 +1396,9 @@ local function Grep_ProcessFile (fdata, fullname, cdata)
     end
   end -- for line, eol in lines_iter(...)
   if nMatches > 0 then
+    if tGrep then
+      tGrep.nMatches = nMatches
+    end
     cdata.nMatchesTotal = cdata.nMatchesTotal + nMatches
     cdata.nFilesWithMatches = cdata.nFilesWithMatches + 1
   end
@@ -1550,22 +1552,22 @@ local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
       if v[1] then
         numfile = numfile + 1
         fp = fp or assert(io.open(fname, "wb"))
-        fp:write("[", tostring(numfile), "] ", v.FileName, "\r\n")
+        fp:write(("[%d] %s : %d\n"):format(numfile, v.FileName, v.nMatches))
         local last_numline = -1
         for m=1,#v,2 do
           local lnum, line = v[m], v[m+1]
           local abs_numline = math.abs(lnum)
           if insert_empty_lines then
-            if abs_numline - last_numline > 1 then fp:write("\r\n") end
+            if abs_numline - last_numline > 1 then fp:write("\n") end
             last_numline = abs_numline
           end
           if aData.bGrepShowLineNumbers then
             fp:write(tostring(abs_numline), lnum>0 and ":" or "-")
           end
           if tParams.Regex.ufindW then line=Utf8(line) end
-          fp:write(line, "\r\n")
+          fp:write(line, "\n")
         end
-        fp:write("\r\n")
+        fp:write("\n")
       end
     end
     if fp then
