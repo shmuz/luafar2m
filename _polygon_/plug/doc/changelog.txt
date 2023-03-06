@@ -1,0 +1,282 @@
+2023-03-06, v.1.7.2
+    1. Fix inability of editing records having very big ROWID values.
+
+2021-12-16, v.1.7.1
+    1. Make panel.SetSortMode() work on this plugin's panels.
+    2. Heavy refactoring and some logical changes.
+    3. Fix "History of SQL queries" in the case it is empty.
+
+2021-11-13, v.1.7.0
+    1. Keep selection in the panel after editing a record.
+    2. Column masks are turned on/off individually per table (was: globally for all tables).
+    3. Column masks persistent settings are changed. The already existing saved masks won't work.
+    4. Minimal required Far version is (again) 3.0.4401.
+
+2021-10-04, v.1.6.2
+    1. SQL queries history: new shortcut F6 (opens an empty editor).
+    2. Ctrl-Shift-BackSlash closes the panel from any panel mode.
+    3. Added new dialog: "Recover" (Shift-F6 from database panel mode).
+
+2021-09-28, v.1.6.1
+    1. Add undocumented command-line options: "-startdebug" and "-stopdebug".
+    2. Add undocumented macro call commands: "startdebug" and "stopdebug".
+    3. Insert row dialog : fix the case when COMMIT fails.
+
+2021-09-21, v.1.6.0
+    1. Table view mode   : indicate the sorted column by ♦
+    2. Edit row dialog   : text values may be entered unquoted (see the help file)
+    3. Edit row dialog   : a new shortcut Alt-F3 for viewing blob as text
+    4. Insert row dialog : multiple rows can be added at once
+    5. New dialog added  : "Create a table"
+    6. Performance       : reading tables from database sped up by about 7 times (due to a fix)
+
+2021-09-11, v.1.5.0
+    1. "Edit row" dialog: a new shortcut Ctrl-O for (de)normalizing strings.
+    2. A new menu "Select sort compare mode" (shortcut Ctrl-N in the panel).
+    3. Further increase in sorting speed (by about 1.5 times).
+
+2021-08-19, v.1.4.4
+    1. A couple of fixes; minor refactoring.
+
+2021-07-01, v.1.4.3
+    1. Added History of SQL queries (activated with F6 in any view mode).
+    2. Minimal required Far build changed: 4401 -> 5416.
+
+2021-06-14, v.1.4.2
+    1. Fixes and improvements.
+
+2021-06-06, v.1.4.1
+    1. Fix "Exclude files matching masks" configuration setting.
+
+2021-06-05, v.1.4.0
+    1. Configuration dialog: added "Exclude files matching masks" setting.
+    2. Configuration dialog: option "Load user modules" was split into two:
+       "Load common user modules" and "Load individual user modules".
+    3. Sorting (CtrlF3, etc): speed increase by about 10 times due to doing
+       comparisons in C rather than in Lua.
+    4. Bug fixes, refactoring.
+
+2021-02-02, v.1.3.4
+    1. Refactoring.
+
+2020-11-27, v.1.3.3
+    1. Fix: trying to open "Edit row" dialog resulted in error if row fields contained text
+       that was not valid UTF-8.
+
+2020-10-08, v.1.3.2
+    1. Module 'settings' is used instead of module 'history'.
+       Attention: the existing plugin's settings may disappear.
+    2. Module 'simpledialog' is now used in all dialogs.
+
+2020-02-17, v.1.3.1
+    1. Rebuild the plugin due to a fix in luaplug.c.
+
+2020-01-18, v.1.3.0
+    1. Pragma statements dialog: add more pragmas.
+    2. Database view: some items (sqlite_master, etc.) are given "system" file attribute.
+       Far Manager assigns them different colors and shows/hides them with Ctrl-H.
+    3. Updated lsqlite3.dl.
+    4. Show SQLite error codes in primary/extended format.
+    5. Add file polygon.ini that can turn the plugin into debug mode.
+    6. polygon.ini can contain setting AppIdToSkip: comma-separated list of application_id
+       to skip during export.Analyse().
+    7. A collation named "utf8_ncase" (case-insensitive UTF-8 collation) is automatically added
+       to any database connection. This collation can be used in SQL schemas and statements.
+    8. SQLite core functions lower(), upper() and like() are replaced by their UTF-8 equivalents.
+    9. Added regexp() user function. It makes possible the REGEXP operator in SQL expressions.
+
+2019-09-28, v.1.2.1
+    1. Use fixed lsqlite3.dl.
+
+2019-08-30, v.1.2.0
+    1. Make the plugin work with LuaFAR builds >= 699 (that added luautf8 library).
+
+2019-06-21, v.1.1.0
+    1. Permanently remove special handling of the table names: "..", "\", "/", ""
+       introduced in v.0.7.1 (it made the code too complicated).
+    2. Make most plugin files modules. That will handle dependencies automatically.
+    3. Execute "lua ..." command line calls in protected mode to ensure correct return to Far.
+
+2019-03-02, v.1.0.0
+    1. Add a new mode and a configuration option: "Multi-database mode".
+    2. Several shortcuts are changed.
+    3. Command line on plugin's panel: syntax changed, see the help file.
+    4. Add a new configuration option: "Confirm closing the panel".
+    5. Remove a configuration option: "Disable security warnings".
+    6. Changes and additions in key bar.
+    7. Temporarily removed special handling of the table names: "..", "\", "/", "".
+
+2019-02-03, v.0.10.3
+    1. Fix a corner case in function get_row_count().
+
+2019-02-02, v.0.10.2
+    1. Fix regression (since v0.4.1): plugin could not enter "WITHOUT ROWID" tables.
+
+2019-02-01, v.0.10.1
+    1. Lua API: remove function polygon.debug; remove table polygon.
+    2. When entering a table with > 20000 rows, sort mode is forcibly switched to "unsorted"
+       (otherwise it is very slow).
+
+2018-12-19, v.0.10.0
+    1. The special user-modules table: rename column 'active' to 'enabled'.
+    2. Configuration dialog: add option "Disable security warnings".
+    3. Data export dialog: improve layout and add a help page.
+    4. Fix: no progress window was shown while executing long SQL queries.
+    5. Panel filter: do not close dialog on invalid SQL statement.
+    6. Panel filter: add a text input field before "WHERE".
+
+2018-11-24, v.0.9.0
+    1. Option "f" (honor foreign keys) removed, option "F" (do not honor foreign keys) added.
+       The default is to honor.
+    2. Options can be passed from the command line.
+    3. User modules can be also loaded from files specified in a special table in the database file.
+
+2018-09-24, v.0.8.0
+    1. A new dialog: "Data dump".
+       An external file sqlite3.exe is required for this functionality.
+
+2018-08-26, v.0.7.1
+    1. Fixes for correct work with a table whose name is an empty string.
+    2. A new method for handling table names that have special meaning for Far Manager: "..", "\", "/", "".
+       These names are placed in item.FileName being encoded while the original names
+       are placed in item.UserData verbatim.
+
+2018-08-13, v.0.7.0
+    1. A major syntax change in "Edit row" dialog: the values from the dialog are put
+       in an update/insert SQL statement "as is", so the user has control over value types
+       (e.g. 50 versus '50').
+    2. Fix: forcibly update the panel after executing "lua <lua_code>" from the command line.
+    3. Prevent updating the panel in cases it is not needed:
+       Shift-F5 (conditionally), Shift-F6 (always), F8 (conditionally), Shift-F8 (always).
+
+2018-08-02, v.0.6.1
+    1. Fix: DeleteFilesW - refinement of v.0.5.5(3).
+
+2018-07-26, v.0.6.0
+    1. Edit/insert table row dialog does not close on errors - it gives an opportunity
+       to fix the error and try again.
+    2. Changes in command line processing (when the plugin's panel is active):
+       - "sql <text>" will execute an SQL query <text>.
+       - "lua <text>" will execute a Lua code <text>.
+    3. Plugin creates the table _G.polygon that persists during usual reloads of plugin code.
+    4. Added function polygon.debug().
+    5. Handle NULL's in row editor dialog with Ctrl-N.
+    6. Extending Plugin.Call() operations.
+    7. Add a feature: show/hide columns affinity in panel view.
+    8. Fixes and refactoring.
+    9. Extending help files.
+
+2018-05-31, v.0.5.5
+    1. Refactoring.
+    2. Add: support drop trigger via F8 in database view.
+    3. Fix: crash in DeleteFilesW when deleting all rows from a table containing 170000 rows.
+
+2018-05-12, v.0.5.4
+    1. Fix:    show triggers in the 'Type' column as 'trigger' (was: '?').
+    2. Change: in database view, items can be sorted by Name (Ctrl-F3), by Type (Ctrl-F4)
+               or by Count (Ctrl-F6). "Show directory first" is automatically turned off.
+
+2018-04-24, v.0.5.3
+    1. Add help on "panel filter".
+    2. Show characters with hex codes 01 - 1F in panel columns and "edit row" dialog
+       (was: those characters were replaced with a space).
+
+2018-04-13, v.0.5.2
+    1. Fix: incorrect sorting after change in sort mode.
+    2. Fix: incorrect sorting after change in custom panel view.
+
+2018-04-13, v.0.5.1
+    1. Fix: options worked correctly only in case "far.ReloadDefaultScript = true".
+    2. Fix: error on enter in SQLite "view" object (regression bug from v0.4.1).
+    3. Add: panel filter.
+
+2018-04-11, v.0.5.0
+    1. Add: support for Plugin.Call() from macros.
+    2. Add: a help topic for User Modules (finished).
+
+2018-04-10, v.0.4.5
+    1. Add: further developing of "user modules" support.
+    2. Add: a help topic for User Modules (to be extended).
+    3. Add: a new configuration setting "Enable extensions".
+
+2018-04-09, v.0.4.4
+    1. Add: further developing of "user modules" support (to be documented later).
+    2. Add: a new configuration setting "Load user modules".
+    3. Add: a help topic for the configuration dialog.
+
+2018-04-08, v.0.4.3
+    1. Fix: function open_query() could put the program into inconsistent state.
+    2. Fix: error in export.Compare() when changing the panel object to display.
+
+2018-04-08, v.0.4.2
+    1. Add: further developing of "user modules" support (to be documented later).
+    2. Add: sqlite3.dll can be placed into either of the following locations:
+            (1) plugin's directory - added in this version;
+            (2) Far's directory; (3) any directory on PATH.
+
+2018-04-07, v.0.4.1
+    1. Fix: incorrect selection after selected items were deleted (regression bug from v0.2.0).
+    2. Fix: export.SetDirectory() did not work with OPM_SILENT.
+    3. Add: GUID for "Drop selected items?" confirmation dialog.
+
+2018-04-06, v.0.4.0
+    1. Fix: correct work with tables and columns whose names contain any allowed characters:
+            spaces, brackets, single and double quotes, etc.
+    2. Add: (experimental) plugin's functionality can be extended by "user modules" written in Lua,
+            that are loaded from %FARPROFILE%\PluginsData\Polygon\*.lua.
+            Currently it is in the very beginning stage and will be documented later.
+
+2018-04-03, v.0.3.0
+    1. Fix:    operations on tables containing spaces in their names.
+    2. Fix:    function open_query() for empty data sets.
+    3. Change: Shift-F5 toggles between full view and custom view (was: Ctrl-F3).
+    4. Add:    full-screen view (LCtrl-2).
+    5. Add:    "custom panel view" feature for View mode (was: only for Table mode).
+    6. Add:    command line with no filename specified opens in-memory data base.
+    7. Add:    support for Folder Shortcuts.
+    8. Add:    (experimental) sort items by Ctrl-F3 ... Ctrl-F11.
+
+2018-03-30, v.0.2.2
+    1. Add directory attribute to ".." panel items to make happy Far 3.0.5176.
+
+2018-03-29, v.0.2.1
+    1. Rename the dialog: "Select columns to display" -> "Custom panel view".
+    2. Add settings of column widths to this dialog.
+    3. Ctrl-F3 in the panels toggles between full view and custom view.
+    4. Settings of custom panel view are stored permanently in the plugin's local database.
+
+2018-03-27, v.0.2.0
+    1. Fix function prepare_panel_info().
+    2. Add a new dialog: "Select columns to display".
+       - the dialog is invoked by pressing Shift-F3 in table view;
+       - the settings are stored individually per DB table;
+       - the settings persist during a plugin session (i.e. until the panel is closed);
+
+2018-03-24, v.0.1.4
+    1. Force passive panel redraw after data export.
+    2. Fix function read_column_description().
+    3. Text-format export: compress multiple consecutive spaces to one space.
+
+2018-03-22, v.0.1.3
+    1. Refactoring.
+    2. Two fixes in text-format export.
+
+2018-03-11, v.0.1.2
+    1. When invoked from Plugins Menu, the plugin checks if the current panel item is a real file.
+    2. Fix calculation of column widths for BLOB fields in text-format export.
+
+2018-03-09, v.0.1.1
+    1. Fixed conversion from numbers to text.
+    2. Added help files and changelog.
+
+2018-03-08, v.0.1
+    1. [change ] SQLite library is not embedded into plugin: external sqlite3.dll is required.
+    2. [change ] Plugin exports files in UTF-8 encoding rather than UTF-16.
+    3. [fix    ] DB file is not left locked by the plugin if another plugin is selected to open this DB.
+    4. [fix    ] Normal work with selection when the panel displays a table contents.
+    5. [add    ] Option "Honor foreign keys" (Settings dialog).
+    6. [add    ] Option "Preserve line feeds" (Data Export dialog). This option preserves new lines in CSV-export.
+    7. [add    ] Plugin can enter into "WITHOUT ROWID" tables (insert is supported; edit and delete are not).
+    8. [add    ] Plugin can enter into and modify tables that have a "rowid"-named column that is not INTEGER PRIMARY KEY.
+    9. [improve] Data Export dialog: change extension in the file name field when CSV/Text selection changes.
+   10. [improve] Eliminate flickering with the progress window.
