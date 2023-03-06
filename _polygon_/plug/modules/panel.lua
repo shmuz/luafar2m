@@ -477,7 +477,7 @@ function mypanel:get_panel_list_db()
   local items = { { FileName=".."; FileAttributes="d"; } }
   for i,obj in ipairs(db_objects) do
     local item = {
-      NumberOfLinks = obj.type;  -- This field is used as type id
+      NumberOfLinks = obj.type;  -- IMPORTANT: 'NumberOfLinks' field is used as type id
       CustomColumnData = {};
       FileAttributes = "";
       FileName = obj.name;
@@ -497,6 +497,15 @@ function mypanel:get_panel_list_db()
 
   prg_wnd:hide()
   return items
+end
+
+
+local function rowid_tostring(rowid)
+  if type(rowid)=="string" then
+    return rowid
+  else -- rowid is a number
+    return tostring(bit64.new(rowid))
+  end
 end
 
 
@@ -594,10 +603,11 @@ function mypanel:get_panel_list_obj()
       end
       -- the leftmost column is ROWID (according to the query used)
       local rowid = stmt:get_value(0)
-      -- this field is used for holding ROWID
-      item.NumberOfLinks = rowid
+      rowid = rowid_tostring(rowid)
+      -- IMPORTANT: field 'Owner' is used for holding ROWID
+      item.Owner = rowid
       -- use ROWID as file name, otherwise FAR cannot properly handle selections on the panel
-      item.FileName = ("%010d"):format(rowid)
+      item.FileName = ("%010s"):format(rowid)
     else
       for i = 1,#self._col_info do
         item.CustomColumnData[i] = exporter.get_text(stmt, i-1, true)
