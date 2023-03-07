@@ -72,7 +72,7 @@ local function RedrawHighlightPattern (EI, Pattern, Priority, ProcessLineNumbers
   local config = _Plugin.History.config
   local Color = config.EditorHighlightColor
   local GetNextString = MakeGetString(EI.TopScreenLine, math.min(EI.TopScreenLine+EI.WindowSizeY-1, EI.TotalLines))
-  local ufind = Pattern.ufind
+  local ufind = Pattern.ufind or Pattern.ufindW
 
   local prefixPattern = regex.new("^(\\d+([:\\-]))") -- (grep) 123: matched_line; 123- context_line
   local filenamePattern = regex.new("^\\[\\d+\\]")   -- (grep) [123] c:\dir1\dir2\filename
@@ -95,6 +95,8 @@ local function RedrawHighlightPattern (EI, Pattern, Priority, ProcessLineNumbers
     if not filename_line then
       local start = 1
       local maxstart = math.min(str.StringLength+1, EI.LeftPos+EI.WindowSizeX-1) - offset
+
+      if not Pattern.ufind then text=win.Utf8ToUtf32(text) end
 
       while start <= maxstart do
         local from, to, collect = ufind(Pattern, text, start)
