@@ -13,66 +13,66 @@
 
 ---- Настройки
 local function Settings()
--- Начало файла Profile\SimSU\Editor_Remarks.cfg
-return{
-  KeyComment  ="CtrlShift[";     --PriorComment  =50; --SortComment  =50; -- Комментирование текущей строки или выделенного блока.
-  KeyUnComment="CtrlShift]";    --PriorUnComment=50; --SortUnComment=50; -- Снятие комментирования текущей строки или выделенного блока.
-  KeyOptions  ="ShiftF12"; --PriorOptions  =50; --SortOptions  =50; -- Настройка комментирования для различных типов файлов.
-  KeyTab      ="Tab";      --PriorTab      =50; --SortTab      =50; -- Табулирование строк выделенного блока.
-  KeyUnTab    ="ShiftTab"; --PriorUnTab    =50; --SortUnTab    =50; -- Отмена табулирования строк выделенного блока.
-}
--- Конец файла Profile\SimSU\Editor_Remarks.cfg
+  -- Начало файла Profile\SimSU\Editor_Remarks.cfg
+  return{
+    KeyComment  ="CtrlShift["; -- Комментирование текущей строки или выделенного блока.
+    KeyUnComment="CtrlShift]"; -- Снятие комментирования текущей строки или выделенного блока.
+    KeyOptions  ="ShiftF12";   -- Настройка комментирования для различных типов файлов.
+    KeyTab      ="Tab";        -- Табулирование строк выделенного блока.
+    KeyUnTab    ="ShiftTab";   -- Отмена табулирования строк выделенного блока.
+  }
+  -- Конец файла Profile\SimSU\Editor_Remarks.cfg
 end
 
--- Встроенные языки / Built-in laguages
+-- Встроенные языки / Built-in languages
 local function Messages()
-local lang = win.GetEnv("FARLANG")
-if lang=="Russian" then
--- Начало файла Profile\SimSU\Editor_RemarksRussian.lng
-return{
-  DescrOptions="Настройка комментирования помеченного блока. © SimSU";
-  DescrComment="Комментирование помеченного блока. © SimSU";
-  DescrUnComment= "Разкомментирование помеченного блока. © SimSU";
-  DescrTab="Табулирование строк выделенного блока. © SimSU";
-  DescrUnTab= "Отмена табулирования строк выделенного блока. © SimSU";
+  local lang = win.GetEnv("FARLANG")
+  if lang=="Russian" then
+    -- Начало файла Profile\SimSU\Editor_RemarksRussian.lng
+    return{
+      DescrOptions="Настройка комментирования помеченного блока. © SimSU";
+      DescrComment="Комментирование помеченного блока. © SimSU";
+      DescrUnComment= "Разкомментирование помеченного блока. © SimSU";
+      DescrTab="Табулирование строк выделенного блока. © SimSU";
+      DescrUnTab= "Отмена табулирования строк выделенного блока. © SimSU";
 
-  MenuTitle="Комментирование";
-  DlgTitle="Настройка комментирования";
-  Mask="&Маска файлов";
-  Symbol="&Символы строчного комментирования";
-  description="&Описание";
-  Yes="&Да";
-  No="&Нет";
-  Delete="&Удалить";
-}
--- Конец файла Profile\SimSU\Editor_RemarksRussian.lng
-else--if far.lang=="English" then
--- Begin of file Profile\SimSU\Editor_RemarksEnglish.lng
-return{
-  DescrOptions="Настройка комментирования помеченного блока. © SimSU";
-  DescrComment="Комментирование помеченного блока. © SimSU";
-  DescrUnComment= "Разкомментирование помеченного блока. © SimSU";
-  DescrTab="Табулирование строк выделенного блока. © SimSU";
-  DescrUnTab= "Отмена табулирования строк выделенного блока. © SimSU";
+      MenuTitle="Комментирование";
+      DlgTitle="Настройка комментирования";
+      Mask="&Маска файлов";
+      Symbol="&Символы строчного комментирования";
+      description="&Описание";
+      Yes="&Да";
+      No="&Нет";
+      Delete="&Удалить";
+    }
+    -- Конец файла Profile\SimSU\Editor_RemarksRussian.lng
+  else
+    -- Begin of file Profile\SimSU\Editor_RemarksEnglish.lng
+    return{
+      DescrOptions="Настройка комментирования помеченного блока. © SimSU";
+      DescrComment="Комментирование помеченного блока. © SimSU";
+      DescrUnComment= "Разкомментирование помеченного блока. © SimSU";
+      DescrTab="Табулирование строк выделенного блока. © SimSU";
+      DescrUnTab= "Отмена табулирования строк выделенного блока. © SimSU";
 
-  MenuTitle="Commenting";
-  DlgTitle="Comment settings";
-  Mask="&Mask of files";
-  Symbol="&String comment symbols";
-  description="D&escription";
-  Yes="&Yes";
-  No="&No";
-  Delete="&Delete"
-}
--- End of file Profile\SimSU\Editor_RemarksEnglish.lng
-end end
+      MenuTitle="Commenting";
+      DlgTitle="Comment settings";
+      Mask="&Mask of files";
+      Symbol="&String comment symbols";
+      description="D&escription";
+      Yes="&Yes";
+      No="&No";
+      Delete="&Delete"
+    }
+    -- End of file Profile\SimSU\Editor_RemarksEnglish.lng
+  end
+end
 
 --local M=(loadfile(win.GetEnv("FARPROFILE").."\\SimSU\\Editor_Remarks"..far.lang..".lng") or Messages)()
 --local S=(loadfile(win.GetEnv("FARLOCALPROFILE").."\\SimSU\\Editor_Remarks.cfg") or loadfile(win.GetEnv("FARPROFILE").."\\SimSU\\Editor_Remarks.cfg") or Settings)()
 local M=Messages()
 local S=Settings()
 
-local SimSU=_G.SimSU or {}
 -------------------------------------------------------------------------------
 local F=far.Flags
 local Rem=mf.mload("SimSU","Remarks") or {}
@@ -80,7 +80,8 @@ local Rem=mf.mload("SimSU","Remarks") or {}
 local function Options()
 -- Функция настройки символов комментирования.
   local FileName=editor.GetFileName()
-  local Items,Index={},{} local Idx,item
+  local Items,Index={},{}
+  local Idx,item
   for Mask,Data in pairs(Rem) do
     local a=(Mask or ""):sub(1,20)..(" "):rep(20-((Mask or ""):len())).."  │  "..(Data.Desc or "")
     Items[#Items+1]={text=a}
@@ -90,42 +91,38 @@ local function Options()
     end
   end
   Items[#Items+1]={text="                      │                     "}
-  --Idx=Menu.Show(Items,M.MenuTitle,0x8+0x80,Idx)
-  item,Idx=far.Menu({Title=M.MenuTitle; Flags="FMENU_AUTOHIGHLIGHT";},Items)
 
-  local Mask; local Data={}
-  if item then
-    Mask=Index[Idx]
-    Data=Mask and Rem[Mask] or {}
-    Items={
-      --[[01]]  {"DI_DOUBLEBOX", 3, 1,40,10, 0,nil,0,0,M.DlgTitle},
-      --[[02]]  {"DI_TEXT",      5, 2,38, 2, 0,nil,0,0,M.Mask},
-      --[[03]]  {"DI_EDIT",      5, 3,38, 3, 0,nil,0,0,Mask},
-      --[[04]]  {"DI_TEXT",      5, 4,38, 4, 0,nil,0,0,M.Symbol},
-      --[[05]]  {"DI_EDIT",      5, 5,38, 5, 0,nil,0,0,Data.Symb},
-      --[[06]]  {"DI_TEXT",      5, 6,38, 4, 0,nil,0,0,M.description},
-      --[[07]]  {"DI_EDIT",      5, 7,38, 5, 0,nil,0,0,Data.Desc},
-      --[[08]]  {"DI_TEXT",      3, 8,40, 8, 0,nil,"DIF_SEPARATOR",0,nil},
-      --[[09]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,{DIF_CENTERGROUP=1},1,M.Yes},
-      --[[10]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,"DIF_CENTERGROUP",0,M.No},
-      --[[11]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,"DIF_CENTERGROUP",0,M.Delete},
-    }
-    local guid = win.Uuid("c3487851-e1d8-450c-b696-51ac45a46b2b")
-    local result=far.Dialog(-1,-1,44,12,nil,Items)
-    if result==9 then
-      Mask=Items[3][10]
-      Data.Symb=Items[5][10]
-      Data.Desc=Items[7][10]
-      if Index[Idx] then Rem[Index[Idx]]=nil end
-      Rem[Mask]=Data
-    elseif result==11 and Index[Idx] then
-      Rem[Mask]=nil
-      Data={}
-    end
-    mf.msave("SimSU","Remarks",Rem)
-  else
-    Data.Symb=nil
+  item,Idx=far.Menu({Title=M.MenuTitle; Flags="FMENU_AUTOHIGHLIGHT";},Items)
+  if not item then return nil end
+
+  local Mask=Index[Idx]
+  local Data=Mask and Rem[Mask] or {}
+  Items={
+    --[[01]]  {"DI_DOUBLEBOX", 3, 1,40,10, 0,nil,0,0,M.DlgTitle},
+    --[[02]]  {"DI_TEXT",      5, 2,38, 2, 0,nil,0,0,M.Mask},
+    --[[03]]  {"DI_EDIT",      5, 3,38, 3, 0,nil,0,0,Mask},
+    --[[04]]  {"DI_TEXT",      5, 4,38, 4, 0,nil,0,0,M.Symbol},
+    --[[05]]  {"DI_EDIT",      5, 5,38, 5, 0,nil,0,0,Data.Symb},
+    --[[06]]  {"DI_TEXT",      5, 6,38, 4, 0,nil,0,0,M.description},
+    --[[07]]  {"DI_EDIT",      5, 7,38, 5, 0,nil,0,0,Data.Desc},
+    --[[08]]  {"DI_TEXT",      3, 8,40, 8, 0,nil,"DIF_SEPARATOR",  0,""},
+    --[[09]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,"DIF_CENTERGROUP",1,M.Yes},
+    --[[10]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,"DIF_CENTERGROUP",0,M.No},
+    --[[11]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,"DIF_CENTERGROUP",0,M.Delete},
+  }
+  local guid = win.Uuid("c3487851-e1d8-450c-b696-51ac45a46b2b")
+  local result=far.Dialog(-1,-1,44,12,nil,Items)
+  if result==9 then
+    Mask=Items[3][10]
+    Data.Symb=Items[5][10]
+    Data.Desc=Items[7][10]
+    if Index[Idx] then Rem[Index[Idx]]=nil end
+    Rem[Mask]=Data
+  elseif result==11 and Index[Idx] then
+    Rem[Mask]=nil
+    Data={}
   end
+  mf.msave("SimSU","Remarks",Rem)
   return Data.Symb
 end
 
@@ -172,7 +169,6 @@ local function filename() if Area.Editor then return CommUnComm() end end
 -------------------------------------------------------------------------------
 if _filename then return filename(...) end
 if not Macro then return {Editor_Remarks=Editor_Remarks} end
-SimSU.Editor_Remarks=Editor_Remarks; _G.SimSU=SimSU
 -------------------------------------------------------------------------------
 
 Macro {id="25cce9ac-0dcf-44af-8a4b-bb286f05276e";
