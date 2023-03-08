@@ -4,7 +4,8 @@ if (...)=="far" then -- running from Far environment
   luafar = true
 
 else
-  local cfg = require "far2.luacheck_config"
+--local cfg = require "far2.luacheck_config"
+  local cfg = dofile(os.getenv("HOME").."/luafar2l/lua_share/far2/luacheck_config.lua")
   stds.luafar = cfg.luafar
   std = "max+luafar"
 

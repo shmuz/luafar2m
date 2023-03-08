@@ -11,6 +11,8 @@
 -- Символы строчного комментирования которые будут вставляться в начало строки и, если хотите, комментарий.
 -- Настройки можно переопределять/изменять/добавять/удалять по средствам самого макроса.
 
+-- luacheck:ignore 631 (line is too long)
+
 ---- Настройки
 local function Settings()
   -- Начало файла Profile\SimSU\Editor_Remarks.cfg
@@ -112,7 +114,7 @@ local function Options()
     --[[11]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,"DIF_CENTERGROUP",0,M.Delete},
   }
   local edtMask,edtSymb,edtDesc,btnYes,btnDelete = 3,5,7,9,11
-  local guid = win.Uuid("c3487851-e1d8-450c-b696-51ac45a46b2b")
+  --local guid = win.Uuid("c3487851-e1d8-450c-b696-51ac45a46b2b")
 
   local pos=far.Dialog(-1,-1,44,12,nil,Items)
   if pos==btnYes then
@@ -145,7 +147,6 @@ local function CommUnComm(Comm,Symb)
   local Len=Symb and Symb:len()+1 or 1
   if Len>1 then
     local tEdt=editor.GetInfo()
-    local ID=tEdt.EditorID
     local tSel=editor.GetSelection()
     local Beg = tSel and tSel.StartLine or tEdt.CurLine
     local End = tSel and tSel.EndLine-(tSel and tSel.EndPos==0 and tSel.BlockType~=F.BTYPE_COLUMN and 1 or 0) or tEdt.CurLine

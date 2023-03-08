@@ -5,7 +5,8 @@ if (...)=="far" then -- running from Far environment
   lf4ed = false
 
 else -- running from non-Far environment, e.g. SciTE editor
-  local cfg = require "far2.luacheck_config"
+--local cfg = require "far2.luacheck_config"
+  local cfg = dofile(os.getenv("HOME").."/luafar2l/lua_share/far2/luacheck_config.lua")
 
   stds.luafar = cfg.luafar
   stds.lf4ed = cfg.lf4ed
