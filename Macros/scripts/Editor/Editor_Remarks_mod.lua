@@ -91,8 +91,9 @@ local function Options()
     end
   end
   Items[#Items+1]={text="                      │                     "}
+  Idx=Idx or #Items
 
-  item,Idx=far.Menu({Title=M.MenuTitle; Flags="FMENU_AUTOHIGHLIGHT";},Items)
+  item,Idx=far.Menu({Title=M.MenuTitle; SelectIndex=Idx; Flags="FMENU_AUTOHIGHLIGHT"},Items)
   if not item then return nil end
 
   local Mask=Index[Idx]
