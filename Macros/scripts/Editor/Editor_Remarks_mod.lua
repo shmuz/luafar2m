@@ -80,14 +80,14 @@ local Rem=mf.mload("SimSU","Remarks") or {}
 local function Options()
 -- Функция настройки символов комментирования.
   local FileName=editor.GetFileName()
-  local Items,Index={},{}
+  local Items,Masks={},{}
   local Idx,item
   for Mask,Data in pairs(Rem) do
     local a=(Mask or ""):sub(1,20)..(" "):rep(20-((Mask or ""):len())).."  │  "..(Data.Desc or "")
     Items[#Items+1]={text=a}
-    Index[#Index+1]=Mask
-    if mf.fmatch(FileName,Mask)==1 then
-      Idx=Idx or #Items
+    Masks[#Masks+1]=Mask
+    if Idx==nil and mf.fmatch(FileName,Mask)==1 then
+      Idx=#Items
     end
   end
   Items[#Items+1]={text="                      │                     "}
@@ -96,12 +96,12 @@ local function Options()
   item,Idx=far.Menu({Title=M.MenuTitle; SelectIndex=Idx; Flags="FMENU_AUTOHIGHLIGHT"},Items)
   if not item then return nil end
 
-  local Mask=Index[Idx]
-  local Data=Mask and Rem[Mask] or {}
+  local OldMask=Masks[Idx]
+  local Data=OldMask and Rem[OldMask] or {}
   Items={
     --[[01]]  {"DI_DOUBLEBOX", 3, 1,40,10, 0,nil,0,0,M.DlgTitle},
     --[[02]]  {"DI_TEXT",      5, 2,38, 2, 0,nil,0,0,M.Mask},
-    --[[03]]  {"DI_EDIT",      5, 3,38, 3, 0,nil,0,0,Mask},
+    --[[03]]  {"DI_EDIT",      5, 3,38, 3, 0,nil,0,0,OldMask},
     --[[04]]  {"DI_TEXT",      5, 4,38, 4, 0,nil,0,0,M.Symbol},
     --[[05]]  {"DI_EDIT",      5, 5,38, 5, 0,nil,0,0,Data.Symb},
     --[[06]]  {"DI_TEXT",      5, 6,38, 4, 0,nil,0,0,M.description},
@@ -111,25 +111,29 @@ local function Options()
     --[[10]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,"DIF_CENTERGROUP",0,M.No},
     --[[11]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,"DIF_CENTERGROUP",0,M.Delete},
   }
+  local edtMask,edtSymb,edtDesc,btnYes,btnDelete = 3,5,7,9,11
   local guid = win.Uuid("c3487851-e1d8-450c-b696-51ac45a46b2b")
-  local result=far.Dialog(-1,-1,44,12,nil,Items)
-  if result==9 then
-    Mask=Items[3][10]
-    Data.Symb=Items[5][10]
-    Data.Desc=Items[7][10]
-    if Index[Idx] then Rem[Index[Idx]]=nil end
+
+  local pos=far.Dialog(-1,-1,44,12,nil,Items)
+  if pos==btnYes then
+    local Mask=Items[edtMask][10]
+    Data.Symb=Items[edtSymb][10]
+    Data.Desc=Items[edtDesc][10]
+    if OldMask then Rem[OldMask]=nil end
     Rem[Mask]=Data
-  elseif result==11 and Index[Idx] then
-    Rem[Mask]=nil
+  elseif pos==btnDelete and OldMask then
+    Rem[OldMask]=nil
     Data={}
+  else
+    return nil
   end
   mf.msave("SimSU","Remarks",Rem)
   return Data.Symb
 end
 
 local function CommUnComm(Comm,Symb)
-  local FileName=editor.GetFileName()
   if not Symb then
+    local FileName=editor.GetFileName()
     for Mask in pairs(Rem) do
       if mf.fmatch(FileName,Mask)==1 then
         Symb=Rem[Mask].Symb
@@ -137,26 +141,25 @@ local function CommUnComm(Comm,Symb)
       end
     end
   end
-  if not Symb then Symb=Options() end
-  local len=Symb and Symb:len()+1 or 1
-  if len>1 then
+  Symb = Symb or Options()
+  local Len=Symb and Symb:len()+1 or 1
+  if Len>1 then
     local tEdt=editor.GetInfo()
     local ID=tEdt.EditorID
     local tSel=editor.GetSelection()
     local Beg = tSel and tSel.StartLine or tEdt.CurLine
     local End = tSel and tSel.EndLine-(tSel and tSel.EndPos==0 and tSel.BlockType~=F.BTYPE_COLUMN and 1 or 0) or tEdt.CurLine
     if (tEdt.CurLine>=Beg and tEdt.CurLine<=End) or (tSel and tSel.EndPos==0 and tEdt.CurLine==tSel.EndLine) then
-      editor.UndoRedo(0)
-      local Str,Eol
+      editor.UndoRedo("EUR_BEGIN")
       for i=Beg,End do
-        Str,Eol=editor.GetString(i,3)
+        local Str,Eol=editor.GetString(i,3)
         if Comm then
           editor.SetString(i,Symb..Str,Eol)
         elseif Str:find(Symb,1,true)==1 then
-          editor.SetString(i,Str:sub(len),Eol)
+          editor.SetString(i,Str:sub(Len),Eol)
         end
       end
-      editor.UndoRedo(1)
+      editor.UndoRedo("EUR_END")
     end
   end
 end
