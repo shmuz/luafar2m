@@ -85,14 +85,13 @@ local function Options()
   local Items,Masks={},{}
   local Idx,item
   for Mask,Data in pairs(Rem) do
-    local a=(Mask or ""):sub(1,20)..(" "):rep(20-((Mask or ""):len())).."  │  "..(Data.Desc or "")
-    Items[#Items+1]={text=a}
+    Items[#Items+1]={text=Mask:sub(1,20)..(" "):rep(20-Mask:len()).."  │  "..(Data.Desc or "")}
     Masks[#Masks+1]=Mask
     if Idx==nil and mf.fmatch(FileName,Mask)==1 then
       Idx=#Items
     end
   end
-  Items[#Items+1]={text="                      │                     "}
+  Items[#Items+1]={text=("%22s│%21s"):format("","")}
   Idx=Idx or #Items
 
   item,Idx=far.Menu({Title=M.MenuTitle; SelectIndex=Idx; Flags="FMENU_AUTOHIGHLIGHT"},Items)
