@@ -1,6 +1,6 @@
 /************************************************************************
 * lsqlite3-s                                                            *
-* Copyright (C) 2018-2019 Shmuel Zeigerman                              *
+* Copyright (C) 2018-2023 Shmuel Zeigerman                              *
 * All rights reserved.                                                  *
 * Author    : Shmuel Zeigerman                                          *
 * Library   : lsqlite3-s - an SQLite 3 database binding for Lua 5       *
@@ -200,6 +200,21 @@ static const char *sqlite_blob_meta = ":sqlite3:blob";
     } while (0)
 #endif
 
+/* This function replaces lua_pushfstring(L, "%ll")
+   as "%ll" is not listed as a valid conversion specifier
+   in the Lua 5.1 reference manual.
+*/
+static void push_str64(lua_State *L, sqlite_int64 val)
+{
+    char buf[32];
+#ifdef _WIN32
+    sprintf(buf, "%I64d", val);
+#else
+    sprintf(buf, "%lld", val);
+#endif
+    lua_pushstring(L, buf);
+}
+
 /*
 ** =======================================================
 ** Database Virtual Machine Operations
@@ -374,7 +389,7 @@ static int dbvm_last_insert_rowid(lua_State *L) {
     sdb_vm *svm = lsqlite_checkvm(L, 1);
     /* conversion warning: int64 -> luaNumber */
     sqlite_int64 rowid = sqlite3_last_insert_rowid(svm->db->db);
-    PUSH_INT64(L, rowid, lua_pushfstring(L, "%ll", rowid));
+    PUSH_INT64(L, rowid, push_str64(L, rowid));
     return 1;
 }
 
@@ -982,7 +997,7 @@ static int db_last_insert_rowid(lua_State *L) {
     sdb *db = lsqlite_checkdb(L, 1);
     /* conversion warning: int64 -> luaNumber */
     sqlite_int64 rowid = sqlite3_last_insert_rowid(db->db);
-    PUSH_INT64(L, rowid, lua_pushfstring(L, "%ll", rowid));
+    PUSH_INT64(L, rowid, push_str64(L, rowid));
     return 1;
 }
 
@@ -1424,7 +1439,7 @@ static void db_update_hook_callback(void *user, int op, char const *dbname, char
     lua_pushstring(L, dbname); /* update_hook database name */
     lua_pushstring(L, tblname); /* update_hook database name */
 
-    PUSH_INT64(L, rowid, lua_pushfstring(L, "%ll", rowid));
+    PUSH_INT64(L, rowid, push_str64(L, rowid));
 
     /* call lua function */
     lua_pcall(L, 5, 0, 0);

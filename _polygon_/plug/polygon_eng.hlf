@@ -97,9 +97,10 @@ $^ #Reference of keyboard actions#
                  │ Alt-F6              │ Toggle panel filter: on/off
                  │ Ctrl-N              │ Menu: select sort compare mode
    ──────────────┼─────────────────────┼───────────────────────────────────────────────────
-   Table         │ F4, Enter           │ Dialog: edit a row
-                 │ Shift-F4            │ Dialog: insert a row
-                 │ Shift-F5            │ Show/hide columns affinity
+   Table         │ F4, Enter           │ Edit a row under cursor
+                 │ Shift-F4            │ Insert a new row
+                 │ Shift-F5            │ Copy a row under cursor
+                 │ Alt-F5              │ Show/hide columns affinity
                  │                     │   (i=integer, t=text, b=blob, r=real, n=numeric)
                  │ F8                  │ Dialog: delete selected rows
    ──────────────┴─────────────────────┴───────────────────────────────────────────────────
