@@ -24,4 +24,6 @@ FAR_EXPORTS = \
   PROCESSKEY         \
   SETDIRECTORY
 
+luaplug1.o luaplug2.o : ../plug/lsqlite3.c
+
 include ../../plugin.mak
