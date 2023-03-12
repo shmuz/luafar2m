@@ -1,4 +1,4 @@
-﻿local syntax_cmake =
+local syntax_cmake =
 {
   bgcolor = "darkblue";
   bracketmatch = true;
