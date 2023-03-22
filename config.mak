@@ -23,7 +23,6 @@ endif
 
 SRC_LUAFAR = ../..
 LUA_SHARE  = $(SRC_LUAFAR)/lua_share
-LUAFARDLL  = luafar2l.so
 
 CC     = gcc
 CFLAGS = -O2 -Wall -Wno-unused-function -fvisibility=hidden \
