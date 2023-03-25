@@ -14,8 +14,9 @@ local MsgRus = {
   Title="Календарь";
   __DaysOfWeek={"Вс","Пн","Вт","Ср","Чт","Пт","Сб"};
   Months={"Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"};
-  Ins="Вставить";
-  Ok="Закрыть";
+  Today="&Сегодня";
+  Ins="&Вставить";
+  Close="&Закрыть";
 }
 
 local MsgEng = {
@@ -23,8 +24,9 @@ local MsgEng = {
   Title="Calendar";
   __DaysOfWeek={"Su","Mo","Tu","We","Th","Fr","Sa"};
   Months={"January","February","March","April","May","June","July","August","September","October","November","December"};
-  Ins="Insert";
-  Ok="Close";
+  Today="&Today";
+  Ins="&Insert";
+  Close="&Close";
 }
 
 local function CorrectMsg(tbl)
@@ -78,11 +80,6 @@ local function WeekStartDay(DateTime) -- первый день текущей н
   return IncDay(DateTime, a <= 0 and a or -7+a)
 end
 
-local function Monday(DateTime) -- последний наступивший понедельник параметра DateTime
-  local a = 1 - DateTime.wDayOfWeek
-  return IncDay(DateTime, a <= 0 and a or -7+a)
-end
-
 local function FirstDay(DateTime) -- первый день месяца параметра DateTime
   return IncDay(DateTime,1-DateTime.wDay)
 end
@@ -120,33 +117,26 @@ end
 local function Calendar(DateTime)
   local sd = require "far2.simpledialog"
   M=Messages()
---==
-  local Current=Today()
---==
-  IncDay(Current,0) -- Чтобы февраль откорректировать.
---==
 
-  local dt=DateTime and win.SystemTimeToFileTime(DateTime) and DateTime or Current
+  local Months={}
+  for m,v in ipairs(M.Months) do Months[m] = {["Text"]=v}; end
+
   local Items = {
     guid="615d826b-3921-48bb-9cf2-c6d345833855";
     width=36;
     {tp="dbox"; text=M.Title},
     {tp="sep"},
-    {tp="butt";             name="decYear"; btnnoclose=1; x1=4;  text="<";        }, --Год назад
-    {tp="fixedit";          name="Year";     mask="9999"; x1=16; width=4;  y1=""; }, --Год
-    {tp="butt";             name="incYear"; btnnoclose=1; x1=27; text=">"; y1=""; }, --Год вперёд
-    {tp="sep"                                                            },
+    {tp="butt";     name="DecYear";  btnnoclose=1;   x1=4;  text="<";        }, --Год назад
+    {tp="fixedit";  name="Year";     mask="9999";    x1=16; width=4;  y1=""; }, --Год
+    {tp="butt";     name="IncYear";  btnnoclose=1;   x1=27; text=">"; y1=""; }, --Год вперёд
+    {tp="sep"},
+    {tp="butt";     name="DecMonth"; btnnoclose=1;   x1=4;  text="<";                     }, --Месяц назад
+    {tp="combobox"; name="Month";    dropdownlist=1; x1=11; x2=23;    y1=""; list=Months; }, --Месяц
+    {tp="butt";     name="IncMonth"; btnnoclose=1;   x1=27; text=">"; y1="";              }, --Месяц вперёд
+    {tp="sep"}
   }
-  local Months={}
-  for m=1,12 do
-    Months[m]={}; Months[m]["Text"]=M.Months[m]
-  end
-  local Add=table.insert
-  Add(Items,{tp="butt";     name="decMonth"; btnnoclose=1;   x1=4;  text="<";                  }) --Месяц назад
-  Add(Items,{tp="combobox"; name="Month";    dropdownlist=1; x1=10; x2=24; list=Months; y1=""; }) --Месяц
-  Add(Items,{tp="butt";     name="incMonth"; btnnoclose=1;   x1=27; text=">";           y1=""; }) --Месяц вперёд
-  Add(Items,{tp="sep"})
 
+  local Add=table.insert
   for d=1,7 do
     Add(Items,{tp="text"; text=M.DaysOfWeek[d]})
   end
@@ -158,16 +148,20 @@ local function Calendar(DateTime)
     end
   end
 
-  Add(Items,{tp="user";     name="User"; x1=8; ystep=-6; x2=31; height=7; }) --Движение по дням
+  Add(Items,{tp="user";    name="User";   x1=8; ystep=-6; x2=31; height=7; }) --Движение по дням
   Add(Items,{tp="sep"})
-  Add(Items,{tp="fixedit";  name="Date"; x1=7; x2=16; mask="99.99.9999"; readonly=1; })
-  Add(Items,{tp="butt";     name="Insert"; x1=18; text=M.Ins; y1="";  }) -- Вставить дату
+  Add(Items,{tp="fixedit"; name="Date";   x1=7; x2=16; mask="99.99.9999"; readonly=1; })
+  Add(Items,{tp="butt";    name="Today";  x1=18;  text=M.Today; y1=""; btnnoclose=1;  }) -- Установить текущую дату
   Add(Items,{tp="sep"})
-  Add(Items,{tp="butt"; centergroup=1; default=1; text=M.Ok; focus=1; })
+  Add(Items,{tp="butt";    name="Close";  centergroup=1; default=1; text=M.Close; focus=1; })
+  Add(Items,{tp="butt";    name="Insert"; centergroup=1; x1=18;  text=M.Ins; y1=""; }) -- Вставить дату
 
   local Dlg = sd.New(Items)
   local Pos = Dlg:Indexes()
-  local Text
+
+  local Current = Today()
+  IncDay(Current,0) -- Чтобы февраль откорректировать.
+  local dt = DateTime and win.SystemTimeToFileTime(DateTime) and DateTime or Today()
   local ITic
 
   local function Rebuild(hDlg,dT)
@@ -199,20 +193,22 @@ local function Calendar(DateTime)
   function Items.proc(hDlg,Msg,Param1,Param2)
     if Msg==F.DN_INITDIALOG then
       Rebuild(hDlg,dt)
-    elseif Msg==F.DN_BTNCLICK and Param1==Pos.Insert then
-      Text=msg(hDlg,F.DM_GETTEXT, Pos.Date)
     elseif Msg==F.DN_BTNCLICK then
-      if     Param1==Pos.decYear  then dt=DecYear(dt)  -- Год назад
-      elseif Param1==Pos.incYear  then dt=IncYear(dt)  -- Год вперёд
-      elseif Param1==Pos.decMonth then dt=DecMonth(dt) -- Месяц назад
-      elseif Param1==Pos.incMonth then dt=IncMonth(dt) -- Месяц вперёд
+      if     Param1==Pos.DecYear  then dt=DecYear(dt)  -- Год назад
+      elseif Param1==Pos.IncYear  then dt=IncYear(dt)  -- Год вперёд
+      elseif Param1==Pos.DecMonth then dt=DecMonth(dt) -- Месяц назад
+      elseif Param1==Pos.IncMonth then dt=IncMonth(dt) -- Месяц вперёд
+      elseif Param1==Pos.Today    then Current=Today(); dt=Today(); msg(hDlg,F.DM_SETFOCUS,Pos.Close);
+      else return
       end
       Rebuild(hDlg,dt)
     elseif Msg==F.DN_EDITCHANGE and Param1==Pos.Year then
       local oldY=dt.wYear
       dt.wYear=tonumber(msg(hDlg,F.DM_GETTEXT, Pos.Year))
       if win.SystemTimeToFileTime(dt) then
+        local pos=msg(hDlg,F.DM_GETCURSORPOS,Pos.Year)
         Rebuild(hDlg,dt)
+        msg(hDlg,F.DM_SETCURSORPOS,Pos.Year,pos)
       else
         ---require"far2.lua_explorer"(dt,"dt")
         dt.wYear=oldY
@@ -248,15 +244,14 @@ local function Calendar(DateTime)
     end
   end
 
-  Dlg:Run()
-  if Text then mf.print(Text) end
+  local out,pos = Dlg:Run()
+  if out and pos==Pos.Insert then mf.print(out.Date) end
 end
 -------------------------------------------------------------------------------
 local Common_Calendar={
   Today    = Today   ;
   Leap     = Leap    ;
   IncDay   = IncDay  ;
-  Monday   = Monday  ;
   FirstDay = FirstDay;
   LastDay  = LastDay ;
   IncMonth = IncMonth;
@@ -272,7 +267,7 @@ if _filename then return filename(...) end
 if not Macro then return {Common_Calendar=Common_Calendar} end
 -------------------------------------------------------------------------------
 
-Macro {id="6dd41dba-866d-4e67-83e0-ed6a809cbdf9";
+Macro {
   area="Common"; key=S.Key; description=M.Descr;
   action=function() Calendar() end;
 }
