@@ -173,7 +173,7 @@ local function Calendar(DateTime)
         if day.wYear==Current.wYear and day.wMonth==Current.wMonth and day.wDay==Current.wDay then
           msg(hDlg,F.DM_SETTEXT,IF+w*7+d,("[%2s]"):format(day.wDay))
           ITic= ITic or w*7+d
-        elseif day.wDay==dT.wDay then
+        elseif day.wMonth==dT.wMonth and day.wDay==dT.wDay then
           msg(hDlg,F.DM_SETTEXT,IF+w*7+d,("{%2s}"):format(day.wDay))
           ITic=day.wMonth==dT.wMonth and w*7+d or ITic
         else
@@ -194,10 +194,10 @@ local function Calendar(DateTime)
     elseif Msg==F.DN_BTNCLICK and Param1==63 then
       Text=msg(hDlg,F.DM_GETTEXT, 62, nil)
     elseif Msg==F.DN_BTNCLICK then
-      if     Param1==03 --[[Год назад   ]] then dt=DecYear(dt)
-      elseif Param1==05 --[[Год вперёд  ]] then dt=IncYear(dt)
-      elseif Param1==07 --[[Месяц назад ]] then dt=DecMonth(dt)
-      elseif Param1==09 --[[Месяц вперёд]] then dt=IncMonth(dt)
+      if     Param1==03 then dt=DecYear(dt)  -- Год назад
+      elseif Param1==05 then dt=IncYear(dt)  -- Год вперёд
+      elseif Param1==07 then dt=DecMonth(dt) -- Месяц назад
+      elseif Param1==09 then dt=IncMonth(dt) -- Месяц вперёд
       end
       Rebuild(hDlg,dt)
     elseif Msg==F.DN_EDITCHANGE and Param1==04 then
@@ -219,10 +219,10 @@ local function Calendar(DateTime)
     elseif Msg==F.DN_KEY and Param1==61 then
       if     band(Param2,F.KEY_CTRL+F.KEY_RCTRL)~=0 then
         local key = band(Param2, bnot(F.KEY_CTRL+F.KEY_RCTRL))
-        if     key==F.KEY_LEFT  then dt=DecMonth(dt   )
-        elseif key==F.KEY_UP    then dt=DecYear (dt,-1)
-        elseif key==F.KEY_RIGHT then dt=IncMonth(dt, 7)
-        elseif key==F.KEY_DOWN  then dt=IncYear (dt, 1)
+        if     key==F.KEY_LEFT  then dt=DecMonth(dt)
+        elseif key==F.KEY_UP    then dt=DecYear (dt)
+        elseif key==F.KEY_RIGHT then dt=IncMonth(dt)
+        elseif key==F.KEY_DOWN  then dt=IncYear (dt)
         end
       elseif Param2==F.KEY_LEFT  then dt=IncDay(dt,-7)
       elseif Param2==F.KEY_UP    then dt=IncDay(dt,-1)
