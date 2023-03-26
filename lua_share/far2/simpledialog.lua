@@ -483,6 +483,13 @@ function mod:Run()
         end
       end
 
+    elseif (FarVer == 2) and (Msg == F.DN_MOUSECLICK or Msg == F.DN_MOUSEEVENT)
+    or     (FarVer == 3) and (Msg == F.DN_CONTROLINPUT and Par2.EventType == F.MOUSE_EVENT) then
+      if inData.mouseaction then
+        if Par1 <= 0 then Par1 = nil; end
+        if inData.mouseaction(hDlg, Par1, Par2) then return true end
+      end
+
     elseif (FarVer == 3) and Msg==F.DN_CONTROLINPUT and Par2.EventType==F.KEY_EVENT and Par2.KeyDown then
       if inData.keyaction and inData.keyaction(hDlg, Par1, far.InputRecordToName(Par2)) then
         return true

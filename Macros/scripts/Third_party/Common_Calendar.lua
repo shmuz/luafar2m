@@ -190,6 +190,32 @@ local function Calendar(DateTime)
     msg(hDlg,F.DM_ENABLEREDRAW,1)
   end
 
+  Items.keyaction = function(hDlg,Param1,KeyName)
+    if Param1==Pos.User then
+      if     KeyName=="Left"      then dt=IncDay(dt,-7)
+      elseif KeyName=="Up"        then dt=IncDay(dt,-1)
+      elseif KeyName=="Right"     then dt=IncDay(dt, 7)
+      elseif KeyName=="Down"      then dt=IncDay(dt, 1)
+      elseif KeyName=="CtrlLeft"  then dt=DecMonth(dt)
+      elseif KeyName=="CtrlUp"    then dt=DecYear (dt)
+      elseif KeyName=="CtrlRight" then dt=IncMonth(dt)
+      elseif KeyName=="CtrlDown"  then dt=IncYear (dt)
+      else return
+      end
+      Rebuild(hDlg,dt)
+    end
+  end
+
+  Items.mouseaction = function(hDlg,Param1,Param2)
+    if Param1==Pos.User then
+      if Param2.ButtonState==1 then
+        local i=math.floor(Param2.MousePositionX/4)*7+Param2.MousePositionY+1
+        dt=IncDay(dt,i-ITic)
+        Rebuild(hDlg,dt)
+      end
+    end
+  end
+
   function Items.proc(hDlg,Msg,Param1,Param2)
     if Msg==F.DN_INITDIALOG then
       Rebuild(hDlg,dt)
@@ -219,26 +245,6 @@ local function Calendar(DateTime)
       if not win.SystemTimeToFileTime(dt) then
         msg(hDlg,F.DM_LISTSETCURPOS,Pos.Month,{SelectPos=dt.wMonth})
         dt.wMonth=oldM
-      end
-      Rebuild(hDlg,dt)
-    elseif Msg==F.DN_KEY and Param1==Pos.User then
-      if     band(Param2,F.KEY_CTRL+F.KEY_RCTRL)~=0 then
-        local key = band(Param2, bnot(F.KEY_CTRL+F.KEY_RCTRL))
-        if     key==F.KEY_LEFT  then dt=DecMonth(dt)
-        elseif key==F.KEY_UP    then dt=DecYear (dt)
-        elseif key==F.KEY_RIGHT then dt=IncMonth(dt)
-        elseif key==F.KEY_DOWN  then dt=IncYear (dt)
-        end
-      elseif Param2==F.KEY_LEFT  then dt=IncDay(dt,-7)
-      elseif Param2==F.KEY_UP    then dt=IncDay(dt,-1)
-      elseif Param2==F.KEY_RIGHT then dt=IncDay(dt, 7)
-      elseif Param2==F.KEY_DOWN  then dt=IncDay(dt, 1)
-      end
-      Rebuild(hDlg,dt)
-    elseif Msg==F.DN_MOUSECLICK and Param1==Pos.User then
-      if Param2.ButtonState==1 then
-        local i=math.floor(Param2.MousePositionX/4)*7+Param2.MousePositionY+1
-        dt=IncDay(dt,i-ITic)
       end
       Rebuild(hDlg,dt)
     end
