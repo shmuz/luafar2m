@@ -44,7 +44,7 @@ CFLAGS1 = $(CFLAGS) $(EXPORTS)
 CFLAGS2 = $(CFLAGS1) -DEMBED
 
 $(TRG): $(OBJ) $(LIBS)
-	$(CC) -o $@ $^ $(LDFLAGS) -Wl,-rpath,../../
+	$(CC) -o $@ $^ $(LDFLAGS)
 	mv -f $@ $(PATH_PLUGIN)
 	cd $(PATH_PLUGIN) && $(MAKE_LANG)
 
