@@ -1,5 +1,11 @@
 -------------------------------------------------------------------------------
--- Календарь. © SimSU
+-- Календарь.
+-- Copyright (c) SimSU
+-- Copyright (c) Shmuel Zeigerman
+--     (1) the utility made portable between Far3 and far2l (was: Far3)
+--     (2) the interface language is set when the macro is called (was: when loaded)
+--     (3) the first day of week can be specified (was: Monday)
+--     (4) Added button [Today] for setting the current date
 -------------------------------------------------------------------------------
 
 ---- Настройки
@@ -28,6 +34,8 @@ local MsgEng = {
   Ins="&Insert";
   Close="&Close";
 }
+
+local OS_Windows = package.config:sub(1,1)=="\r\n"
 
 local function CorrectMsg(tbl)
   tbl.DaysOfWeek = {}
@@ -70,6 +78,13 @@ local function Leap(DateTime) -- високосный год?
 end
 
 local function IncDay(DateTime,Days)
+  -- In far2l, FileTimeToSystemTime never fails, so do the check ourselves
+  if (not OS_Windows) and DateTime.wYear==1601 and Days<0 then
+    local numDay=DateTime.wDay
+    for m=1,DateTime.wMonth-1 do numDay=numDay+(m==2 and 28 or DaysInMonths[m]) end
+    if numDay+Days <= 0 then return DateTime end
+  end
+
   local dt=win.FileTimeToSystemTime(win.SystemTimeToFileTime(DateTime)+Days*MSinDay) or DateTime
   DaysInMonths[2]=Leap(dt) and 29 or 28 --### потенциальный или реальный баг
   return dt
@@ -224,7 +239,10 @@ local function Calendar(DateTime)
       elseif Param1==Pos.IncYear  then dt=IncYear(dt)  -- Год вперёд
       elseif Param1==Pos.DecMonth then dt=DecMonth(dt) -- Месяц назад
       elseif Param1==Pos.IncMonth then dt=IncMonth(dt) -- Месяц вперёд
-      elseif Param1==Pos.Today    then Current=Today(); dt=Today(); msg(hDlg,F.DM_SETFOCUS,Pos.Close);
+      elseif Param1==Pos.Today    then
+        Current=Today()
+        dt=Today()
+        msg(hDlg,F.DM_SETFOCUS,Pos.Close)
       else return
       end
       Rebuild(hDlg,dt)
