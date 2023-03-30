@@ -10,7 +10,7 @@
 
 ---- Настройки
 local Settings = {
-  Key = "CtrlShiftF5";
+  Key = "CtrlShift5";
   FirstDayOfWeek = 0; -- 0=Sunday, 1=Monday, etc.
 }
 local S = Settings
@@ -35,8 +35,6 @@ local MsgEng = {
   Close="&Close";
 }
 
-local OS_Windows = package.config:sub(1,1)=="\r\n"
-
 local function CorrectMsg(tbl)
   tbl.DaysOfWeek = {}
   for k=1,7 do
@@ -55,8 +53,72 @@ end
 local M=Messages()
 
 -------------------------------------------------------------------------------
+local DnumToDate, DateToDnum
+do
+  local periods = {
+    365*400 + 100 - 4 + 1, -- 400 years
+    365*100 + 25 - 1,      -- 100 years
+    365*4 + 1,             --   4 years
+  }
+
+  local factors = {400,100,4}
+
+  local monthsReg  = {31,28,31,30,31,30,31,31,30,31,30,31}
+  local monthsLeap = {31,29,31,30,31,30,31,31,30,31,30,31}
+
+  local function leap(y)
+    return y%4==0 and (y%100~=0 or y%400==0)
+  end
+
+  DnumToDate = function(aDay)
+    local year = 0        -- number of whole years passed
+    local month = 0       -- number of whole months passed
+    local day = aDay - 1  -- number of whole days passed
+
+    for i,T in ipairs(periods) do
+      local r = day % T
+      local num = (day-r) / T
+      if i==2 and num==4 then num=3; r=r+T; end -- don't allow the 4-th century period
+      year = year + factors[i] * num
+      day = r
+    end
+
+    for _=1,3 do
+      if day >= 365 then day=day-365; year=year+1; else break; end
+    end
+
+    local Months = leap(year+1) and monthsLeap or monthsReg
+    for i,d in ipairs(Months) do
+      if day < d then
+        month = i-1
+        break
+      end
+      day = day - d
+    end
+
+    return { wYear=year+1; wMonth=month+1; wDay=day+1; wDayOfWeek=aDay%7; }
+  end
+
+  DateToDnum = function(DateTime)
+    local yy,mm,dd = DateTime.wYear, DateTime.wMonth, DateTime.wDay
+    local day = 0
+    local y1 = yy-1
+    for i,T in ipairs(factors) do
+      local r = y1 % T
+      day = day + (y1-r) / T * periods[i]
+      y1 = r
+    end
+    day = day + 365*y1
+
+    local Months = leap(yy) and monthsLeap or monthsReg
+    for i=1,mm-1 do
+      day = day+Months[i]
+    end
+    return day + dd
+  end
+end
+-------------------------------------------------------------------------------
 local F,msg = far.Flags,far.SendDlgMessage
-local MSinDay=1000*60*60*24
 local DaysInMonths={[0]=31,31,28,31,30,31,30,31,31,30,31,30,31,[13]=31}
 
 local function Today()
@@ -78,16 +140,8 @@ local function Leap(DateTime) -- високосный год?
 end
 
 local function IncDay(DateTime,Days)
-  -- In far2l, FileTimeToSystemTime never fails, so do the check ourselves
-  if (not OS_Windows) and DateTime.wYear==1601 and Days<0 then
-    local numDay=DateTime.wDay
-    for m=1,DateTime.wMonth-1 do numDay=numDay+(m==2 and 28 or DaysInMonths[m]) end
-    if numDay+Days <= 0 then return DateTime end
-  end
-
-  local dt=win.FileTimeToSystemTime(win.SystemTimeToFileTime(DateTime)+Days*MSinDay) or DateTime
-  DaysInMonths[2]=Leap(dt) and 29 or 28 --### потенциальный или реальный баг
-  return dt
+  local d = DateToDnum(DateTime) + Days
+  return d > 0 and DnumToDate(d) or DateTime
 end
 
 local function WeekStartDay(DateTime) -- первый день текущей недели параметра DateTime
@@ -97,10 +151,6 @@ end
 
 local function FirstDay(DateTime) -- первый день месяца параметра DateTime
   return IncDay(DateTime,1-DateTime.wDay)
-end
-
-local function LastDay(DateTime) -- последний день месяца параметра DateTime
-  return IncDay(DaysInMonths[DateTime.wMonth]-DateTime.wDay)
 end
 
 local function IncMonth(DateTime) -- добавить 1 месяц (применяется нетрадиционная коррекция дня месяца)
@@ -277,7 +327,6 @@ local Common_Calendar={
   Leap     = Leap    ;
   IncDay   = IncDay  ;
   FirstDay = FirstDay;
-  LastDay  = LastDay ;
   IncMonth = IncMonth;
   DecMonth = DecMonth;
   IncYear  = IncYear ;

@@ -414,7 +414,7 @@ local luafar = {
         "Clock", "CompareString", "CopyFile", "CreateDir", "DeleteFile", "EnumSystemCodePages",
         "ExtractKey", "FileTimeToLocalFileTime", "FileTimeToSystemTime", "GetACP",
         "GetConsoleScreenBufferInfo", "GetCPInfo", "GetCurrentDir", "GetDriveType", "GetEnv",
-        "GetFileAttr", "GetFileInfo", "GetOEMCP", "GetSystemTimeAsFileTime",
+        "GetFileAttr", "GetFileInfo", "GetLocalTime", "GetOEMCP", "GetSystemTime", "GetSystemTimeAsFileTime",
         "GetVirtualKeys", "IsProcess64bit", "lenW", "MoveFile", "MultiByteToWideChar", "OemToUtf8",
         "RemoveDir", "RenameFile", "SetCurrentDir", "SetEnv", "SetFileAttr", "Sleep", "subW",
         "SystemTimeToFileTime", "Utf32ToUtf8", "Utf8ToOem", "Utf8ToUtf32", "Uuid", "wcscmp",
