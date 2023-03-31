@@ -2,10 +2,11 @@
 -- Календарь.
 -- Copyright (c) SimSU
 -- Copyright (c) Shmuel Zeigerman
---     (1) the utility made portable between Far3 and far2l (was: Far3)
---     (2) the interface language is set when the macro is called (was: when loaded)
---     (3) the first day of week can be specified (was: Monday)
+--     (1) The utility made portable between Far3 and far2l (was: Far3)
+--     (2) The interface language is set when the macro is called (was: when loaded)
+--     (3) The first day of week can be specified (was: Monday)
 --     (4) Added button [Today] for setting the current date
+--     (5) The calendar starts from 0001-01-01 (was: 1601-01-01)
 -------------------------------------------------------------------------------
 
 ---- Настройки
@@ -16,34 +17,36 @@ local Settings = {
 local S = Settings
 
 local MsgRus = {
-  Descr="Календарь. © SimSU";
-  Title="Календарь";
-  __DaysOfWeek={"Вс","Пн","Вт","Ср","Чт","Пт","Сб"};
-  Months={"Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"};
-  Today="&Сегодня";
-  Ins="&Вставить";
-  Close="&Закрыть";
+  Descr  = "Календарь. © SimSU";
+  Title  = "Календарь";
+  __DaysOfWeek = {"Вс","Пн","Вт","Ср","Чт","Пт","Сб"};
+  Months = {"Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь",
+            "Ноябрь","Декабрь"};
+  Today  = "&Сегодня";
+  Ins    = "&Вставить";
+  Close  = "&Закрыть";
 }
 
 local MsgEng = {
-  Descr="Calendar. © SimSU";
-  Title="Calendar";
-  __DaysOfWeek={"Su","Mo","Tu","We","Th","Fr","Sa"};
-  Months={"January","February","March","April","May","June","July","August","September","October","November","December"};
-  Today="&Today";
-  Ins="&Insert";
-  Close="&Close";
+  Descr  = "Calendar. © SimSU";
+  Title  = "Calendar";
+  __DaysOfWeek = {"Su","Mo","Tu","We","Th","Fr","Sa"};
+  Months = {"January","February","March","April","May","June","July","August","September","October",
+            "November","December"};
+  Today  = "&Today";
+  Ins    = "&Insert";
+  Close  = "&Close";
 }
 
-local function CorrectMsg(tbl)
+local function SetWeekStart(tbl)
   tbl.DaysOfWeek = {}
   for k=1,7 do
     tbl.DaysOfWeek[k] = tbl.__DaysOfWeek[(S.FirstDayOfWeek+k-1) % 7 + 1]
   end
 end
 
-CorrectMsg(MsgRus)
-CorrectMsg(MsgEng)
+SetWeekStart(MsgRus)
+SetWeekStart(MsgEng)
 
 -- Встроенные языки / Built-in languages
 local function Messages()
@@ -119,7 +122,14 @@ do
 end
 -------------------------------------------------------------------------------
 local F,msg = far.Flags,far.SendDlgMessage
-local DaysInMonths={[0]=31,31,28,31,30,31,30,31,31,30,31,30,31,[13]=31}
+local DaysInMonth={[0]=31,31,28,31,30,31,30,31,31,30,31,30,31,[13]=31}
+local MaxDayNum = DateToDnum {wYear=9999; wMonth=12; wDay=31}
+
+local function CopyDate(dt)
+  local t = {}
+  for k,v in pairs(dt) do t[k]=v end
+  return t
+end
 
 local function Today()
 --[[ Возвращает таблицу DateTime с полями:
@@ -132,16 +142,18 @@ local function Today()
   wSecond:        number
   wMilliseconds:  number
 ]]
-  return win.FileTimeToSystemTime(win.FileTimeToLocalFileTime(win.GetSystemTimeAsFileTime()))
+  local lt=win.GetLocalTime
+  return lt and lt() or
+    win.FileTimeToSystemTime(win.FileTimeToLocalFileTime(win.GetSystemTimeAsFileTime()))
 end
 
-local function Leap(DateTime) -- високосный год?
-  return DateTime.wYear%4 ==0 and (DateTime.wYear%100 ~=0 or DateTime.wYear%400 ==0)
+local function Leap(year) -- високосный год?
+  return year%4 == 0 and (year%100 ~= 0 or year%400 == 0)
 end
 
 local function IncDay(DateTime,Days)
   local d = DateToDnum(DateTime) + Days
-  return d > 0 and DnumToDate(d) or DateTime
+  return (d > 0 and d <= MaxDayNum) and DnumToDate(d) or CopyDate(DateTime)
 end
 
 local function WeekStartDay(DateTime) -- первый день текущей недели параметра DateTime
@@ -149,33 +161,37 @@ local function WeekStartDay(DateTime) -- первый день текущей н
   return IncDay(DateTime, a <= 0 and a or -7+a)
 end
 
-local function FirstDay(DateTime) -- первый день месяца параметра DateTime
+local function MonthFirstDay(DateTime) -- первый день месяца параметра DateTime
   return IncDay(DateTime,1-DateTime.wDay)
 end
 
-local function IncMonth(DateTime) -- добавить 1 месяц (применяется нетрадиционная коррекция дня месяца)
-  return IncDay(DateTime, DateTime.wDay>DaysInMonths[DateTime.wMonth+1]
-         and DaysInMonths[DateTime.wMonth+1] or DaysInMonths[DateTime.wMonth])
+local function IncMonth(dt) -- добавить 1 месяц
+  local This = DaysInMonth[dt.wMonth]
+  local Next = DaysInMonth[dt.wMonth+1]
+  if This==28 and Leap(dt.wYear) then This=29 end
+  if Next==28 and Leap(dt.wYear) then Next=29 end
+  return IncDay(dt, dt.wDay<=Next and This or This-dt.wDay+Next)
 end
 
-local function DecMonth(DateTime) -- убавить 1 месяц (применяется традиционная коррекция дня месяца)
-  return IncDay(DateTime, DateTime.wDay>DaysInMonths[DateTime.wMonth-1]
-         and -DateTime.wDay or -DaysInMonths[DateTime.wMonth-1])
+local function DecMonth(dt) -- убавить 1 месяц
+  local Prev = DaysInMonth[dt.wMonth-1]
+  if Prev==28 and Leap(dt.wYear) then Prev=29 end
+  return IncDay(dt, dt.wDay<=Prev and -Prev or -dt.wDay)
 end
 
-local function IncYear(DateTime) -- добавить 1 год
-  return IncDay(DateTime,
-    DateTime.wMonth>2  and Leap(IncDay(DateTime,365)) and 366 or
-    DateTime.wMonth==2 and DateTime.wDay==29 and 365 or
-    DateTime.wMonth<3  and Leap(DateTime) and 366 or 365
+local function IncYear(dt) -- добавить 1 год
+  return IncDay(dt,
+    dt.wMonth>2  and Leap(dt.wYear+1) and 366 or
+    dt.wMonth==2 and dt.wDay==29 and 365 or
+    dt.wMonth<3  and Leap(dt.wYear) and 366 or 365
   )
 end
 
-local function DecYear(DateTime) -- убавить 1 год
-  return IncDay(DateTime,
-    DateTime.wMonth>2  and Leap(DateTime) and -366 or
-    DateTime.wMonth==2 and DateTime.wDay==29 and -366 or
-    DateTime.wMonth<3  and Leap(IncDay(DateTime,-365)) and -366 or -365
+local function DecYear(dt) -- убавить 1 год
+  return IncDay(dt,
+    dt.wMonth>2  and Leap(dt.wYear) and -366 or
+    dt.wMonth==2 and dt.wDay==29 and -366 or
+    dt.wMonth<3  and Leap(dt.wYear-1) and -366 or -365
   )
 end
 
@@ -225,7 +241,6 @@ local function Calendar(DateTime)
   local Pos = Dlg:Indexes()
 
   local Current = Today()
-  IncDay(Current,0) -- Чтобы февраль откорректировать.
   local dt = DateTime and win.SystemTimeToFileTime(DateTime) and DateTime or Today()
   local ITic
 
@@ -233,7 +248,7 @@ local function Calendar(DateTime)
     msg(hDlg,F.DM_ENABLEREDRAW,0)
     msg(hDlg,F.DM_SETTEXT,Pos.Year,tostring(dT.wYear))
     msg(hDlg,F.DM_LISTSETCURPOS,Pos.Month,{SelectPos=dT.wMonth})
-    local day=WeekStartDay(FirstDay(dT))
+    local day=WeekStartDay(MonthFirstDay(dT))
     ITic=nil
     for w=0,5 do
       for d=1,7 do
@@ -291,7 +306,7 @@ local function Calendar(DateTime)
       elseif Param1==Pos.IncMonth then dt=IncMonth(dt) -- Месяц вперёд
       elseif Param1==Pos.Today    then
         Current=Today()
-        dt=Today()
+        dt=CopyDate(Current)
         msg(hDlg,F.DM_SETFOCUS,Pos.Close)
       else return
       end
@@ -304,7 +319,6 @@ local function Calendar(DateTime)
         Rebuild(hDlg,dt)
         msg(hDlg,F.DM_SETCURSORPOS,Pos.Year,pos)
       else
-        ---require"far2.lua_explorer"(dt,"dt")
         dt.wYear=oldY
       end
     elseif Msg==F.DN_EDITCHANGE and Param1==Pos.Month then
@@ -323,16 +337,16 @@ local function Calendar(DateTime)
 end
 -------------------------------------------------------------------------------
 local Common_Calendar={
-  Today    = Today   ;
-  Leap     = Leap    ;
-  IncDay   = IncDay  ;
-  FirstDay = FirstDay;
-  IncMonth = IncMonth;
-  DecMonth = DecMonth;
-  IncYear  = IncYear ;
-  DecYear  = DecYear ;
-  Calendar = Calendar;
-  WeekStartDay=WeekStartDay;
+  Calendar      = Calendar;
+  DecMonth      = DecMonth;
+  DecYear       = DecYear;
+  IncDay        = IncDay;
+  IncMonth      = IncMonth;
+  IncYear       = IncYear;
+  Leap          = Leap;
+  MonthFirstDay = MonthFirstDay;
+  Today         = Today;
+  WeekStartDay  = WeekStartDay;
 }
 local function filename() return Calendar() end
 -------------------------------------------------------------------------------
