@@ -180,19 +180,23 @@ local function DecMonth(dt) -- убавить 1 месяц
 end
 
 local function IncYear(dt) -- добавить 1 год
-  return IncDay(dt,
-    dt.wMonth>2  and Leap(dt.wYear+1) and 366 or
-    dt.wMonth==2 and dt.wDay==29 and 365 or
-    dt.wMonth<3  and Leap(dt.wYear) and 366 or 365
-  )
+  local Inc=365
+  if Leap(dt.wYear) then
+    if dt.wMonth<=2 and not (dt.wMonth==2 and dt.wDay==29) then Inc=366 end
+  elseif Leap(dt.wYear+1) then
+    if dt.wMonth>2 then Inc=366 end
+  end
+  return IncDay(dt,Inc)
 end
 
 local function DecYear(dt) -- убавить 1 год
-  return IncDay(dt,
-    dt.wMonth>2  and Leap(dt.wYear) and -366 or
-    dt.wMonth==2 and dt.wDay==29 and -366 or
-    dt.wMonth<3  and Leap(dt.wYear-1) and -366 or -365
-  )
+  local Inc=365
+  if Leap(dt.wYear) then
+    if dt.wMonth>2 or (dt.wMonth==2 and dt.wDay==29) then Inc=366 end
+  elseif Leap(dt.wYear-1) then
+    if dt.wMonth<=2 then Inc=366 end
+  end
+  return IncDay(dt,-Inc)
 end
 
 local function Calendar(DateTime)
