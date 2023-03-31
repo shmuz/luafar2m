@@ -179,6 +179,14 @@ local function DecMonth(dt) -- убавить 1 месяц
   return IncDay(dt, dt.wDay<=Prev and -Prev or -dt.wDay)
 end
 
+local function ChangeMonth(dt,month) -- изменить месяц на параметр month
+  local Next = DaysInMonth[month]
+  if Next==28 and Leap(dt.wYear) then Next=29 end
+  dt.wDay=math.min(Next,dt.wDay)
+  dt.wMonth=month
+  return IncDay(dt,0)
+end
+
 local function IncYear(dt) -- добавить 1 год
   local Inc=365
   if Leap(dt.wYear) then
@@ -329,7 +337,8 @@ local function Calendar(DateTime)
         msg(hDlg,F.DM_SETCURSORPOS,Pos.Year,pos)
       end
     elseif Msg==F.DN_EDITCHANGE and Param1==Pos.Month then
-      dt.wMonth=msg(hDlg,F.DM_LISTGETCURPOS, Pos.Month).SelectPos
+      local month=msg(hDlg,F.DM_LISTGETCURPOS, Pos.Month).SelectPos
+      ChangeMonth(dt,month)
       Rebuild(hDlg,dt)
     end
   end
