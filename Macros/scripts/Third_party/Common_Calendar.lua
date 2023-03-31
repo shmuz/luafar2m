@@ -151,18 +151,18 @@ local function Leap(year) -- високосный год?
   return year%4 == 0 and (year%100 ~= 0 or year%400 == 0)
 end
 
-local function IncDay(DateTime,Days)
-  local d = DateToDnum(DateTime) + Days
-  return (d > 0 and d <= MaxDayNum) and DnumToDate(d) or CopyDate(DateTime)
+local function IncDay(dt,Days)
+  local dnum = DateToDnum(dt) + Days
+  return (dnum > 0 and dnum <= MaxDayNum) and DnumToDate(dnum) or CopyDate(dt)
 end
 
-local function WeekStartDay(DateTime) -- первый день текущей недели параметра DateTime
-  local a = S.FirstDayOfWeek - DateTime.wDayOfWeek
-  return IncDay(DateTime, a <= 0 and a or -7+a)
+local function WeekStartDay(dt) -- первый день текущей недели параметра dt
+  local a = S.FirstDayOfWeek - dt.wDayOfWeek
+  return IncDay(dt, a <= 0 and a or -7+a)
 end
 
-local function MonthFirstDay(DateTime) -- первый день месяца параметра DateTime
-  return IncDay(DateTime,1-DateTime.wDay)
+local function MonthFirstDay(dt) -- первый день месяца параметра dt
+  return IncDay(dt,1-dt.wDay)
 end
 
 local function IncMonth(dt) -- добавить 1 месяц
@@ -245,12 +245,14 @@ local function Calendar(DateTime)
   local Pos = Dlg:Indexes()
 
   local Current = Today()
-  local dt = DateTime and win.SystemTimeToFileTime(DateTime) and DateTime or Today()
+  local dt = DateTime or CopyDate(Current)
   local ITic
+  local IsRebuilding
 
   local function Rebuild(hDlg,dT)
+    IsRebuilding=true
     msg(hDlg,F.DM_ENABLEREDRAW,0)
-    msg(hDlg,F.DM_SETTEXT,Pos.Year,tostring(dT.wYear))
+    msg(hDlg,F.DM_SETTEXT,Pos.Year,("%04d"):format(dT.wYear))
     msg(hDlg,F.DM_LISTSETCURPOS,Pos.Month,{SelectPos=dT.wMonth})
     local day=WeekStartDay(MonthFirstDay(dT))
     ITic=nil
@@ -270,8 +272,9 @@ local function Calendar(DateTime)
         day=IncDay(day,1)
       end
     end
-    msg(hDlg,F.DM_SETTEXT,Pos.Date,string.format("%02d.%02d.%4d",dT.wDay,dT.wMonth,dT.wYear))
+    msg(hDlg,F.DM_SETTEXT,Pos.Date,("%02d.%02d.%04d"):format(dT.wDay,dT.wMonth,dT.wYear))
     msg(hDlg,F.DM_ENABLEREDRAW,1)
+    IsRebuilding=false
   end
 
   Items.keyaction = function(hDlg,Param1,KeyName)
@@ -301,7 +304,9 @@ local function Calendar(DateTime)
   end
 
   function Items.proc(hDlg,Msg,Param1,Param2)
-    if Msg==F.DN_INITDIALOG then
+    if IsRebuilding then
+      return
+    elseif Msg==F.DN_INITDIALOG then
       Rebuild(hDlg,dt)
     elseif Msg==F.DN_BTNCLICK then
       if     Param1==Pos.DecYear  then dt=DecYear(dt)  -- Год назад
@@ -316,22 +321,15 @@ local function Calendar(DateTime)
       end
       Rebuild(hDlg,dt)
     elseif Msg==F.DN_EDITCHANGE and Param1==Pos.Year then
-      local oldY=dt.wYear
-      dt.wYear=tonumber(msg(hDlg,F.DM_GETTEXT, Pos.Year))
-      if win.SystemTimeToFileTime(dt) then
+      local year=tonumber(msg(hDlg,F.DM_GETTEXT, Pos.Year))
+      if year and year>0 then
         local pos=msg(hDlg,F.DM_GETCURSORPOS,Pos.Year)
+        dt.wYear=year
         Rebuild(hDlg,dt)
         msg(hDlg,F.DM_SETCURSORPOS,Pos.Year,pos)
-      else
-        dt.wYear=oldY
       end
     elseif Msg==F.DN_EDITCHANGE and Param1==Pos.Month then
-      local oldM=dt.wMonth
-      dt.wMonth=(msg(hDlg,F.DM_LISTGETCURPOS, Pos.Month)).SelectPos
-      if not win.SystemTimeToFileTime(dt) then
-        msg(hDlg,F.DM_LISTSETCURPOS,Pos.Month,{SelectPos=dt.wMonth})
-        dt.wMonth=oldM
-      end
+      dt.wMonth=msg(hDlg,F.DM_LISTGETCURPOS, Pos.Month).SelectPos
       Rebuild(hDlg,dt)
     end
   end
