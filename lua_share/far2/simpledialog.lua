@@ -12,6 +12,7 @@ local VK        = win.GetVirtualKeys()
 local band, bor = bit64.band, bit64.bor
 local lshift    = bit64.lshift
 local Send      = far.SendDlgMessage
+local Colors    = far.Colors or F
 
 local IND_TYPE, IND_X1, IND_Y1, IND_X2, IND_Y2, IND_HISTORY, IND_DATA = 1,2,3,4,5,7,10
 local IND_FOCUS    = (FarVer==2) and 6 or nil
@@ -71,7 +72,6 @@ end
 -- @return 2      : number: usercontrol width
 -- @return 3      : number: usercontrol height
 local function usercontrol2 (txt, h_char, h_color)
-  local Colors = (OpSys=="windows") and far.Colors or F
   local COLOR_NORMAL = far.AdvControl("ACTL_GETCOLOR", Colors.COL_DIALOGTEXT)
   local CELL_BLANK = { Char=" "; Attributes=COLOR_NORMAL }
   h_char = h_char or "#"
@@ -427,7 +427,7 @@ function mod:Run()
     if type(v.colors) == "table" then
       outData[i].colors = {}
       for j,w in ipairs(v.colors) do
-        outData[i].colors[j] = type(w)=="string" and far.AdvControl(F.ACTL_GETCOLOR, far.Colors[w]) or w
+        outData[i].colors[j] = type(w)=="string" and far.AdvControl(F.ACTL_GETCOLOR, Colors[w]) or w
       end
     end
 
