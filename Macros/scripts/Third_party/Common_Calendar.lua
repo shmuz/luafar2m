@@ -40,13 +40,16 @@ local MsgEng = {
 
 local F = far.Flags
 local _Colors = F.COL_DIALOGTEXT and F or far.Colors -- different between far2 and far3
-local COLOR_ENB=far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGTEXT)
-local COLOR_DSB=far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGDISABLED)
+local COLOR_ENB = far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGTEXT)
+local COLOR_DSB = far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGDISABLED)
+local WEEK = 7   -- serves also as user control height
+local UC_HOR = 6 -- user control width, in cells
+local CELL_WIDTH = 4
 
 local function SetWeekStart(tbl)
   tbl.DaysOfWeek = {}
-  for k=1,7 do
-    tbl.DaysOfWeek[k] = tbl.__DaysOfWeek[(S.FirstDayOfWeek+k-1) % 7 + 1]
+  for k=1,WEEK do
+    tbl.DaysOfWeek[k] = tbl.__DaysOfWeek[(S.FirstDayOfWeek+k-1) % WEEK + 1]
   end
 end
 
@@ -130,10 +133,6 @@ local msg = far.SendDlgMessage
 local DaysInMonth={[0]=31,31,28,31,30,31,30,31,31,30,31,30,31,[13]=31}
 local MaxDayNum = DateToDnum {wYear=9999; wMonth=12; wDay=31}
 
-local WEEK = 7   -- serves also as user control height
-local UC_HOR = 6 -- user control width, in cells
-local CELL_WIDTH = 4
-
 local function CopyDate(dt)
   local t = {}
   for k,v in pairs(dt) do t[k]=v end
@@ -167,7 +166,7 @@ end
 
 local function WeekStartDay(dt) -- первый день текущей недели параметра dt
   local a = S.FirstDayOfWeek - dt.wDayOfWeek
-  return IncDay(dt, a <= 0 and a or -7+a)
+  return IncDay(dt, a <= 0 and a or a-WEEK)
 end
 
 local function MonthFirstDay(dt) -- первый день месяца параметра dt
@@ -297,9 +296,9 @@ local function Calendar(DateTime)
 
   Items.keyaction = function(hDlg,Param1,KeyName)
     if Param1==Pos.User then
-      if     KeyName=="Left"      then dt=IncDay(dt,-7)
+      if     KeyName=="Left"      then dt=IncDay(dt,-WEEK)
       elseif KeyName=="Up"        then dt=IncDay(dt,-1)
-      elseif KeyName=="Right"     then dt=IncDay(dt, 7)
+      elseif KeyName=="Right"     then dt=IncDay(dt, WEEK)
       elseif KeyName=="Down"      then dt=IncDay(dt, 1)
       elseif KeyName=="CtrlLeft"  then dt=DecMonth(dt)
       elseif KeyName=="CtrlUp"    then dt=DecYear (dt)
@@ -314,7 +313,7 @@ local function Calendar(DateTime)
   Items.mouseaction = function(hDlg,Param1,Param2)
     if Param1==Pos.User then
       if Param2.ButtonState==F.FROM_LEFT_1ST_BUTTON_PRESSED then
-        local i=math.floor(Param2.MousePositionX/CELL_WIDTH)*7+Param2.MousePositionY+1
+        local i=math.floor(Param2.MousePositionX/CELL_WIDTH)*WEEK+Param2.MousePositionY+1
         dt=IncDay(dt,i-ITic)
         Rebuild(hDlg,dt)
       end
