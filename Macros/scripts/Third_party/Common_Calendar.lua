@@ -38,6 +38,11 @@ local MsgEng = {
   Close  = "&Close";
 }
 
+local F = far.Flags
+local _Colors = F.COL_DIALOGTEXT and F or far.Colors -- different between far2 and far3
+local COLOR_ENB=far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGTEXT)
+local COLOR_DSB=far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGDISABLED)
+
 local function SetWeekStart(tbl)
   tbl.DaysOfWeek = {}
   for k=1,7 do
@@ -121,7 +126,7 @@ do
   end
 end
 -------------------------------------------------------------------------------
-local F,msg = far.Flags,far.SendDlgMessage
+local msg = far.SendDlgMessage
 local DaysInMonth={[0]=31,31,28,31,30,31,30,31,31,30,31,30,31,[13]=31}
 local MaxDayNum = DateToDnum {wYear=9999; wMonth=12; wDay=31}
 
@@ -263,8 +268,6 @@ local function Calendar(DateTime)
     local day=WeekStartDay(MonthFirstDay(dT))
     ITic=nil
     local elem={}
-    local color_enb=far.AdvControl(F.ACTL_GETCOLOR,F.COL_DIALOGTEXT)
-    local color_dsb=far.AdvControl(F.ACTL_GETCOLOR,F.COL_DIALOGDISABLED)
     for w=0,UC_HOR-1 do
       for d=1,WEEK do
         local txt
@@ -277,7 +280,7 @@ local function Calendar(DateTime)
         else
           txt = ("%3s "):format(day.wDay)
         end
-        local color=day.wMonth==dT.wMonth and color_enb or color_dsb
+        local color=day.wMonth==dT.wMonth and COLOR_ENB or COLOR_DSB
         local curpos=1+(w+(d-1)*UC_HOR)*CELL_WIDTH
         for k=1,CELL_WIDTH do
           elem.Char=txt:sub(k,k)
