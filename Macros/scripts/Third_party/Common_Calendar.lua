@@ -19,7 +19,7 @@ local S = Settings
 local MsgRus = {
   Descr  = "Календарь. © SimSU";
   Title  = "Календарь";
-  __DaysOfWeek = {"Вс","Пн","Вт","Ср","Чт","Пт","Сб"};
+  DaysOfWeek = {"Вс","Пн","Вт","Ср","Чт","Пт","Сб"};
   Months = {"Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь",
             "Ноябрь","Декабрь"};
   Today  = "&Сегодня";
@@ -30,7 +30,7 @@ local MsgRus = {
 local MsgEng = {
   Descr  = "Calendar. © SimSU";
   Title  = "Calendar";
-  __DaysOfWeek = {"Su","Mo","Tu","We","Th","Fr","Sa"};
+  DaysOfWeek = {"Su","Mo","Tu","We","Th","Fr","Sa"};
   Months = {"January","February","March","April","May","June","July","August","September","October",
             "November","December"};
   Today  = "&Today";
@@ -39,22 +39,12 @@ local MsgEng = {
 }
 
 local F = far.Flags
-local _Colors = F.COL_DIALOGTEXT and F or far.Colors -- different between far2 and far3
+local _Colors = far.Colors or F -- different between far2 and far3
 local COLOR_ENB = far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGTEXT)
 local COLOR_DSB = far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGDISABLED)
 local WEEK = 7   -- serves also as user control height
 local UC_HOR = 6 -- user control width, in cells
 local CELL_WIDTH = 4
-
-local function SetWeekStart(tbl)
-  tbl.DaysOfWeek = {}
-  for k=1,WEEK do
-    tbl.DaysOfWeek[k] = tbl.__DaysOfWeek[(S.FirstDayOfWeek+k-1) % WEEK + 1]
-  end
-end
-
-SetWeekStart(MsgRus)
-SetWeekStart(MsgEng)
 
 -- Встроенные языки / Built-in languages
 local function Messages()
@@ -62,6 +52,10 @@ local function Messages()
 end
 
 local M=Messages()
+
+local function GetDayOfWeek(num)
+  return M.DaysOfWeek[(S.FirstDayOfWeek+num-1) % WEEK + 1]
+end
 
 -------------------------------------------------------------------------------
 local DnumToDate, DateToDnum
@@ -222,6 +216,8 @@ local function Calendar(DateTime)
   local Months={}
   for m,v in ipairs(M.Months) do Months[m] = {["Text"]=v}; end
 
+  local buff = far.CreateUserControl(CELL_WIDTH*UC_HOR, WEEK)
+
   local Items = {
     guid="615d826b-3921-48bb-9cf2-c6d345833855";
     width=36;
@@ -234,22 +230,24 @@ local function Calendar(DateTime)
     {tp="butt";     name="DecMonth"; btnnoclose=1;   x1=4;  text="<";                     }, --Месяц назад
     {tp="combobox"; name="Month";    dropdownlist=1; x1=11; x2=23;    y1=""; list=Months; }, --Месяц
     {tp="butt";     name="IncMonth"; btnnoclose=1;   x1=27; text=">"; y1="";              }, --Месяц вперёд
-    {tp="sep"}
+    {tp="sep" },
+
+    {tp="text"; text=GetDayOfWeek(1); },
+    {tp="text"; text=GetDayOfWeek(2); },
+    {tp="text"; text=GetDayOfWeek(3); },
+    {tp="text"; text=GetDayOfWeek(4); },
+    {tp="text"; text=GetDayOfWeek(5); },
+    {tp="text"; text=GetDayOfWeek(6); },
+    {tp="text"; text=GetDayOfWeek(7); },
+    {tp="user";     name="User";     x1=8; ystep=1-WEEK; width=CELL_WIDTH*UC_HOR; height=WEEK; buffer=buff; },
+    {tp="sep" },
+
+    {tp="fixedit";  name="Date";     x1=7; x2=16; mask="99.99.9999"; readonly=1; },
+    {tp="butt";     name="Today";    x1=18;  text=M.Today; y1=""; btnnoclose=1;  }, -- Установить текущую дату
+    {tp="sep" },
+    {tp="butt";     name="Close";    centergroup=1; default=1; text=M.Close; focus=1; },
+    {tp="butt";     name="Insert";   centergroup=1; x1=18;  text=M.Ins; y1=""; }, -- Вставить дату
   }
-
-  local Add=table.insert
-  for d=1,WEEK do
-    Add(Items,{tp="text"; text=M.DaysOfWeek[d]})
-  end
-  local buff = far.CreateUserControl(CELL_WIDTH*UC_HOR, WEEK)
-
-  Add(Items,{tp="user";    name="User";   x1=8; ystep=1-WEEK; width=CELL_WIDTH*UC_HOR; height=WEEK; buffer=buff; })
-  Add(Items,{tp="sep"})
-  Add(Items,{tp="fixedit"; name="Date";   x1=7; x2=16; mask="99.99.9999"; readonly=1; })
-  Add(Items,{tp="butt";    name="Today";  x1=18;  text=M.Today; y1=""; btnnoclose=1;  }) -- Установить текущую дату
-  Add(Items,{tp="sep"})
-  Add(Items,{tp="butt";    name="Close";  centergroup=1; default=1; text=M.Close; focus=1; })
-  Add(Items,{tp="butt";    name="Insert"; centergroup=1; x1=18;  text=M.Ins; y1=""; }) -- Вставить дату
 
   local Dlg = sd.New(Items)
   local Pos = Dlg:Indexes()
