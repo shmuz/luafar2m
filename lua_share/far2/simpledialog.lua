@@ -10,6 +10,7 @@ local OpSys     = DirSep=="/" and "linux" or "windows"
 local FarVer    = F.ACTL_GETFARMANAGERVERSION and 3 or 2
 local VK        = win.GetVirtualKeys()
 local band, bor = bit64.band, bit64.bor
+local lshift    = bit64.lshift
 local Send      = far.SendDlgMessage
 
 local IND_TYPE, IND_X1, IND_Y1, IND_X2, IND_Y2, IND_HISTORY, IND_DATA = 1,2,3,4,5,7,10
@@ -426,7 +427,7 @@ function mod:Run()
     if type(v.colors) == "table" then
       outData[i].colors = {}
       for j,w in ipairs(v.colors) do
-        outData[i].colors[j] = far.AdvControl(F.ACTL_GETCOLOR, far.Colors[w] or w)
+        outData[i].colors[j] = type(w)=="string" and far.AdvControl(F.ACTL_GETCOLOR, far.Colors[w]) or w
       end
     end
 
@@ -511,9 +512,17 @@ function mod:Run()
       if inData[Par1].action then inData[Par1].action(hDlg,Par1,Par2); end
 
     elseif Msg == F.DN_CTLCOLORDLGITEM then
-      if FarVer == 3 then -- TODO for Far 2
-        local colors = outData[Par1].colors
-        if colors then return colors; end
+      local colors = outData[Par1].colors
+      if colors then
+        if FarVer == 3 then -- TODO for Far 2
+          return colors
+        else
+          local col = 0
+          for i,v in ipairs(colors) do
+            col = bor(col, lshift(v,8*(i-1)))
+          end
+          return col
+        end
       end
 
     end

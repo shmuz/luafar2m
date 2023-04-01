@@ -42,6 +42,7 @@ local F = far.Flags
 local _Colors = far.Colors or F -- different between far2 and far3
 local COLOR_ENB = far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGTEXT)
 local COLOR_DSB = far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGDISABLED)
+local COLOR_WD  = {0x79}
 local WEEK = 7   -- serves also as user control height
 local UC_HOR = 6 -- user control width, in cells
 local CELL_WIDTH = 4
@@ -232,16 +233,16 @@ local function Calendar(DateTime)
     {tp="butt";     name="IncMonth"; btnnoclose=1;   x1=27; text=">"; y1="";              }, --Месяц вперёд
     {tp="sep" },
 
-    {tp="text"; text=GetDayOfWeek(1); },
-    {tp="text"; text=GetDayOfWeek(2); },
-    {tp="text"; text=GetDayOfWeek(3); },
-    {tp="text"; text=GetDayOfWeek(4); },
-    {tp="text"; text=GetDayOfWeek(5); },
-    {tp="text"; text=GetDayOfWeek(6); },
-    {tp="text"; text=GetDayOfWeek(7); },
+    {tp="text"; text=GetDayOfWeek(1); width=2; colors=COLOR_WD; },
+    {tp="text"; text=GetDayOfWeek(2); width=2; colors=COLOR_WD; },
+    {tp="text"; text=GetDayOfWeek(3); width=2; colors=COLOR_WD; },
+    {tp="text"; text=GetDayOfWeek(4); width=2; colors=COLOR_WD; },
+    {tp="text"; text=GetDayOfWeek(5); width=2; colors=COLOR_WD; },
+    {tp="text"; text=GetDayOfWeek(6); width=2; colors=COLOR_WD; },
+    {tp="text"; text=GetDayOfWeek(7); width=2; colors=COLOR_WD; },
+
     {tp="user";     name="User";     x1=8; ystep=1-WEEK; width=CELL_WIDTH*UC_HOR; height=WEEK; buffer=buff; },
     {tp="sep" },
-
     {tp="fixedit";  name="Date";     x1=7; x2=16; mask="99.99.9999"; readonly=1; },
     {tp="butt";     name="Today";    x1=18;  text=M.Today; y1=""; btnnoclose=1;  }, -- Установить текущую дату
     {tp="sep" },
