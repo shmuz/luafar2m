@@ -125,6 +125,10 @@ local F,msg = far.Flags,far.SendDlgMessage
 local DaysInMonth={[0]=31,31,28,31,30,31,30,31,31,30,31,30,31,[13]=31}
 local MaxDayNum = DateToDnum {wYear=9999; wMonth=12; wDay=31}
 
+local WEEK = 7   -- serves also as user control height
+local UC_HOR = 6 -- user control width, in cells
+local CELL_WIDTH = 4
+
 local function CopyDate(dt)
   local t = {}
   for k,v in pairs(dt) do t[k]=v end
@@ -230,18 +234,12 @@ local function Calendar(DateTime)
   }
 
   local Add=table.insert
-  for d=1,7 do
+  for d=1,WEEK do
     Add(Items,{tp="text"; text=M.DaysOfWeek[d]})
   end
-  local IF=#Items
+  local buff = far.CreateUserControl(CELL_WIDTH*UC_HOR, WEEK)
 
-  for w=0,5 do
-    for d=1,7 do
-      Add(Items,{tp="text"; x1=8+w*4; ystep=(d==1 and -6); })
-    end
-  end
-
-  Add(Items,{tp="user";    name="User";   x1=8; ystep=-6; x2=31; height=7; }) --Движение по дням
+  Add(Items,{tp="user";    name="User";   x1=8; ystep=1-WEEK; width=CELL_WIDTH*UC_HOR; height=WEEK; buffer=buff; })
   Add(Items,{tp="sep"})
   Add(Items,{tp="fixedit"; name="Date";   x1=7; x2=16; mask="99.99.9999"; readonly=1; })
   Add(Items,{tp="butt";    name="Today";  x1=18;  text=M.Today; y1=""; btnnoclose=1;  }) -- Установить текущую дату
@@ -264,18 +262,27 @@ local function Calendar(DateTime)
     msg(hDlg,F.DM_LISTSETCURPOS,Pos.Month,{SelectPos=dT.wMonth})
     local day=WeekStartDay(MonthFirstDay(dT))
     ITic=nil
-    for w=0,5 do
-      for d=1,7 do
-        local curpos=IF+w*7+d
-        msg(hDlg,F.DM_ENABLE,curpos,day.wMonth==dT.wMonth and 1 or 0)
+    local elem={}
+    local color_enb=far.AdvControl(F.ACTL_GETCOLOR,F.COL_DIALOGTEXT)
+    local color_dsb=far.AdvControl(F.ACTL_GETCOLOR,F.COL_DIALOGDISABLED)
+    for w=0,UC_HOR-1 do
+      for d=1,WEEK do
+        local txt
         if day.wYear==Current.wYear and day.wMonth==Current.wMonth and day.wDay==Current.wDay then
-          msg(hDlg,F.DM_SETTEXT,curpos,("[%2s]"):format(day.wDay))
-          ITic= ITic or w*7+d
-        elseif day.wMonth==dT.wMonth and day.wDay==dT.wDay then
-          msg(hDlg,F.DM_SETTEXT,curpos,("{%2s}"):format(day.wDay))
-          ITic=day.wMonth==dT.wMonth and w*7+d or ITic
+          txt = ("[%2s]"):format(day.wDay)
+          ITic= ITic or w*WEEK+d
+        elseif day.wDay==dT.wDay then
+          txt = ("{%2s}"):format(day.wDay)
+          ITic=day.wMonth==dT.wMonth and w*WEEK+d or ITic
         else
-          msg(hDlg,F.DM_SETTEXT,curpos,("%3s "):format(day.wDay))
+          txt = ("%3s "):format(day.wDay)
+        end
+        local color=day.wMonth==dT.wMonth and color_enb or color_dsb
+        local curpos=1+(w+(d-1)*UC_HOR)*CELL_WIDTH
+        for k=1,CELL_WIDTH do
+          elem.Char=txt:sub(k,k)
+          elem.Attributes=color
+          buff[curpos+k-1]=elem
         end
         day=IncDay(day,1)
       end
@@ -303,8 +310,8 @@ local function Calendar(DateTime)
 
   Items.mouseaction = function(hDlg,Param1,Param2)
     if Param1==Pos.User then
-      if Param2.ButtonState==1 then
-        local i=math.floor(Param2.MousePositionX/4)*7+Param2.MousePositionY+1
+      if Param2.ButtonState==F.FROM_LEFT_1ST_BUTTON_PRESSED then
+        local i=math.floor(Param2.MousePositionX/CELL_WIDTH)*7+Param2.MousePositionY+1
         dt=IncDay(dt,i-ITic)
         Rebuild(hDlg,dt)
       end
