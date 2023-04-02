@@ -26,8 +26,6 @@ local thisDir do
   if type(arg)=="string" then thisDir = mf and arg:match(".+"..dirsep) or arg end -- LuaMacro or LF4Ed
 end
 
-local ed = editor
-
 local SETTINGS_KEY  = FarVer==3 and "Duplicate Fighter" or "shmuz"
 local SETTINGS_NAME = FarVer==3 and "settings"          or "Duplicate Fighter"
 
@@ -75,13 +73,13 @@ local function SetLanguage() return win.GetEnv("FARLANG")=="Russian" and mRus or
 local M = SetLanguage()
 
 local function GetDups(keepempty, func, toboolean)
-  local info = ed.GetInfo()
+  local info = editor.GetInfo()
   local isSel = (info.BlockType ~= F.BTYPE_NONE)
   local isColumn = (info.BlockType == F.BTYPE_COLUMN)
   local groups = {}
   local nSkipped = 0
   for lnum = isSel and info.BlockStartLine or 1,info.TotalLines do
-    local S = ed.GetString(lnum)
+    local S = editor.GetString(nil,lnum)
     if not S
       or (isSel and not (S.SelStart>0 and S.SelEnd~=0))
       or (lnum==info.TotalLines and S.StringText=="")
@@ -124,21 +122,21 @@ local function HandleDups(op, keepWhat, keepempty, showstats, func, toboolean)
   table.sort(duplines, function(a,b) return math.abs(a) < math.abs(b) end)
 
   local nClear, nDel = 0, 0
-  ed.UndoRedo(nil,"EUR_BEGIN")
+  editor.UndoRedo(nil,"EUR_BEGIN")
   for _,n in ipairs(duplines) do
     if n > 0 then
       if op == "clear" then
-        ed.SetString(n, "")
+        editor.SetString(nil, n, "")
         nClear = nClear+1
       elseif op == "delete" then
-        ed.SetPosition(n - nDel)
-        ed.DeleteString()
+        editor.SetPosition(nil, n - nDel)
+        editor.DeleteString()
         nDel = nDel+1
       end
     end
   end
-  ed.UndoRedo(nil,"EUR_END")
-  ed.Redraw()
+  editor.UndoRedo(nil,"EUR_END")
+  editor.Redraw()
   if showstats then
     local len1 = math.max(M.STAT_DUP:len(), M.STAT_UNIQ:len(), M.STAT_SKIP:len(),
                           M.STAT_DEL:len(), M.STAT_CLEAR:len())

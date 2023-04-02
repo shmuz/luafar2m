@@ -21,14 +21,6 @@ local F = far.Flags
 local Send = far.SendDlgMessage
 local KEEP_DIALOG_OPEN = 0
 
-local Ed = editor
-if FarVer == 3 then
-  Ed = setmetatable({Editor=editor.Editor}, {__index=
-    function(self,name)
-      return function(...) return editor[name](nil, ...) end
-    end})
-end
-
 local function ShowHelp()
   -- Note: the text parts in a line enclosed in ## get highlighted
   local msg = [[
@@ -158,11 +150,11 @@ local function get_data_from_dialog()
 end
 
 local function GetSelection()
-  local EI = Ed.GetInfo()
+  local EI = editor.GetInfo()
   if EI.BlockType == F.BTYPE_STREAM then
     local tt = {}
     for i=EI.BlockStartLine, math.huge do
-      local s = Ed.GetString(i)
+      local s = editor.GetString(nil,i)
       if s.SelEnd == 0 then break end
       tt[#tt+1] = s.StringText
     end
@@ -172,9 +164,9 @@ local function GetSelection()
 end
 
 local function InsertLine(lnum, text)
-  Ed.SetPosition(lnum,1,1)
-  Ed.InsertString()
-  Ed.SetString(lnum, text)
+  editor.SetPosition(nil,lnum,1,1)
+  editor.InsertString()
+  editor.SetString(nil,lnum,text)
 end
 
 local function SplitBy1stLine(aText, aPatt)
@@ -290,9 +282,9 @@ local function Work(data)
       end)
 
   -- actions on editor
-  Ed.UndoRedo(nil,"EUR_BEGIN")
-  Ed.DeleteBlock()
-  local lnum = Ed.GetInfo().CurLine
+  editor.UndoRedo(nil,"EUR_BEGIN")
+  editor.DeleteBlock()
+  local lnum = editor.GetInfo().CurLine
   local delim = data.sOutDelim:gsub("\\(.)", { n="\n";t="\t"; })
   for _,v in ipairs(chunks) do
     for line, eol in v.chunk:gmatch("([^\n]*)(\n?)") do
@@ -308,8 +300,8 @@ local function Work(data)
       end
     end
   end
-  Ed.UndoRedo(nil,"EUR_END")
-  Ed.Redraw()
+  editor.UndoRedo(nil,"EUR_END")
+  editor.Redraw()
 end
 
 if Macro then
