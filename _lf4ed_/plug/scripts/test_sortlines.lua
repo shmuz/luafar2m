@@ -22,7 +22,7 @@ end
 
 local function ClearBuffer()
   local editInfo = editor.GetInfo()
-  editor.Select("BTYPE_STREAM", 1, 1, nil, editInfo.TotalLines)
+  editor.Select(nil, "BTYPE_STREAM", 1, 1, nil, editInfo.TotalLines)
   editor.DeleteBlock()
 end
 
@@ -34,14 +34,14 @@ local function PrepareFile (filename)
     local result = far.Message("\nSave current file?\n",
       "A new file will be created", "Yes;No;Cancel")
     if result < 0 or result == 3 then return false end
-    if result == 1 and not editor.SaveFile(editInfo.FileName) then
+    if result == 1 and not editor.SaveFile(nil,editInfo.FileName) then
       far.Message"Could not save file. Canceling the operation."
       return false
     end
   end
   os.remove(filename)
   ClearBuffer()
-  if not editor.SaveFile(filename) then
+  if not editor.SaveFile(nil,filename) then
     far.Message"Could not save file. Canceling the operation."
     return false
   end
@@ -94,15 +94,15 @@ local function TestCase (data, selection, refer, expr, colpat, onlysel)
   ClearBuffer()
   for _=1,#data do editor.InsertString() end
   for i,line in ipairs(data) do
-    editor.SetPosition(i, 1)
-    editor.SetString(i, line, "")
+    editor.SetPosition(nil, i, 1)
+    editor.SetString(nil, i, line, "")
   end
-  editor.Select(unpack(selection))
+  editor.Select(nil,unpack(selection))
   -----------------------------------------------------------------------------
   sl.SortWithRawData(control)
   for i = 1, #data do
-    editor.SetPosition(i, 1)
-    local s = editor.GetString(i)
+    editor.SetPosition(nil,i, 1)
+    local s = editor.GetString(nil,i)
     if type(refer) == "string" then
       ProtectedAssert(s.StringText .. s.StringEOL == data[tonumber(refer:sub(i,i))])
     elseif type(refer) == "table" then
@@ -213,7 +213,7 @@ package.loaded["sortlines"]=nil
   TestCase (data1, "1-8", "21436587", "i%2==0 and i-1 or i+1")
   TestCase (data1, "1-8", "13572468", "i%2==1 and i-I or i")
   -----------------------------------------------------------------------------
-  editor.SaveFile(filename)
+  editor.SaveFile(nil,filename)
   far.Message"Success!"
 end
 

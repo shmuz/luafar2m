@@ -433,7 +433,7 @@ local function GetWordUnderCursor (select)
     local _, last = r:find(line.StringText, pos==1 and pos or (pos+offset-2))
     local from, to, word = r:find(line.StringText:reverse(), line.StringLength-last+1)
     if select then
-      editor.Select("BTYPE_STREAM", nil, line.StringLength-to+1, to-from+1, 1)
+      editor.Select(nil, "BTYPE_STREAM", nil, line.StringLength-to+1, to-from+1, 1)
     end
     return word:reverse()
   end
@@ -769,7 +769,7 @@ function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
       if bScript or not bForceBlock then
         bScopeBlock = (Data.sScope == "block")
       else
-        local line = editor.GetString(EI.BlockStartLine+1) -- test the 2-nd selected line
+        local line = editor.GetString(nil,EI.BlockStartLine+1) -- test the 2-nd selected line
         bScopeBlock = line and line.SelStart>0
       end
       hDlg:SetCheck(Pos[bScopeBlock and "rScopeBlock" or "rScopeGlobal"], true)

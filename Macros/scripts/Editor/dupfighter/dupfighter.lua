@@ -27,12 +27,6 @@ local thisDir do
 end
 
 local ed = editor
-if FarVer == 3 then
-  ed = setmetatable({Editor=editor.Editor}, {__index=
-    function(self,name)
-      return function(...) return editor[name](nil, ...) end
-    end})
-end
 
 local SETTINGS_KEY  = FarVer==3 and "Duplicate Fighter" or "shmuz"
 local SETTINGS_NAME = FarVer==3 and "settings"          or "Duplicate Fighter"
@@ -130,7 +124,7 @@ local function HandleDups(op, keepWhat, keepempty, showstats, func, toboolean)
   table.sort(duplines, function(a,b) return math.abs(a) < math.abs(b) end)
 
   local nClear, nDel = 0, 0
-  ed.UndoRedo("EUR_BEGIN")
+  ed.UndoRedo(nil,"EUR_BEGIN")
   for _,n in ipairs(duplines) do
     if n > 0 then
       if op == "clear" then
@@ -143,7 +137,7 @@ local function HandleDups(op, keepWhat, keepempty, showstats, func, toboolean)
       end
     end
   end
-  ed.UndoRedo("EUR_END")
+  ed.UndoRedo(nil,"EUR_END")
   ed.Redraw()
   if showstats then
     local len1 = math.max(M.STAT_DUP:len(), M.STAT_UNIQ:len(), M.STAT_SKIP:len(),

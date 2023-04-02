@@ -37,7 +37,7 @@ Macro {
   action=function()
     local info, str = editor.GetInfo(), editor.GetString()
     local pos = str.StringText:find("%S") or 1
-    editor.SetPosition(nil, pos==info.CurPos and 1 or pos)
+    editor.SetPosition(nil, nil, pos==info.CurPos and 1 or pos)
     editor.Redraw()
   end;
 }

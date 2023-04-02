@@ -1214,8 +1214,8 @@ function mypanel:view_db_object()
   local title = M.title_short .. ": " .. RealItemName
   viewer.Viewer(tmp_file_name, title, 0, 0, -1, -1, bit64.bor(
     F.VF_ENABLE_F6, F.VF_DISABLEHISTORY, F.VF_DELETEONLYFILEONCLOSE, F.VF_IMMEDIATERETURN, F.VF_NONMODAL), 65001)
-  viewer.SetMode { Type=F.VSMT_WRAP,     iParam=0,          Flags=0 }
-  viewer.SetMode { Type=F.VSMT_VIEWMODE, iParam=F.VMT_TEXT, Flags=F.VSMFL_REDRAW }
+  viewer.SetMode(nil, { Type=F.VSMT_WRAP,     iParam=0,          Flags=0 })
+  viewer.SetMode(nil, { Type=F.VSMT_VIEWMODE, iParam=F.VMT_TEXT, Flags=F.VSMFL_REDRAW })
 end
 
 

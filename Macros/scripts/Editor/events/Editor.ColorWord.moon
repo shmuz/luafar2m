@@ -36,11 +36,11 @@ Event
         ei=editor.GetInfo id
         start,finish=ei.TopScreenLine,math.min ei.TopScreenLine+ei.WindowSizeY,ei.TotalLines
         for ii=start,finish
-          line,pos=editor.GetString(ii).StringText,1
+          line,pos=editor.GetString(nil,ii).StringText,1
           while true
             jj,kk,curr=line\find("([%w_]+)",pos)
             if not jj then break
             if not OptCaseSensitive then curr=curr\lower!
-            if curr==words[id] then editor.AddColor ii,jj,kk,"ECF_AUTODELETE",color
+            if curr==words[id] then editor.AddColor nil,ii,jj,kk,color,"ECF_AUTODELETE"
             pos=kk+1
     elseif event==F.EE_CLOSE then words[id]=nil

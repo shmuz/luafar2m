@@ -69,7 +69,7 @@ local function GetEditorText()
   local einfo = editor.GetInfo()
   local arr = {}
   for i=1,einfo.TotalLines do
-    arr[i] = editor.GetString(i).StringText
+    arr[i] = editor.GetString(nil,i).StringText
   end
   return table.concat(arr,"\n")
 end
@@ -106,8 +106,8 @@ local function CheckEditor()
       props.X = (R.Right-R.Left+1) - (maxlen+6)
       local info = items[props.SelectIndex].info
       local topline = math.max(1, info.line - 10)
-      editor.SetPosition(info.line, info.column, nil, topline)
-      editor.Select("BTYPE_STREAM", info.line, info.column, info.end_column-info.column+1, 1)
+      editor.SetPosition(nil,info.line, info.column, nil, topline)
+      editor.Select(nil, "BTYPE_STREAM", info.line, info.column, info.end_column-info.column+1, 1)
       editor.Redraw() -- required for Far < 3.0.4813 (and makes no change for newer builds)
     end
 

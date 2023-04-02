@@ -178,7 +178,7 @@ local function EditorAction (op, data)
     if CheckBreak() then
       return 0, 0, "broken"
     end
-    local line = TT_EditorGetString(lineno)
+    local line = TT_EditorGetString(nil,lineno)
     if bSelection and (line.SelStart<=0 or line.SelEnd==0) then
       if eol ~= TT_empty then t[#t+1] = TT_empty end
       break
@@ -197,14 +197,14 @@ local function EditorAction (op, data)
   if CheckBreak(true) then return nFound, 0, "broken" end
 
   -- OPERATION CHANGING EDITOR CONTENTS --
-  editor.UndoRedo(F.EUR_BEGIN)
+  editor.UndoRedo(nil,F.EUR_BEGIN)
 
   -- delete the source editor lines
-  editor.SetPosition(bSelection and editorInfo.BlockStartLine or 1, 1)
+  editor.SetPosition(nil,bSelection and editorInfo.BlockStartLine or 1, 1)
   local start = bSelection and editorInfo.BlockStartLine or 1
   for _=start,lineno-1 do
     if CheckBreak() then
-      editor.UndoRedo(F.EUR_END)
+      editor.UndoRedo(nil,F.EUR_END)
       return nFound, 0, "broken"
     end
     editor.DeleteString()
@@ -214,22 +214,22 @@ local function EditorAction (op, data)
   lineno = bSelection and editorInfo.BlockStartLine or 1
   for line, eol in TT_gmatch(result, "([^\r\n]*)(\r?\n?)") do
     if CheckBreak() then
-      editor.UndoRedo(F.EUR_END)
+      editor.UndoRedo(nil,F.EUR_END)
       return nFound, 0, "broken"
     end
     if eol ~= TT_empty then
       editor.InsertString()
-      TT_EditorSetString(lineno, line)
+      TT_EditorSetString(nil, lineno, line)
       lineno = lineno+1
     else
       if line == TT_empty then break end
       local L = TT_EditorGetString()
-      TT_EditorSetString(nil, line .. L.StringText)
+      TT_EditorSetString(nil, nil, line .. L.StringText)
     end
   end
 
-  editor.UndoRedo(F.EUR_END)
-  editor.SetPosition(editorInfo)
+  editor.UndoRedo(nil,F.EUR_END)
+  editor.SetPosition(nil,editorInfo)
 
   if data.bAdvanced then tParams.FinalFunc() end
   return nFound, nReps

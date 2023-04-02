@@ -35,7 +35,7 @@ Macro {
     local EI = editor.GetInfo()
     EI.CurTabPos = EI.CurTabPos==EI.LeftPos and EI.CurTabPos+1 or nil
     EI.LeftPos, EI.CurPos = EI.LeftPos+1, nil
-    editor.SetPosition(EI)
+    editor.SetPosition(nil,EI)
   end;
 }
 
@@ -49,7 +49,7 @@ Macro {
       local ClientSizeX = EI.WindowSizeX - (ScrBar and 1 or 0)
       if EI.CurTabPos-EI.LeftPos+1 == ClientSizeX then EI.CurTabPos = EI.CurTabPos-1 end
       EI.LeftPos, EI.CurPos = EI.LeftPos-1, nil
-      editor.SetPosition(EI)
+      editor.SetPosition(nil,EI)
     end
   end;
 }

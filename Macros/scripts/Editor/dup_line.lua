@@ -11,14 +11,14 @@ Macro {
     local info = editor.GetInfo()
     local line = editor.GetString()
     local eol = line.StringEOL ~= "" and line.StringEOL or nil
-    editor.UndoRedo("EUR_BEGIN")
-    editor.SetPosition(nil,1)
+    editor.UndoRedo(nil,"EUR_BEGIN")
+    editor.SetPosition(nil,nil,1)
     editor.InsertString()
-    editor.SetPosition(info)
-    editor.SetString(nil, line.StringText, eol)
-    editor.UndoRedo("EUR_END")
+    editor.SetPosition(nil,info)
+    editor.SetString(nil, nil, line.StringText, eol)
+    editor.UndoRedo(nil,"EUR_END")
     info.CurLine = info.CurLine + 1
-    editor.SetPosition(info)
+    editor.SetPosition(nil,info)
     editor.Redraw()
   end;
 }

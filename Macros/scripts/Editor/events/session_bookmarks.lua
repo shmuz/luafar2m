@@ -16,7 +16,7 @@ Event {
       if Arr and Arr[1] then
         local Info = editor.GetInfo()
         for _,v in ipairs(Arr) do
-          editor.AddColor(v.Line,Info.LeftPos,Info.LeftPos,Color,colorFlags)
+          editor.AddColor(nil,v.Line,Info.LeftPos,Info.LeftPos,Color,colorFlags)
         end
       end
     end
@@ -24,7 +24,7 @@ Event {
 }
 
 local function SetPosition(bm, info) -- info is currently not used
-  editor.SetPosition(bm.Line, bm.Cursor, nil, bm.Line-bm.ScreenLine+1, bm.LeftPos)
+  editor.SetPosition(nil, bm.Line, bm.Cursor, nil, bm.Line-bm.ScreenLine+1, bm.LeftPos)
 end
 
 local function Goto(forward)
@@ -54,13 +54,13 @@ local function BookmarksMenu()
     local items = {}
     for i,v in ipairs(Arr) do
       local ch = i<10 and i or i<36 and string.char(i+55)
-      ch =  (ch and ch..". " or "") .. editor.GetString(v.Line,2)
+      ch =  (ch and ch..". " or "") .. editor.GetString(nil,v.Line,2)
       items[i] = { text=ch; bm=v }
     end
     local v,pos = far.Menu(properties, items, bkeys)
     if not v then break end
     if v.BreakKey=="DELETE" then
-      if items[pos] then editor.DeleteStackBookmark(items[pos].bm.index) end
+      if items[pos] then editor.DeleteStackBookmark(nil,items[pos].bm.index) end
     else
       SetPosition(v.bm, Info); break
     end
@@ -75,7 +75,7 @@ Macro {
     local Arr = editor.GetStackBookmarks() or {}
     local deleted
     for i,v in ipairs(Arr) do
-      if v.Line == Info.CurLine then editor.DeleteStackBookmark(i); deleted=true; end
+      if v.Line == Info.CurLine then editor.DeleteStackBookmark(nil,i); deleted=true; end
     end
     if not deleted then editor.AddStackBookmark() end
   end;

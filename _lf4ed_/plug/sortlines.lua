@@ -47,7 +47,7 @@ local function EditorBlockLines ()
   if not EditorHasSelection(editInfo) then return function() end; end
   local start_line = editInfo.BlockStartLine
   return function()
-    local lineInfo = editor.GetString (start_line, 1)
+    local lineInfo = editor.GetString(nil,start_line, 1)
     if lineInfo and lineInfo.SelStart >= 1 and lineInfo.SelEnd ~= 0 then
       start_line = start_line + 1
       return lineInfo
@@ -78,10 +78,10 @@ local function PutLines(arr_compare, arr_index, arr_target, OnlySelection)
   local pstart = editInfo.BlockStartLine - 1
   local BlockSelStart, BlockSelEnd, BlockSelWidth
   if OnlySelection then
-    editor.SetPosition(editInfo.BlockStartLine)
+    editor.SetPosition(nil,editInfo.BlockStartLine)
     local line = editor.GetString()
-    BlockSelStart = editor.RealToTab(nil, line.SelStart)
-    BlockSelEnd   = editor.RealToTab(nil, line.SelEnd)
+    BlockSelStart = editor.RealToTab(nil,nil, line.SelStart)
+    BlockSelEnd   = editor.RealToTab(nil,nil, line.SelEnd)
     BlockSelWidth = BlockSelEnd - BlockSelStart + 1
   end
   for i, v in ipairs(arr_index) do
@@ -107,8 +107,8 @@ local function PutLines(arr_compare, arr_index, arr_target, OnlySelection)
       else
         newtext, newEOL = arr_target[v].StringText, arr_target[v].StringEOL
       end
-      EditorSetPosition(pstart + i)
-      EditorSetString(nil, newtext, newEOL)
+      EditorSetPosition(nil, pstart + i)
+      EditorSetString(nil, nil, newtext, newEOL)
     end
   end
 end
@@ -207,9 +207,9 @@ function Package.SortWithRawData (aData)
   DoSort(arr_compare, arr_index, arr_dialog)
   -- put the sorted lines into the editor
   local OnlySelection = columntype and aData.cbxOnlySel
-  editor.UndoRedo("EUR_BEGIN")
+  editor.UndoRedo(nil,"EUR_BEGIN")
   PutLines(arr_compare, arr_index, arr_target, OnlySelection)
-  editor.UndoRedo("EUR_END")
+  editor.UndoRedo(nil,"EUR_END")
 end
 
 -- generic

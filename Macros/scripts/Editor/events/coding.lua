@@ -31,19 +31,19 @@ local function OnEnter()
   local conf = GetConfig()
   if conf then
     local info = editor.GetInfo()
-    local curline = editor.GetString(info.CurLine, 2)
+    local curline = editor.GetString(nil,info.CurLine, 2)
     local line1, line2 = curline:sub(1,info.CurPos-1), curline:sub(info.CurPos)
     local indent = curline:match("^%s*")
     if conf.pat:find(line1) then
       indent = (indent:sub(1,1)=="\t" and "\t" or conf.indent) .. indent
     end
-    editor.UndoRedo("EUR_BEGIN")
+    editor.UndoRedo(nil,"EUR_BEGIN")
     editor.InsertString()
-    editor.SetString(info.CurLine,   line1:match("(.-)%s*$"))
-    editor.SetString(info.CurLine+1, indent..line2:match("%s*(.-)%s*$"))
-    editor.SetPosition(info.CurLine+1, #indent+1)
+    editor.SetString(nil, info.CurLine,   line1:match("(.-)%s*$"))
+    editor.SetString(nil, info.CurLine+1, indent..line2:match("%s*(.-)%s*$"))
+    editor.SetPosition(nil, info.CurLine+1, #indent+1)
     editor.Redraw()
-    editor.UndoRedo("EUR_END")
+    editor.UndoRedo(nil,"EUR_END")
     return true
   end
 end
@@ -53,16 +53,16 @@ local function OnBackSpace()
   if conf then
     local info = editor.GetInfo()
     if info.CurPos > 2 then
-      local line = editor.GetString(info.CurLine, 3)
+      local line = editor.GetString(nil, info.CurLine, 3)
       local pos = line:find("%S")
       if not (pos and pos < info.CurPos) then
         local stop = math.max(1, info.CurLine-1000) -- limit search at 1000 lines above the current
         for k=info.CurLine-1,stop,-1 do
-          local ln = editor.GetString(k, 3)
+          local ln = editor.GetString(nil, k, 3)
           pos = ln:find("%S")
           if pos and pos < info.CurPos then
-            editor.SetString(info.CurLine, ln:sub(1,pos-1)..line:sub(info.CurPos))
-            editor.SetPosition(info.CurLine, pos)
+            editor.SetString(nil, info.CurLine, ln:sub(1,pos-1)..line:sub(info.CurPos))
+            editor.SetPosition(nil, info.CurLine, pos)
             editor.Redraw()
             return true
           end

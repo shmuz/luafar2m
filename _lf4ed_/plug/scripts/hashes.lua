@@ -144,8 +144,8 @@ local function Work()
       elseif item.BreakKey=="F4" then
         editor.Editor(Editor_FileName,nil,nil,nil,nil,nil,
           {EF_CREATENEW=1,EF_NONMODAL=1,EF_IMMEDIATERETURN=1},nil,nil,65001)
-        editor.SetPosition(1,1)
-        editor.InsertText(table.concat(msg,"\r"))
+        editor.SetPosition(nil,1,1)
+        editor.InsertText(nil,table.concat(msg,"\r"))
         editor.InsertString()
       end
     end

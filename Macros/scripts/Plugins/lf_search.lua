@@ -99,10 +99,10 @@ Macro {
   area="Editor"; key="CtrlShiftG";
   condition=LFS_Exist;
   action=function()
-    local lnum = editor.GetString(nil,3):match("^(%d+)[:%-]")
+    local lnum = editor.GetString(nil,nil,3):match("^(%d+)[:%-]")
     local EI = editor.GetInfo()
     for n = EI.CurLine,1,-1 do
-      local fname = editor.GetString(n,3):match("^%[%d+%]%s+(.-) : %d+$")
+      local fname = editor.GetString(nil,n,3):match("^%[%d+%]%s+(.-) : %d+$")
       if fname then
         editor.Editor(fname,nil,nil,nil,nil,nil,
           {EF_NONMODAL=1,EF_IMMEDIATERETURN=1,EF_ENABLE_F6=1},

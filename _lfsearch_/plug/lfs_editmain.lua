@@ -18,7 +18,7 @@ local function UnlockEditor (Title, EI)
   EI = EI or editor.GetInfo()
   if band(EI.CurState,F.ECSTATE_LOCKED) ~= 0 then
     if far.Message(M.MEditorLockedPrompt, Title, M.MBtnYesNo)==1 then
-      if editor.SetParam("ESPT_LOCKMODE",false) then
+      if editor.SetParam(nil,"ESPT_LOCKMODE",false) then
         editor.Redraw()
         return true
       end
@@ -256,7 +256,7 @@ local function EditorAction (aOp, aData, aScriptCall)
   local ok, nFound, nReps, sChoice, nElapsed = xpcall(Work, debug.traceback)
   if ok then
     if not aScriptCall then
-      editor.SetTitle("")
+      editor.SetTitle(nil,"")
     end
     if sChoice == "newsearch" then
       return EditorAction(aOp, aData, aScriptCall)
@@ -271,7 +271,7 @@ local function EditorAction (aOp, aData, aScriptCall)
   end
   if not aScriptCall then
     ErrorMsg(nFound,nil,nil,"wl")
-    editor.SetTitle("")
+    editor.SetTitle(nil,"")
   end
 end
 

@@ -54,10 +54,10 @@ local function scite_like(Rec)
     -- check entering inside the region
     if key=="Down" then
       if EI.CurLine ~= EI.BlockStartLine-1 then return false end
-      local line = editor.GetString(EI.BlockStartLine)
+      local line = editor.GetString(nil,EI.BlockStartLine)
       if not (line and line.SelStart>0 and line.SelEnd-line.SelStart+1 <= 1) then return false end
     elseif key=="Up" and EI.CurLine>1 then
-      local line = editor.GetString(EI.CurLine-1)
+      local line = editor.GetString(nil,EI.CurLine-1)
       if not (line and line.SelStart>0 and line.SelEnd-line.SelStart+1 <= 1) then return false end
     else
       return false
@@ -87,7 +87,7 @@ local function scite_like(Rec)
     if EI.CurLine==EI.BlockStartLine then return false end
   elseif key=="Down" then
     if EI.CurLine==EI.TotalLines then return true end
-    local line = editor.GetString(EI.CurLine+1)
+    local line = editor.GetString(nil,EI.CurLine+1)
     if not line or line.SelStart <= 0 then return false end
   end
 
@@ -95,11 +95,11 @@ local function scite_like(Rec)
   local clean = true
   local BlockStartRealPos, BlockStartTabPos
   while true do
-    local line = editor.GetString(lnum)
+    local line = editor.GetString(nil,lnum)
     if not line or line.SelStart <= 0 then break end
     BlockStartRealPos = BlockStartRealPos or line.SelStart
-    BlockStartTabPos = BlockStartTabPos or editor.RealToTab(lnum,BlockStartRealPos)
-    local pos = editor.TabToReal(lnum,EI.CurTabPos)
+    BlockStartTabPos = BlockStartTabPos or editor.RealToTab(nil,lnum,BlockStartRealPos)
+    local pos = editor.TabToReal(nil,lnum,EI.CurTabPos)
     local s, len, newS = line.StringText, line.StringLength, nil
     if delblock then
       if key == "Del" or key == "BS" then
@@ -121,12 +121,12 @@ local function scite_like(Rec)
       end
     end
     if newS then
-      if clean then editor.UndoRedo(F.EUR_BEGIN); clean=false; end
-      editor.SetString(lnum, newS)
+      if clean then editor.UndoRedo(nil,F.EUR_BEGIN); clean=false; end
+      editor.SetString(nil,lnum, newS)
     end
     lnum = lnum + 1
   end
-  if not clean then editor.UndoRedo(F.EUR_END) end
+  if not clean then editor.UndoRedo(nil,F.EUR_END) end
 
   local realX, tabX, newY
   if delblock then
@@ -135,11 +135,11 @@ local function scite_like(Rec)
     newY = EI.CurLine
   else
     realX = math.max(1, EI.CurPos + ((key=="Right") and 1 or (key=="BS" or key=="Left") and -1 or textlen))
-    tabX = editor.RealToTab(EI.CurLine, realX)
+    tabX = editor.RealToTab(nil,EI.CurLine, realX)
     newY = math.max(1, EI.CurLine + (key=="Up" and -1 or key=="Down" and 1 or 0))
   end
-  editor.SetPosition(newY, realX)
-  editor.Select("BTYPE_COLUMN", EI.BlockStartLine, tabX, 1, lnum-EI.BlockStartLine)
+  editor.SetPosition(nil, newY, realX)
+  editor.Select(nil, "BTYPE_COLUMN", EI.BlockStartLine, tabX, 1, lnum-EI.BlockStartLine)
   editor.Redraw()
   return true
 end

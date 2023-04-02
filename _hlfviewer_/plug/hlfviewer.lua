@@ -94,7 +94,7 @@ local function RestorePosition(ei)
   esp.CurPos  = ei.CurPos
   esp.TopScreenLine = ei.TopScreenLine
   esp.LeftPos = ei.LeftPos
-  editor.SetPosition(esp)
+  editor.SetPosition(nil,esp)
 end
 
 -- для "этой темы" ищем её имя (от позиции курсора вверх/вниз по файлу)
@@ -111,7 +111,7 @@ local function FindTopic (ForwardDirect, RestorePos)
     else
       if esp.CurLine < 1 then break end
     end
-    editor.SetPosition(esp)
+    editor.SetPosition(nil,esp)
     local egs = editor.GetString()
     local tmp = egs.StringText
 
@@ -153,7 +153,7 @@ local function IsHlf()
     local esp = {}
     for i=1,3 do
       esp.CurLine = i
-      editor.SetPosition(esp)
+      editor.SetPosition(nil,esp)
       local egs = editor.GetString()
 
       if 0 == far.LStrnicmp(".Language=",egs.StringText,10) then
@@ -182,7 +182,7 @@ local function ShowHelpFromTempFile()
       local ei = editor.GetInfo()
 
       for i=1, ei.TotalLines do
-        local egs = editor.GetString(i)
+        local egs = editor.GetString(nil,i)
         Handle:write(egs.StringText, "\n")
       end
 

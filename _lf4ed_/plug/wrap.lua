@@ -12,7 +12,7 @@ local insert, concat = table.insert, table.concat
 local function EditorBlock (start_line)
   start_line = start_line or editor.GetInfo().BlockStartLine
   return function()
-    local lineInfo = editor.GetString (start_line, 1)
+    local lineInfo = editor.GetString(nil,start_line, 1)
     if lineInfo and lineInfo.SelStart >= 1 and lineInfo.SelEnd ~= 0 then
       start_line = start_line + 1
       return lineInfo
@@ -27,7 +27,7 @@ end
 
 
 local function EditorSelectCurLine (editInfo)
-  return editor.Select ("BTYPE_STREAM", editInfo.CurLine, 1, -1, 1)
+  return editor.Select (nil, "BTYPE_STREAM", editInfo.CurLine, 1, -1, 1)
 end
 
 
@@ -110,11 +110,11 @@ local function Wrap (aColumn1, aColumn2, aJustify, aFactor)
 
   -- Put reformatted lines into the editor
   local Pos = { CurLine=editInfo.BlockStartLine, CurPos=1, TopScreenLine=editInfo.TopScreenLine }
-  editor.SetPosition (Pos)
+  editor.SetPosition(nil,Pos)
   for i = #lines_out, 1, -1 do
     editor.InsertString()
-    editor.SetPosition (Pos)
-    editor.SetString(nil, lines_out[i])
+    editor.SetPosition(nil,Pos)
+    editor.SetString(nil,nil, lines_out[i])
   end
   editor.Redraw()
 end
@@ -201,7 +201,7 @@ local function ProcessBlock (aCode)
 
   local lnum, N = eInfo.BlockStartLine, 0
   while lnum <= eInfo.TotalLines do
-    local line = editor.GetString(lnum, 1)
+    local line = editor.GetString(nil,lnum, 1)
     if not (line and line.SelStart >= 1 and line.SelEnd ~= 0) then
       break
     end
@@ -209,13 +209,13 @@ local function ProcessBlock (aCode)
     local repl = func(line.StringText, N)
     if type(repl) == "string" then
       if repl == "" then
-        editor.SetString(nil, repl, line.StringEOL)
+        editor.SetString(nil,nil, repl, line.StringEOL)
       else
         for s,eol in repl:gmatch("([^\r\n]*)(\r?\n?)") do
           if s=="" and eol=="" then break end
-          editor.SetString(lnum, s)
+          editor.SetString(nil,lnum, s)
           if eol ~= "" then
-            editor.SetPosition(lnum, s:len()+1)
+            editor.SetPosition(nil,lnum, s:len()+1)
             editor.InsertString()
             lnum = lnum + 1
             eInfo.TotalLines = eInfo.TotalLines + 1
@@ -231,8 +231,8 @@ local function ProcessBlock (aCode)
     end
   end
 
-  editor.SetPosition (eInfo)
-  if bNotSelected then editor.Select("BTYPE_NONE") end
+  editor.SetPosition(nil,eInfo)
+  if bNotSelected then editor.Select(nil,"BTYPE_NONE") end
 end
 
 
@@ -245,15 +245,15 @@ local function WrapWithDialog (aData)
     assert(offs1 >= 1, "start column is less than 1")
     assert(offs2 >= offs1, "end column is less than start column")
 
-    editor.UndoRedo("EUR_BEGIN")
+    editor.UndoRedo(nil,"EUR_BEGIN")
     Wrap (offs1, offs2, aData.cbxJustify, 2.0)
-    editor.UndoRedo("EUR_END")
+    editor.UndoRedo(nil,"EUR_END")
 
   elseif aData.cbxProcess then
     local code = aData.edtExpress or ""
-    editor.UndoRedo("EUR_BEGIN")
+    editor.UndoRedo(nil,"EUR_BEGIN")
     ProcessBlock(code)
-    editor.UndoRedo("EUR_END")
+    editor.UndoRedo(nil,"EUR_END")
   end
 end
 

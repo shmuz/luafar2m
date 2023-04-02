@@ -6,7 +6,7 @@ local function GetSelectedText()
     local t = {}
     local n = ei.BlockStartLine
     while true do
-      local s = editor.GetString(n, 1)
+      local s = editor.GetString(nil,n, 1)
       if not s or s.SelStart == 0 then
         break
       end
@@ -14,14 +14,14 @@ local function GetSelectedText()
       table.insert(t, sel)
       n = n + 1
     end
-    editor.SetPosition(ei)
+    editor.SetPosition(nil,ei)
     return table.concat(t, "\n"), n-1
   end
 end
 
 local function GetText()
   local text = GetSelectedText()
-  return (text ~= "") and text or editor.GetString(nil,2)
+  return (text ~= "") and text or editor.GetString(nil,nil,2)
 end
 
 local function ShowSumAndAverage()

@@ -7,14 +7,14 @@ local function RemoveTrailingSpaces(Id, Event, Param)
     local info = editor.GetInfo()
     if info then
       for k=1,info.TotalLines do
-        local ln = editor.GetString(k,1)
+        local ln = editor.GetString(nil,k,1)
         local from = ln.StringText:find("%s+$")
         if from then
           local str = ln.StringText:sub(1,from-1)
-          editor.SetString(k,str,ln.StringEOL)
+          editor.SetString(nil,k,str,ln.StringEOL)
         end
       end
-      editor.SetPosition(info)
+      editor.SetPosition(nil,info)
     end
   end
 end

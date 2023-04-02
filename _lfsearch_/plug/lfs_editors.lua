@@ -56,7 +56,7 @@ local function MakeGetString (ymin, ymax)
   return function()
     if ymin < ymax then
       ymin = ymin + 1
-      return editor.GetString(ymin), ymin
+      return editor.GetString(nil,ymin), ymin
     end
   end
 end
@@ -86,7 +86,7 @@ local function RedrawHighlightPattern (EI, Pattern, Priority, ProcessLineNumbers
         offset = prefix:len()
         text = text:sub(offset+1)
         local prColor = char==":" and config.GrepLineNumMatchColor or config.GrepLineNumContextColor
-        editor.AddColor(y, 1, offset, prColor, ColorFlags, Priority, ColorOwner)
+        editor.AddColor(nil,y, 1, offset, prColor, ColorFlags, Priority, ColorOwner)
       else
         filename_line = filenamePattern:match(text)
       end
@@ -104,7 +104,7 @@ local function RedrawHighlightPattern (EI, Pattern, Priority, ProcessLineNumbers
         start = to>=from and to+1 or from+1
         if not (bSkip and collect[1]) then
           if to >= from and to+offset >= EI.LeftPos then
-            editor.AddColor(y, offset+from, offset+to, Color, ColorFlags, Priority, ColorOwner)
+            editor.AddColor(nil,y, offset+from, offset+to, Color, ColorFlags, Priority, ColorOwner)
           end
         end
       end

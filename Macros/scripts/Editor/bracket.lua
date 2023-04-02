@@ -1,7 +1,7 @@
 -- bracket.lua
 
 local function FastGetString (num)
-  return editor.GetString (num, 2)
+  return editor.GetString(nil, num, 2)
 end
 
 local function FindBracket()
@@ -62,13 +62,13 @@ local function FindBracket()
               esp.TopScreenLine = 1
             end
           end
-          editor.SetPosition(esp) -- match found: set the new position
+          editor.SetPosition(nil,esp) -- match found: set the new position
           return
         end
       end
     end
   end
-  editor.SetPosition(ei) -- match not found: restore the initial position
+  editor.SetPosition(nil,ei) -- match not found: restore the initial position
 end
 
 Macro {

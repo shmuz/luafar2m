@@ -290,7 +290,7 @@ local function Work(data)
       end)
 
   -- actions on editor
-  Ed.UndoRedo("EUR_BEGIN")
+  Ed.UndoRedo(nil,"EUR_BEGIN")
   Ed.DeleteBlock()
   local lnum = Ed.GetInfo().CurLine
   local delim = data.sOutDelim:gsub("\\(.)", { n="\n";t="\t"; })
@@ -308,7 +308,7 @@ local function Work(data)
       end
     end
   end
-  Ed.UndoRedo("EUR_END")
+  Ed.UndoRedo(nil,"EUR_END")
   Ed.Redraw()
 end
 

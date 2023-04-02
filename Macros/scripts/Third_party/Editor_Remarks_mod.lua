@@ -150,16 +150,16 @@ local function CommUnComm(Comm,Symb)
     local Beg = tSel and tSel.StartLine or tEdt.CurLine
     local End = tSel and tSel.EndLine-(tSel and tSel.EndPos==0 and tSel.BlockType~=F.BTYPE_COLUMN and 1 or 0) or tEdt.CurLine
     if (tEdt.CurLine>=Beg and tEdt.CurLine<=End) or (tSel and tSel.EndPos==0 and tEdt.CurLine==tSel.EndLine) then
-      editor.UndoRedo("EUR_BEGIN")
+      editor.UndoRedo(nil, "EUR_BEGIN")
       for i=Beg,End do
-        local Str,Eol=editor.GetString(i,3)
+        local Str,Eol=editor.GetString(nil,i,3)
         if Comm then
-          editor.SetString(i,Symb..Str,Eol)
+          editor.SetString(nil,i,Symb..Str,Eol)
         elseif Str:find(Symb,1,true)==1 then
-          editor.SetString(i,Str:sub(Len),Eol)
+          editor.SetString(nil,i,Str:sub(Len),Eol)
         end
       end
-      editor.UndoRedo("EUR_END")
+      editor.UndoRedo(nil, "EUR_END")
     end
   end
 end
