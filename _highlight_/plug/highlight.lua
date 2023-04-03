@@ -202,7 +202,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
   if Syn.bracketmatch then
     -- Try 2 positions: current and previous to current.
     -- The current position is checked first.
-    local curstr = editor.GetString(nil,nil, 3)
+    local curstr = editor.GetString(nil, nil, 3)
     for k=0, ei.CurPos==1 and 0 or 1 do
       posbracket = ei.CurPos-k
       local char = curstr:sub(posbracket, posbracket)

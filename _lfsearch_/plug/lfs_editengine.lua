@@ -315,7 +315,7 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
   local newsearch = false
   function list:keyfunction (hDlg, key, item)
     if regex.match(key, "^R?Ctrl(?:Up|Down|Home|End|Num[1278])$") then
-      editor.ProcessKey(nil,far.NameToKey(key))
+      editor.ProcessKey(nil, far.NameToKey(key))
       actl.RedrawAll()
       hDlg:Redraw()
       return "done"
@@ -372,7 +372,7 @@ end
 
 local function make_update_info (aScriptCall)
   return aScriptCall and function() end
-    or function(nFound, y) editor.SetTitle(nil,M.MCurrentlyFound .. nFound) end
+    or function(nFound, y) editor.SetTitle(nil, M.MCurrentlyFound .. nFound) end
 end
 
 local function NeedWrapTheSearch (bForward, timing)
@@ -816,7 +816,7 @@ local function DoReplace (
                     x1, y1 = 1, y
                 else
                     EditorSetCurString(line, nl)
-                    editor.SetPosition(nil,nil, TT.len(line)+1)
+                    editor.SetPosition(nil, nil, TT.len(line)+1)
                     editor.InsertString()
                     if not bForward then set_sLine(sStartLine) end
                     x1, y1 = fr, y
@@ -836,7 +836,7 @@ local function DoReplace (
                 break
             else
                 EditorSetCurString(txt, nl)
-                editor.SetPosition(nil,nil, TT.len(txt)+1)
+                editor.SetPosition(nil, nil, TT.len(txt)+1)
                 editor.InsertString()
                 nAddedLines = nAddedLines + 1
             end
@@ -880,7 +880,7 @@ local function DoReplace (
 
     if not bForward then
       x = 1
-      editor.SetPosition(nil,y, x)
+      editor.SetPosition(nil, y, x)
     end
 
     if tBlockInfo then
@@ -1118,8 +1118,8 @@ local function DoReplace (
       if bSelectFound and x2 then
         if not is_wide then
           -- Convert byte-wise offsets to character-wise ones
-          local str1 = editor.GetString(nil,y1, 2)
-          local str2 = (y2 == y1) and str1 or editor.GetString(nil,y2, 2)
+          local str1 = editor.GetString(nil, y1, 2)
+          local str2 = (y2 == y1) and str1 or editor.GetString(nil, y2, 2)
           x1, x2 = TT.sub(str1,1,x1):len(), TT.sub(str2,1,x2):len()
         end
         editor.Select(nil, "BTYPE_STREAM", y1, x1, x2-x1+1, y2-y1+1)
@@ -1133,7 +1133,7 @@ local function DoReplace (
       local fr, to = TT.find(lastSubst, "[\r\n][^\r\n]*$")
       if fr then -- the last substitution was multi-line
         editor.Select(nil, "BTYPE_NONE")
-        editor.SetPosition(nil,nil, bForward and to-fr+1 or TT.len(acc[1])+TT.len(acc[2]))
+        editor.SetPosition(nil, nil, bForward and to-fr+1 or TT.len(acc[1])+TT.len(acc[2]))
       else -- the last substitution was single-line
         if lastSubst ~= TT.empty then
           -- Convert byte-wise offsets to character-wise ones if needed
@@ -1146,7 +1146,7 @@ local function DoReplace (
           else
             editor.Select(nil, "BTYPE_NONE")
           end
-          editor.SetPosition(nil,nil, bForward and x1+width or x1)
+          editor.SetPosition(nil, nil, bForward and x1+width or x1)
         else
           editor.Select(nil, "BTYPE_NONE")
         end

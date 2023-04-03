@@ -200,7 +200,7 @@ local function EditorAction (op, data)
   editor.UndoRedo(nil,F.EUR_BEGIN)
 
   -- delete the source editor lines
-  editor.SetPosition(nil,bSelection and editorInfo.BlockStartLine or 1, 1)
+  editor.SetPosition(nil, bSelection and editorInfo.BlockStartLine or 1, 1)
   local start = bSelection and editorInfo.BlockStartLine or 1
   for _=start,lineno-1 do
     if CheckBreak() then

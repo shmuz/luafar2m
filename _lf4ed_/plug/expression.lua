@@ -12,7 +12,7 @@ local function ErrMsg (msg)
 end
 
 local function GetNearestWord (pattern)
-  local line = editor.GetString(nil,nil, 2)
+  local line = editor.GetString(nil, nil, 2)
   local pos = editor.GetInfo().CurPos
   local r = regex.new(pattern)
   local start = 1
@@ -43,7 +43,7 @@ local function GetSelectedText()
     local t = {}
     local n = ei.BlockStartLine
     while true do
-      local s = editor.GetString(nil,n, 1)
+      local s = editor.GetString(nil, n, 1)
       if not s or s.SelStart == 0 then
         break
       end
@@ -51,7 +51,7 @@ local function GetSelectedText()
       table.insert(t, sel)
       n = n + 1
     end
-    editor.SetPosition(nil,ei)
+    editor.SetPosition(nil, ei)
     return table.concat(t, "\n"), n-1
   end
 end
@@ -194,14 +194,14 @@ local function BlockSum (history)
   if ei.BlockType ~= F.BTYPE_NONE then
     local r = regex.new(pattern)
     for n=ei.BlockStartLine, ei.TotalLines do
-      local s = editor.GetString(nil,n)
+      local s = editor.GetString (nil, n)
       if s.SelEnd == 0 or s.SelStart < 1 then
         blockEndLine = n - 1
         break
       end
       local start, fin, sel = r:find( s.StringText:sub(s.SelStart, s.SelEnd) ) -- 'start' in selection
       if start then
-        x_start = editor.RealToTab(nil,n, s.SelStart + start - 1) -- 'start' column in line
+        x_start = editor.RealToTab(nil, n, s.SelStart + start - 1) -- 'start' column in line
         local num = tonumber(sel)
         if num then
           sum = sum + num
@@ -210,7 +210,7 @@ local function BlockSum (history)
             has_dots = true
             x_dot = x_start + x - 1  -- 'dot' column in line
           else
-            x_dot = editor.RealToTab(nil,n, s.SelStart + fin)
+            x_dot = editor.RealToTab(nil, n, s.SelStart + fin)
           end
         end
       end
@@ -218,7 +218,7 @@ local function BlockSum (history)
   else
     local start, fin, word = GetNearestWord(pattern)
     if start then
-      x_start = editor.RealToTab(nil,nil, start)
+      x_start = editor.RealToTab(nil, nil, start)
       local num = tonumber(word)
       if num then
         sum = sum + num
@@ -227,7 +227,7 @@ local function BlockSum (history)
           has_dots = true
           x_dot = x_start + x - 1
         else
-          x_dot = editor.RealToTab(nil,nil, 1 + fin)
+          x_dot = editor.RealToTab(nil, nil, 1 + fin)
         end
       end
     end
@@ -246,8 +246,8 @@ local function BlockSum (history)
   end
   if history.cbxInsert then
     local y = blockEndLine or ei.CurLine -- position of the last line
-    local s = editor.GetString(nil,y)                     -- get last line
-    editor.SetPosition(nil,y, s.StringText:len()+1)      -- insert a new line
+    local s = editor.GetString(nil, y)                -- get last line
+    editor.SetPosition (nil, y, s.StringText:len()+1) -- insert a new line
     editor.InsertString()                             -- +
     local prefix = "="
     if x_dot then
@@ -259,11 +259,11 @@ local function BlockSum (history)
     else
       x_start = (ei.BlockType==F.BTYPE_COLUMN) and s.SelStart or 1
     end
-    editor.SetPosition(nil,y+1, x_start, nil, nil, ei.LeftPos)
-    editor.InsertText(nil,prefix .. sum)
+    editor.SetPosition (nil, y+1, x_start, nil, nil, ei.LeftPos)
+    editor.InsertText(nil, prefix .. sum)
     editor.Redraw()
   else
-    editor.SetPosition(nil,ei) -- restore the position
+    editor.SetPosition (nil, ei) -- restore the position
   end
 end
 
@@ -272,7 +272,7 @@ local function LuaExpr (history)
   local text, numline = GetSelectedText()
   if not text then
     numline = edInfo.CurLine
-    text = editor.GetString(nil,numline, 2)
+    text = editor.GetString(nil, numline, 2)
   end
 
   local func, msg = loadstring("return " .. text)
@@ -296,9 +296,9 @@ local function LuaExpr (history)
 
   result = history.edtResult
   if history.cbxInsert then
-    local line = editor.GetString(nil,numline)
+    local line = editor.GetString(nil, numline)
     local pos = (edInfo.BlockType==F.BTYPE_NONE) and line.StringLength or line.SelEnd
-    editor.SetPosition(nil,numline, pos+1)
+    editor.SetPosition(nil, numline, pos+1)
     editor.InsertText(nil, " = " .. result .. " ;")
     editor.Redraw()
   end
