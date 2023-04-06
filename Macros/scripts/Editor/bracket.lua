@@ -4,16 +4,17 @@ local function FastGetString (num)
   return editor.GetString(nil, num, 2)
 end
 
-local function FindBracket()
+local function FindBracket (aSelect)
   local ei = editor.GetInfo()
   local line = FastGetString(ei.CurLine)
 
   local CurPos, CurLine = ei.CurPos, ei.CurLine
-  local Bracket, Match, Direction
+  local Bracket, Match, Direction, Increment
 
   local tForward  = { ["("]=")", ["{"]="}", ["["]="]", ["<"]=">", }
   local tBackward = { [")"]="(", ["}"]="{", ["]"]="[", [">"]="<", }
   for k=0,1 do -- test cursor position and left-to-cursor position
+    Increment = 1-k
     Bracket = line:sub (CurPos-k, CurPos-k)
     if tForward[Bracket] then
       Direction, Match = 1, tForward[Bracket]
@@ -53,16 +54,23 @@ local function FindBracket()
       elseif Ch == Match then
         MatchCount = MatchCount - 1
         if MatchCount == 0 then
-          local esp = { CurLine = CurLine, CurPos = CurPos }
-          if (CurLine < ei.TopScreenLine or
-              CurLine >= ei.TopScreenLine + ei.WindowSizeY)
-          then
+          local esp = { CurLine=CurLine, CurPos=CurPos+Increment }
+          if (CurLine < ei.TopScreenLine or CurLine >= ei.TopScreenLine + ei.WindowSizeY) then
             esp.TopScreenLine = CurLine - ei.WindowSizeY/2;
             if esp.TopScreenLine < 1 then
               esp.TopScreenLine = 1
             end
           end
           editor.SetPosition(nil,esp) -- match found: set the new position
+          if aSelect then
+            local from,to = ei,esp
+            if Direction < 0 then
+              from,to = to,from
+            end
+            local width = to.CurPos-from.CurPos
+            local height = to.CurLine-from.CurLine+1
+            editor.Select(nil, "BTYPE_STREAM", from.CurLine, from.CurPos, width, height)
+          end
           return
         end
       end
@@ -72,7 +80,12 @@ local function FindBracket()
 end
 
 Macro {
-  description="Match brackets";
+  description="Go to matching bracket";
   area="Editor"; key="CtrlE";
-  action=function() FindBracket() end;
+  action=function() FindBracket(false) end;
+}
+Macro {
+  description="Select to matching bracket";
+  area="Editor"; key="CtrlShiftE";
+  action=function() FindBracket(true) end;
 }

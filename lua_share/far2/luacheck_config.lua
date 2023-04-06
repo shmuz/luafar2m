@@ -565,7 +565,8 @@ local luamacro = {
         "flock", "fmatch", "fsplit", "iif", "index", "int", "itoa", "key", "lcase", "len", "max",
         "mdelete", "min", "mload", "mmode", "mod", "msave", "msgbox", "postmacro", "print",
         "printconsole", "prompt", "replace", "rindex", "serialize", "size2str", "sleep", "string",
-        "strpad", "strwrap", "substr", "testfolder", "trim", "ucase", "usermenu", "waitkey", "xlat",
+        "strpad", "strwrap", "substr", "testfolder", "trim", "ucase", "udlsplit", "usermenu",
+        "waitkey", "xlat",
       };
     };
   };

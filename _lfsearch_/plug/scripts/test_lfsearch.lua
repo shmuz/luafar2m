@@ -56,9 +56,9 @@ end
 
 local function GetEditorText()
   local t = {}
-  editor.SetPosition(nil,1, 1)
+  editor.SetPosition(nil, 1, 1)
   for i=1, editor.GetInfo().TotalLines do
-    t[i] = editor.GetString(nil,i, 2)
+    t[i] = editor.GetString(nil, i, 2)
   end
   return table.concat(t, "\n")
 end
@@ -85,7 +85,7 @@ do -- former selftest.lua
 local function RunEditorAction (lib, op, data, refFound, refReps)
   data.sRegexLib = lib
   if not data.KeepCurPos then
-    editor.SetPosition(nil,data.CurLine or 1, data.CurPos or 1)
+    editor.SetPosition(nil, data.CurLine or 1, data.CurPos or 1)
   end
   local nFound, nReps = lfsearch.EditorAction(op, data)
   if nFound ~= refFound or nReps ~= refReps then
@@ -620,8 +620,8 @@ end
 local function test_bug_20120301 (lib)
   SetEditorText("-\tabc")
   local dt = { sSearchPat="abc", sReplacePat="", sScope="block" }
-  local pos = editor.RealToTab(nil,1, 3)
-  editor.Select(nil,"BTYPE_COLUMN", 1, pos, 3, 1)
+  local pos = editor.RealToTab(nil, 1, 3)
+  editor.Select(nil, "BTYPE_COLUMN", 1, pos, 3, 1)
   RunEditorAction(lib, "test:replace", dt, 1, 1)
 end
 
@@ -641,7 +641,7 @@ local function test_bug_20161108 (lib)
     SetEditorText("line1\nline2\n")
     local dt = { sSearchPat="$", sReplacePat="-", sScope="block", sOrigin="scope", bRegExpr=true }
     dt.bSearchBack = (k==2)
-    editor.Select(nil,"BTYPE_STREAM", 1, 1, 0, 3)
+    editor.Select(nil, "BTYPE_STREAM", 1, 1, 0, 3)
     RunEditorAction(lib, "test:count", dt, 2, 0)
     RunEditorAction(lib, "test:replace", dt, 2, 2)
     AssertEditorText("line1-\nline2-\n")
@@ -677,7 +677,7 @@ do -- former test_mreplace.lua
 local function RunEditorAction (lib, op, data, refFound, refReps)
   data.sRegexLib = lib
   if not data.KeepCurPos then
-    editor.SetPosition(nil,data.CurLine or 1, data.CurPos or 1)
+    editor.SetPosition(nil, data.CurLine or 1, data.CurPos or 1)
   end
   local nFound, nReps = lfsearch.MReplaceEditorAction(op, data)
   if nFound ~= refFound or nReps ~= refReps then
