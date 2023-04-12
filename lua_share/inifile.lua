@@ -18,8 +18,19 @@ end
 -- @param nocomment : if true then values can contain any chars including semicolons
 --                    if false then a semicolon means start of a comment
 function lib.New(fname, nocomment)
-  local fp, msg = io.open(fname)
-  if not fp then return nil, msg; end
+  local fp, msg
+  for k=1,2 do
+    fp, msg = io.open(fname)
+    if fp then
+      break
+    elseif k==1 then
+      fp = io.open(fname, "w")
+      if fp then fp:close() end
+    else
+      return nil, msg
+    end
+  end
+
   local self = { map={}; }
   setmetatable(self, mt_lib)
   local cursection
