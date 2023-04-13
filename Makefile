@@ -4,11 +4,9 @@ ifdef install
 PARAM = install
 endif
 
-ifeq ($(USER),shmuel)
-all: lf4ed lfsearch lftmp lfhistory polygon luapanel hlfviewer highlight
-else
+#  Note: plugin 'highlight' is intentionally not included in 'all'
+#  because it is not suitable to most users.
 all: lf4ed lfsearch lftmp lfhistory polygon luapanel hlfviewer
-endif
 
 lf4ed:
 	cd _lf4ed_/build && $(MAKE) $(PARAM)

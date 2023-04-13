@@ -6,7 +6,7 @@ local syntax_shell =
   --bracketcolor = 0xE3;
   {
     name = "Comment"; fgcolor = "gray7";
-    pattern = [[ \#.* ]];
+    pattern = [[ (?<!\$)\#.* ]];
   },
   {
     name = "Literal"; fgcolor = "white";
@@ -35,7 +35,7 @@ local syntax_shell =
     name = "Keyword"; fgcolor = "yellow";
     --color = { ForegroundColor=0x00FF00; BackgroundColor=0x000080; Flags={FCF_FG_BOLD=1} };
     pattern = [[ \b(?:
-      case|cd|do|done|echo|else|esac|exec|exit|expr|fi|for|if|in|kill|rm|sleep|start|then|while
+      case|cd|do|done|echo|elif|else|esac|exec|exit|expr|fi|for|if|in|kill|rm|sleep|start|then|while
       )\b ]];
   },
   {
