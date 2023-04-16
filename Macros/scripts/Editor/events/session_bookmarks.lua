@@ -12,7 +12,7 @@ Event {
   group="EditorEvent";
   action=function(EditorId, Event, Param)
     if Event==F.EE_REDRAW then
-      local Arr = editor.GetStackBookmarks()
+      local Arr = editor.GetSessionBookmarks()
       if Arr and Arr[1] then
         local Info = editor.GetInfo()
         for _,v in ipairs(Arr) do
@@ -29,7 +29,7 @@ end
 
 local function Goto(forward)
   local Info = editor.GetInfo()
-  local Arr = editor.GetStackBookmarks()
+  local Arr = editor.GetSessionBookmarks()
   if not (Info and Arr and Arr[1]) then return end
   for i,v in ipairs(Arr) do v.index=i end
   table.insert(Arr, {Line=Info.CurLine + (forward and 0.5 or -0.5)})
@@ -48,7 +48,7 @@ local function BookmarksMenu()
   local properties = {Title="Bookmarks", Bottom="Keys: Enter Del Esc", Flags=F.FMENU_AUTOHIGHLIGHT+F.FMENU_WRAPMODE}
   local bkeys = {{BreakKey="DELETE"}}
   while Info do
-    local Arr = editor.GetStackBookmarks() or {}
+    local Arr = editor.GetSessionBookmarks() or {}
     for i,v in ipairs(Arr) do v.index=i end
     table.sort(Arr, function(a,b) return a.Line < b.Line end)
     local items = {}
@@ -60,7 +60,7 @@ local function BookmarksMenu()
     local v,pos = far.Menu(properties, items, bkeys)
     if not v then break end
     if v.BreakKey=="DELETE" then
-      if items[pos] then editor.DeleteStackBookmark(nil,items[pos].bm.index) end
+      if items[pos] then editor.DeleteSessionBookmark(nil,items[pos].bm.index) end
     else
       SetPosition(v.bm, Info); break
     end
@@ -72,18 +72,18 @@ Macro {
   area="Editor"; key="ShiftF9";
   action=function()
     local Info = editor.GetInfo()
-    local Arr = editor.GetStackBookmarks() or {}
+    local Arr = editor.GetSessionBookmarks() or {}
     local deleted
     for i,v in ipairs(Arr) do
-      if v.Line == Info.CurLine then editor.DeleteStackBookmark(nil,i); deleted=true; end
+      if v.Line == Info.CurLine then editor.DeleteSessionBookmark(nil,i); deleted=true; end
     end
-    if not deleted then editor.AddStackBookmark() end
+    if not deleted then editor.AddSessionBookmark() end
   end;
 }
 Macro {
   description="Session Bookmarks: clear all bookmarks";
   area="Editor"; key="CtrlShiftF9";
-  action=function() editor.ClearStackBookmarks() end;
+  action=function() editor.ClearSessionBookmarks() end;
 }
 Macro {
   description="Session Bookmarks: next bookmark";

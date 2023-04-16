@@ -359,7 +359,7 @@ local luafar = {
         "GetInterfaceSettings", "GetPanelSettings", "GetPluginMaxReadData", "GetShortWindowInfo",
         "GetSystemSettings", "GetSysWordDiv", "GetWindowCount", "GetWindowInfo", "KeyMacro",
         "ProgressNotify", "Quit", "RedrawAll", "SetArrayColor", "SetCurrentWindow", "SetCursorPos",
-        "SetProgressState", "SetProgressValue", "Synchro","WaitKey",
+        "SetProgressState", "SetProgressValue", "Synchro", "WaitKey", "WinPortBackend",
       };
     };
 
@@ -385,10 +385,10 @@ local luafar = {
 
     ["editor"] = {
       fields = {
-        "AddColor", "AddStackBookmark", "ClearStackBookmarks", "DeleteBlock", "DeleteChar",
-        "DeleteStackBookmark", "DeleteString", "Editor", "ExpandTabs", "GetBookmarks", "GetColor",
-        "GetFileName", "GetInfo", "GetSelection", "GetStackBookmarks", "GetString", "GetStringW",
-        "InsertString", "InsertText", "InsertTextW", "NextStackBookmark", "PrevStackBookmark",
+        "AddColor", "AddSessionBookmark", "ClearSessionBookmarks", "DeleteBlock", "DeleteChar",
+        "DeleteSessionBookmark", "DeleteString", "Editor", "ExpandTabs", "GetBookmarks", "GetColor",
+        "GetFileName", "GetInfo", "GetSelection", "GetSessionBookmarks", "GetString", "GetStringW",
+        "InsertString", "InsertText", "InsertTextW", "NextSessionBookmark", "PrevSessionBookmark",
         "ProcessInput", "ProcessKey", "Quit", "ReadInput", "RealToTab", "Redraw", "SaveFile",
         "Select", "SetKeyBar", "SetParam", "SetPosition", "SetString", "SetStringW", "SetTitle",
         "TabToReal", "TurnOffMarkingBlock", "UndoRedo",
@@ -418,7 +418,7 @@ local luafar = {
         "GetVirtualKeys", "IsProcess64bit", "lenW", "MoveFile", "MultiByteToWideChar", "OemToUtf8",
         "RemoveDir", "RenameFile", "SetCurrentDir", "SetEnv", "SetFileAttr", "Sleep", "subW",
         "SystemTimeToFileTime", "Utf32ToUtf8", "Utf8ToOem", "Utf8ToUtf32", "Uuid", "wcscmp",
-        "WideCharToMultiByte",
+        "WideCharToMultiByte", "WriteConsole",
       };
     };
 
