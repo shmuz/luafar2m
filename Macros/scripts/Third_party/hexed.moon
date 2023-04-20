@@ -357,8 +357,7 @@ DoHex=->
         {F.DI_USERCONTROL,0,1,ww-1,hh-1,0,buffer,0,0,''}
         {F.DI_FIXEDIT,0,0,0,0,0,0,F.DIF_HIDDEN+F.DIF_READONLY,0,''}
       }
-      --hDlg=far.DialogInit -1,-1,ww,hh,nil,items,F.FDLG_NONMODAL+F.FDLG_NODRAWSHADOW,DlgProc
-      hDlg=far.DialogInit -1,-1,ww,hh,nil,items,F.FDLG_NODRAWSHADOW,DlgProc
+      hDlg=far.DialogInit -1,-1,ww,hh,nil,items,F.FDLG_NONMODAL+F.FDLG_NODRAWSHADOW,DlgProc
       if hDlg
         dialogs[hDlg\rawhandle!]=
           :buffer,
@@ -379,8 +378,6 @@ DoHex=->
           editchanged:false,
           editascii:false
         UpdateDlg hDlg,dialogs[hDlg\rawhandle!]
-      far.DialogRun hDlg
-      far.DialogFree hDlg
     else
       C.WINPORT_CloseHandle file
 
