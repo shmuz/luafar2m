@@ -10,7 +10,7 @@ USE_LUAJIT = 1
 # Settings below do not usually require editing
 # ----------------------------------------------
 
-INC_FAR = $(FARSOURCE)/far2l/far2sdk
+INC_FAR = $(FARSOURCE)/far/far2sdk
 INC_WIN = $(FARSOURCE)/WinPort
 
 ifneq ($(USE_LUAJIT),1)
