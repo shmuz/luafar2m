@@ -11,7 +11,7 @@ if not package.path:find("/lua_share/") then
 end
 
 -- load plugins
-if os.getenv("FARHOME") == home.."/far2l/_build/install" then
+if os.getenv("FARHOME") == home.."/far2m/_build/install" then
   far.RecursiveSearch(luafar, "*.far-plug-wide",
     function(_, fullpath)
       far.LoadPlugin("PLT_PATH", fullpath)

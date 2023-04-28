@@ -1,8 +1,8 @@
 # User-configurable settings
 # ---------------------------
 
-# Far2l source tree
-FARSOURCE = $(HOME)/far2l
+# Far2m source tree
+FARSOURCE = $(HOME)/far2m
 
 # Set USE_LUAJIT=0 to use Lua5.1 rather than LuaJIT
 USE_LUAJIT = 1
@@ -36,8 +36,8 @@ LDFLAGS = -shared -fPIC $(MYLDFLAGS)
 
 ### Install section
 INSTALL_PREFIX ?= /usr/local
-TRG_LIB   = $(INSTALL_PREFIX)/lib/far2l/Plugins/luafar
-TRG_SHARE = $(INSTALL_PREFIX)/share/far2l/Plugins/luafar
+TRG_LIB   = $(INSTALL_PREFIX)/lib/far2m/Plugins/luafar
+TRG_SHARE = $(INSTALL_PREFIX)/share/far2m/Plugins/luafar
 
 TRG_PLUG_LIB = $(TRG_LIB)/$(PLUGNAME)/plug
 TRG_PLUG_SHARE = $(TRG_SHARE)/$(PLUGNAME)/plug

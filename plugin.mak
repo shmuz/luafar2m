@@ -64,8 +64,8 @@ luaplug2.o: $(C_SOURCE)
 	$(CC) -c -o $@ $< $(CFLAGS2)
 
 install:
-ifeq ("$(wildcard $(INSTALL_PREFIX)/bin/far2l)","")
-	@echo Error: far2l installation is not found; exit 1
+ifeq ("$(wildcard $(INSTALL_PREFIX)/bin/far2m)","")
+	@echo Error: far2m installation is not found; exit 1
 endif
 	mkdir -p $(TRG_PLUG_LIB) $(TRG_PLUG_SHARE)
 	cd ../plug && cp -f $(SRC_PLUG_LIB) $(TRG_PLUG_LIB)
