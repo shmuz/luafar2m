@@ -3,7 +3,7 @@ if run ~= 1 then return end
 
 local home = os.getenv("HOME")
 local installed = far.PluginStartupInfo().ShareDir:match("^/usr/.-/luafar")
-local luafar = installed or home.."/luafar2l"
+local luafar = installed or home.."/luafar2m"
 
 -- add lua_share to package.path
 if not package.path:find("/lua_share/") then

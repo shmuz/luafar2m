@@ -1,19 +1,18 @@
 ## What is it
 
 This repository contains a few plugins
-for my [Far2L fork](https://github.com/shmuz/far2l)
+for my [far2m](https://github.com/shmuz/far2m)
 written in [Lua](https://www.lua.org/) 5.1 programming language.
-It also contains various utilities for Far2L written in Lua.
-
-## Prerequisites
-
-Either LuaJIT 2.1 or Lua 5.1 (configurable in `config.mak`)
+It also contains various utilities for Far2M written in Lua.
 
 ## How to build
 
-1. Unpack this package into `Plugins/luafar` directory.
+1. Edit the first line in config.mak (`FARSOURCE`)
+   to point to Far2M source tree on your disk.
 
-2. Edit the first line in config.mak (`FARSOURCE`)
-   to point to Far2L source tree on your disk.
+2. Execute `make`.
 
-3. Execute `make`.
+## Installation
+
+Assuming far2m is already installed execute
+`sudo make install=1`
