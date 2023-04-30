@@ -1,12 +1,10 @@
 # Makefile
 
-ifdef install
-PARAM = install
-endif
+install: PARAM=install
 
 #  Note: plugin 'highlight' is intentionally not included in 'all'
 #  because it is not suitable to most users.
-all: lf4ed lfsearch lftmp lfhistory polygon luapanel hlfviewer
+all install: lf4ed lfsearch lftmp lfhistory polygon luapanel hlfviewer
 
 lf4ed:
 	cd _lf4ed_/build && $(MAKE) $(PARAM)
