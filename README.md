@@ -15,4 +15,4 @@ It also contains various utilities for Far2M written in Lua.
 ## Installation
 
 Assuming far2m is already installed execute
-`sudo make install`
+`sudo make install=1`
