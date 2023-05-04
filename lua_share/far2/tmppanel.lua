@@ -274,7 +274,6 @@ end
 
 
 function Env:OpenPanelFromOutput (command)
-  far.Show(command)
   local h = io.popen (command, "r")
   if h then
     local list = {}
