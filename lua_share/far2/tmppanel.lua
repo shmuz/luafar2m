@@ -274,7 +274,8 @@ end
 
 
 function Env:OpenPanelFromOutput (command)
-  local h = io.popen (command, "rt")
+  far.Show(command)
+  local h = io.popen (command, "r")
   if h then
     local list = {}
     for line in h:lines() do

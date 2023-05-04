@@ -2,8 +2,8 @@
 -- Minimal Far3 version  : 3.0.3300
 -- Far3 plugin           : LuaMacro, LF4Editor, LFSearch, LFHistory (any of them)
 -- Dependencies          : Lua modules 'far2.simpledialog' and 'far2.settings'
--- Minimal far2l version : https://github.com/shmuz/far2l
--- Far2l plugin          : LuaMacro, LF4Editor (any of them)
+-- Minimal far2m version : https://github.com/shmuz/far2m
+-- Far2m plugin          : LuaMacro, LF4Editor (any of them)
 
 local MacroKey = "CtrlF2"
 local SETTINGS_KEY    = "shmuz"

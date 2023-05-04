@@ -316,7 +316,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
     local first = true
     return function(tmr)
       if first then
-      --first, tmr.Interval = false, 30 --> setting timer.Interval is currently not supported in luafar2l
+      --first, tmr.Interval = false, 30 --> setting timer.Interval is currently not supported in luafar2m
         first = false
       end
       if not ( (key==F.KEY_PGUP or key==F.KEY_PGDN) and

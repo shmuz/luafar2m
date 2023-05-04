@@ -1,5 +1,5 @@
 -- started    : 2011-02-20
--- far2l port : 2023-01-11
+-- far2m port : 2023-01-11
 
 local F=far.Flags
 

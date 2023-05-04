@@ -1,5 +1,5 @@
 -- Started:                 2020-08-15
--- Started for far2l:       2022-01-23
+-- Started for far2m:       2022-01-23
 -- Author:                  Shmuel Zeigerman
 -- Far3 minimal version:    3.0.3300
 -- Far3 plugin:             any LuaFAR plugin

@@ -10,7 +10,7 @@ mod.Info = {
   Description  = "A module for extracting/viewing/running XX- and UU-encoded files";
   Author       = "Shmuel Zeigerman";
   StartDate    = "2019-12-20";
-  Dependencies = "Far2L (my fork); bin2text.so;";
+  Dependencies = "Far2M; bin2text.so;";
   LinuxPortStartDate = "2022-08-05";
 }
 

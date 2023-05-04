@@ -2,7 +2,7 @@
 -- Календарь.
 -- Copyright (c) SimSU
 -- Copyright (c) Shmuel Zeigerman
---     (1) The utility made portable between Far3 and far2l (was: Far3)
+--     (1) The utility made portable between Far3 and far2m (was: Far3)
 --     (2) The interface language is set when the macro is called (was: when loaded)
 --     (3) The first day of week can be specified (was: Monday)
 --     (4) Added button [Today] for setting the current date

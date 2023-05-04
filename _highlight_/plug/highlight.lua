@@ -491,7 +491,7 @@ local function ShowSettings()
         hDlg:SetText(Pos.edBench, "")
         local t1 = win.Clock()
         for k=1,math.huge do
-          --editor.Redraw() --> this works from a dialog in Far3 but not in Far2L
+          --editor.Redraw() --> this works from a dialog in Far3 but not in Far2M
           actl.RedrawAll()
           local t2 = win.Clock()
           if t2-t1 > 1 then
@@ -737,8 +737,8 @@ local function OnNewEditor (id, ei)
   end
 end
 
--- This trick is needed under Far2l (not needed under Far3).
--- Far2l does not redraw the entire visible part of the editor when navigation keys are pressed.
+-- This trick is needed under Far2m (not needed under Far3).
+-- Far2m does not redraw the entire visible part of the editor when navigation keys are pressed.
 -- That makes problems with highlighting matching brackets.
 function export.ProcessEditorInput (Rec)
   local state = Editors[editor.GetInfo().EditorID]

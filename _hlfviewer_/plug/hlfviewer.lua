@@ -233,7 +233,7 @@ local function FindPluginHelp(Name)
         local file = Info.ModuleName:match(".*/")..Name
         if FileExists(file) then
           return file
-        elseif file:find("^/usr/") then -- is far2l installed?
+        elseif file:find("^/usr/") then -- is far2m installed?
           file = file:gsub("^(.-)/lib/", "%1/share/")
           if FileExists(file) then
             return file
