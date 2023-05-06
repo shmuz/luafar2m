@@ -3,7 +3,7 @@ local syntax_ini =
   bgcolor = "darkblue";
   {
     name = "Comment"; fgcolor = "gray7";
-    pattern = [[ ; .* ]];
+    pattern = [[ ^ \s* ; .* ]];
   },
   {
     name = "Section"; color = "darkblue on aqua";

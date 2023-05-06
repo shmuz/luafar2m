@@ -31,6 +31,14 @@ Macro {
 }
 
 Macro {
+  description="Jump to home directory";
+  area="Shell"; key="Ctrl`";
+  action=function()
+    panel.SetPanelDirectory(1, os.getenv"HOME")
+  end;
+}
+
+Macro {
   description="Macro-engine test";
   area="Shell"; key="CtrlShiftF12";
   action = function()
