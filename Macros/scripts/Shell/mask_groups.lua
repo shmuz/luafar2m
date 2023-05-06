@@ -58,13 +58,15 @@ local function main()
       elseif choice == 2 then
         break
       end
-    elseif (item.action==nil or item.action=="edit") and pos>0 then
-      local name,val = EditItem(Items[pos].Name, Items[pos].Val)
-      if name then
-        name,val = Trim(name),Trim(val)
-        if name~="" and val~="" then
-          Items[pos] = CreateMenuItem(name,val)
-          WasEdited = true
+    elseif item.action==nil or item.action=="edit" then
+      if pos > 0 then
+        local name,val = EditItem(Items[pos].Name, Items[pos].Val)
+        if name then
+          name,val = Trim(name),Trim(val)
+          if name~="" and val~="" then
+            Items[pos] = CreateMenuItem(name,val)
+            WasEdited = true
+          end
         end
       end
     elseif item.action=="insert" then
@@ -76,9 +78,11 @@ local function main()
           WasEdited = true
         end
       end
-    elseif item.action=="delete" and pos>0 then
-      table.remove(Items, pos)
-      WasEdited = true
+    elseif item.action=="delete" then
+      if pos > 0 then
+        table.remove(Items, pos)
+        WasEdited = true
+      end
     end
   end
 end
