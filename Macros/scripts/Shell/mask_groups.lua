@@ -2,7 +2,11 @@
 local inifile = require "inifile"
 local sdialog = require "far2.simpledialog"
 
-local function EditItem(aName, aVal)
+local function Trim(txt)
+  return txt:match("%s*(.-)%s*$")
+end
+
+local function EditItem(aName, aVal, aGuard)
   local Items = {
     {tp="dbox"; text="Groups of file masks"; },
     {tp="text"; text="&Name:"; },
@@ -13,13 +17,28 @@ local function EditItem(aName, aVal)
     {tp="butt"; text="OK";     centergroup=1; default=1; },
     {tp="butt"; text="Cancel"; centergroup=1; cancel=1;  },
   }
+
+  function Items.closeaction(hDlg, Par1, tOut)
+    local name,val = Trim(tOut.name),Trim(tOut.val)
+    if name=="" or val=="" then
+      far.Message("Either Name or Mask is empty", "Error", nil, "w")
+      return 0
+    elseif name ~= aName and aGuard[name] then
+      far.Message(("The entry '%s' already exists"):format(name), "Error", nil, "w")
+      return 0
+    end
+  end
+
   local Dlg=sdialog.New(Items)
   local out = Dlg:Run()
-  if out then return out.name, out.val end
-end
-
-local function Trim(txt)
-  return txt:match("%s*(.-)%s*$")
+  if out then
+    local name,val = Trim(out.name),Trim(out.val)
+    if name ~= aName then
+      aGuard[aName] = nil
+      aGuard[name] = true
+    end
+    return name, val
+  end
 end
 
 local function CreateMenuItem(name, val)
@@ -39,8 +58,10 @@ local function main()
     {BreakKey="Ins"; action="insert"; },
     {BreakKey="Del"; action="delete"; },
   }
+  local Guard = {}
   for k,v in Sec:records() do
     table.insert(Items, CreateMenuItem(k,v))
+    Guard[k] = true
   end
 
   local WasEdited
@@ -60,27 +81,23 @@ local function main()
       end
     elseif item.action==nil or item.action=="edit" then
       if pos > 0 then
-        local name,val = EditItem(Items[pos].Name, Items[pos].Val)
+        local name,val = EditItem(Items[pos].Name, Items[pos].Val, Guard)
         if name then
-          name,val = Trim(name),Trim(val)
-          if name~="" and val~="" then
-            Items[pos] = CreateMenuItem(name,val)
-            WasEdited = true
-          end
-        end
-      end
-    elseif item.action=="insert" then
-      local name,val = EditItem("", "")
-      if name then
-        name,val = Trim(name),Trim(val)
-        if name~="" and val~="" then
-          table.insert(Items, CreateMenuItem(name,val))
+          Items[pos] = CreateMenuItem(name,val)
           WasEdited = true
         end
       end
+    elseif item.action=="insert" then
+      local name,val = EditItem("", "", Guard)
+      if name then
+        table.insert(Items, CreateMenuItem(name,val))
+        WasEdited = true
+      end
     elseif item.action=="delete" then
       if pos > 0 then
+        local name = Items[pos].Name
         table.remove(Items, pos)
+        Guard[name] = nil
         WasEdited = true
       end
     end
