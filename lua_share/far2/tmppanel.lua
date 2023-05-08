@@ -139,6 +139,13 @@ local function IsLinksDisplayed (ColumnTypes)
 end
 
 
+local function IsGroupsDisplayed (ColumnTypes)
+  for word in ColumnTypes:gmatch "[^,]+" do
+    if word == "U" then return true end
+  end
+end
+
+
 local function ParseParam (str)
   local p1, p2 = str:match "^%|(.*)%|(.*)"
   if p1 then
@@ -349,6 +356,7 @@ function Env:NewPanel (aOptions)
     Env = self,
     LastOwnersRead = false,
     LastLinksRead = false,
+    LastGroupsRead = false,
   }
 
   pan.Opt = setmetatable({}, self.OptMeta)
@@ -547,12 +555,13 @@ function Panel:ProcessList (aList, aReplaceMode)
 end
 
 
-function Panel:UpdateItems (ShowOwners, ShowLinks)
+function Panel:UpdateItems (ShowOwners, ShowLinks, ShowGroups)
   local hScreen = #self:GetItems() >= 1000 and far.SaveScreen()
   if hScreen then far.Message(M.MTempUpdate, M.MTempPanel, "") end
 
   self.LastOwnersRead = ShowOwners
   self.LastLinksRead = ShowLinks
+  self.LastGroupsRead = ShowGroups
   local RemoveTable = {}
   local PanelItems = {}
   for i,v in ipairs(self:GetItems()) do
@@ -565,13 +574,16 @@ function Panel:UpdateItems (ShowOwners, ShowLinks)
   end
   self:RemoveMarkedItems(RemoveTable)
 
-  if ShowOwners or ShowLinks then
+  if ShowOwners or ShowLinks or ShowGroups then
     for _,v in ipairs(PanelItems) do
       if ShowOwners then
         v.Owner = far.GetFileOwner(nil, v.FileName)
       end
       if ShowLinks then
         v.NumberOfLinks = far.GetNumberOfLinks(v.FileName)
+      end
+      if ShowGroups then
+        v.Group = far.GetFileGroup(nil, v.FileName)
       end
     end
   end
@@ -804,7 +816,7 @@ function Panel:GetFindData (Handle, OpMode)
 --### far.Show("GetFindData")
   self:RemoveDuplicates()
   local types = panel.GetColumnTypes (Handle)
-  local PanelItems = self:UpdateItems (IsOwnersDisplayed (types), IsLinksDisplayed (types))
+  local PanelItems = self:UpdateItems (IsOwnersDisplayed (types), IsLinksDisplayed (types), IsGroupsDisplayed (types))
   return PanelItems
 end
 
@@ -826,8 +838,9 @@ function Panel:ProcessEvent (Handle, Event, Param)
     local types = panel.GetColumnTypes (Handle)
     local UpdateOwners = IsOwnersDisplayed (types) and not self.LastOwnersRead
     local UpdateLinks = IsLinksDisplayed (types) and not self.LastLinksRead
-    if UpdateOwners or UpdateLinks then
-      self:UpdateItems (UpdateOwners, UpdateLinks)
+    local UpdateGroups = IsGroupsDisplayed (types) and not self.LastGroupsRead
+    if UpdateOwners or UpdateLinks or UpdateGroups then
+      self:UpdateItems (UpdateOwners, UpdateLinks, UpdateGroups)
       panel.UpdatePanel (Handle, true)
       panel.RedrawPanel (Handle)
     end

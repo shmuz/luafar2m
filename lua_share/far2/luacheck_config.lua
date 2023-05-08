@@ -30,7 +30,7 @@ local luafar = {
         "CreateUserControl", "DefDlgProc", "Dialog", "DialogFree", "DialogInit", "DialogRun",
         "Execute", "ExecuteLibrary", "MacroCallToLua", "FindPlugin", "Flags", "ForcedLoadPlugin",
         "FreeScreen", "GenerateName", "GetCurrentDirectory", "GetDirList", "GetFileEncoding",
-        "GetFileOwner", "GetMsg", "GetMyHome", "GetNumberOfLinks", "GetPathRoot", "GetPluginId",
+        "GetFileOwner", "GetFileGroup", "GetMsg", "GetMyHome", "GetNumberOfLinks", "GetPluginId",
         "GetPluginInformation", "GetPluginDirList", "GetPlugins", "GetReparsePointInfo", "Guids",
         "Host", "InMyCache", "InMyConfig", "InMyTemp", "InputBox", "InputRecordToKey",
         "InputRecordToName", "Keys", "KeyToName", "LIsAlpha", "LIsAlphanum", "LIsLower", "LIsUpper",
