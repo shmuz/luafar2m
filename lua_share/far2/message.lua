@@ -13,12 +13,12 @@
 
 
 local F = far.Flags
-local bnot, band, bor, lshift, rshift = bit64.bnot, bit64.band, bit64.bor, bit64.lshift, bit64.rshift
+local bnot, band, bor = bit64.bnot, bit64.band, bit64.bor
 local min, max = math.min, math.max
 local STARTX, STARTY = 5, 2
 
 -- Dialog API constants
-local IDX_X1, IDX_Y1, IDX_X2, IDX_Y2, IDX_FLAGS, IDX_DEFAULT, IDX_DATA = 2,3,4,5,8,9,10
+local IDX_X1, IDX_Y1, IDX_X2, IDX_Y2, IDX_DEFAULT, IDX_DATA = 2,3,4,5,9,10
 
 local function Label (x1, y1, text, color)
   return {"DI_TEXT", x1,y1,0,y1, 0,0,F.DIF_SHOWAMPERSAND,0, text, color=color}

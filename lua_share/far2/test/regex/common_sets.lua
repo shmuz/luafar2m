@@ -177,7 +177,7 @@ end
 
 local function set_f_gsub1 (lib, flg)
   local subj, pat = "abcdef", "[abef]+"
-  local cpat = lib.new(pat)
+  --local cpat = lib.new(pat)
   return {
     Name = "Function gsub, set1",
     Func = lib.gsub,
@@ -200,7 +200,7 @@ end
 
 local function set_f_gsubW1 (lib, flg)
   local subj, pat = L"abcdef", "[abef]+"
-  local cpat = lib.new(pat)
+  --local cpat = lib.new(pat)
   return {
     Name = "Function gsubW, set1",
     Func = lib.gsubW,

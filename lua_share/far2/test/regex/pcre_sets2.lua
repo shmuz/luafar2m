@@ -3,7 +3,7 @@
 local L = win.Utf8ToUtf32
 
 local function set_f_gsub1 (lib, flg)
-  local subj, pat = "abcdef", "[abef]+"
+  --local subj, pat = "abcdef", "[abef]+"
   return {
     Name = "Function gsub, set1",
     Func = lib.gsub,
@@ -13,7 +13,7 @@ local function set_f_gsub1 (lib, flg)
 end
 
 local function set_f_gsubW1 (lib, flg)
-  local subj, pat = "abcdef", "[abef]+"
+  --local subj, pat = "abcdef", "[abef]+"
   return {
     Name = "Function gsubW, set1",
     Func = lib.gsubW,

@@ -6,12 +6,6 @@ local L = win.Utf8ToUtf32
 
 local function norm(a) return a==nil and N or a end
 
-local function fill (n, m)
-  local t = {}
-  for i = n, m, -1 do table.insert (t, i) end
-  return t
-end
-
 local function set_f_find (lib, flg)
   return {
   Name = "Function find",

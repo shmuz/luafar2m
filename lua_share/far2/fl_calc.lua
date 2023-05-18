@@ -12,7 +12,7 @@ addHelp('fact(n)', 'Calculate factorial of n')
 
 local floor=math.floor
 local huge=math.huge
-local limit=200
+local limit1=200
 
 local function factSafe(n, p)
     if n>0 then return factSafe(n-1, n*p)
@@ -23,8 +23,8 @@ function lib.fact(n)
     --
     -- return factorial of n
     --
-    local n=floor(n)
-    if n>limit  then return huge
+    n=floor(n)
+    if n>limit1 then return huge
     elseif n>0  then return factSafe(n-1, n)
     elseif n==0 then return 1
     end
@@ -34,13 +34,13 @@ end
 addHelp('fib(n)', 'Calculate n-th Fibonacci number')
 
 local fibs
-local limit=1500
+local limit2=1500
 function lib.fib(n)
     --
     -- return n-th Fibonacci number (iterative)
     --
-    if n>limit then return huge end
-    local n=floor(n)
+    if n>limit2 then return huge end
+    n=floor(n)
     fibs={[0]=0, 1, 1}
     for i=3,n do
         if not fibs[i] then

@@ -64,7 +64,7 @@ function Calc:get_token()
   end
 
   -- look for binary numbers
-  local from,to,val,w = self.mInput:find("^0[bB]([01]+)(%w?)", pos)
+  from,to,val,w = self.mInput:find("^0[bB]([01]+)(%w?)", pos)
   if from then
     if w=="" then
       self.mPos, self.mToken = to+1, tonumber(val,2)

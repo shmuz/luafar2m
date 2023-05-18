@@ -10,13 +10,13 @@ local OpenFrom = {	[0]="OPEN_LEFTDISKMENU","OPEN_PLUGINSMENU","OPEN_FINDLIST","O
   "OPEN_COMMANDLINE","OPEN_EDITOR","OPEN_VIEWER","OPEN_FILEPANEL","OPEN_DIALOG","OPEN_ANALYSE",
   "OPEN_RIGHTDISKMENU","OPEN_FROMMACRO",[100]="OPEN_LUAMACRO" }
 
-local InputEvents = {
-  [F.KEY_EVENT               ] = "KEY_EVENT";
-  [F.MOUSE_EVENT             ] = "MOUSE_EVENT";
-  [F.WINDOW_BUFFER_SIZE_EVENT] = "WINDOW_BUFFER_SIZE_EVENT";
-  [F.MENU_EVENT              ] = "MENU_EVENT";
-  [F.FOCUS_EVENT             ] = "FOCUS_EVENT";
-}
+-- local InputEvents = {
+--   [F.KEY_EVENT               ] = "KEY_EVENT";
+--   [F.MOUSE_EVENT             ] = "MOUSE_EVENT";
+--   [F.WINDOW_BUFFER_SIZE_EVENT] = "WINDOW_BUFFER_SIZE_EVENT";
+--   [F.MENU_EVENT              ] = "MENU_EVENT";
+--   [F.FOCUS_EVENT             ] = "FOCUS_EVENT";
+-- }
 
 local OpModes = {
   [F.OPM_SILENT   ] = "OPM_SILENT";

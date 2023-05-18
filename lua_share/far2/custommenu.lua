@@ -208,16 +208,16 @@ do
       self.slider_start = floor((self.upper-1) * offs_ratio + 0.5) -- 0-based
     end
 
-    local function Horisontal (cleft, cright, text, y)
+    local function Horisontal (cleft, cright, text, yy)
       local mlen = text=="" and 0 or 1
-      far.Text(x, y, color, cleft) -- left corner
+      far.Text(x, yy, color, cleft) -- left corner
       local tlen = text:len()
       local len = max(ceil((self.w - 2*mlen - tlen)/2-0.5), 0)
-      far.Text(x+1, y, color, T.hor:rep(len))
-      far.Text(x+1+len+mlen, y, color, text:sub(1, self.w-1))
+      far.Text(x+1, yy, color, T.hor:rep(len))
+      far.Text(x+1+len+mlen, yy, color, text:sub(1, self.w-1))
       local offs = len + tlen + 2*mlen
-      far.Text(x+1+offs, y, color, T.hor:rep(self.w - offs))
-      far.Text(x+self.w+1, y, color, cright) -- right corner
+      far.Text(x+1+offs, yy, color, T.hor:rep(self.w - offs))
+      far.Text(x+self.w+1, yy, color, cright) -- right corner
     end
 
     Horisontal(T.c1, T.c2, self.fulltitle, y)
@@ -230,8 +230,8 @@ do
       elseif k == 1 then c = up
       elseif k == self.h then c = dn
       else
-        local k = k-2
-        c = k >= self.slider_start and k < self.slider_start+self.slider_len and scr2 or scr1
+        local m = k-2
+        c = m >= self.slider_start and m < self.slider_start+self.slider_len and scr2 or scr1
       end
       far.Text(x+self.w+1, y+k, color, c)
     end
@@ -466,7 +466,7 @@ local function ProcessSearchMethod (method, pattern)
   ----------------------------------------------------------
   local ok, cregex = pcall(regex.new, pattern, "i")
   if ok then
-    return function (text, pattern, start)
+    return function (text, p, start)
       return cregex:find(text, start)
     end
   end
@@ -536,7 +536,7 @@ end
 
 function List:PrepareToDisplay (hDlg)
   self.drawitems = {}
-  for i,v in ipairs(self.items) do
+  for _,v in ipairs(self.items) do
     local vdata = self.idata[v]
     vdata.fr, vdata.to = v.fr, v.to
     self.drawitems[#self.drawitems+1] = v

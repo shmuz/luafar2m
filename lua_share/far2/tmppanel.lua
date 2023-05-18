@@ -220,34 +220,22 @@ local function ShowMenuFromFile (FileName)
       menuitems[i] = { text=menuline, action=part2 }
     end
   end
-  local breakkeys = { {BreakKey="S+RETURN"}, } -- Shift+Enter
 
   local Title = ExtractFileName(FileName):gsub("%.[^.]+$", "")
   Title = TruncStr(Title, 64)
-  local Item, Position = far.Menu(
+  local Item = far.Menu(
     { Flags="FMENU_WRAPMODE", Title=Title, HelpTopic="Contents", Bottom=#menuitems.." lines" },
-    menuitems, breakkeys)
+    menuitems)
   if not Item then return end
 
-  local bShellExecute
-  if Item.BreakKey then
-    bShellExecute = true
-    Item = menuitems[Position]
-  else
-    local panelitem = CheckForCorrect (Item.action)
-    if panelitem then
-      if IsDirectory (panelitem) then
-        panel.SetPanelDirectory (1, Item.action)
-      else
-        bShellExecute = true
-      end
-    else
-      panel.SetCmdLine (Item.action)
+  local panelitem = CheckForCorrect (Item.action)
+  if panelitem then
+    if IsDirectory (panelitem) then
+      panel.SetPanelDirectory (1, Item.action)
     end
+  else
+    panel.SetCmdLine (Item.action)
   end
-  --### if bShellExecute then
-  --###   _Su.ShellExecute (nil, "open", Item.action, nil, nil, "SW_SHOW")
-  --### end
 end
 
 
