@@ -80,7 +80,7 @@ do
 end
 
 -- NOT USED: IS IT REALLY NEEDED?
-local function toreal(id, y, pos) return editor.TabToReal(nil,y,pos) end
+-- local function toreal(id, y, pos) return editor.TabToReal(nil,y,pos) end
 
 local function template(str, ...)
   local rep = {...}
@@ -196,7 +196,7 @@ end
 local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, extracolor)
   local current -- current item of Syn
   local pat_close
-  local ID = ei.EditorID
+--local ID = ei.EditorID
 
   local openbracket, bstack, bpattern, opattern, params, posbracket
   if Syn.bracketmatch then
@@ -267,7 +267,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
               from, to = pat_close:findW(str, left)
               if from == nil then
                 color = current.color_unfinished or color
-                from, to = PatEndLine:findW(str, left)
+                to = select(2, PatEndLine:findW(str, left))
               end
             end
           end
@@ -371,7 +371,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
 end
 
 local function RedrawExtraPattern (ei, Priority, extrapattern, extracolor)
-  local ID = ei.EditorID
+--local ID = ei.EditorID
   local GetNextString = MakeGetString(
     ei.TopScreenLine,
     math.min(ei.TopScreenLine+ei.WindowSizeY-1, ei.TotalLines),
@@ -547,10 +547,10 @@ local function SetExtraPattern (EditorID, extrapattern)
   if state then state.extrapattern = extrapattern end
 end
 
-local function GetExtraPattern (EditorID)
-  local state = Editors[EditorID]
-  return state and state.extrapattern
-end
+-- local function GetExtraPattern (EditorID)
+--   local state = Editors[EditorID]
+--   return state and state.extrapattern
+-- end
 
 local function EnumMenuItems(items) -- add hot keys
   local n = 1

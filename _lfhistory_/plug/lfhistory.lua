@@ -561,7 +561,7 @@ function export.OpenPlugin (From, Item)
       { text=M.mMenuCommands,   action=commands_history; areas="p";   },
       { text=M.mMenuView,       action=view_history;     areas="epv"; },
       { text=M.mMenuFolders,    action=folders_history;  areas="p";   },
-      { text=M.mMenuConfig,     action=export_Configure; areas="epv"; },
+      { text=M.mMenuConfig,     action=export.Configure; areas="epv"; },
       { text=M.mMenuLocateFile, action=LocateFile2;      areas="p";   },
     }
     local items = {}
