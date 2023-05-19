@@ -12,7 +12,6 @@ local utils    = require "modules.utils"
 
 local ErrMsg, Resize, Norm = utils.ErrMsg, utils.Resize, utils.Norm
 local F = far.Flags
-local VK = win.GetVirtualKeys()
 local KEEP_DIALOG_OPEN = 0
 local SM_USER = F.SM_USER or 100 -- SM_USER appeared in Far 3.0.5655
 

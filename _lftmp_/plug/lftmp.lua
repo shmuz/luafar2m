@@ -61,15 +61,15 @@ function export.ExitFAR()
   Sett.msave(SETTINGS_KEY, SETTINGS_NAME, History)
 end
 
-local function InitUpvalues (_Plugin)
-  History = _Plugin.History
+local function InitUpvalues (plugin)
+  History = plugin.History
   Require = Cfg.ReloadOnRequire and Require or require
   far.ReloadDefaultScript = Cfg.ReloadDefaultScript
   local tp = Require "far2.tmppanel"
   tp.SetMessageTable(require "tmpp_message") -- message localization support
-  far.tmppanel = far.tmppanel or tp
-  far.tmppanel.Env = tp.NewEnv (far.tmppanel.Env or field(History, "Env"))
-  Env = far.tmppanel.Env
+  plugin.tmppanel = plugin.tmppanel or tp
+  plugin.tmppanel.Env = tp.NewEnv (plugin.tmppanel.Env or field(History, "Env"))
+  Env = plugin.tmppanel.Env
   for _, name in ipairs {
     "ClosePlugin",
     "GetFindData",

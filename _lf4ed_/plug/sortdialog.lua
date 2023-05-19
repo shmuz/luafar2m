@@ -3,6 +3,8 @@
  Start: 2008-10-17 by Shmuel Zeigerman
 --]]
 
+-- luacheck: max line length 128
+
 local sd = require "far2.simpledialog"
 local M  = require "lf4ed_message"
 local F  = far.Flags

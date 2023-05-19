@@ -737,9 +737,9 @@ SetExportFunctions = function()
   export.ProcessDialogEvent = alive(_Plugin.DialogEventHandlers) and export_ProcessDialogEvent
 end
 
-local function InitUpvalues (_Plugin)
-  _ShareDir = _Plugin.ShareDir
-  _History = _Plugin.History
+local function InitUpvalues (plugin)
+  _ShareDir = plugin.ShareDir
+  _History = plugin.History
   _Cfg = field(_History, "Settings")
   setmetatable(_Cfg, { __index=DefaultCfg })
 end

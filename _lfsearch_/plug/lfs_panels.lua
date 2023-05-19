@@ -33,7 +33,7 @@ local F = far.Flags
 local KEEP_DIALOG_OPEN = 0
 local bor, band, bxor, lshift = bit64.bor, bit64.band, bit64.bxor, bit64.lshift
 local clock = os.clock
-local strbyte, strgsub = string.byte, string.gsub
+local strbyte = string.byte
 local Utf32, Utf8 = win.Utf8ToUtf32, win.Utf32ToUtf8
 local MultiByteToWideChar = win.MultiByteToWideChar
 local WideCharToMultiByte = win.WideCharToMultiByte
@@ -140,8 +140,8 @@ local function Lines (aFile, aCodePage, userbreak)
     local line, eol, tb
     aFile:seek("set", posInner)
     while chunk do
-      local fr, to
-      fr, to, line, eol = find(chunk, aPattern, start)
+      local to
+      to, line, eol = select(2, find(chunk, aPattern, start))
       if eol ~= EMPTY then
         if eol == CR and to == #chunk/CHARSIZE then
           chunk = read(CHARSIZE)
@@ -217,7 +217,6 @@ local function RecursiveSearch (sInitDir, UserFunc, Flags, FileFilter,
   local function Recurse (InitDir)
     local bSearchInThisDir = fDirMask(InitDir)
 
-    local findspec = InitDir.."/*"
     local SlashInitDir = InitDir:find("/$") and InitDir or InitDir.."/"
 
     local ret = far.RecursiveSearch(InitDir, "*",
@@ -833,7 +832,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     if tPlus then
       found = found or not (stop or next(tPlus) or uUsual)
     end
-    if not found ~= not tParams.bInverseSearch then
+    if (not found) ~= (not tParams.bInverseSearch) then
       tFoundFiles[#tFoundFiles+1] = fullname
     end
   end
@@ -1341,7 +1340,7 @@ local function Grep_ProcessFile (fdata, fullname, cdata)
 
   local Convert = Replace_GetConvertors (bWideCharRegex, nCodePage)
   local lines_iter = --[[cdata.bFileAsLine and Lines2 or]] Lines
-  for line, eol in lines_iter(fp, nCodePage, userbreak) do
+  for line in lines_iter(fp, nCodePage, userbreak) do
     numline = numline + 1
     -------------------------------------------------------------------------
     local Line = Convert(line)
@@ -1487,11 +1486,10 @@ local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
           M.MPanelRO_Readonly..fullname..M.MPanelRO_Question,
           M.MWarning, M.MPanelRO_Buttons, "w")
         cdata.last_clock = cdata.last_clock + clock() - currclock
-        if res == 1 then -- do nothing
-        elseif res == 2 then sProcessReadonly="all"
+        if     res == 2 then sProcessReadonly="all"
         elseif res == 3 then bCanProcess=false
         elseif res == 4 then bCanProcess=false; sProcessReadonly="none"
-        else                 bCanProcess=false; userbreak.fullcancel=true
+        elseif res ~= 1 then bCanProcess=false; userbreak.fullcancel=true
         end
       end
     end

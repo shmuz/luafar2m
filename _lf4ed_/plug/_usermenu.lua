@@ -1,3 +1,5 @@
+-- luacheck: globals lf4ed AddCommand AddToMenu AddUserFile AutoInstall
+
 local function ReloadUserFile()
   lf4ed.reload()
   far.Message("User file reloaded","LF4Ed","")

@@ -229,7 +229,7 @@ export.ProcessEditorEvent = Editors.ProcessEditorEvent
 
 
 function export.OpenPlugin (aFrom, aItem)
-  local userItems, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
+  local userItems = libUtils.LoadUserMenu("_usermenu.lua")
   if     aFrom == F.OPEN_PLUGINSMENU then return OpenFromPanels(userItems.panels)
   elseif aFrom == F.OPEN_EDITOR      then OpenFromEditor(userItems.editor)
   end
@@ -237,13 +237,13 @@ end
 
 
 function export.OpenCommandLine (aItem)
-  local userItems, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
+  local _, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
   return libUtils.OpenCommandLine(aItem, commandTable, nil, M.MMenuTitle)
 end
 
 
 function export.OpenFromMacro (aItem)
-  local userItems, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
+  local _, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
   local val = OpenFromMacro(aItem, commandTable)
   if val then
     SaveSettings()
