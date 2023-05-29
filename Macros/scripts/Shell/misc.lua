@@ -1,5 +1,3 @@
-local F = far.Flags
-
 -- assuming "Show directories first" option is set
 -- description="Find an upper non-directory item";
 -- area="Shell"; key="CtrlShiftHome";

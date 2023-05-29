@@ -11,9 +11,6 @@
 local pattern = regex.new("(\\w+)")
 -- END OF SETTINGS
 
-local F = far.Flags
-local SendDlgMessage = far.SendDlgMessage
-
 local function GetTextFromEditor (curtext)
   local line = editor.GetString()
   if line then

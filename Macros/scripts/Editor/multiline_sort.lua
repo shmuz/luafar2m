@@ -16,7 +16,6 @@ local Info = { --luacheck: no unused
   Started       = "2021-01-20";
   Title         = Title;
 }
-local FarVer = package.config:sub(1,1) == "\\" and 3 or 2
 local F = far.Flags
 local Send = far.SendDlgMessage
 local KEEP_DIALOG_OPEN = 0
