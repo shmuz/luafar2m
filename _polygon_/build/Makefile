@@ -5,7 +5,6 @@ C_SOURCE = ../plug/polygon.c
 MYCFLAGS = -I$(FARSOURCE)/luafar/src
 MYLDFLAGS = -lsqlite3
 FUNC_OPENLIBS = luaopen_polygon
-SYS_ID = 0xD4BC5EA7
 SETPACKAGEPATH = 1
 
 SRC_PLUG_DIRS = modules
@@ -23,6 +22,14 @@ FAR_EXPORTS = \
   PROCESSEVENT       \
   PROCESSKEY         \
   SETDIRECTORY
+
+# Global Info
+SYS_ID             = 0xD4BC5EA7
+PLUG_MINFARVERSION = 0x00020004
+PLUG_VERSION       = 0x00010008
+PLUG_TITLE         = \"Polygon\"
+PLUG_DESCRIPTION   = \"Plugin for viewing and editing SQLite3 database files\"
+PLUG_AUTHOR        = \"Artem Senichev, Shmuel Zeigerman\"
 
 include ../../plugin.mak
 

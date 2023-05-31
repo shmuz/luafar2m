@@ -1,12 +1,19 @@
 PLUGNAME = highlight
 CONFIG   = highlight.cfg
 LANG_GEN =
-SYS_ID   = 0xF6138DC9
 SETPACKAGEPATH = 1
 
 SRC_PLUG_DIRS = syntaxes
 SRC_PLUG_SHARE = *.lua *.hlf
 
 FAR_EXPORTS = OPENPLUGIN PROCESSEDITOREVENT PROCESSEDITORINPUT
+
+# Global Info
+SYS_ID             = 0xF6138DC9
+PLUG_MINFARVERSION = 0x00020004
+PLUG_VERSION       = 0x00000005
+PLUG_TITLE         = \"Highlight\"
+PLUG_DESCRIPTION   = \"Syntax highlighter for editor\"
+PLUG_AUTHOR        = \"Shmuel Zeigerman\"
 
 include ../../plugin.mak

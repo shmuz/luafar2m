@@ -1,7 +1,6 @@
 PLUGNAME = lf4ed
 CONFIG   = lf4ed.cfg
 LANG_GEN = lf4ed_lang.lua
-SYS_ID   = 0x6F332978
 SETPACKAGEPATH = 1
 
 SRC_PLUG_DIRS = scripts
@@ -9,5 +8,13 @@ SRC_PLUG_DIRS = scripts
 FAR_EXPORTS = \
   CONFIGURE  EXITFAR  MAYEXITFAR  OPENPLUGIN  PROCESSEDITOREVENT \
   PROCESSEDITORINPUT  PROCESSVIEWEREVENT  PROCESSDIALOGEVENT
+
+# Global Info
+SYS_ID             = 0x6F332978
+PLUG_MINFARVERSION = 0x00020004
+PLUG_VERSION       = 0x00030009
+PLUG_TITLE         = \"LuaFAR for Editor\"
+PLUG_DESCRIPTION   = \"A host for scripts and script packets\"
+PLUG_AUTHOR        = \"Shmuel Zeigerman\"
 
 include ../../plugin.mak
