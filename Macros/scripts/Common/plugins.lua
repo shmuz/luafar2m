@@ -1,6 +1,7 @@
 -- started    : 2011-02-20
 -- far2m port : 2023-01-11
 
+local OsWindows = package.config:sub(1,1)=="\\"
 local F=far.Flags
 
 local breakkeys = {
@@ -15,6 +16,10 @@ local properties = {
 }
 
 local last_module
+
+local function GetFileName(name)
+  return name:match(OsWindows and "[^\\]+$" or "[^/]+$");
+end
 
 local function Main()
   -- Get space for this script's data. Kept alive between the script's invocations.
@@ -52,7 +57,7 @@ local function Main()
     for _,v in pairs(Plugins) do
       local loaded = v.handle and (0 ~= bit64.band(v.Flags, F.FPF_LOADED))
       items[#items+1] = {
-        text = v.PInfo.PluginMenu[1] or v.PInfo.PluginConfig[1] or v.ModuleName:match("[^/]+$");
+        text = v.PInfo.PluginMenu.Strings[1] or v.PInfo.PluginConfig.Strings[1] or GetFileName(v.ModuleName);
         info = v;
         checked = loaded and "+" or not v.handle and "-" or nil;
       }
