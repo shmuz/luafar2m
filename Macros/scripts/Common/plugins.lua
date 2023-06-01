@@ -9,6 +9,7 @@ local breakkeys = {
   { BreakKey="Ins";      command="forcedload"; },
   { BreakKey="Del";      command="unload";     },
   { BreakKey="CtrlDel";  command="clearcache"; },
+  { BreakKey="F3";       command="showinfo";   },
 }
 
 local properties = {
@@ -94,6 +95,14 @@ local function Main()
           far.UnloadPlugin(mItem.info.handle)
         else
           mf.postmacro(far.Message, "I'm running this script and cannot unload myself !!!", mItem.text, nil, "w")
+        end
+      end
+
+    elseif command == "showinfo" then
+      if mItem.info.handle then
+        local info = far.GetPluginInformation(mItem.info.handle)
+        if info then
+          require "far2.lua_explorer" (info, "info")
         end
       end
 

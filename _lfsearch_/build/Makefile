@@ -24,7 +24,7 @@ FAR_EXPORTS =           \
 # Global Info
 SYS_ID             = 0x8E11EA75
 PLUG_MINFARVERSION = 0x00020004
-PLUG_VERSION       = 0x0003002D
+PLUG_VERSION       = 0x032D0005
 PLUG_TITLE         = \"LuaFAR Search\"
 PLUG_DESCRIPTION   = \"Plugin for search and replace\"
 PLUG_AUTHOR        = \"Shmuel Zeigerman\"

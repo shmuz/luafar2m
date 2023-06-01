@@ -12,7 +12,7 @@ FAR_EXPORTS = \
 # Global Info
 SYS_ID             = 0x6F332978
 PLUG_MINFARVERSION = 0x00020004
-PLUG_VERSION       = 0x00030009
+PLUG_VERSION       = 0x03090003
 PLUG_TITLE         = \"LuaFAR for Editor\"
 PLUG_DESCRIPTION   = \"A host for scripts and script packets\"
 PLUG_AUTHOR        = \"Shmuel Zeigerman\"
