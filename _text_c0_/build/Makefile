@@ -8,8 +8,8 @@ FAR_EXPORTS = \
 
 # Global Info
 SYS_ID             = 0x5D4AAAB0
-PLUG_MINFARVERSION = 0x00020004
-PLUG_VERSION       = 0x00010000
+PLUG_MINFARVERSION = "MAKEFARVERSION(2,4)"
+PLUG_VERSION       = "MAKEPLUGVERSION(0,1,0,0)"
 PLUG_TITLE         = \"text_c0\"
 PLUG_DESCRIPTION   = \"Displays some text from a file in 'Alternative full' panel column\"
 PLUG_AUTHOR        = \"Shmuel Zeigerman\"

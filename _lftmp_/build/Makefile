@@ -10,8 +10,8 @@ FAR_EXPORTS = \
 
 # Global Info
 SYS_ID             = 0xE2500D1C
-PLUG_MINFARVERSION = 0x00020004
-PLUG_VERSION       = 0x03010002
+PLUG_MINFARVERSION = "MAKEFARVERSION(2,4)"
+PLUG_VERSION       = "MAKEPLUGVERSION(3,1,2,0)"
 PLUG_TITLE         = \"LuaFAR Temp. Panel\"
 PLUG_DESCRIPTION   = \"A Lua clone of TmpPanel plugin\"
 PLUG_AUTHOR        = \"Far Group, Shmuel Zeigerman\"
