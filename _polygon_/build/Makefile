@@ -26,7 +26,7 @@ FAR_EXPORTS = \
 # Global Info
 SYS_ID             = 0xD4BC5EA7
 PLUG_MINFARVERSION = "MAKEFARVERSION(2,4)"
-PLUG_VERSION       = "{1,8,2,0}"
+PLUG_VERSION       = "1,8,2,0"
 PLUG_TITLE         = \"Polygon\"
 PLUG_DESCRIPTION   = \"Plugin for viewing and editing SQLite3 database files\"
 PLUG_AUTHOR        = \"Artem Senichev, Shmuel Zeigerman\"

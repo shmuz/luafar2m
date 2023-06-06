@@ -11,7 +11,7 @@ FAR_EXPORTS = OPENPLUGIN PROCESSEDITOREVENT PROCESSEDITORINPUT
 # Global Info
 SYS_ID             = 0xF6138DC9
 PLUG_MINFARVERSION = "MAKEFARVERSION(2,4)"
-PLUG_VERSION       = "{0,5,1,0}"
+PLUG_VERSION       = "0,5,1,0"
 PLUG_TITLE         = \"Highlight\"
 PLUG_DESCRIPTION   = \"Syntax highlighter for editor\"
 PLUG_AUTHOR        = \"Shmuel Zeigerman\"

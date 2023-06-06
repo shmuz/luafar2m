@@ -12,7 +12,7 @@ FAR_EXPORTS = \
 # Global Info
 SYS_ID             = 0x50F187DF
 PLUG_MINFARVERSION = "MAKEFARVERSION(2,4)"
-PLUG_VERSION       = "{0,2,0,0}"
+PLUG_VERSION       = "0,2,0,0"
 PLUG_TITLE         = \"Lua Panel\"
 PLUG_DESCRIPTION   = \"Panel-mode Lua-state browser\"
 PLUG_AUTHOR        = \"Shmuel Zeigerman\"
