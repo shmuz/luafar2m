@@ -28,7 +28,7 @@
 ----------------------------------------------------------------------------
 -- @@ Lunatic Python library
 -- Set to nil if the library is not available.
-local Lib_Python = "37-python" -- Python 3.7
+local Lib_Python = "python"
 --<< SETTINGS END
 ----------------------------------------------------------------------------
 

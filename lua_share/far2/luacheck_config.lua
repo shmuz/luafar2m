@@ -49,8 +49,8 @@ local luafar = {
             "ACTL_GETCURSORPOS", "ACTL_GETDESCSETTINGS", "ACTL_GETDIALOGSETTINGS", "ACTL_GETFARHWND", "ACTL_GETFARRECT",
             "ACTL_GETFARVERSION", "ACTL_GETINTERFACESETTINGS", "ACTL_GETPANELSETTINGS", "ACTL_GETPLUGINMAXREADDATA", "ACTL_GETSHORTWINDOWINFO",
             "ACTL_GETSYSTEMSETTINGS", "ACTL_GETSYSWORDDIV", "ACTL_GETWINDOWCOUNT", "ACTL_GETWINDOWINFO", "ACTL_KEYMACRO",
-            "ACTL_PROGRESSNOTIFY", "ACTL_QUIT", "ACTL_REDRAWALL", "ACTL_SETARRAYCOLOR",
-            "ACTL_SETCURRENTWINDOW", "ACTL_SETCURSORPOS", "ACTL_SETPROGRESSSTATE", "ACTL_SETPROGRESSVALUE", "ACTL_SYNCHRO",
+            "ACTL_QUIT", "ACTL_REDRAWALL", "ACTL_SETARRAYCOLOR",
+            "ACTL_SETCURRENTWINDOW", "ACTL_SETCURSORPOS", "ACTL_SYNCHRO",
             "ACTL_WAITKEY", "BACKGROUND_BLUE", "BACKGROUND_GREEN", "BACKGROUND_INTENSITY", "BACKGROUND_RED",
             "BS_B_H1V1", "BS_B_H1V2", "BS_B_H2V1", "BS_B_H2V2", "BS_C_H1V1",
             "BS_C_H1V2", "BS_C_H2V1", "BS_C_H2V2", "BS_H1", "BS_H2",
@@ -359,8 +359,8 @@ local luafar = {
         "GetDescSettings", "GetDialogSettings", "GetFarHwnd", "GetFarRect", "GetFarVersion",
         "GetInterfaceSettings", "GetPanelSettings", "GetPluginMaxReadData", "GetShortWindowInfo",
         "GetSystemSettings", "GetSysWordDiv", "GetWindowCount", "GetWindowInfo", "KeyMacro",
-        "ProgressNotify", "Quit", "RedrawAll", "SetArrayColor", "SetCurrentWindow", "SetCursorPos",
-        "SetProgressState", "SetProgressValue", "Synchro", "WaitKey", "WinPortBackend",
+        "Quit", "RedrawAll", "SetArrayColor", "SetCurrentWindow", "SetCursorPos",
+        "Synchro", "WaitKey", "WinPortBackend",
       };
     };
 
@@ -414,7 +414,7 @@ local luafar = {
       fields = {
         "Clock", "CompareString", "CopyFile", "CreateDir", "DeleteFile", "EnumSystemCodePages",
         "ExtractKey", "FileTimeToLocalFileTime", "FileTimeToSystemTime", "GetACP",
-        "GetConsoleScreenBufferInfo", "GetCPInfo", "GetCurrentDir", "GetDriveType", "GetEnv",
+        "GetConsoleScreenBufferInfo", "GetCPInfo", "GetCurrentDir", "GetEnv",
         "GetFileAttr", "GetFileInfo", "GetLocalTime", "GetOEMCP", "GetSystemTime", "GetSystemTimeAsFileTime",
         "GetVirtualKeys", "IsProcess64bit", "lenW", "MoveFile", "MultiByteToWideChar", "OemToUtf8",
         "RemoveDir", "RenameFile", "SetCurrentDir", "SetEnv", "SetFileAttr", "Sleep", "subW",
