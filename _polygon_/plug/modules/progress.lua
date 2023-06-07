@@ -27,7 +27,6 @@ end
 function progress:show()
   if not self._visible then
     self._visible = true
-    far.AdvControl("ACTL_SETPROGRESSSTATE", "PGS_INDETERMINATE")
   end
 
   if self._bar == nil then
@@ -40,8 +39,6 @@ end
 
 function progress:hide()
   if self._visible then
-    far.AdvControl("ACTL_PROGRESSNOTIFY")
-    far.AdvControl("ACTL_SETPROGRESSSTATE", "PGS_NOPROGRESS")
     panel.RedrawPanel(1)
     panel.RedrawPanel(0)
     self._visible = false
@@ -55,10 +52,6 @@ function progress:update(val)
   end
   if self._max_value > 0 then
     local percent = math.floor(val * 100 / self._max_value)
-
-    local pv = { Completed=percent; Total=100 }
-    far.AdvControl("ACTL_SETPROGRESSVALUE", pv)
-
     local len = math.floor(percent * PROGRESS_WIDTH / 100)
     self._bar = CHAR_SOLID:rep(len) .. CHAR_DOTTED:rep(PROGRESS_WIDTH - len)
   end

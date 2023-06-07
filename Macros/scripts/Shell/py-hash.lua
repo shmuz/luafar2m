@@ -88,7 +88,6 @@ local function display_progress (fullname, cntFound, cntTotal, ratio)
   local msg = ("%s\n%s\nProcessed: %s/%s"):format(
     fname, set_progress(W2,ratio), format_num(cntFound), format_num(cntTotal))
   far.Message(msg, "Calculating file hashes...", "")
-  far.AdvControl("ACTL_SETPROGRESSVALUE", nil, { Completed=cntFound, Total=cntTotal })
 end
 
 local function select_hash_types (list)
@@ -137,7 +136,6 @@ local function GetHashes()
 
   -- Execution --
   local pylist = CalcHashes(fullname) -- returns a Python List represented as a Lua userdata
-------  far.AdvControl("ACTL_SETPROGRESSSTATE", "TBPS_NOPROGRESS")
   if not pylist then return end
 
   -- Showing the results --
