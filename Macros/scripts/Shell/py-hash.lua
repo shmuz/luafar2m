@@ -172,5 +172,9 @@ Macro {
   action=GetHashes;
   -- The condition function is not used here for its intended purpose; rather we take
   -- advantage of the fact that lua_State here is "main" (not that of a coroutine)
-  condition = function() return pcall(require, "python"); end;
+  condition = function()
+    local ok
+    ok, _G.python = pcall(require, "python")
+    return ok
+  end;
 }

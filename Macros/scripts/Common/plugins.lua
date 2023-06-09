@@ -58,7 +58,10 @@ local function Main()
     for _,v in pairs(Plugins) do
       local loaded = v.handle and (0 ~= bit64.band(v.Flags, F.FPF_LOADED))
       items[#items+1] = {
-        text = v.PInfo.PluginMenu.Strings[1] or v.PInfo.PluginConfig.Strings[1] or GetFileName(v.ModuleName);
+        text = (v.GInfo.Title ~= "" and v.GInfo.Title)
+               or v.PInfo.PluginConfig.Strings[1]
+               or v.PInfo.PluginMenu.Strings[1]
+               or GetFileName(v.ModuleName);
         info = v;
         checked = loaded and "+" or not v.handle and "-" or nil;
       }
