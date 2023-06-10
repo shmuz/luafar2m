@@ -1,6 +1,6 @@
 PLUGNAME = lf4ed
 CONFIG   = lf4ed.cfg
-LANG_GEN = lf4ed_lang.lua
+LANG_TEMPL = lf4ed_lang.templ
 SETPACKAGEPATH = 1
 
 SRC_PLUG_DIRS = scripts

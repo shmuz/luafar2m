@@ -1,6 +1,6 @@
 PLUGNAME = lfhistory
 CONFIG   = lfhistory.cfg
-LANG_GEN = lfh_lang.lua
+LANG_TEMPL = lfh_lang.templ
 SETPACKAGEPATH = 1
 
 FAR_EXPORTS = CONFIGURE  OPENPLUGIN

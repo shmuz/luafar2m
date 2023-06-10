@@ -5,7 +5,7 @@ include ../../config.mak
 # The following 4 variables should be defined by the including make file
 CONFIG      ?=
 FAR_EXPORTS ?=
-LANG_GEN    ?=
+LANG_TEMPL  ?=
 PLUGNAME    ?=
 
 C_SOURCE ?= $(FARSOURCE)/luafar/src/luaplug.c
@@ -17,7 +17,8 @@ endif
 LUAC        = luac5.1
 PATH_PLUGIN = ../plug
 GEN_METHOD  = -plain
-MAKE_LANG   = $(LUAEXE) -epackage.path=[[$(LUA_SHARE)/?.lua]] $(LANG_GEN)
+MAKE_LANG   = $(LUAEXE) -epackage.path=\"$(LUA_SHARE)/?.lua\" \
+              -erequire\"far2.makelang\"\(\"$(LANG_TEMPL)\"\)
 
 ifndef EMBED
   TRG = $(PLUGNAME).far-plug-wide
@@ -46,7 +47,9 @@ CFLAGS2 = $(CFLAGS1) -DEMBED
 $(TRG): $(OBJ) $(LIBS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 	mv -f $@ $(PATH_PLUGIN)
+ifdef LANG_TEMPL
 	cd $(PATH_PLUGIN) && $(MAKE_LANG)
+endif
 
 # Since linit.c has changing prerequisites (sets of Lua files),
 # that can not be specified in this makefile, it is better be

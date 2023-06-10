@@ -1,6 +1,6 @@
 PLUGNAME = lftmp
 CONFIG   = tmppanel.cfg
-LANG_GEN = tmpp_lang.lua
+LANG_TEMPL = tmpp_lang.templ
 SETPACKAGEPATH = 1
 
 FAR_EXPORTS = \

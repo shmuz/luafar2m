@@ -1,9 +1,6 @@
 -- started: 2010-05-30
 -- author: Shmuel Zeigerman
 
--- forward declarations
-local get_quoted
-
 --[[---------------------------------------------------------------------------
 Purpose:
   Makes  creation and  maintenance of  LuaFAR plugins'  language files
@@ -13,29 +10,9 @@ Purpose:
   not matter.
 -------------------------------------------------------------------------------
 Input:
-  @aModuleFileName:
-    Name  of  Lua  module  file  to  be generated.  This file  will be
-    require()'d by every file that needs to  use this  message system.
+  @aFileName:
+    Name  of a "template" file.
 
-  @aDescriptions:
-    Array of description tables (description table per language). Each
-    description  table  must  contain  fields 'filename'  and 'line1'.
-
-  ... :
-    Arbitrary  number  of  "template"  file names  (at least  one file
-    should be specified) .
-
-    Each template file  contains "message  blocks" delimited  by empty
-    lines. A  message block  consists of  an "identifier"  line (first
-    non-comment line; unquoted) following by one or more "value" lines
-    (line  per  language;  quoted).  The   order  of   languages  must
-    correspond to that in `aDescriptions' argument. No empty lines are
-    permitted within a  message block.  Comment lines  (beginning with
-    //)   are   permitted;   they   are   ignored   by   the   parser.
-
-    "Value"  line  next  to  "identifier"  line is  considered default
-    value. If any of the  following values  equals to  "upd:" (without
-    quotes)   then   the   default   value  is   substituted  instead.
 -------------------------------------------------------------------------------
 Files written:
   A) Lua module file.
@@ -47,62 +24,107 @@ Returns:
 -------------------------------------------------------------------------------
 --]]
 
-local function MakeLang (aModuleFileName, aDescriptions, ...)
-  assert ( type(aModuleFileName) == "string" )
-  assert ( type(aDescriptions) == "table" )
-  local tFiles = {...}
-  assert(#tFiles > 0, "no files specified")
+local function get_quoted (s)
+  if s:sub(1,1) ~= '"' then
+    error("no opening quote in line: " .. s)
+  end
+  local len, q = 1, nil
+  for c in s:sub(2):gmatch("\\?.") do
+    len = len + c:len()
+    if c == '"' then q=c break end
+  end
+  if not q then
+    error("no closing quote in line: " .. s)
+  end
+  return s:sub(1, len)
+end
+
+local function MakeLang (aFileName)
+  assert ( type(aFileName) == "string" )
 
   local bom_utf8 = "\239\187\191"
   local exist = {}
   local t_out = {}
-  for k=1, 1 + #aDescriptions do t_out[k] = {} end
+  local languages = {}
+  local msgfile, lngfile
 
-  for _, fname in ipairs(tFiles) do
-    local fp = assert(io.open(fname))
-    local sMessages = fp:read("*a")
-    fp:close()
-    if string.sub(sMessages, 1, 3) == bom_utf8 then
-      sMessages = string.sub(sMessages, 4)
-    end
-
+  do
+    local fp = assert(io.open(aFileName))
+    local stOut, stLang, stSett, stMsg = 1,2,3,4
+    local state = stOut
     local n = 0
     local dflt
-    for line in (sMessages.."\n\n"):gmatch("([^\r\n]*)\r?\n") do
-      if not line:match("^%s*//") then -- comment lines are always skipped
-        if line:match("%S") then
-          n = n + 1
-          if n > #t_out then
-            error("extra line in block: " .. line)
-          elseif n == 1 then
-            local ident = line:match("^([%a_][%w_]*)%s*$")
-            if ident then
-              if exist[ident] then
-                error("duplicate identifier: "..line)
-              end
-              exist[ident] = true
-              table.insert(t_out[n], ident)
-            else
-              error("bad message name: `" .. line .. "'")
-            end
-          elseif n == 2 then
-            dflt = get_quoted(line)
-            table.insert(t_out[n], dflt)
-          else
-            table.insert(t_out[n],
-                         line:match("^upd:") and "// need translation:\n"..dflt or get_quoted(line))
+    if fp:read(3) ~= bom_utf8 then -- skip UTF8 BOM
+      fp:seek("set", 0)
+    end
+
+    for line in fp:lines() do
+      if state~=stMsg and (line:match("^%s*$") or line:match("^%s*//")) then
+        line = line -- luacheck: no unused
+      elseif state==stOut then
+        if line:lower():match("%[languages%]") then
+          state=stLang
+        else
+          error "[Languages] expected"
+        end
+      elseif state==stLang then
+        if line:lower():match("%[settings%]") then
+          assert(languages[1], "no language found in [Languages]")
+          for k=1, 1 + #languages do t_out[k] = {} end
+          state=stSett
+        else
+          local s = assert(line:match("^%s*(%.Language=%w%w%w.*)"))
+          table.insert(languages, s)
+        end
+      elseif state==stSett then
+        if line:lower():match("%[messages%]") then
+          assert(msgfile, "no msgfile found in [Settings]")
+          assert(lngfile, "no lngfile found in [Settings]")
+          state = stMsg
+        else
+          local k,v = line:match("%s*([^%s=]+)%s*=%s*(%S+)")
+          assert(k, "bad line in [Settings]")
+          if k:lower()=="msgfile"     then msgfile=v
+          elseif k:lower()=="lngfile" then lngfile=v
           end
-        else -- empty line: serves as a delimiter between blocks
-          if n > 0 then
-            if n < #t_out then
-              local t = t_out[1]
-              error("too few lines in block `" .. t[#t] .. "'")
+        end
+      elseif state==stMsg then
+        if not line:match("^%s*//") then -- comment lines are always skipped
+          if line:match("%S") then
+            n = n + 1
+            if n > #t_out then
+              error("extra line in block: " .. line)
+            elseif n == 1 then
+              local ident = line:match("^([%a_][%w_]*)%s*$")
+              if ident then
+                if exist[ident] then
+                  error("duplicate identifier: "..line)
+                end
+                exist[ident] = true
+                table.insert(t_out[n], ident)
+              else
+                error("bad message name: `" .. line .. "'")
+              end
+            elseif n == 2 then
+              dflt = get_quoted(line)
+              table.insert(t_out[n], dflt)
+            else
+              table.insert(t_out[n],
+                           line:match("^upd:") and "// need translation:\n"..dflt or get_quoted(line))
             end
-            n = 0
+          else -- empty line: serves as a delimiter between blocks
+            if n > 0 then
+              if n < #t_out then
+                local t = t_out[1]
+                error("too few lines in block `" .. t[#t] .. "'")
+              end
+              n = 0
+            end
           end
         end
       end
     end
+    fp:close()
   end
   ----------------------------------------------------------------------------
   -- check for duplicates
@@ -112,7 +134,7 @@ local function MakeLang (aModuleFileName, aDescriptions, ...)
     map[name] = true
   end
   ----------------------------------------------------------------------------
-  local fp = assert(io.open(aModuleFileName, "w"))
+  local fp = assert(io.open(msgfile, "w"))
   fp:write("-- This file is auto-generated. Don't edit.\n\n")
   fp:write("local indexes = {\n")
   for k,name in ipairs(t_out[1]) do
@@ -126,27 +148,15 @@ return setmetatable( {},
 ]])
   fp:close()
   ----------------------------------------------------------------------------
-  for k,v in ipairs(aDescriptions) do
-    fp = assert(io.open(v.filename, "w"))
-    fp:write(bom_utf8, v.line1, "\n\n")
+  for k,v in ipairs(languages) do
+    local suffix = v:match("%.Language=(%w%w%w)")
+    suffix = assert(suffix, v):lower()
+    local fname = lngfile.."_"..suffix..".lng"
+    fp = assert(io.open(fname, "w"))
+    fp:write(bom_utf8, v, "\n\n")
     fp:write(table.concat(t_out[k+1], "\n"), "\n")
     fp:close()
   end
-end
-
-get_quoted = function(s)
-  if s:sub(1,1) ~= '"' then
-    error("no opening quote in line: " .. s)
-  end
-  local len, q = 1, nil
-  for c in s:sub(2):gmatch("\\?.") do
-    len = len + c:len()
-    if c == '"' then q=c break end
-  end
-  if not q then
-    error("no closing quote in line: " .. s)
-  end
-  return s:sub(1, len)
 end
 
 return MakeLang

@@ -33,11 +33,11 @@
   are always exported, so there's no need to include them in the list.
 - Example: `FAR_EXPORTS = OPENPLUGIN EXITFAR`
 
-## LANG_GEN
-- Name of a Lua script used for generation of plugin's language files
-  out of `*.templ` files
+## LANG_TEMPL
+- Name of a "template" file containing strings for all the languages
+  supported by the plugin
 - Not required if the plugin does not have `*.templ` files
-- Example: `LANG_GEN = polygon_lang.lua`
+- Example: `LANG_TEMPL = polygon_lang.templ`
 
 ## CONFIG
 - A configuration file (Lua script) used in generating an "embedding"

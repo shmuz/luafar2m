@@ -1,6 +1,6 @@
 PLUGNAME = polygon
 CONFIG   = polygon.cfg
-LANG_GEN = polygon_lang.lua
+LANG_TEMPL = polygon_lang.templ
 C_SOURCE = ../plug/polygon.c
 MYCFLAGS = -I$(FARSOURCE)/luafar/src
 MYLDFLAGS = -lsqlite3
