@@ -660,6 +660,20 @@ function List:KeyEnd()
   end
 end
 
+function List:KeyMsWheel(hDlg, dir)
+  local N = #self.drawitems
+  if N > 0 then
+    if dir == "down" then
+      self.upper = max(1, self.upper-1)
+      self.sel = max(1, self.sel-1)
+    else
+      self.upper = min(max(1, N-self.h+1), self.upper+1)
+      self.sel = min(N, self.sel+1)
+    end
+    hDlg:Redraw()
+  end
+end
+
 function List:DeleteCurrentItem (hDlg)
   local Item = self.drawitems[self.sel]
   local index = Item and self.idata[Item].index
@@ -811,18 +825,22 @@ function List:Key (hDlg, key)
     if ret == "done" then return "done" end
   end
 
-  if key == F.KEY_HOME or key == F.KEY_NUM7 then
+  if key == F.KEY_HOME or key == F.KEY_NUMPAD7 then
     self:KeyHome()
-  elseif key == F.KEY_END or key == F.KEY_NUM1 then
+  elseif key == F.KEY_END or key == F.KEY_NUMPAD1 then
     self:KeyEnd()
-  elseif key == F.KEY_DOWN or key == F.KEY_RIGHT or key == F.KEY_NUM2 or key == F.KEY_NUM6 then
+  elseif key == F.KEY_DOWN or key == F.KEY_RIGHT or key == F.KEY_NUMPAD2 or key == F.KEY_NUMPAD6 then
     self:KeyDown(true)
-  elseif key == F.KEY_UP or key == F.KEY_LEFT or key == F.KEY_NUM8 or key == F.KEY_NUM4 then
+  elseif key == F.KEY_UP or key == F.KEY_LEFT or key == F.KEY_NUMPAD8 or key == F.KEY_NUMPAD4 then
     self:KeyUp(true)
-  elseif key == F.KEY_PGDN or key == F.KEY_NUM3 then
+  elseif key == F.KEY_PGDN or key == F.KEY_NUMPAD3 then
     self:KeyPageDown()
-  elseif key == F.KEY_PGUP or key == F.KEY_NUM9 then
+  elseif key == F.KEY_PGUP or key == F.KEY_NUMPAD9 then
     self:KeyPageUp()
+  elseif key == F.KEY_MSWHEEL_DOWN then
+    self:KeyMsWheel(hDlg, "down")
+  elseif key == F.KEY_MSWHEEL_UP then
+    self:KeyMsWheel(hDlg, "up")
 
   elseif key == F.KEY_ENTER or key == F.KEY_NUMENTER then
     return Item, Item and self.idata[Item].index

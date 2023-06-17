@@ -281,7 +281,7 @@ local function FoldersHistory_CanClose (self, item, breakkey)
     return true
   end
   ----------------------------------------------------------------------------
-  local GetNextPath = function(s) return s:match("^(.*[\\/]).+") end
+  local GetNextPath = function(s) return s:match("(.*/).+") end
   if not GetNextPath(item.text) then -- check before asking user
     far.Message(item.text, M.mPathNotFound, nil, "w")
     return false
@@ -306,7 +306,8 @@ local function FoldersHistory_CanClose (self, item, breakkey)
   end
 end
 
-local function MakeMenuParams (aCommonConfig, aHistTypeConfig, aHistTypeData, aItems, aHistObject)
+local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems, aHistObject)
+  local Cfg = _Plugin.Cfg
   local menuProps = {
     DialogId      = win.Uuid("d853e243-6b82-4b84-96cd-e733d77eeaa1"),
     Flags         = {FMENU_WRAPMODE=1},
@@ -315,12 +316,12 @@ local function MakeMenuParams (aCommonConfig, aHistTypeConfig, aHistTypeData, aI
     SelectIndex   = #aItems,
   }
   local listProps = {
-    autocenter    = aCommonConfig.bAutoCenter,
-    resizeW       = aHistTypeConfig.bDynResize or aCommonConfig.bDynResize,
-    resizeH       = aHistTypeConfig.bDynResize or aCommonConfig.bDynResize,
+    autocenter    = Cfg.bAutoCenter,
+    resizeW       = aHistTypeConfig.bDynResize or Cfg.bDynResize,
+    resizeH       = aHistTypeConfig.bDynResize or Cfg.bDynResize,
     resizeScreen  = true,
-    col_highlight = aCommonConfig.HighTextColor or 0x3A,
-    col_selectedhighlight = aCommonConfig.SelHighTextColor or 0x0A,
+    col_highlight = Cfg.HighTextColor or 0x3A,
+    col_selectedhighlight = Cfg.SelHighTextColor or 0x0A,
     selalign      = "bottom",
     selignore     = true,
     searchmethod  = aHistTypeData.searchmethod or "dos",
@@ -423,7 +424,7 @@ local function get_history (aConfig)
   end
 
   -- execute the menu
-  local menuProps, list = MakeMenuParams(_Plugin.Cfg, aConfig, settings, menu_items, hst)
+  local menuProps, list = MakeMenuParams(aConfig, settings, menu_items, hst)
   SortListItems(list, _Plugin.Cfg.bDirectSort, nil)
   local item, itempos = custommenu.Menu(menuProps, list)
   settings.searchmethod = list.searchmethod
@@ -505,7 +506,7 @@ local function LocateFile2()
   local hst = Sett.mload(SETTINGS_KEY, cfgLocateFile.PluginHistoryType) or {}
   local settings = Field(hst, "settings")
 
-  local menuProps, list = MakeMenuParams(_Plugin.Cfg, cfgLocateFile, settings, items, hst)
+  local menuProps, list = MakeMenuParams(cfgLocateFile, settings, items, hst)
   list.searchstart = 2
 
   local item, itempos = custommenu.Menu(menuProps, list)
@@ -549,6 +550,7 @@ function export.OpenFromMacro (Item)
   elseif Item[1] == "view"     then view_history()
   elseif Item[1] == "folders"  then folders_history()
   elseif Item[1] == "locate"   then LocateFile2()
+  elseif Item[1] == "config"   then export.Configure()
   end
 end
 

@@ -1,12 +1,12 @@
--- started: 2023-05-06
-local inifile = require "inifile"
-local sdialog = require "far2.simpledialog"
+-- Started: 2023-05-06
+-- Depends on modules: inifile, far2.simpledialog
 
 local function Trim(txt)
   return txt:match("%s*(.-)%s*$")
 end
 
 local function EditItem(aName, aVal, aGuard)
+  local sdialog = require "far2.simpledialog"
   local Items = {
     {tp="dbox"; text="Groups of file masks"; },
     {tp="text"; text="&Name:"; },
@@ -47,6 +47,7 @@ local function CreateMenuItem(name, val)
 end
 
 local function main()
+  local inifile = require "inifile"
   local filename = far.InMyConfig("settings/masks.ini")
   local Ini = inifile.New(filename, true)
   local Sec = Ini:add_section("Masks")
