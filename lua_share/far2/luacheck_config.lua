@@ -28,12 +28,12 @@ local luafar = {
         "AdvControl", "CheckMask", "ClearPluginCache", "CmpName", "CmpNameList", "ColorDialog",
         "Colors", "ConvertPath", "CopyToClipboard", "CPluginStartupInfo", "CreateFileFilter",
         "CreateUserControl", "DefDlgProc", "Dialog", "DialogFree", "DialogInit", "DialogRun",
-        "Execute", "ExecuteLibrary", "MacroCallToLua", "FindPlugin", "Flags", "ForcedLoadPlugin",
+        "Execute", "ExecuteLibrary", "MacroCallToLua", "FindPlugin", "ForcedLoadPlugin",
         "FreeScreen", "GenerateName", "GetCurrentDirectory", "GetDirList", "GetFileEncoding",
         "GetFileOwner", "GetFileGroup", "GetMsg", "GetMyHome", "GetNumberOfLinks",
         "GetPluginGlobalInfo", "GetPluginId",
-        "GetPluginInformation", "GetPluginDirList", "GetPlugins", "GetReparsePointInfo", "Guids",
-        "Host", "InMyCache", "InMyConfig", "InMyTemp", "InputBox", "InputRecordToKey",
+        "GetPluginInformation", "GetPluginDirList", "GetPlugins", "GetReparsePointInfo",
+        "InMyCache", "InMyConfig", "InMyTemp", "InputBox", "InputRecordToKey",
         "InputRecordToName", "Keys", "KeyToName", "LIsAlpha", "LIsAlphanum", "LIsLower", "LIsUpper",
         "LLowerBuf", "LoadPlugin", "Log", "LStricmp", "LStrnicmp", "LuafarVersion", "LUpperBuf",
         "MacroAdd", "MacroCallFar", "MacroCheck", "MacroDelete", "MacroExecute", "MacroGetArea",
@@ -344,6 +344,10 @@ local luafar = {
             "FileOpenCreateId", "FileSaveAsId", "FindFileId", "HardSymLinkId",
             "MakeFolderId", "MoveFilesId",
          }
+        },
+
+        ["Host"] = {
+          fields = { "GetFiles", "GetFindData", "SetDirectory" };
         },
 
         ["ReloadDefaultScript"] = {
