@@ -40,7 +40,7 @@ local luafar = {
         "MacroGetLastError", "MacroGetState", "MacroLoadAll", "MacroPost", "MacroSaveAll",
         "MakeMenuItems", "Menu", "Message", "MkLink", "MkTemp", "NameToInputRecord", "NameToKey",
         "PasteFromClipboard", "PluginStartupInfo", "ProcessName", "RecursiveSearch",
-        "ReloadDefaultScript", "RestoreScreen", "SaveScreen", "SendDlgMessage", "Show", "ShowHelp",
+        "RestoreScreen", "SaveScreen", "SendDlgMessage", "Show", "ShowHelp",
         "Text", "Timer", "TruncPathStr", "TruncStr", "UnloadPlugin", "XLat",
 
         ["Flags"] = {
