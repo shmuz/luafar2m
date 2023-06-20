@@ -22,6 +22,8 @@ local DefaultCfg = {
   iSizeCmd    = 1000,
   iSizeView   = 1000,
   iSizeFold   = 1000,
+  HighTextColor    = 0x3A,
+  SelHighTextColor = 0x0A,
 }
 
 local cfgView = {
@@ -72,8 +74,12 @@ local cfgLocateFile = {
   bDynResize = true,
 }
 
+local function GetBoolConfigValue(Cfg, Key)
+  if Cfg[Key] ~= nil then return Cfg[Key] else return DefaultCfg[Key] end
+end
+
 local function GetFileAttrEx(fname)
-  return win.GetFileAttr(fname) or win.GetFileAttr([[\\?\]]..fname)
+  return win.GetFileAttr(fname)
 end
 
 local function IsCtrlEnter (key)
@@ -259,7 +265,7 @@ local function GetListKeyFunction (HistTypeConfig, HistObject)
   end
 end
 
-local function ViewHistory_CanClose (self, item, breakkey)
+function cfgView.CanClose (self, item, breakkey)
   if item and (IsCtrlPgUp(breakkey) or IsCtrlPgDn(breakkey)) and not LocateFile(item.text) then
     TellFileNotExist(item.text)
     return false
@@ -267,7 +273,7 @@ local function ViewHistory_CanClose (self, item, breakkey)
   return true
 end
 
-local function FoldersHistory_CanClose (self, item, breakkey)
+function cfgFolders.CanClose (self, item, breakkey)
   if not item then
     return true
   end
@@ -317,11 +323,11 @@ local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems, aHistObje
   }
   local listProps = {
     autocenter    = Cfg.bAutoCenter,
-    resizeW       = aHistTypeConfig.bDynResize or Cfg.bDynResize,
-    resizeH       = aHistTypeConfig.bDynResize or Cfg.bDynResize,
+    resizeW       = GetBoolConfigValue(aHistTypeConfig, "bDynResize"),
+    resizeH       = GetBoolConfigValue(aHistTypeConfig, "bDynResize"),
     resizeScreen  = true,
-    col_highlight = Cfg.HighTextColor or 0x3A,
-    col_selectedhighlight = Cfg.SelHighTextColor or 0x0A,
+    col_highlight = Cfg.HighTextColor,
+    col_selectedhighlight = Cfg.SelHighTextColor,
     selalign      = "bottom",
     selignore     = true,
     searchmethod  = aHistTypeData.searchmethod or "dos",
@@ -330,8 +336,7 @@ local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems, aHistObje
   }
   local list = custommenu.NewList(listProps, aItems)
   list.keyfunction = GetListKeyFunction(aHistTypeConfig, aHistObject)
-  list.CanClose = (aHistTypeConfig == cfgFolders) and FoldersHistory_CanClose or
-                  (aHistTypeConfig == cfgView) and ViewHistory_CanClose
+  list.CanClose = aHistTypeConfig.CanClose
   return menuProps, list
 end
 

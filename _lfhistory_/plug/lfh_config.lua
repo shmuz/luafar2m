@@ -40,8 +40,8 @@ local function ConfigDialog (aData)
   local Pos = dlg:Indexes()
   dlg:LoadData(aData)
 
-  local hColor0 = aData.HighTextColor    or 0x3A
-  local hColor1 = aData.SelHighTextColor or 0x0A
+  local hColor0 = aData.HighTextColor
+  local hColor1 = aData.SelHighTextColor
 
   Items.proc = function (hDlg, msg, param1, param2)
     if msg == F.DN_BTNCLICK then
