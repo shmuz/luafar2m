@@ -537,6 +537,7 @@ end
 
 function export.GetPluginInfo()
   return {
+    CommandPrefix = "lfh",
     Flags = bit64.bor(F.PF_EDITOR, F.PF_VIEWER),
     PluginConfigStrings = { M.mPluginTitle },
     PluginMenuStrings = { M.mPluginTitle },
@@ -550,13 +551,24 @@ function export.Configure()
   end
 end
 
-function export.OpenFromMacro (Item)
-  if     Item[1] == "commands" then commands_history()
-  elseif Item[1] == "view"     then view_history()
-  elseif Item[1] == "folders"  then folders_history()
-  elseif Item[1] == "locate"   then LocateFile2()
-  elseif Item[1] == "config"   then export.Configure()
+function export.OpenFromMacro (Args)
+  local Op = Args[1]
+  if Op=="code" or Op=="file" or Op=="command" then
+    local _, commandTable = Utils.LoadUserMenu("_usermenu.lua")
+    return Utils.OpenMacro(Args, commandTable, nil, M.mPluginTitle)
+  elseif Op=="own" then
+    if     Args[2] == "commands" then commands_history()
+    elseif Args[2] == "view"     then view_history()
+    elseif Args[2] == "folders"  then folders_history()
+    elseif Args[2] == "locate"   then LocateFile2()
+    elseif Args[2] == "config"   then export.Configure()
+    end
   end
+end
+
+function export.OpenCommandLine (aItem)
+  local _, commandTable = Utils.LoadUserMenu("_usermenu.lua")
+  return Utils.OpenCommandLine(aItem, commandTable, nil, M.mPluginTitle)
 end
 
 function export.OpenPlugin (From, Item)

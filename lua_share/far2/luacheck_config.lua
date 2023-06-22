@@ -41,7 +41,7 @@ local luafar = {
         "MakeMenuItems", "Menu", "Message", "MkLink", "MkTemp", "NameToInputRecord", "NameToKey",
         "PasteFromClipboard", "PluginStartupInfo", "ProcessName", "RecursiveSearch",
         "RestoreScreen", "SaveScreen", "SendDlgMessage", "Show", "ShowHelp",
-        "Text", "Timer", "TruncPathStr", "TruncStr", "UnloadPlugin", "XLat",
+        "Text", "Timer", "TruncPathStr", "TruncStr", "UnloadPlugin", "WriteConsole", "XLat",
 
         ["Flags"] = {
           fields = {
@@ -422,7 +422,7 @@ local luafar = {
         "GetVirtualKeys", "IsProcess64bit", "lenW", "MoveFile", "MultiByteToWideChar", "OemToUtf8",
         "RemoveDir", "RenameFile", "SetCurrentDir", "SetEnv", "SetFileAttr", "Sleep", "subW",
         "SystemTimeToFileTime", "Utf32ToUtf8", "Utf8ToOem", "Utf8ToUtf32", "Uuid", "wcscmp",
-        "WideCharToMultiByte", "WriteConsole",
+        "WideCharToMultiByte",
       };
     };
 
