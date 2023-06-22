@@ -161,7 +161,7 @@ local function SortListItems (list, bDirectSort, hDlg)
   end
 end
 
-local function GetListKeyFunction (HistTypeConfig, HistObject)
+local function GetListKeyFunction (HistTypeConfig, HistTypeData)
   return function (self, hDlg, key, Item)
     -----------------------------------------------------------------------------------------------
     if key=="CtrlI" or key=="RCtrlI" then
@@ -225,7 +225,7 @@ local function GetListKeyFunction (HistTypeConfig, HistObject)
       return "done"
     -----------------------------------------------------------------------------------------------
     elseif key == "F9" then
-      local s = HistObject["lastpattern"]
+      local s = HistTypeData.lastpattern
       if s and s ~= "" then self:ChangePattern(hDlg,s) end
       return "done"
     -----------------------------------------------------------------------------------------------
@@ -312,7 +312,7 @@ function cfgFolders.CanClose (self, item, breakkey)
   end
 end
 
-local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems, aHistObject)
+local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems)
   local Cfg = _Plugin.Cfg
   local menuProps = {
     DialogId      = win.Uuid("d853e243-6b82-4b84-96cd-e733d77eeaa1"),
@@ -335,7 +335,7 @@ local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems, aHistObje
     xlat          = aHistTypeData.xlat,
   }
   local list = custommenu.NewList(listProps, aItems)
-  list.keyfunction = GetListKeyFunction(aHistTypeConfig, aHistObject)
+  list.keyfunction = GetListKeyFunction(aHistTypeConfig, aHistTypeData)
   list.CanClose = aHistTypeConfig.CanClose
   return menuProps, list
 end
@@ -429,14 +429,14 @@ local function get_history (aConfig)
   end
 
   -- execute the menu
-  local menuProps, list = MakeMenuParams(aConfig, settings, menu_items, hst)
+  local menuProps, list = MakeMenuParams(aConfig, settings, menu_items)
   SortListItems(list, _Plugin.Cfg.bDirectSort, nil)
   local item, itempos = custommenu.Menu(menuProps, list)
   settings.searchmethod = list.searchmethod
   settings.xlat = list.xlat
   hst["items"] = list.items
   if item and list.pattern ~= "" then
-    hst["lastpattern"] = list.pattern
+    settings.lastpattern = list.pattern
   end
   DelayedSaveHistory(aConfig.PluginHistoryType, hst, 200)
   if item then
@@ -511,14 +511,14 @@ local function LocateFile2()
   local hst = Sett.mload(SETTINGS_KEY, cfgLocateFile.PluginHistoryType) or {}
   local settings = Field(hst, "settings")
 
-  local menuProps, list = MakeMenuParams(cfgLocateFile, settings, items, hst)
+  local menuProps, list = MakeMenuParams(cfgLocateFile, settings, items)
   list.searchstart = 2
 
   local item, itempos = custommenu.Menu(menuProps, list)
   settings.searchmethod = list.searchmethod
   settings.xlat = list.xlat
   if item and list.pattern ~= "" then
-    hst["lastpattern"] = list.pattern
+    settings.lastpattern = list.pattern
   end
   DelayedSaveHistory(cfgLocateFile.PluginHistoryType, hst, 200)
 
