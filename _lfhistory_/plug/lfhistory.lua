@@ -38,6 +38,7 @@ local cfgView = {
     "CtrlPgUp", "RCtrlPgUp", "CtrlPgDn", "RCtrlPgDn",
   },
   maxItemsKey = "iSizeView",
+  showdates = true,
 }
 
 local cfgCommands = {
@@ -50,6 +51,7 @@ local cfgCommands = {
     "ShiftEnter", "ShiftNumEnter",
   },
   maxItemsKey = "iSizeCmd",
+  showdates = true,
 }
 
 local cfgFolders = {
@@ -62,6 +64,7 @@ local cfgFolders = {
     "ShiftEnter", "ShiftNumEnter",
   },
   maxItemsKey = "iSizeFold",
+  showdates = true,
 }
 
 local cfgLocateFile = {
@@ -72,6 +75,7 @@ local cfgLocateFile = {
     "CtrlEnter", "RCtrlEnter", "CtrlNumEnter", "RCtrlNumEnter",
   },
   bDynResize = true,
+  showdates = false,
 }
 
 local function GetBoolConfigValue(Cfg, Key)
@@ -333,6 +337,7 @@ local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems)
     searchmethod  = aHistTypeData.searchmethod or "dos",
     filterlines   = true,
     xlat          = aHistTypeData.xlat,
+    showdates     = aHistTypeConfig.showdates,
   }
   local list = custommenu.NewList(listProps, aItems)
   list.keyfunction = GetListKeyFunction(aHistTypeConfig, aHistTypeData)

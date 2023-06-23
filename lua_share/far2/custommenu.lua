@@ -91,6 +91,7 @@ local function NewList (props, items, bkeys, startId)
   SetParam(self, P, "selalign", "center") -- top/center/bottom/
   SetParam(self, P, "selignore")
   SetParam(self, P, "xlat")
+  SetParam(self, P, "showdates")
 
   SetParam(self, P, "keys_searchmethod",       F.KEY_F5)
   SetParam(self, P, "keys_ellipsis",           F.KEY_F6)
@@ -106,7 +107,6 @@ local function NewList (props, items, bkeys, startId)
   SetParam(self, P, "keys_applyxlat",          F.KEY_CTRLALTX)
 
   self:SetSize()
-  self:SetUpperItem()
   return self
 end
 
@@ -139,22 +139,46 @@ function List:OnResizeConsole (hDlg, consoleSize)
   end
 end
 
+function List:FindUpperItem()
+  for i,v in ipairs(self.drawitems) do
+    if not v.separator then return i end
+  end
+  return 1
+end
+
+function List:FindLowerItem()
+  for i=#self.drawitems,1,-1 do
+    if not self.drawitems[i].separator then return i end
+  end
+  return #self.drawitems
+end
+
 -- calculate index of the upper element shown
 function List:SetUpperItem ()
-  local item = self.drawitems[self.sel]
+  local item = self.sel and self.drawitems[self.sel]
   if not item or item.separator then
-    self.sel, self.upper = 1, 1
+    if self.selalign == "top" then self:KeyHome()
+    elseif self.selalign == "bottom" then self:KeyEnd()
+    end
   elseif self.selalign == "top" then
-    if self.selignore then self.sel = 1 end
+    if self.selignore then
+      self.sel = self:FindUpperItem()
+    end
     self.upper = min(self.sel, max(1, #self.drawitems-self.h+1))
   elseif self.selalign == "bottom" then
-    if self.selignore then self.sel = #self.drawitems end
+    if self.selignore then
+      self.sel = self:FindLowerItem()
+    end
     self.upper = max(1, self.sel - self.h + 1)
   else -- "center"
-    if self.selignore then self.sel = ceil(#self.drawitems / 2) end
+    if self.selignore then
+      self.sel = ceil(#self.drawitems / 2)
+    end
     self.upper = self.sel - floor(self.h / 2)
-    if self.upper < 1 then self.upper = 1
-    else self.upper = max(1, min(self.upper, #self.drawitems-self.h+1))
+    if self.upper < 1 then
+      self.upper = 1
+    else
+      self.upper = max(1, min(self.upper, #self.drawitems-self.h+1))
     end
   end
 end
@@ -162,6 +186,9 @@ end
 function List:OnInitDialog (hDlg)
   if self.filterlines then
     self:ChangePattern(hDlg, self.pattern)
+    if self.selalign=="top" then self:KeyHome()
+    elseif self.selalign=="bottom" then self:KeyEnd()
+    end
   else
     self:PrepareToDisplay(hDlg)
   end
@@ -491,10 +518,19 @@ function List:UpdateSizePos (hDlg)
   end
 end
 
+local function GetDate (filetime)
+  if filetime then
+    local ft = win.FileTimeToLocalFileTime(filetime)
+    return ft and win.FileTimeToSystemTime(ft)
+  end
+end
+
 function List:ChangePattern (hDlg, pattern)
   if pattern then self.pattern = pattern end
   local oldsel = self.drawitems[self.sel]
+  local numItems = 0
   self.drawitems = {}
+  self.sel = nil
 
   local find, find2
   local pat2 = self.xlat and XLat(pattern)
@@ -506,6 +542,7 @@ function List:ChangePattern (hDlg, pattern)
   end
 
   if find or find2 then
+    local groupdate
     for _,v in ipairs(self.items) do
       local fr, to
       if find then
@@ -517,20 +554,35 @@ function List:ChangePattern (hDlg, pattern)
       local vdata = self.idata[v]
       vdata.fr, vdata.to = fr, to
       if fr then
+        if self.showdates then
+          local ft = GetDate(v.time)
+          if ft then
+            local date = (ft.wYear*12 + ft.wMonth)*31 + ft.wDay
+            if not groupdate or (self.selalign=="bottom" and groupdate < date)
+                             or (self.selalign=="top" and groupdate > date) then
+              groupdate = date
+              ft.year,ft.month,ft.day = ft.wYear,ft.wMonth,ft.wDay
+              local text = os.date("%x %a", os.time(ft))
+              self.drawitems[#self.drawitems+1] = { separator=true; text=text; }
+            end
+          end
+        end
+        numItems = numItems + 1
         self.drawitems[#self.drawitems+1] = v
         if oldsel == v then
           self.sel = #self.drawitems
         end
-      else
-        if oldsel == v then self.sel = 1 end
       end
     end
   end
-  self.fulltitle = (self.pattern == "") and self.title or
-    self.title.." ["..self.pattern.."]"
-  self.bottom = ("%d of %d items [%s:%s, %s:xlat=%s]"):format(#self.drawitems, #self.items,
-    far.KeyToName(self.keys_searchmethod) or "", self.searchmethod,
-    far.KeyToName(self.keys_xlatonoff) or "", self.xlat and "on" or "off")
+  self.fulltitle = (self.pattern == "") and self.title or self.title.." ["..self.pattern.."]"
+  self.bottom = ("%d of %d items [%s:%s, %s:xlat=%s]"):format(
+    numItems,
+    #self.items,
+    far.KeyToName(self.keys_searchmethod) or "",
+    self.searchmethod,
+    far.KeyToName(self.keys_xlatonoff) or "",
+    self.xlat and "on" or "off")
   self:UpdateSizePos(hDlg)
 end
 
@@ -705,6 +757,13 @@ function List:DeleteCurrentItem (hDlg)
         else self.sel = old_sel - 1
         end
       end
+
+      local item = self.drawitems[self.sel]
+      if item and item.separator then
+        self:KeyDown()
+      elseif self.sel == #self.drawitems then
+        self:KeyEnd()
+      end
     end
   end
 end
@@ -741,7 +800,7 @@ function List:DeleteNonexistentItems (hDlg, fExist, fConfirm)
     local items, idata = self.items, self.idata
     -- mark nonexistent items
     for _,v in ipairs(self.drawitems) do
-      if not fExist(v) then
+      if not (v.separator or fExist(v)) then
         idata[v].marked = true
         n = n + 1
       end
