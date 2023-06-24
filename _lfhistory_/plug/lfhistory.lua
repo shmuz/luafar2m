@@ -18,6 +18,7 @@ local Field      = Sett.field
 local DefaultCfg = {
   bDynResize  = true,
   bAutoCenter = true,
+  bShowDates  = true,
   bDirectSort = true,
   iSizeCmd    = 1000,
   iSizeView   = 1000,
@@ -38,7 +39,6 @@ local cfgView = {
     "CtrlPgUp", "RCtrlPgUp", "CtrlPgDn", "RCtrlPgDn",
   },
   maxItemsKey = "iSizeView",
-  showdates = true,
 }
 
 local cfgCommands = {
@@ -51,7 +51,6 @@ local cfgCommands = {
     "ShiftEnter", "ShiftNumEnter",
   },
   maxItemsKey = "iSizeCmd",
-  showdates = true,
 }
 
 local cfgFolders = {
@@ -64,7 +63,6 @@ local cfgFolders = {
     "ShiftEnter", "ShiftNumEnter",
   },
   maxItemsKey = "iSizeFold",
-  showdates = true,
 }
 
 local cfgLocateFile = {
@@ -75,7 +73,6 @@ local cfgLocateFile = {
     "CtrlEnter", "RCtrlEnter", "CtrlNumEnter", "RCtrlNumEnter",
   },
   bDynResize = true,
-  showdates = false,
 }
 
 local function GetBoolConfigValue(Cfg, Key)
@@ -337,7 +334,7 @@ local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems)
     searchmethod  = aHistTypeData.searchmethod or "dos",
     filterlines   = true,
     xlat          = aHistTypeData.xlat,
-    showdates     = aHistTypeConfig.showdates,
+    showdates     = aHistTypeConfig ~= cfgLocateFile and Cfg.bShowDates,
   }
   local list = custommenu.NewList(listProps, aItems)
   list.keyfunction = GetListKeyFunction(aHistTypeConfig, aHistTypeData)
@@ -509,7 +506,7 @@ local function LocateFile2()
   local items = { PanelInfo=info; PanelDirectory=panel.GetPanelDirectory(1); }
   for k=1,info.ItemsNumber do
     local v = panel.GetPanelItem(1,k)
-    local prefix = v.FileAttributes:find("d") and "/" or " "
+    local prefix = v.FileAttributes:find("d") and "/" or ""
     items[k] = {text=prefix..v.FileName}
   end
 
@@ -529,7 +526,7 @@ local function LocateFile2()
 
   if item then
     if item.BreakKey then
-      local data = items[itempos].text:sub(2)
+      local data = items[itempos].text:gsub("^/", "")
       if IsCtrlEnter(item.BreakKey) then panel.SetCmdLine(data)
       elseif item.BreakKey == "F3" then CallViewer(data)
       elseif item.BreakKey == "F4" then CallEditor(data)

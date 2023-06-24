@@ -22,10 +22,11 @@ local function ConfigDialog (aData)
     { tp="fixedit"; x1=20; width=5; name="iSizeFold"; ystep=0; },
 
     { tp="text";  text=M.mWinProperties; x1=34; ystep=-3;        },
-    { tp="chbox"; text=M.mDynResize; x1=35;  name="bDynResize";  },
+    { tp="chbox"; text=M.mDynResize;  x1=35; name="bDynResize";  },
     { tp="chbox"; text=M.mAutoCenter; x1=35; name="bAutoCenter"; },
+    { tp="chbox"; text=M.mShowDates;  x1=35; name="bShowDates";  },
 
-    { tp="sep";  text=M.mSepColors; centertext=1; ystep=3;                                          },
+    { tp="sep";  text=M.mSepColors; centertext=1; ystep=2;                                          },
     { tp="butt"; text=M.mBtnHighTextColor;    btnnoclose=1; name="btnHighTextColor";                },
     { tp="text"; text=M.mTextSample; x1=offset; ystep=0;    name="labHighTextColor";    width=swid; },
     { tp="butt"; text=M.mBtnSelHighTextColor; btnnoclose=1; name="btnSelHighTextColor";             },

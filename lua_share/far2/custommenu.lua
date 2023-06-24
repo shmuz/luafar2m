@@ -3,6 +3,8 @@
  Started: 2010-03-25 by Shmuel Zeigerman
 --]]
 
+--luacheck: no unused args
+
 local XLat = require "far2.xlat"
 local F = far.Flags
 local min, max, floor, ceil = math.min, math.max, math.floor, math.ceil
@@ -139,6 +141,12 @@ function List:OnResizeConsole (hDlg, consoleSize)
   end
 end
 
+function List:AdjustEnds()
+  if self.selalign == "top" then self:KeyHome()
+  elseif self.selalign == "bottom" then self:KeyEnd()
+  end
+end
+
 function List:FindUpperItem()
   for i,v in ipairs(self.drawitems) do
     if not v.separator then return i end
@@ -157,9 +165,7 @@ end
 function List:SetUpperItem ()
   local item = self.sel and self.drawitems[self.sel]
   if not item or item.separator then
-    if self.selalign == "top" then self:KeyHome()
-    elseif self.selalign == "bottom" then self:KeyEnd()
-    end
+    self:AdjustEnds()
   elseif self.selalign == "top" then
     if self.selignore then
       self.sel = self:FindUpperItem()
@@ -186,9 +192,7 @@ end
 function List:OnInitDialog (hDlg)
   if self.filterlines then
     self:ChangePattern(hDlg, self.pattern)
-    if self.selalign=="top" then self:KeyHome()
-    elseif self.selalign=="bottom" then self:KeyEnd()
-    end
+    self:AdjustEnds()
   else
     self:PrepareToDisplay(hDlg)
   end
@@ -712,17 +716,27 @@ function List:KeyEnd()
   end
 end
 
-function List:KeyMsWheel(hDlg, dir)
+function List:KeyMsWheel (dir)
   local N = #self.drawitems
   if N > 0 then
-    if dir == "down" then
-      self.upper = max(1, self.upper-1)
-      self.sel = max(1, self.sel-1)
-    else
-      self.upper = min(max(1, N-self.h+1), self.upper+1)
-      self.sel = min(N, self.sel+1)
+    for k=1,2 do -- loop to skip a separator
+      if dir == "down" then
+        if self.sel==1 or self.sel==2 and self.drawitems[1].separator then
+          break
+        end
+        self.upper = max(1, self.upper-1)
+        self.sel = self.sel-1
+      else
+        if self.sel==N then
+          break
+        end
+        self.upper = min(max(1, N-self.h+1), self.upper+1)
+        self.sel = self.sel+1
+      end
+      if not self.drawitems[self.sel].separator then
+        break
+      end
     end
-    hDlg:Redraw()
   end
 end
 
@@ -897,9 +911,9 @@ function List:Key (hDlg, key)
   elseif key == F.KEY_PGUP or key == F.KEY_NUMPAD9 then
     self:KeyPageUp()
   elseif key == F.KEY_MSWHEEL_DOWN then
-    self:KeyMsWheel(hDlg, "down")
+    self:KeyMsWheel("down")
   elseif key == F.KEY_MSWHEEL_UP then
-    self:KeyMsWheel(hDlg, "up")
+    self:KeyMsWheel("up")
 
   elseif key == F.KEY_ENTER or key == F.KEY_NUMENTER then
     return Item, Item and self.idata[Item].index
