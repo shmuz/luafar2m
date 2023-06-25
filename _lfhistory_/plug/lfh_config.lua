@@ -26,14 +26,16 @@ local function ConfigDialog (aData)
     { tp="chbox"; text=M.mAutoCenter; x1=35; name="bAutoCenter"; },
     { tp="chbox"; text=M.mShowDates;  x1=35; name="bShowDates";  },
 
-    { tp="sep";  text=M.mSepColors; centertext=1; ystep=2;                                          },
+    { tp="sep";  text=M.mSepColors; centertext=1;                                                   },
     { tp="butt"; text=M.mBtnHighTextColor;    btnnoclose=1; name="btnHighTextColor";                },
     { tp="text"; text=M.mTextSample; x1=offset; ystep=0;    name="labHighTextColor";    width=swid; },
     { tp="butt"; text=M.mBtnSelHighTextColor; btnnoclose=1; name="btnSelHighTextColor";             },
     { tp="text"; text=M.mTextSample; x1=offset; ystep=0;    name="labSelHighTextColor"; width=swid; },
     { tp="sep"; },
 
-    { tp="butt"; text=M.mOk;     centergroup=1; default=1; },
+    { tp="chbox"; text=M.mKeepSelectedItem; name="bKeepSelectedItem"; },
+
+    { tp="butt"; text=M.mOk;     centergroup=1; default=1; ystep=2; },
     { tp="butt"; text=M.mCancel; centergroup=1; cancel=1;  },
   }
   ------------------------------------------------------------------------------

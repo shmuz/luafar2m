@@ -16,15 +16,16 @@ local F          = far.Flags
 local Field      = Sett.field
 
 local DefaultCfg = {
-  bDynResize  = true,
-  bAutoCenter = true,
-  bShowDates  = true,
-  bDirectSort = true,
-  iSizeCmd    = 1000,
-  iSizeView   = 1000,
-  iSizeFold   = 1000,
-  HighTextColor    = 0x3A,
-  SelHighTextColor = 0x0A,
+  bDynResize        = true,
+  bAutoCenter       = true,
+  bShowDates        = true,
+  bKeepSelectedItem = false,
+  bDirectSort       = true,
+  iSizeCmd          = 1000,
+  iSizeView         = 1000,
+  iSizeFold         = 1000,
+  HighTextColor     = 0x3A,
+  SelHighTextColor  = 0x0A,
 }
 
 local cfgView = {
@@ -330,7 +331,7 @@ local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems)
     col_highlight = Cfg.HighTextColor,
     col_selectedhighlight = Cfg.SelHighTextColor,
     selalign      = "bottom",
-    selignore     = true,
+    selignore     = not Cfg.bKeepSelectedItem,
     searchmethod  = aHistTypeData.searchmethod or "dos",
     filterlines   = true,
     xlat          = aHistTypeData.xlat,
