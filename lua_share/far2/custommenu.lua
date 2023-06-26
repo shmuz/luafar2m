@@ -33,6 +33,22 @@ end
 local List = {}
 local ListMeta = { __index=List }
 
+local ListMetaDebug = {
+  __index=function(self,k)
+    if type(List[k])=="function" then
+      self.Log(("  "):rep(self.depth)..k)
+      return function(...)
+        self.depth = self.depth + 1
+        local a,b,c,d = List[k](...)
+        self.depth = self.depth - 1
+        return a,b,c,d
+      end
+    else
+      return List[k]
+    end
+  end;
+}
+
 local function SetParam(trg, src, key, default)
   if default == nil then
     trg[key] = src[key]
@@ -46,8 +62,17 @@ local function NewList (props, items, bkeys, startId)
   assert (type(props) == "table")
   assert (type(items) == "table")
   assert (not bkeys or type(bkeys)=="table")
-  local self = setmetatable ({}, ListMeta)
   local P = props
+  local self
+  if props.debug then
+    self = setmetatable ({}, ListMetaDebug)
+    self.debug = true
+    self.depth = 1
+    self.Log = far.Log
+  else
+    self = setmetatable ({}, ListMeta)
+    self.Log = function() end
+  end
 
   -- Constants
   self.bkeys     = bkeys
@@ -890,6 +915,9 @@ local function FindKey (t, key)
 end
 
 function List:Key (hDlg, key)
+  if self.debug then
+    self.Log(("%s%s"):format(("  "):rep(self.depth), far.KeyToName(key)))
+  end
   local Item = self.drawitems[self.sel]
   if self.keyfunction then
     local strKey = far.KeyToName(key)
@@ -1011,24 +1039,30 @@ local function Menu (props, list)
   ------------------------------------------------------------------------------
   local function DlgProc (hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
+      list.Log("DN_INITDIALOG")
       hDlg:SetMouseEventNotify(1, 0)
       list:OnInitDialog (hDlg)
 
     elseif msg == F.DN_GETDIALOGINFO then
+      list.Log("DN_GETDIALOGINFO")
       return props.DialogId
 
     elseif msg == F.DN_DRAWDIALOG then
+      list.Log("DN_DRAWDIALOG")
       Rect = hDlg:GetDlgRect()
 
     elseif msg == F.DN_CTLCOLORDIALOG then
+      list.Log("DN_CTLCOLORDIALOG")
       return list.col_text
 
     elseif msg == F.DN_DRAWDLGITEM then
+      list.Log("DN_DRAWDLGITEM")
       if param1 == pos_usercontrol then
         list:OnDrawDlgItem (Rect.Left, Rect.Top)
       end
 
     elseif msg == F.DN_KEY then
+      list.Log("DN_KEY")
       if param1 == pos_usercontrol then
         ret_item, ret_pos = list:Key(hDlg, param2)
         if ret_item == "done" then
@@ -1043,22 +1077,27 @@ local function Menu (props, list)
       end
 
     elseif msg == F.DN_MOUSEEVENT then
+      list.Log("DN_MOUSEEVENT")
       local ret
       ret, ret_item, ret_pos = list:MouseEvent(hDlg, param2, Rect.Left, Rect.Top)
       if ret_item then hDlg:Close(-1, 0) end
       return ret
 
     elseif msg == F.DN_GOTFOCUS then
+      list.Log("DN_GOTFOCUS")
       list:OnGotFocus()
 
     elseif msg == F.DN_KILLFOCUS then
+      list.Log("F.DN_KILLFOCUS")
       list:OnKillFocus()
 
     elseif msg == F.DN_RESIZECONSOLE then
+      list.Log("DN_RESIZECONSOLE")
       list:OnResizeConsole(hDlg, param2)
       return 1
 
     elseif msg == F.DN_CLOSE then
+      list.Log("DN_CLOSE")
       local canclose = true
       if param1 == pos_usercontrol and type(list.CanClose) == "function" and ret_item and ret_pos then
         canclose = list:CanClose(list.items[ret_pos], ret_item.BreakKey)

@@ -324,6 +324,7 @@ local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems)
     SelectIndex   = #aItems,
   }
   local listProps = {
+    ----debug         = true,
     autocenter    = Cfg.bAutoCenter,
     resizeW       = GetBoolConfigValue(aHistTypeConfig, "bDynResize"),
     resizeH       = GetBoolConfigValue(aHistTypeConfig, "bDynResize"),
