@@ -76,8 +76,9 @@ local cfgLocateFile = {
   bDynResize = true,
 }
 
-local function GetBoolConfigValue(Cfg, Key)
-  if Cfg[Key] ~= nil then return Cfg[Key] else return DefaultCfg[Key] end
+local function ConfigValue(Cfg, Key)
+  if Cfg[Key] ~= nil then return Cfg[Key] end
+  return _Plugin.Cfg[Key]
 end
 
 local function GetFileAttrEx(fname)
@@ -326,8 +327,8 @@ local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems)
   local listProps = {
     ----debug         = true,
     autocenter    = Cfg.bAutoCenter,
-    resizeW       = GetBoolConfigValue(aHistTypeConfig, "bDynResize"),
-    resizeH       = GetBoolConfigValue(aHistTypeConfig, "bDynResize"),
+    resizeW       = ConfigValue(aHistTypeConfig, "bDynResize"),
+    resizeH       = ConfigValue(aHistTypeConfig, "bDynResize"),
     resizeScreen  = true,
     col_highlight = Cfg.HighTextColor,
     col_selectedhighlight = Cfg.SelHighTextColor,
