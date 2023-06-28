@@ -81,10 +81,6 @@ local function ConfigValue(Cfg, Key)
   return _Plugin.Cfg[Key]
 end
 
-local function GetFileAttrEx(fname)
-  return win.GetFileAttr(fname)
-end
-
 local function IsCtrlEnter (key)
   return key=="CtrlEnter" or key=="RCtrlEnter" or key=="CtrlNumEnter" or key=="RCtrlNumEnter"
 end
@@ -119,7 +115,7 @@ local function TellFileIsDirectory (fname)
 end
 
 local function LocateFile (fname)
-  local attr = GetFileAttrEx(fname)
+  local attr = win.GetFileAttr(fname)
   if attr and not attr:find"d" then
     local dir, name = fname:match("^(.*/)([^/]*)$")
     if panel.SetPanelDirectory(1, dir) then
@@ -139,15 +135,6 @@ local function LocateFile (fname)
     end
   end
   return false
-end
-
--- Баг позиционирования на файл при возвращении в меню из модального редактора;
--- причина описана здесь: http://forum.farmanager.com/viewtopic.php?p=136358#p136358
-local function RedrawAll_Workaround_b4545 (list)
-  local f = list.OnResizeConsole
-  list.OnResizeConsole = function() end
-  actl.RedrawAll()
-  list.OnResizeConsole = f
 end
 
 local function SortListItems (list, bDirectSort, hDlg)
@@ -186,7 +173,7 @@ local function GetListKeyFunction (HistTypeConfig, HistTypeData)
             end
           end
         end
-        local attr = GetFileAttrEx(fname)
+        local attr = win.GetFileAttr(fname)
         if not attr then
           TellFileNotExist(fname)
           return "done"
@@ -195,11 +182,9 @@ local function GetListKeyFunction (HistTypeConfig, HistTypeData)
           return "done"
         elseif key == "AltF3" then
           viewer.Viewer(fname)
-          RedrawAll_Workaround_b4545(self)
           return "done"
         elseif key == "AltF4" then
           editor.Editor(fname)
-          RedrawAll_Workaround_b4545(self)
           return "done"
         end
       end
@@ -220,7 +205,7 @@ local function GetListKeyFunction (HistTypeConfig, HistTypeData)
         far.Message(M.mPleaseWait, "", "")
         self:DeleteNonexistentItems(hDlg,
             function(t) return t.text:find("^%w%w+:") -- some plugin's prefix
-                               or GetFileAttrEx(t.text) or t.checked end,
+                               or win.GetFileAttr(t.text) or t.checked end,
             function(n) return 1 == far.Message((M.mDeleteItemsQuery):format(n),
                         M.mDeleteNonexistentTitle, ";YesNo", "w") end)
         hDlg:Redraw()
@@ -250,7 +235,7 @@ local function GetListKeyFunction (HistTypeConfig, HistTypeData)
         return "done"
       end
       if HistTypeConfig==cfgView then
-        local attr = GetFileAttrEx(Item.text)
+        local attr = win.GetFileAttr(Item.text)
         if not attr then
           TellFileNotExist(Item.text)
           return "done"
