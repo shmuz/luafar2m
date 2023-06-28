@@ -177,10 +177,10 @@ local function GetListKeyFunction (HistTypeConfig, HistTypeData)
         return "done"
       end
       if HistTypeConfig==cfgView or HistTypeConfig==cfgLocateFile then
-        local fname = HistTypeConfig==cfgView and Item.text or Item.text:sub(2)
+        local fname = HistTypeConfig==cfgView and Item.text or Item.FileName
         if HistTypeConfig==cfgLocateFile then
           if not fname:find("/") then
-            local Name = self.items.PanelDirectory and self.items.PanelDirectory.Name
+            local Name = self.items.PanelDirectory
             if Name and Name ~= "" then
               fname = Name:find("/$") and Name..fname or Name.."/"..fname
             end
@@ -510,7 +510,7 @@ local function LocateFile2()
   for k=1,info.ItemsNumber do
     local v = panel.GetPanelItem(1,k)
     local prefix = v.FileAttributes:find("d") and "/" or ""
-    items[k] = {text=prefix..v.FileName}
+    items[k] = {text=prefix..v.FileName; FileName=v.FileName; }
   end
 
   local hst = Sett.mload(SETTINGS_KEY, cfgLocateFile.PluginHistoryType) or {}
@@ -529,7 +529,7 @@ local function LocateFile2()
 
   if item then
     if item.BreakKey then
-      local data = items[itempos].text:gsub("^/", "")
+      local data = items[itempos].FileName
       if IsCtrlEnter(item.BreakKey) then panel.SetCmdLine(data)
       elseif item.BreakKey == "F3" then CallViewer(data)
       elseif item.BreakKey == "F4" then CallEditor(data)
@@ -538,6 +538,11 @@ local function LocateFile2()
       panel.RedrawPanel(1,{CurrentItem=itempos})
     end
   end
+end
+
+local function GetCommandTable()
+  local _, commandTable = Utils.LoadUserMenu("_usermenu.lua")
+  return commandTable
 end
 
 function export.GetPluginInfo()
@@ -558,9 +563,10 @@ end
 
 function export.OpenFromMacro (Args)
   local Op = Args[1]
-  if Op=="code" or Op=="file" or Op=="command" then
-    local _, commandTable = Utils.LoadUserMenu("_usermenu.lua")
-    return Utils.OpenMacro(Args, commandTable, nil, M.mPluginTitle)
+  if Op=="code" or Op=="file" then
+    return Utils.OpenMacro(Args, nil, nil, M.mPluginTitle)
+  elseif Op=="command" then
+    return Utils.OpenMacro(Args, GetCommandTable(), nil, M.mPluginTitle)
   elseif Op=="own" then
     if     Args[2] == "commands" then commands_history()
     elseif Args[2] == "view"     then view_history()
@@ -572,8 +578,7 @@ function export.OpenFromMacro (Args)
 end
 
 function export.OpenCommandLine (aItem)
-  local _, commandTable = Utils.LoadUserMenu("_usermenu.lua")
-  return Utils.OpenCommandLine(aItem, commandTable, nil, M.mPluginTitle)
+  return Utils.OpenCommandLine(aItem, GetCommandTable(), nil, M.mPluginTitle)
 end
 
 function export.OpenPlugin (From, Item)
