@@ -877,7 +877,11 @@ end
 
 function List:CopyFilteredItemsToClipboard()
   local t = {}
-  for k,v in ipairs(self.drawitems) do t[k]=v.text end
+  for k,v in ipairs(self.drawitems) do
+    if not v.separator then
+      t[#t+1] = v.text
+    end
+  end
   t[#t+1] = ""
   far.CopyToClipboard(table.concat(t, "\n"))
 end
