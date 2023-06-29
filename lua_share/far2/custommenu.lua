@@ -1,13 +1,15 @@
---[[
- Custom menu.
- Started: 2010-03-25 by Shmuel Zeigerman
---]]
+-- Name    : Custom menu
+-- Author  : Shmuel Zeigerman
+-- Started : 2010-03-25
+-- Portable Far3/far2m : 2023-06-29
 
---luacheck: no unused args
+-- luacheck: no unused args
 
 local XLat = require "far2.xlat"
 local F = far.Flags
 local min, max, floor, ceil = math.min, math.max, math.floor, math.ceil
+local DlgSend = far.SendDlgMessage
+local osWindows = package.config:sub(1,1) == "\\"
 
 local function FlagsToInt (input)
   local tp, ret = type(input), 0
@@ -28,6 +30,14 @@ end
 
 local function btest (bitset, bitname)
   return bit64.band(bitset, F[bitname]) ~= 0
+end
+
+local function GetColor(color)
+  if osWindows then
+    return far.AdvControl("ACTL_GETCOLOR",far.Colors[color])
+  else
+    return actl.GetColor(color)
+  end
 end
 
 local List = {}
@@ -101,10 +111,10 @@ local function NewList (props, items, bkeys, startId)
   end
 
   SetParam(self, P, "autocenter")
-  self.col_highlight         = P.col_highlight or actl.GetColor(F.COL_MENUHIGHLIGHT)
-  self.col_selectedhighlight = P.col_selectedhighlight or actl.GetColor(F.COL_MENUSELECTEDHIGHLIGHT)
-  self.col_selectedtext      = P.col_selectedtext or actl.GetColor(F.COL_MENUSELECTEDTEXT)
-  self.col_text              = P.col_text or actl.GetColor(F.COL_MENUTEXT)
+  self.col_highlight         = P.col_highlight         or GetColor("COL_MENUHIGHLIGHT")
+  self.col_selectedhighlight = P.col_selectedhighlight or GetColor("COL_MENUSELECTEDHIGHLIGHT")
+  self.col_selectedtext      = P.col_selectedtext      or GetColor("COL_MENUSELECTEDTEXT")
+  self.col_text              = P.col_text              or GetColor("COL_MENUTEXT")
   self.ellipsis  = (P.ellipsis or 1) % 4
   SetParam(self, P, "filterlines")
   SetParam(self, P, "margin", "  ")
@@ -162,7 +172,7 @@ function List:OnResizeConsole (hDlg, consoleSize)
     self.wmax, self.hmax = max(4, consoleSize.X - 8), max(1, consoleSize.Y - 6)
     self:SetSize()
     self:SetUpperItem()
-    hDlg:ResizeDialog(0, {X=self.w + 6, Y=self.h + 4})
+    DlgSend(hDlg, "DM_RESIZEDIALOG", 0, {X=self.w + 6, Y=self.h + 4})
   end
 end
 
@@ -356,6 +366,12 @@ function List:Draw (x, y)
 end
 
 function List:MouseEvent (hDlg, Ev, x, y)
+  if osWindows and Ev.EventFlags == F.MOUSE_WHEELED then
+    self:KeyMsWheel(Ev.ButtonState < 0x80000000 and "down" or "up")
+    DlgSend(hDlg, "DM_REDRAW")
+    return
+  end
+
   local X, Y = Ev.MousePositionX, Ev.MousePositionY
   local MOVED = (Ev.EventFlags == F.MOUSE_MOVED)
 
@@ -372,18 +388,18 @@ function List:MouseEvent (hDlg, Ev, x, y)
 
   local function MakeScrollFunction (key)
     self:Key(hDlg, key, true)
-    hDlg:Redraw()
+    DlgSend(hDlg, "DM_REDRAW")
     local first = true
     return function(tmr)
       if first then
       --first, tmr.Interval = false, 30 --> setting timer.Interval is currently not supported in luafar2m
         first = false
       end
-      if not ( (key==F.KEY_PGUP or key==F.KEY_PGDN) and
+      if not ( (key=="PgUp" or key=="PgDn") and
                (Y >= y + 2 + self.slider_start) and
                (Y  < y + 2 + self.slider_start + self.slider_len) ) then
         self:Key(hDlg, key, true)
-        hDlg:Redraw()
+        DlgSend(hDlg, "DM_REDRAW")
       end
     end
   end
@@ -406,13 +422,13 @@ function List:MouseEvent (hDlg, Ev, x, y)
           -- click on scrollbar
           local period = 50 -- was:300
           if Y == y + 1 then                           -- click on "up" arrow
-            self.timer = far.Timer(period, MakeScrollFunction(F.KEY_UP))
+            self.timer = far.Timer(period, MakeScrollFunction("Up"))
           elseif Y == y + self.h then                  -- click on "down" arrow
-            self.timer = far.Timer(period, MakeScrollFunction(F.KEY_DOWN))
+            self.timer = far.Timer(period, MakeScrollFunction("Down"))
           elseif Y < y + 2 + self.slider_start then    -- click above the slider
-            self.timer = far.Timer(period, MakeScrollFunction(F.KEY_PGUP))
+            self.timer = far.Timer(period, MakeScrollFunction("PgUp"))
           elseif Y >= y + 2 + self.slider_start + self.slider_len then -- click below the slider
-            self.timer = far.Timer(period, MakeScrollFunction(F.KEY_PGDN))
+            self.timer = far.Timer(period, MakeScrollFunction("PgDn"))
           else                                         -- click on slider
             -- start dragging slider
             self.clickY = Y
@@ -435,7 +451,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
         local index = self.upper + (Y - y) - 1
         local item = self.drawitems[index]
         if item and not item.separator then self.sel = index end
-        hDlg:Redraw()
+        DlgSend(hDlg, "DM_REDRAW")
       end
     end
   ------------------------------------------------------------------------------
@@ -443,7 +459,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
     if LEFT then
       if MOVED then
         if self.clickX then
-          hDlg:MoveDialog(0, { X = X - self.clickX, Y = Y - self.clickY })
+          DlgSend(hDlg, "DM_MOVEDIALOG", 0, { X = X - self.clickX, Y = Y - self.clickY })
           self.clickX, self.clickY = X, Y
         end
       end
@@ -460,7 +476,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
         self.upper = floor(1 + self.slider_start * (#self.drawitems - self.h) / n)
         self.sel = self.upper + self.slider_start
         self.clickY = Y
-        hDlg:Redraw()
+        DlgSend(hDlg, "DM_REDRAW")
       end
       return 0
     else
@@ -474,7 +490,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
           local index = self.upper + (Y - y) - 1
           local item = self.drawitems[index]
           if item and not item.separator then self.sel = index end
-          hDlg:Redraw()
+          DlgSend(hDlg, "DM_REDRAW")
         end
       end
     else
@@ -537,17 +553,17 @@ function List:UpdateSizePos (hDlg)
 
   local dim
   if self.resizeW or self.resizeH then
-    dim = hDlg:ResizeDialog(0, { X=self.w+6, Y=self.h+4 })
+    dim = DlgSend(hDlg, "DM_RESIZEDIALOG", 0, { X=self.w+6, Y=self.h+4 })
     self.w = min (dim.X-6, self.w)
     self.h = min (dim.Y-4, self.h)
   end
   self:SetUpperItem()
 
   if self.autocenter then
-    hDlg:MoveDialog(1, { X=-1, Y=-1 })
+    DlgSend(hDlg, "DM_MOVEDIALOG", 1, { X=-1, Y=-1 })
   end
   if self.resizeW or self.resizeH then
-    hDlg:SetItemPosition(self.startId, { Left=2, Top=1, Right=dim.X-3, Bottom=dim.Y-2 })
+    DlgSend(hDlg, "DM_SETITEMPOSITION", self.startId, { Left=2, Top=1, Right=dim.X-3, Bottom=dim.Y-2 })
   end
 end
 
@@ -908,9 +924,7 @@ local function FindKey (t, key)
   end
 end
 
-function List:Key (hDlg, key_code)
-  local key = far.KeyToName(key_code)
-
+function List:Key (hDlg, key)
   if self.debug then
     self.Log(("%s%s"):format(("  "):rep(self.depth), key))
   end
@@ -1026,14 +1040,14 @@ local function Menu (props, list)
   local pos_usercontrol = 1
   list.startId = pos_usercontrol
 
-  local ret_item, ret_pos
+  local ret, ret_item, ret_pos
   local Rect
-  local D = { list:CreateDialogItems (2, 1) }
+  local Items = { list:CreateDialogItems (2, 1) }
   ------------------------------------------------------------------------------
   local function DlgProc (hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
       list.Log("DN_INITDIALOG")
-      hDlg:SetMouseEventNotify(1, 0)
+      DlgSend(hDlg, F.DM_SETINPUTNOTIFY or F.DM_SETMOUSEEVENTNOTIFY, 1) -- keep flag backward compatibility
       list:OnInitDialog (hDlg)
 
     elseif msg == F.DN_GETDIALOGINFO then
@@ -1042,7 +1056,7 @@ local function Menu (props, list)
 
     elseif msg == F.DN_DRAWDIALOG then
       list.Log("DN_DRAWDIALOG")
-      Rect = hDlg:GetDlgRect()
+      Rect = DlgSend(hDlg, "DM_GETDLGRECT")
 
     elseif msg == F.DN_CTLCOLORDIALOG then
       list.Log("DN_CTLCOLORDIALOG")
@@ -1054,27 +1068,62 @@ local function Menu (props, list)
         list:OnDrawDlgItem (Rect.Left, Rect.Top)
       end
 
-    elseif msg == F.DN_KEY then
+    elseif not osWindows and msg == F.DN_KEY then
       list.Log("DN_KEY")
       if param1 == pos_usercontrol then
-        ret_item, ret_pos = list:Key(hDlg, param2)
+        local key = far.KeyToName(param2)
+        if not key then return end
+        ret_item, ret_pos = list:Key(hDlg, key)
         if ret_item == "done" then
           return true
         elseif ret_item then
-          if param2~=F.KEY_ENTER and param2~=F.KEY_NUMENTER then -- prevent DN_CLOSE from coming twice
-            hDlg:Close(-1, 0)
+          if key~="Enter" and key~="NumEnter" then -- prevent DN_CLOSE from coming twice
+            DlgSend(hDlg, "DM_CLOSE", -1, 0)
           end
         else
-          hDlg:Redraw()
+          DlgSend(hDlg, "DM_REDRAW")
         end
       end
 
-    elseif msg == F.DN_MOUSEEVENT then
+    elseif not osWindows and msg == F.DN_MOUSEEVENT then
       list.Log("DN_MOUSEEVENT")
-      local ret
       ret, ret_item, ret_pos = list:MouseEvent(hDlg, param2, Rect.Left, Rect.Top)
-      if ret_item then hDlg:Close(-1, 0) end
+      if ret_item then DlgSend(hDlg, "DM_CLOSE", -1, 0) end
       return ret
+
+    elseif osWindows and (msg == F.DN_CONTROLINPUT or msg == F.DN_INPUT) then
+      if param2.EventType == F.KEY_EVENT then
+        if param1 == pos_usercontrol then
+          local key = far.InputRecordToName(param2)
+          -- far.Show(
+          --   "far.InputRecordToName(param2): "..tostring(key),
+          --   param2.EventType,
+          --   param2.KeyDown,
+          --   param2.RepeatCount,
+          --   param2.VirtualKeyCode,
+          --   param2.VirtualScanCode,
+          --   param2.UnicodeChar,
+          --   param2.ControlKeyState
+          -- )
+          if not key then return end
+          ret_item, ret_pos = list:Key(hDlg, key)
+          if ret_item == "done" then
+            return true
+          elseif ret_item then
+            if key~="Enter" and key~="NumEnter" then -- prevent DN_CLOSE from coming twice
+              DlgSend(hDlg, "DM_CLOSE")
+            end
+          else
+            DlgSend(hDlg, "DM_REDRAW")
+          end
+        end
+      elseif param2.EventType == F.MOUSE_EVENT then
+        if param1 ~= -1 then --> -1 = click outside the dialog
+          ret, ret_item, ret_pos = list:MouseEvent(hDlg, param2, Rect.Left, Rect.Top)
+          if ret_item then DlgSend(hDlg, "DM_CLOSE") end
+          return ret
+        end
+      end
 
     elseif msg == F.DN_GOTFOCUS then
       list.Log("DN_GOTFOCUS")
@@ -1103,7 +1152,18 @@ local function Menu (props, list)
     end
   end
   ----------------------------------------------------------------------------
-  local ret = far.Dialog (-1,-1,list.w+6,list.h+4, props.HelpTopic, D, 0, DlgProc)
+  local X1, Y1, X2, Y2 = -1, -1, list.w+6, list.h+4
+  if props.X and props.Y then
+    X1, Y1 = props.X, props.Y
+    X2, Y2 = X1+X2-1, Y1+Y2-1
+  end
+
+  if osWindows then
+    local id = props.DialogId or ("\0"):rep(16)
+    ret = far.Dialog(id, X1, Y1, X2, Y2, props.HelpTopic, Items, 0, DlgProc)
+  else
+    ret = far.Dialog(X1, Y1, X2, Y2, props.HelpTopic, Items, 0, DlgProc)
+  end
   if ret == pos_usercontrol then
     return ret_item, ret_pos
   end
