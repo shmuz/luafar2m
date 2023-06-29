@@ -120,18 +120,18 @@ local function NewList (props, items, bkeys, startId)
   SetParam(self, P, "xlat")
   SetParam(self, P, "showdates")
 
-  SetParam(self, P, "keys_searchmethod",       F.KEY_F5)
-  SetParam(self, P, "keys_ellipsis",           F.KEY_F6)
-  SetParam(self, P, "keys_showitem",           F.KEY_F7)
-  SetParam(self, P, "keys_xlatonoff",          F.KEY_F8)
-  SetParam(self, P, "keys_clearpattern",      {F.KEY_DEL,       F.KEY_NUMDEL})
-  SetParam(self, P, "keys_insertpattern",     {F.KEY_CTRLV,     F.KEY_SHIFTINS, F.KEY_SHIFTNUMPAD0})
-  SetParam(self, P, "keys_checkitem",         {F.KEY_INS,       F.KEY_NUMPAD0})
-  SetParam(self, P, "keys_copyitem",          {F.KEY_CTRLC,     F.KEY_CTRLINS,  F.KEY_CTRLNUMPAD0})
-  SetParam(self, P, "keys_deleteitem",        {F.KEY_SHIFTDEL,  F.KEY_SHIFTNUMDEL})
-  SetParam(self, P, "keys_copyfiltereditems", {F.KEY_CTRLSHIFTINS, F.KEY_CTRLSHIFTNUMPAD0})
-  SetParam(self, P, "keys_delfiltereditems",  {F.KEY_CTRLDEL,   F.KEY_CTRLNUMDEL})
-  SetParam(self, P, "keys_applyxlat",          F.KEY_CTRLALTX)
+  SetParam(self, P, "keys_searchmethod",      "F5")
+  SetParam(self, P, "keys_ellipsis",          "F6")
+  SetParam(self, P, "keys_showitem",          "F7")
+  SetParam(self, P, "keys_xlatonoff",         "F8")
+  SetParam(self, P, "keys_clearpattern",      {"Del","NumDel"})
+  SetParam(self, P, "keys_insertpattern",     {"CtrlV","RCtrlV","ShiftIns","ShiftNum0"})
+  SetParam(self, P, "keys_checkitem",         {"Ins","Num0"})
+  SetParam(self, P, "keys_copyitem",          {"CtrlC","CtrlIns","CtrlNum0","RCtrlC","RCtrlIns","RCtrlNum0"})
+  SetParam(self, P, "keys_deleteitem",        {"ShiftDel","ShiftNumDel"})
+  SetParam(self, P, "keys_copyfiltereditems", {"CtrlShiftIns","RCtrlShiftIns","CtrlShiftNum0","RCtrlShiftNum0"})
+  SetParam(self, P, "keys_delfiltereditems",  {"CtrlDel","RCtrlDel","CtrlNumDel","RCtrlNumDel"})
+  SetParam(self, P, "keys_applyxlat",         {"CtrlAltX","RCtrlAltX","CtrlRAltX","RCtrlRAltX"})
 
   self:SetSize()
   return self
@@ -188,10 +188,14 @@ end
 
 -- calculate index of the upper element shown
 function List:SetUpperItem ()
-  local item = self.sel and self.drawitems[self.sel]
-  if not item or item.separator then
-    self:AdjustEnds()
-  elseif self.selalign == "top" then
+  self.sel = self.sel or 1
+  if self.selignore and self.selalign ~= "center" then
+    local item = self.sel and self.drawitems[self.sel]
+    if not item or item.separator then
+      self:AdjustEnds()
+    end
+  end
+  if self.selalign == "top" then
     if self.selignore then
       self.sel = self:FindUpperItem()
     end
@@ -608,9 +612,9 @@ function List:ChangePattern (hDlg, pattern)
   self.bottom = ("%d of %d items [%s:%s, %s:xlat=%s]"):format(
     numItems,
     #self.items,
-    far.KeyToName(self.keys_searchmethod) or "",
+    self.keys_searchmethod or "",
     self.searchmethod,
-    far.KeyToName(self.keys_xlatonoff) or "",
+    self.keys_xlatonoff or "",
     self.xlat and "on" or "off")
   self:UpdateSizePos(hDlg)
 end
@@ -886,20 +890,6 @@ function List:CopyFilteredItemsToClipboard()
   far.CopyToClipboard(table.concat(t, "\n"))
 end
 
-local tNumPad = {
-  [F.KEY_MULTIPLY] = "*",
-  [F.KEY_ADD]      = "+",
-  [F.KEY_SUBTRACT] = "-",
-  [F.KEY_DIVIDE]   = "/",
-}
-
-local function KeyToChar (key)
-  if key>=32 and key<=127 then return string.char(key) end
-  if tNumPad[key] then return tNumPad[key] end
-  local c = far.KeyToName(key)
-  return c:len() == 1 and c
-end
-
 function List:ToggleSearchMethod (hDlg)
   if     self.searchmethod == "dos"   then self.searchmethod = "lua"
   elseif self.searchmethod == "lua"   then self.searchmethod = "regex"
@@ -918,36 +908,37 @@ local function FindKey (t, key)
   end
 end
 
-function List:Key (hDlg, key)
+function List:Key (hDlg, key_code)
+  local key = far.KeyToName(key_code)
+
   if self.debug then
-    self.Log(("%s%s"):format(("  "):rep(self.depth), far.KeyToName(key)))
+    self.Log(("%s%s"):format(("  "):rep(self.depth), key))
   end
   local Item = self.drawitems[self.sel]
   if self.keyfunction then
-    local strKey = far.KeyToName(key)
-    local ret = self:keyfunction(hDlg, strKey, Item)
-    if ret == "break" then return { BreakKey=strKey }, Item and self.idata[Item].index end
+    local ret = self:keyfunction(hDlg, key, Item)
+    if ret == "break" then return { BreakKey=key }, Item and self.idata[Item].index end
     if ret == "done" then return "done" end
   end
 
-  if key == F.KEY_HOME or key == F.KEY_NUMPAD7 then
+  if key == "Home" or key == "Num7" then
     self:KeyHome()
-  elseif key == F.KEY_END or key == F.KEY_NUMPAD1 then
+  elseif key == "End" or key == "Num1" then
     self:KeyEnd()
-  elseif key == F.KEY_DOWN or key == F.KEY_RIGHT or key == F.KEY_NUMPAD2 or key == F.KEY_NUMPAD6 then
+  elseif key == "Down" or key == "Right" or key == "Num2" or key == "Num6" then
     self:KeyDown(true)
-  elseif key == F.KEY_UP or key == F.KEY_LEFT or key == F.KEY_NUMPAD8 or key == F.KEY_NUMPAD4 then
+  elseif key == "Up" or key == "Left" or key == "Num8" or key == "Num4" then
     self:KeyUp(true)
-  elseif key == F.KEY_PGDN or key == F.KEY_NUMPAD3 then
+  elseif key == "PgDn" or key == "Num3" then
     self:KeyPageDown()
-  elseif key == F.KEY_PGUP or key == F.KEY_NUMPAD9 then
+  elseif key == "PgUp" or key == "Num9" then
     self:KeyPageUp()
-  elseif key == F.KEY_MSWHEEL_DOWN then
+  elseif key == "MsWheelDown" then
     self:KeyMsWheel("down")
-  elseif key == F.KEY_MSWHEEL_UP then
+  elseif key == "MsWheelUp" then
     self:KeyMsWheel("up")
 
-  elseif key == F.KEY_ENTER or key == F.KEY_NUMENTER then
+  elseif key == "Enter" or key == "NumEnter" then
     return Item, Item and self.idata[Item].index
 
   elseif FindKey(self.keys_copyitem, key) then
@@ -974,7 +965,7 @@ function List:Key (hDlg, key)
       local str = far.PasteFromClipboard()
       self:ChangePattern(hDlg, str and str:match("^[^\r\n]*") or "")
 
-    elseif key == F.KEY_BS and self.pattern ~= "" then
+    elseif key == "BS" and self.pattern ~= "" then
       self:ChangePattern(hDlg, self.pattern:sub(1,-2))
 
     elseif FindKey(self.keys_searchmethod, key) then
@@ -995,10 +986,8 @@ function List:Key (hDlg, key)
       local result = XLat(self.pattern)
       if result then self:ChangePattern(hDlg, result) end
 
-    --elseif key:len() == 1 then
-    elseif KeyToChar(key) then
-      local c = KeyToChar(key)
-      self:ChangePattern(hDlg, self.pattern..c)
+    elseif key:len() == 1 then
+      self:ChangePattern(hDlg, self.pattern..key)
 
     elseif ConvertTable[key] then
       self:ChangePattern(hDlg, self.pattern..ConvertTable[key])
