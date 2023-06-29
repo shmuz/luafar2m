@@ -5,17 +5,27 @@
 
 -- luacheck: no unused args
 
-local XLat = require "far2.xlat"
+local osWindows = package.config:sub(1,1) == "\\"
+local XLat = osWindows and far.XLat or require "far2.xlat"
 local F = far.Flags
 local min, max, floor, ceil = math.min, math.max, math.floor, math.ceil
+local band, bor = bit64.band, bit64.bor
 local DlgSend = far.SendDlgMessage
-local osWindows = package.config:sub(1,1) == "\\"
+
+local function GetColor (index)
+  local tbl = osWindows and far.Colors or far.Flags
+  return far.AdvControl("ACTL_GETCOLOR", tbl[index])
+end
+
+local function SendRedrawMessage (hDlg)
+  DlgSend(hDlg, "DM_REDRAW")
+end
 
 local function FlagsToInt (input)
   local tp, ret = type(input), 0
   if tp == "table" then
     for k,v in pairs(input) do
-      if F[k] and v then ret = bit64.bor(ret, F[k]) end
+      if F[k] and v then ret = bor(ret, F[k]) end
     end
   elseif tp == "string" then ret = F[input] or 0
   elseif tp == "number" then ret = input
@@ -29,15 +39,7 @@ local function limit (v, lo, hi)
 end
 
 local function btest (bitset, bitname)
-  return bit64.band(bitset, F[bitname]) ~= 0
-end
-
-local function GetColor(color)
-  if osWindows then
-    return far.AdvControl("ACTL_GETCOLOR",far.Colors[color])
-  else
-    return actl.GetColor(color)
-  end
+  return band(bitset, F[bitname]) ~= 0
 end
 
 local List = {}
@@ -88,9 +90,9 @@ local function NewList (props, items, bkeys, startId)
   self.bkeys     = bkeys
   self.flags     = FlagsToInt(P.flags)
   self.items     = items
-  self.startId   = startId or 0
+  self.startId   = startId or 1
   self.title     = P.title or ""
-  self.idata = {}; for i,v in ipairs(items) do  self.idata[v] = { index=i } end
+  self:SetIndexData()
 
   -- Variables
   self.bottom    = P.bottom or ""
@@ -156,7 +158,9 @@ function List:SetSize()
   if self.resizeW then
     local wd = 0
     for _,v in ipairs(self.drawitems) do
-      wd = max(wd, v.text:len())
+      local len = v.text:len() + (v.separator and 1 or 0)
+      wd = max(wd, len)
+      if wd > self.wmax then break end -- this check is needed for performance (with big lists && long lines)
     end
     self.w = max(self.margin:len() + wd + self.rmargin, self.fulltitle:len()+2,
                  self.bottom:len() + 2)
@@ -257,7 +261,7 @@ function List:OnDialogClose ()
 end
 
 do
-  local ch = utf8.char
+  local ch = ("").char
   local sng = {c1=9484,c2=9488,c3=9492,c4=9496,hor=9472,ver=9474,sep1=9500,sep2=9508}
   local dbl = {c1=9556,c2=9559,c3=9562,c4=9565,hor=9552,ver=9553,sep1=9567,sep2=9570}
   for k,v in pairs(sng) do
@@ -313,7 +317,7 @@ function List:Draw (x, y)
   self:DrawBox(x, y)
   x, y = x+1, y+1-self.upper
   local mlen = self.margin:len()
-  local char = utf8.char
+  local char = ("").char
   local check, hor = char(8730), char(9472)
   for i=self.upper, self.upper+self.h-1 do
     local v = self.drawitems[i]
@@ -339,13 +343,15 @@ function List:Draw (x, y)
         local ss = self.searchstart - 1
         local br1 = ss + floor((maxlen - ss) * self.ellipsis/3 + 0.5)
         local br2 = tlen - (maxlen - br1) + 1
-        local offs = br2 - 1 - br1 - 3
         text2 = text:sub(1, br1) .. "..." .. v.text:sub(br2)
-        if fr >= br2-1 then fr = fr - offs
-        elseif fr > br1+1 then fr = br1 + 2
-        end
-        if to >= br2-1 then to = to - offs
-        elseif to > br1+1 then to = br1 + 2
+        if fr and to >= fr then
+          local offs = br2 - 1 - br1 - 3
+          if fr >= br2-1 then fr = fr - offs
+          elseif fr > br1+1 then fr = br1 + 2
+          end
+          if to >= br2-1 then to = to - offs
+          elseif to > br1+1 then to = br1 + 2
+          end
         end
       end
       far.Text(x, y+i, color, self.margin)
@@ -368,7 +374,7 @@ end
 function List:MouseEvent (hDlg, Ev, x, y)
   if osWindows and Ev.EventFlags == F.MOUSE_WHEELED then
     self:KeyMsWheel(Ev.ButtonState < 0x80000000 and "down" or "up")
-    DlgSend(hDlg, "DM_REDRAW")
+    SendRedrawMessage(hDlg)
     return
   end
 
@@ -386,20 +392,20 @@ function List:MouseEvent (hDlg, Ev, x, y)
   local LEFT = btest(Ev.ButtonState, "FROM_LEFT_1ST_BUTTON_PRESSED")
   x, y = x+self.x, y+self.y -- screen coordinates of component's top-left corner
 
-  local function MakeScrollFunction (key)
-    self:Key(hDlg, key, true)
-    DlgSend(hDlg, "DM_REDRAW")
+  local function MakeScrollFunction (method)
+    method(self, false)
+    SendRedrawMessage(hDlg)
     local first = true
     return function(tmr)
       if first then
-      --first, tmr.Interval = false, 30 --> setting timer.Interval is currently not supported in luafar2m
         first = false
+        if osWindows then tmr.Interval=30 end -- setting timer.Interval is currently not supported in luafar2m
       end
-      if not ( (key=="PgUp" or key=="PgDn") and
+      if not ( (method==self.KeyPageUp or method==self.KeyPageDown) and
                (Y >= y + 2 + self.slider_start) and
                (Y  < y + 2 + self.slider_start + self.slider_len) ) then
-        self:Key(hDlg, key, true)
-        DlgSend(hDlg, "DM_REDRAW")
+        method(self, false)
+        SendRedrawMessage(hDlg)
       end
     end
   end
@@ -420,15 +426,15 @@ function List:MouseEvent (hDlg, Ev, x, y)
         -- click on border
         if #self.drawitems>self.h and X==x+self.w+1 and Y>y and Y<=y+self.h then
           -- click on scrollbar
-          local period = 50 -- was:300
+          local period = osWindows and 300 or 50
           if Y == y + 1 then                           -- click on "up" arrow
-            self.timer = far.Timer(period, MakeScrollFunction("Up"))
+            self.timer = far.Timer(period, MakeScrollFunction(self.KeyUp))
           elseif Y == y + self.h then                  -- click on "down" arrow
-            self.timer = far.Timer(period, MakeScrollFunction("Down"))
+            self.timer = far.Timer(period, MakeScrollFunction(self.KeyDown))
           elseif Y < y + 2 + self.slider_start then    -- click above the slider
-            self.timer = far.Timer(period, MakeScrollFunction("PgUp"))
+            self.timer = far.Timer(period, MakeScrollFunction(self.KeyPageUp))
           elseif Y >= y + 2 + self.slider_start + self.slider_len then -- click below the slider
-            self.timer = far.Timer(period, MakeScrollFunction("PgDn"))
+            self.timer = far.Timer(period, MakeScrollFunction(self.KeyPageDown))
           else                                         -- click on slider
             -- start dragging slider
             self.clickY = Y
@@ -451,7 +457,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
         local index = self.upper + (Y - y) - 1
         local item = self.drawitems[index]
         if item and not item.separator then self.sel = index end
-        DlgSend(hDlg, "DM_REDRAW")
+        SendRedrawMessage(hDlg)
       end
     end
   ------------------------------------------------------------------------------
@@ -476,7 +482,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
         self.upper = floor(1 + self.slider_start * (#self.drawitems - self.h) / n)
         self.sel = self.upper + self.slider_start
         self.clickY = Y
-        DlgSend(hDlg, "DM_REDRAW")
+        SendRedrawMessage(hDlg)
       end
       return 0
     else
@@ -490,7 +496,7 @@ function List:MouseEvent (hDlg, Ev, x, y)
           local index = self.upper + (Y - y) - 1
           local item = self.drawitems[index]
           if item and not item.separator then self.sel = index end
-          DlgSend(hDlg, "DM_REDRAW")
+          SendRedrawMessage(hDlg)
         end
       end
     else
@@ -542,7 +548,7 @@ local function ProcessSearchMethod (method, pattern)
   ----------------------------------------------------------
   local ok, cregex = pcall(regex.new, pattern, "i")
   if ok then
-    return function (text, p, start)
+    return function (text, pattern, start)
       return cregex:find(text, start)
     end
   end
@@ -996,8 +1002,7 @@ function List:Key (hDlg, key)
       self:ChangePattern(hDlg, self.pattern)
 
     elseif FindKey(self.keys_applyxlat, key) then
-    --local result = far.XLat(self.pattern, nil, nil, "XLAT_SWITCHKEYBLAYOUT")
-      local result = XLat(self.pattern)
+      local result = XLat(self.pattern, nil, nil, "XLAT_SWITCHKEYBLAYOUT")
       if result then self:ChangePattern(hDlg, result) end
 
     elseif key:len() == 1 then
@@ -1029,20 +1034,24 @@ local function Menu (props, list)
   assert(type(props) == "table")
   assert(type(list) == "table")
 
-  list.title  = props.Title
+  list.title  = props.Title or list.title
   list.bottom = props.Bottom or list.bottom
-  list.sel    = props.SelectIndex
+  list.sel    = props.SelectIndex or list.sel
   list.flags  = FlagsToInt(props.Flags)
 
   list.autocenter = (list.autocenter ~= false)
   list.resizeW    = (list.resizeW ~= false)
   list.resizeH    = (list.resizeH ~= false)
-  local pos_usercontrol = 1
-  list.startId = pos_usercontrol
 
   local ret, ret_item, ret_pos
   local Rect
-  local Items = { list:CreateDialogItems (2, 1) }
+  local Items = {  -- a hidden element for setting console title
+    osWindows and { F.DI_TEXT,  1,1,8,1,  0,0,0,F.DIF_HIDDEN, "" }
+               or { F.DI_TEXT,  1,1,8,1,  0,0,F.DIF_HIDDEN,0, "" },
+    list:CreateDialogItems(2, 1),
+  }
+  local pos_title, pos_usercontrol = 1, 2
+  list.startId = pos_usercontrol
   ------------------------------------------------------------------------------
   local function DlgProc (hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
@@ -1050,9 +1059,22 @@ local function Menu (props, list)
       DlgSend(hDlg, F.DM_SETINPUTNOTIFY or F.DM_SETMOUSEEVENTNOTIFY, 1) -- keep flag backward compatibility
       list:OnInitDialog (hDlg)
 
-    elseif msg == F.DN_GETDIALOGINFO then
+    elseif not osWindows and msg == F.DN_GETDIALOGINFO then
       list.Log("DN_GETDIALOGINFO")
       return props.DialogId
+
+    elseif osWindows and msg == F.DN_GETVALUE then
+      if param1 == pos_usercontrol then
+        local tp = param2.GetType
+        if tp == 7 then                             -- get CurPos
+          return { ValType=F.FMVT_INTEGER, Value=list.sel }
+        elseif tp == 0 or tp == 10 then             -- get item text
+          local item = list.drawitems[list.sel]
+          return item and { ValType=F.FMVT_STRING, Value=item.text or "" }
+        elseif tp == 11 then                        -- get ItemCount
+          return { ValType=F.FMVT_INTEGER, Value=#list.drawitems }
+        end
+      end
 
     elseif msg == F.DN_DRAWDIALOG then
       list.Log("DN_DRAWDIALOG")
@@ -1066,6 +1088,7 @@ local function Menu (props, list)
       list.Log("DN_DRAWDLGITEM")
       if param1 == pos_usercontrol then
         list:OnDrawDlgItem (Rect.Left, Rect.Top)
+        DlgSend(hDlg, "DM_SETTEXT", pos_title, list.fulltitle)
       end
 
     elseif not osWindows and msg == F.DN_KEY then
@@ -1081,7 +1104,7 @@ local function Menu (props, list)
             DlgSend(hDlg, "DM_CLOSE", -1, 0)
           end
         else
-          DlgSend(hDlg, "DM_REDRAW")
+          SendRedrawMessage(hDlg)
         end
       end
 
@@ -1114,7 +1137,7 @@ local function Menu (props, list)
               DlgSend(hDlg, "DM_CLOSE")
             end
           else
-            DlgSend(hDlg, "DM_REDRAW")
+            SendRedrawMessage(hDlg)
           end
         end
       elseif param2.EventType == F.MOUSE_EVENT then
