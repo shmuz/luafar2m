@@ -80,7 +80,7 @@ local function NewList (props, items, bkeys, startId)
     self = setmetatable ({}, ListMetaDebug)
     self.debug = true
     self.depth = 1
-    self.Log = far.Log
+    self.Log = osWindows and win.OutputDebugString or far.Log --luacheck: no global
   else
     self = setmetatable ({}, ListMeta)
     self.Log = function() end
@@ -548,7 +548,7 @@ local function ProcessSearchMethod (method, pattern)
   ----------------------------------------------------------
   local ok, cregex = pcall(regex.new, pattern, "i")
   if ok then
-    return function (text, pattern, start)
+    return function (text, patt, start)
       return cregex:find(text, start)
     end
   end
