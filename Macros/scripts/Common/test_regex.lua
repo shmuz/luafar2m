@@ -1,19 +1,24 @@
--- Started: 2023-07-01
+-- Started     : 2023-07-01
+-- Portability : Far3/far2m
+
+local osWindows = package.config:sub(1,1)=="\\"
 local F = far.Flags
 local Send = far.SendDlgMessage
 
 local function DoTest()
   local sd = require "far2.simpledialog"
-  local W1 = 41
+  local Width = 76
+  local W1 = 3 + Width/2
   local Items = {
+    width = Width;
     help = ":RegExp";
 
     {tp="dbox"; text="Regular expressions";                           },
-    {tp="text"; text="Regex:"; width=W1;                              },
+    {tp="text"; text="&Regex:"; width=W1;                             },
     {tp="edit"; name="expr";   width=W1; hist="RegexTestRegex";       },
-    {tp="text"; text="Test string:"; width=W1; ystep=2;               },
+    {tp="text"; text="&Test string:"; width=W1; ystep=2;              },
     {tp="edit"; name="subj";   width=W1; hist="RegexTestTest";        },
-    {tp="text"; text="Substitution:"; width=W1;                       },
+    {tp="text"; text="&Substitution:"; width=W1;                      },
     {tp="edit"; name="subst"; width=W1; hist="RegexTestSubstitution"; },
     {tp="text"; text="Result:";  width=W1;                            },
     {tp="edit"; name="result";   width=W1;  readonly=1;               },
@@ -21,7 +26,7 @@ local function DoTest()
     {tp="listbox"; name="groups"; x1=W1+6; y1=2; width=24; height=10; text="Matches"; list={}; },
 
     {tp="text"; text="Status:"; width=W1; y1=11;                      },
-    {tp="edit"; name="status";              readonly=1;               },
+    {tp="edit"; name="status";  readonly=1;                           },
     {tp="sep";                                                        },
     {tp="butt"; text="OK"; default=1; centergroup=1;                  },
   }
@@ -64,10 +69,15 @@ local function DoTest()
       end
 
     elseif Msg==F.DN_CTLCOLORDLGITEM and Par1==Pos.status then
-      return
-      Status == "normal"  and 0x0B or
-      Status == "warning" and 0x0E or
-      Status == "error"   and 0x0C or 0x00
+      local color =
+        Status == "normal"  and 0x0B or
+        Status == "warning" and 0x0E or
+        Status == "error"   and 0x0C or 0x00
+      if osWindows then
+        Par2[1],Par2[3] = color,color
+        return Par2
+      end
+      return color
     end
   end
 
@@ -77,6 +87,5 @@ end
 Macro {
   description="Test regular expressions";
   area="Common"; key="AltShiftF2";
-  action=function() DoTest()
-  end;
+  action=function() DoTest() end;
 }
