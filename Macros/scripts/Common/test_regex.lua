@@ -87,6 +87,7 @@ local function DoTest()
   Dlg:Run()
 end
 
+if not Macro then DoTest() return end
 Macro {
   description="Test regular expressions";
   area="Common"; key="AltShiftF2";
