@@ -1,5 +1,5 @@
 -- Started     : 2023-07-01
--- Portability : Far3/far2m
+-- Portability : Far3 (b5284+) / far2m
 
 local osWindows = package.config:sub(1,1)=="\\"
 local F = far.Flags
@@ -37,6 +37,7 @@ local function DoTest()
 
   function Items.proc(hDlg, Msg, Par1, Par2)
     if Msg == F.DN_EDITCHANGE and (Par1==Pos.expr or Par1==Pos.subj or Par1==Pos.subst) then
+      Send(hDlg, F.DM_ENABLEREDRAW, 0)
       Send(hDlg, F.DM_LISTDELETE, Pos.groups)
       local expr  = Send(hDlg, F.DM_GETTEXT, Pos.expr)
       local ok, rex = pcall(regex.new, expr)
@@ -59,14 +60,16 @@ local function DoTest()
         end
 
         local subst = Send(hDlg, F.DM_GETTEXT, Pos.subst)
-        -- convert replace pattern to LuaFAR syntax ($0 -> %0, etc.)
+        -- convert replace pattern to LuaFAR syntax ($3 -> %3, \$ -> $, \\ -> \)
         subst = subst:gsub("%%", "%%%%")
-        subst = regex.gsub(subst, "(\\\\?.)(?=[0-9a-zA-Z])", { ["$"]="%" })
+        subst = regex.gsub(subst, [[ \$([0-9a-zA-Z]) | \\([$\\]) ]],
+          function(a,b) return a and "%"..a or b end, nil, "x")
         -- get replace result
         local result = rex:gsub(subj, subst)
         Send(hDlg, F.DM_SETTEXT, Pos.result, result)
         Send(hDlg, F.DM_SETTEXT, Pos.status, fr and "Found" or "Not found")
       end
+      Send(hDlg, F.DM_ENABLEREDRAW, 1)
 
     elseif Msg==F.DN_CTLCOLORDLGITEM and Par1==Pos.status then
       local color =
