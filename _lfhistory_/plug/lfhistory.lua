@@ -26,6 +26,7 @@ local DefaultCfg = {
   iSizeFold         = 1000,
   HighTextColor     = 0x3A,
   SelHighTextColor  = 0x0A,
+  iDateFormat       = 2,
 }
 
 local cfgView = {
@@ -74,6 +75,14 @@ local cfgLocateFile = {
     "CtrlEnter", "RCtrlEnter", "CtrlNumEnter", "RCtrlNumEnter",
   },
   bDynResize = true,
+}
+
+local DateFormats = {
+  false,
+  "%Y-%m-%d",     -- 2023-07-04
+  "%Y-%m-%d %a",
+  "%x",
+  "%x %a",      -- 04/07/23 Tue (locale dependent)
 }
 
 local function ConfigValue(Cfg, Key)
@@ -302,6 +311,8 @@ end
 
 local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems)
   local Cfg = _Plugin.Cfg
+  local dateformat = DateFormats[Cfg.iDateFormat]
+
   local menuProps = {
     DialogId      = win.Uuid("d853e243-6b82-4b84-96cd-e733d77eeaa1"),
     Flags         = {FMENU_WRAPMODE=1},
@@ -309,6 +320,7 @@ local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems)
     Title         = M[aHistTypeConfig.title],
     SelectIndex   = #aItems,
   }
+
   local listProps = {
     ----debug         = true,
     autocenter    = Cfg.bAutoCenter,
@@ -322,7 +334,8 @@ local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems)
     searchmethod  = aHistTypeData.searchmethod or "dos",
     filterlines   = true,
     xlat          = aHistTypeData.xlat,
-    showdates     = aHistTypeConfig ~= cfgLocateFile and Cfg.bShowDates,
+    showdates     = aHistTypeConfig ~= cfgLocateFile and dateformat,
+    dateformat    = dateformat,
   }
   local list = custommenu.NewList(listProps, aItems)
   list.keyfunction = GetListKeyFunction(aHistTypeConfig, aHistTypeData)
@@ -540,8 +553,9 @@ function export.GetPluginInfo()
 end
 
 function export.Configure()
+  package.loaded.lfh_config = nil
   local dlg = require "lfh_config"
-  if dlg(_Plugin.Cfg) then
+  if dlg(_Plugin.Cfg, DateFormats) then
     Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _Plugin.Cfg)
   end
 end

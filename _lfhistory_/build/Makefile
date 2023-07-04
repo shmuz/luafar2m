@@ -8,7 +8,7 @@ FAR_EXPORTS = CONFIGURE  OPENPLUGIN
 # Global Info
 SYS_ID             = 0xA745761D
 PLUG_MINFARVERSION = "MAKEFARVERSION(2,4)"
-PLUG_VERSION       = "3,10,9,0"
+PLUG_VERSION       = "3,11,1,0"
 PLUG_TITLE         = \"LuaFAR History\"
 PLUG_DESCRIPTION   = \"History of commands, files and folders\"
 PLUG_AUTHOR        = \"Shmuel Zeigerman\"

@@ -131,7 +131,7 @@ local function NewList (props, items, bkeys, startId)
   SetParam(self, P, "selignore")
   SetParam(self, P, "xlat")
   SetParam(self, P, "showdates")
-  SetParam(self, P, "dateformat", "%x %a")
+  SetParam(self, P, "dateformat", "%Y-%m-%d")
 
   SetParam(self, P, "keys_searchmethod",      "F5")
   SetParam(self, P, "keys_ellipsis",          "F6")
