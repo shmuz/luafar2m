@@ -473,10 +473,10 @@ local function PanelDialog  (aOp, aData, aScriptCall)
   insert(Items, { tp="sep"; })
 if aOp == "search" then
   insert(Items, { tp="text"; text=M.MDlgCodePages; })
-  insert(Items, { tp="combobox"; name="cmbCodePage"; list=GetCodePages(aData); dropdownlist=1; noauto=1; })
+  insert(Items, { tp="combobox"; name="cmbCodePage"; list=GetCodePages(aData); dropdown=1; noauto=1; })
 end
   insert(Items, { tp="text"; text=M.MDlgSearchArea; })
-  insert(Items, { tp="combobox"; name="cmbSearchArea"; list=GetSearchAreas(aData); x2=W+1; dropdownlist=1; noload=1; })
+  insert(Items, { tp="combobox"; name="cmbSearchArea"; list=GetSearchAreas(aData); x2=W+1; dropdown=1; noload=1; })
 if aOp == "search" then
   insert(Items, { tp="chbox"; name="bSearchFolders";  text=M.MDlgSearchFolders;  ystep=-1; x1=W+5; })
   insert(Items, { tp="chbox"; name="bSearchSymLinks"; text=M.MDlgSearchSymLinks; ystep=1;  x1=W+5; })

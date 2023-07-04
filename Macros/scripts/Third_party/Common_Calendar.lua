@@ -228,9 +228,9 @@ local function Calendar(DateTime)
     {tp="fixedit";  name="Year";     mask="9999";    x1=16; width=4;  y1=""; }, --Год
     {tp="butt";     name="IncYear";  btnnoclose=1;   x1=27; text=">"; y1=""; }, --Год вперёд
     {tp="sep"},
-    {tp="butt";     name="DecMonth"; btnnoclose=1;   x1=4;  text="<";                     }, --Месяц назад
-    {tp="combobox"; name="Month";    dropdownlist=1; x1=11; x2=23;    y1=""; list=Months; }, --Месяц
-    {tp="butt";     name="IncMonth"; btnnoclose=1;   x1=27; text=">"; y1="";              }, --Месяц вперёд
+    {tp="butt";     name="DecMonth"; btnnoclose=1;   x1=4;  text="<";                 }, --Месяц назад
+    {tp="combobox"; name="Month";    dropdown=1; x1=11; x2=23;    y1=""; list=Months; }, --Месяц
+    {tp="butt";     name="IncMonth"; btnnoclose=1;   x1=27; text=">"; y1="";          }, --Месяц вперёд
     {tp="sep" },
 
     {tp="text"; text=GetDayOfWeek(1); width=2; colors=COLOR_WD; },

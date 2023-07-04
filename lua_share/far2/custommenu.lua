@@ -131,6 +131,7 @@ local function NewList (props, items, bkeys, startId)
   SetParam(self, P, "selignore")
   SetParam(self, P, "xlat")
   SetParam(self, P, "showdates")
+  SetParam(self, P, "dateformat", "%x %a")
 
   SetParam(self, P, "keys_searchmethod",      "F5")
   SetParam(self, P, "keys_ellipsis",          "F6")
@@ -617,7 +618,7 @@ function List:ChangePattern (hDlg, pattern)
                              or (self.selalign=="top" and groupdate > date) then
               groupdate = date
               ft.year,ft.month,ft.day = ft.wYear,ft.wMonth,ft.wDay
-              local text = os.date("%x %a", os.time(ft))
+              local text = os.date(self.dateformat, os.time(ft))
               self.drawitems[#self.drawitems+1] = { separator=true; text=text; }
             end
           end

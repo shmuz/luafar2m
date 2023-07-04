@@ -660,7 +660,7 @@ function SRFrame:InsertInDialog (aPanelsDialog, aOp)
   insert(Items, { tp="chbox"; name="bRegExpr";                         text=M.MDlgRegExpr;  })
   insert(Items, { tp="text";                         y1=""; x1=md;     text=M.MDlgRegexLib; })
   local x1 = md + M.MDlgRegexLib:gsub("&",""):len() + 1;
-  insert(Items, { tp="combobox"; name="cmbRegexLib"; y1=""; x1=x1; width=14; dropdownlist=1; noload=1;
+  insert(Items, { tp="combobox"; name="cmbRegexLib"; y1=""; x1=x1; width=14; dropdown=1; noload=1;
            list = { {Text="Far regex"}, {Text="Oniguruma"}, {Text="PCRE"} };  })
   ------------------------------------------------------------------------------
   insert(Items, { tp="chbox"; name="bCaseSens";                        text=M.MDlgCaseSens; })

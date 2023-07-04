@@ -87,12 +87,12 @@ local function GetDialogData()
     {tp="chbox"; text="&Whole words",                name="bWholeWords"; },
     {tp="sep";                                                           },
     {tp="text"; text="E&ncodings:";                                      },
-    {tp="combobox"; dropdownlist=1; ystep=0; x1=16;  name="iEncoding";
+    {tp="combobox"; dropdown=1; ystep=0; x1=16;  name="iEncoding";
       list = { [ENC_UTF8] = {Text="UTF-8"             };
                [ENC_ALL ] = {Text="UTF-8 + OEM + ANSI"}; };              },
     {tp="sep";                                                           },
     {tp="text"; text="Searc&h area:";                                    },
-    {tp="combobox"; dropdownlist=1; ystep=0; x1=18;  name="iSearchArea";
+    {tp="combobox"; dropdown=1; ystep=0; x1=18;  name="iSearchArea";
       list = { [SA_FROM_CURRENT] = {Text="From the current folder"};
                [SA_CURRENT_ONLY] = {Text="The current folder only"};
                [SA_FROM_ROOT   ] = {Text="From the root folder"   }; };  },

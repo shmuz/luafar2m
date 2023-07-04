@@ -38,7 +38,7 @@ local function ReplaceDialog (Data)
     ------------------------------------------------------------------------------
     { tp="chbox"; text=M.MDlgRegExpr; name="bRegExpr"; },
     { tp="text";  text=M.MDlgRegexLib; x1=X2; y1=""; },
-    { tp="combobox"; x1=X3; x2=X4; y1="";   name="cmbRegexLib"; dropdownlist=1; noload=1;
+    { tp="combobox"; x1=X3; x2=X4; y1="";   name="cmbRegexLib"; dropdown=1; noload=1;
         list={{Text="Far regex"},{Text="Oniguruma"},{Text="PCRE"}}; },
     { tp="chbox"; text=M.MDlgCaseSens;      name="bCaseSens";                  },
     { tp="chbox"; text=M.MDlgFileAsLine;    name="bFileAsLine"; x1=X2; y1="";  },

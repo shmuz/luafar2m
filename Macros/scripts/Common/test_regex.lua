@@ -1,5 +1,5 @@
 -- Started     : 2023-07-01
--- Portability : Far3 (b5284+) / far2m
+-- Portability : Far3 (b5285+) / far2m
 
 local osWindows = package.config:sub(1,1)=="\\"
 local F = far.Flags
