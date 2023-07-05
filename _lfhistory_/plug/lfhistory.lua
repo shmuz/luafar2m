@@ -78,11 +78,11 @@ local cfgLocateFile = {
 }
 
 local DateFormats = {
-  false,
-  "%Y-%m-%d",     -- 2023-07-04
-  "%Y-%m-%d %a",
-  "%x",
-  "%x %a",      -- 04/07/23 Tue (locale dependent)
+  false,         -- don't show dates
+  "%Y-%m-%d",    -- 2023-07-04
+  "%Y-%m-%d %a", -- 2023-07-04 Tue
+  "%x",          -- 04/07/23
+  "%x %a",       -- 04/07/23 Tue
 }
 
 local function ConfigValue(Cfg, Key)

@@ -59,6 +59,7 @@ linit.c::
 	-erequire\(\'generate\'\)\([[$(CONFIG)]],[[$(LUA_SHARE)]],[[$@]],[[$(GEN_METHOD)]],[[$(LUAC)]]\)
 
 luaplug1.o luaplug2.o: $(INC_FAR)/farplug-wide.h
+luaplug1.o: Makefile
 
 luaplug1.o: $(C_SOURCE)
 	$(CC) -c -o $@ $< $(CFLAGS1)
