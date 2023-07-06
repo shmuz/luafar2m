@@ -5,9 +5,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "luaplug.c"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <lua.h>
 #include <lauxlib.h>
-#include "luaplug.c"
+#ifdef __cplusplus
+}
+#endif
 
 /* Lua versions: 5.1 to 5.4 */
 #if LUA_VERSION_NUM > 501

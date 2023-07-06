@@ -1,9 +1,15 @@
 //---------------------------------------------------------------------------
 #include <farplug-wide.h>
-#include <lua.h>
 #include <luafar.h>
 #include "luaplug.c"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "lsqlite3.c"
+#ifdef __cplusplus
+}
+#endif
 
 #ifndef LUAPLUG
 #define LUAPLUG __attribute__ ((visibility ("default")))
