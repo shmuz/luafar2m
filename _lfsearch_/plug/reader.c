@@ -31,7 +31,7 @@ static int NewReader (lua_State *L)
   memset(ud, 0, sizeof(TReader));
   ud->overlap = luaL_checkinteger(L, 1) / 2 / CHUNK;
   if (ud->overlap == 0) ud->overlap = 1;
-  ud->data = malloc(ud->overlap * 2 * CHUNK);
+  ud->data = (char*) malloc(ud->overlap * 2 * CHUNK);
   if (ud->data == NULL) return 0;
   luaL_getmetatable(L, ReaderType);
   lua_setmetatable(L, -2);
@@ -45,7 +45,7 @@ static TReader* GetReader (lua_State *L, int pos)
 
 static TReader* CheckReader (lua_State *L, int pos)
 {
-  TReader* ud = luaL_checkudata(L, pos, ReaderType);
+  TReader* ud = (TReader*) luaL_checkudata(L, pos, ReaderType);
   if (ud->data == NULL) luaL_argerror(L, pos, "attempt to access a deleted reader");
   return ud;
 }
