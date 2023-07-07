@@ -1,27 +1,22 @@
 # User-configurable settings
 # ---------------------------
 
-# Far2m source tree
+# Location of far2m source tree
 FARSOURCE = $(HOME)/far2m
 
-# Set USE_LUAJIT=0 to use Lua5.1 rather than LuaJIT
-USE_LUAJIT = 1
+INC_LUA = /usr/include/luajit-2.1
+# INC_LUA = /usr/include/lua5.1
 
-# Location of lua_share directory
+LUAEXE = luajit
+# LUAEXE = lua5.1
+
+# Location of lua_share relative to <plugin_dir>/build
 LUA_SHARE = ../../lua_share
 
 # Settings below do not usually require editing
 # ----------------------------------------------
 
 INC_FAR = $(FARSOURCE)/far/far2sdk
-
-ifneq ($(USE_LUAJIT),1)
-  INC_LUA = /usr/include/lua5.1
-  LUAEXE  = lua
-else
-  INC_LUA = /usr/include/luajit-2.1
-  LUAEXE  = luajit
-endif
 
 CFLAGS = -O2 -Wall -Wno-unused-function -fvisibility=hidden \
          -I$(INC_FAR) -I$(INC_LUA) -fPIC $(MYCFLAGS)

@@ -17,14 +17,13 @@ endif
 LUAC        = luac5.1
 PATH_PLUGIN = ../plug
 GEN_METHOD  = -plain
-MAKE_LANG   = $(LUAEXE) -epackage.path=\"$(LUA_SHARE)/?.lua\" \
-              -erequire\"far2.makelang\"\(\"$(LANG_TEMPL)\"\)
+MAKE_LANG = $(LUAEXE) -edofile\"$(LUA_SHARE)/far2/makelang.lua\"\(\"$(LANG_TEMPL)\"\)
 
 ifndef EMBED
-  TRG = $(PLUGNAME).far-plug-wide
+  TRG = $(PATH_PLUGIN)/$(PLUGNAME).far-plug-wide
   OBJ = luaplug1.o
 else
-  TRG = $(PLUGNAME)_e.far-plug-wide
+  TRG = $(PATH_PLUGIN)/$(PLUGNAME)_e.far-plug-wide
   OBJ = luaplug2.o linit.o
   FUNC_OPENLIBS ?= luafar_openlibs
 endif
@@ -44,12 +43,18 @@ CFLAGS += -DPLUG_AUTHOR="$(PLUG_AUTHOR)"
 CFLAGS1 = $(CFLAGS) $(EXPORTS)
 CFLAGS2 = $(CFLAGS1) -DEMBED
 
+ifdef LANG_TEMPL
+all: $(TRG) lng
+else
+all: $(TRG)
+endif
+
 $(TRG): $(OBJ) $(LIBS)
 	$(CC) -o $@ $^ $(LDFLAGS)
-	mv -f $@ $(PATH_PLUGIN)
-ifdef LANG_TEMPL
+
+# build unconditionally
+lng::
 	cd $(PATH_PLUGIN) && $(MAKE_LANG)
-endif
 
 # Since linit.c has changing prerequisites (sets of Lua files),
 # that can not be specified in this makefile, it is better be
@@ -79,4 +84,4 @@ ifdef SRC_PLUG_DIRS
 endif
 	cp -rf $(LUA_SHARE) $(TRG_SHARE)
 
-.PHONY:
+.PHONY: all lng install
