@@ -13,7 +13,8 @@ local function arrname(item, boot)
 end
 
 local function requirename(item)
-  return item.name:gsub(".*%*", ""):gsub("/", "."):sub(1,-5)
+  local s = item.name:gsub(".*%*", ""):gsub("/", ".")
+  return (s:gsub("%.[^.]*$", ""))
 end
 
 local linit = [[
