@@ -15,4 +15,11 @@ PLUG_TITLE         = \"Highlight\"
 PLUG_DESCRIPTION   = \"Syntax highlighter for editor\"
 PLUG_AUTHOR        = \"Shmuel Zeigerman\"
 
+# Embedding data
+BOOTSCRIPT = ../plug/highlight.lua
+SCRIPTS = -
+MODULES = \
+  $(LUA_SHARE)*far2/settings.lua         \
+  $(LUA_SHARE)*far2/simpledialog.lua
+
 include ../../plugin.mak

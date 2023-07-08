@@ -14,4 +14,9 @@ PLUG_TITLE         = \"text_c0\"
 PLUG_DESCRIPTION   = \"Displays some text from a file in 'Alternative full' panel column\"
 PLUG_AUTHOR        = \"Shmuel Zeigerman\"
 
+# Embedding data
+BOOTSCRIPT = ../plug/text_c0.lua
+SCRIPTS = -
+MODULES = -
+
 include ../../plugin.mak

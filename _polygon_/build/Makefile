@@ -31,6 +31,22 @@ PLUG_TITLE         = \"Polygon\"
 PLUG_DESCRIPTION   = \"Plugin for viewing and editing SQLite3 database files\"
 PLUG_AUTHOR        = \"Artem Senichev, Shmuel Zeigerman\"
 
+# Embedding data
+BOOTSCRIPT = ../plug/polygon.lua
+SCRIPTS = -
+MODULES = \
+  ../plug*modules/editor.lua             \
+  ../plug*modules/exporter.lua           \
+  ../plug*modules/panel.lua              \
+  ../plug*modules/progress.lua           \
+  ../plug*modules/config.lua             \
+  ../plug*modules/sqlite.lua             \
+  ../plug*modules/string_rc.lua          \
+  ../plug*modules/utils.lua              \
+  $(LUA_SHARE)*far2/plugdebug.lua        \
+  $(LUA_SHARE)*far2/settings.lua         \
+  $(LUA_SHARE)*far2/simpledialog.lua
+
 include ../../plugin.mak
 
 luaplug1.o luaplug2.o : ../plug/lsqlite3.c

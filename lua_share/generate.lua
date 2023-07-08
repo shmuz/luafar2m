@@ -1,11 +1,13 @@
 local bin2c = require "bin2c"
 
 local function arrname(tb, i)
-  return tb.bootindex==i and "boot" or tb[i].name:gsub("[\\/]", "_"):sub(1,-5)
+  if tb.bootindex==i then return "boot" end
+  if tb[i].script then return tb[i].name:gsub(".*/", ""):sub(1,-5) end
+  return tb[i].name:gsub(".*%*", ""):gsub("/", "_"):sub(1,-5)
 end
 
 local function requirename(tb, i)
-  return tb[i].name:gsub("[\\/]", "."):sub(1,-5)
+  return tb[i].name:gsub(".*%*", ""):gsub("/", "."):sub(1,-5)
 end
 
 local linit = [[
@@ -74,24 +76,19 @@ static int preload (lua_State *L, char *arr, size_t arrsize) {
 
 ]]
 
-local dirsep = package.config:sub(1,1)
-local function join(p1, p2)
-  if p1:sub(-1) ~= dirsep then p1=p1..dirsep end
-  return p1..p2
-end
-
 local function addfiles(aLuafiles, target, method, luac)
   local strip = (method == "-strip") and require "lstrip51"
   for i, f in ipairs(aLuafiles) do
     local s
+    local fname = f.name:gsub("%*", "/")
     if method == "-plain" then
-      local fp = assert(io.open(join(f.path, f.name)))
+      local fp = assert(io.open(fname))
       s = fp:read("*all")
       fp:close()
     elseif strip then
-      s = assert(strip("fsk", join(f.path, f.name)))
+      s = assert(strip("fsk", fname))
     else
-      assert(0 == os.execute((luac or "luac") .. " -o luac.out -s " .. f.path .. f.name))
+      assert(0 == os.execute((luac or "luac") .. " -o luac.out -s " .. fname))
       local fp = assert(io.open("luac.out", "rb"))
       s = fp:read("*all")
       fp:close()
@@ -138,14 +135,16 @@ local function create_linit (aLuafiles, aBinlibs)
   end
 end
 
-local function generate(config, share, target, method, luac)
-  assert(target, "syntax: generate.lua <config> <share> <target> [-plain|-strip]")
-  local fconfig = assert(loadfile(config))
-  local luafiles, binlibs = fconfig(share)
-  assert(type(luafiles) == "table")
-  assert(type(luafiles.bootindex) == "number")
-  binlibs = binlibs or {}
-  assert(type(binlibs) == "table")
+local function generate(bootscript, scripts, modules, target, method, luac)
+  local luafiles = { bootindex=1; [1]={name=bootscript; script=true;} }
+  for name in scripts:gmatch("%S+") do
+    if name ~= "-" then table.insert(luafiles, {name=name; script=true;}) end
+  end
+  for name in modules:gmatch("%S+") do
+    if name ~= "-" then table.insert(luafiles, {name=name; module=true;}) end
+  end
+  local binlibs = {}
+
   local fp = assert(io.open(target, "w"))
   --------------------------------------------------------------
   fp:write("/* This is a generated file. */\n\n")
@@ -164,4 +163,8 @@ int preload_%s (lua_State *L)
   fp:close()
 end
 
-return generate
+if select("#", ...) <= 1 then -- called by require()
+  return generate
+else
+  generate(...) -- use as an executable
+end

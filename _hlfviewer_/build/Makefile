@@ -14,4 +14,11 @@ PLUG_TITLE         = \"HlfViewer\"
 PLUG_DESCRIPTION   = \"Hlf-file Viewer for Far Manager\"
 PLUG_AUTHOR        = \"Far Group, Shmuel Zeigerman\"
 
+# Embedding data
+BOOTSCRIPT = ../plug/hlfviewer.lua
+SCRIPTS = -
+MODULES = \
+  $(LUA_SHARE)*far2/settings.lua         \
+  $(LUA_SHARE)*far2/simpledialog.lua
+
 include ../../plugin.mak

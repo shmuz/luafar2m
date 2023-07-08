@@ -2,6 +2,8 @@
 
 ifdef install
 PARAM = install
+else ifdef embed
+PARAM = EMBED=1
 endif
 
 #  Note: plugin 'highlight' is intentionally not included in 'all'

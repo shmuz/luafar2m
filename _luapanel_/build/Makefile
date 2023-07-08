@@ -17,4 +17,9 @@ PLUG_TITLE         = \"Lua Panel\"
 PLUG_DESCRIPTION   = \"Panel-mode Lua-state browser\"
 PLUG_AUTHOR        = \"Shmuel Zeigerman\"
 
+# Embedding data
+BOOTSCRIPT = ../plug/luapanel.lua
+SCRIPTS = -
+MODULES = -
+
 include ../../plugin.mak

@@ -16,4 +16,14 @@ PLUG_TITLE         = \"LuaFAR Temp. Panel\"
 PLUG_DESCRIPTION   = \"A Lua clone of TmpPanel plugin\"
 PLUG_AUTHOR        = \"Far Group, Shmuel Zeigerman\"
 
+# Embedding data
+BOOTSCRIPT = ../plug/lftmp.lua
+SCRIPTS = -
+MODULES = \
+  ../plug*tmpp_message.lua               \
+  $(LUA_SHARE)*far2/settings.lua         \
+  $(LUA_SHARE)*far2/simpledialog.lua     \
+  $(LUA_SHARE)*far2/tmppanel.lua         \
+  $(LUA_SHARE)*far2/utils.lua
+
 include ../../plugin.mak

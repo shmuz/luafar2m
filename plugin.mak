@@ -60,8 +60,8 @@ lng::
 # that can not be specified in this makefile, it is better be
 # rebuilt unconditionally; hence use of the double-colon rule.
 linit.c::
-	$(LUAEXE) -epackage.path=[[$(LUA_SHARE)/?.lua]]	\
-	-erequire\(\'generate\'\)\([[$(CONFIG)]],[[$(LUA_SHARE)]],[[$@]],[[$(GEN_METHOD)]],[[$(LUAC)]]\)
+	$(LUAEXE) -epackage.path=[[$(LUA_SHARE)/?.lua]] $(LUA_SHARE)/generate.lua \
+	"$(BOOTSCRIPT)" "$(SCRIPTS)" "$(MODULES)" "$@" "$(GEN_METHOD)" "$(LUAC)"
 
 luaplug1.o luaplug2.o: $(INC_FAR)/farplug-wide.h
 luaplug1.o: Makefile

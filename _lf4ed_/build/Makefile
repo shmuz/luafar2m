@@ -17,4 +17,19 @@ PLUG_TITLE         = \"LuaFAR for Editor\"
 PLUG_DESCRIPTION   = \"A host for scripts and script packets\"
 PLUG_AUTHOR        = \"Shmuel Zeigerman\"
 
+# Embedding data
+BOOTSCRIPT = ../plug/lf4ed.lua
+SCRIPTS = \
+  ../plug/config.lua                     \
+  ../plug/expression.lua                 \
+  ../plug/wrap.lua
+MODULES = \
+  ../plug*lf4ed_message.lua              \
+  ../plug*sortdialog.lua                 \
+  ../plug*sortlines.lua                  \
+  $(LUA_SHARE)*far2/makelang.lua         \
+  $(LUA_SHARE)*far2/settings.lua         \
+  $(LUA_SHARE)*far2/simpledialog.lua     \
+  $(LUA_SHARE)*far2/utils.lua
+
 include ../../plugin.mak
