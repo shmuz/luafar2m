@@ -1,13 +1,19 @@
 local bin2c = require "bin2c"
 
-local function arrname(tb, i)
-  if tb.bootindex==i then return "boot" end
-  if tb[i].script then return tb[i].name:gsub(".*/", ""):sub(1,-5) end
-  return tb[i].name:gsub(".*%*", ""):gsub("/", "_"):sub(1,-5)
+local function arrname(item, boot)
+  local s
+  if boot then
+    return "boot"
+  elseif item.script then
+    s = item.name:gsub(".*/", "")
+  else -- module
+    s = item.name:gsub(".*%*", ""):gsub("/", "_")
+  end
+  return (s:gsub("%.[^.]*$", ""))
 end
 
-local function requirename(tb, i)
-  return tb[i].name:gsub(".*%*", ""):gsub("/", "."):sub(1,-5)
+local function requirename(item)
+  return item.name:gsub(".*%*", ""):gsub("/", "."):sub(1,-5)
 end
 
 local linit = [[
@@ -93,7 +99,7 @@ local function addfiles(aLuafiles, target, method, luac)
       s = fp:read("*all")
       fp:close()
     end
-    s = "static " .. bin2c(s, arrname(aLuafiles, i))
+    s = "static " .. bin2c(s, arrname(f, i==1))
     target:write(s, "\n")
   end
 end
@@ -106,27 +112,26 @@ local function create_linit (aLuafiles, aBinlibs)
       for _,libname in ipairs(aBinlibs) do
         ret = ret .. "int luaopen_" .. libname .. " (lua_State*);\n"
       end
-      for i = 1, #aLuafiles do
-        ret = ret .. "static int preload_" .. arrname(aLuafiles,i) .. " (lua_State*);\n"
+      for i,f in ipairs(aLuafiles) do
+        ret = ret .. "static int preload_" .. arrname(f,i==1) .. " (lua_State*);\n"
       end
     elseif tag == "binmodules" and #aBinlibs > 0 then
       ret = "  /*------ bin.modules ------*/\n"
       for _,libname in ipairs(aBinlibs) do
-        ret = ret .. ('  {"%s", luaopen_%s},\n'):format(libname, libname)
+        ret = ('%s  {"%s", luaopen_%s},\n'):format(ret, libname, libname)
       end
     elseif tag == "modules" then
       ret = "  /*-------- modules --------*/\n"
-      for i,v in ipairs(aLuafiles) do
+      for _,v in ipairs(aLuafiles) do
         if v.module then
-          ret = ret .. "  {\"" .. requirename(aLuafiles,i) .. "\", preload_" ..
-            arrname(aLuafiles,i) .. "},\n"
+          ret = ("%s  {\"%s\", preload_%s},\n"):format(ret, requirename(v), arrname(v,false))
         end
       end
     elseif tag == "scripts" then
       ret = "  /*-------- scripts --------*/\n"
       for i,v in ipairs(aLuafiles) do
         if v.script then
-          local name = arrname(aLuafiles,i)
+          local name = arrname(v,i==1)
           ret = ret .. "  {\"<" .. name .. "\", preload_" .. name .. "},\n"
         end
       end
@@ -136,7 +141,7 @@ local function create_linit (aLuafiles, aBinlibs)
 end
 
 local function generate(bootscript, scripts, modules, target, method, luac)
-  local luafiles = { bootindex=1; [1]={name=bootscript; script=true;} }
+  local luafiles = { [1]={name=bootscript; script=true;} }
   for name in scripts:gmatch("%S+") do
     if name ~= "-" then table.insert(luafiles, {name=name; script=true;}) end
   end
@@ -152,8 +157,8 @@ local function generate(bootscript, scripts, modules, target, method, luac)
   fp:write(linit)
   fp:write(code)
   addfiles(luafiles, fp, method, luac)
-  for i = 1, #luafiles do
-    local name = arrname(luafiles, i)
+  for i,f in ipairs(luafiles) do
+    local name = arrname(f, i==1)
     fp:write(string.format([[
 int preload_%s (lua_State *L)
     { return preload(L, %s, sizeof(%s)); }
