@@ -1,5 +1,5 @@
 PLUGNAME = hlfviewer
-CONFIG   = hlfviewer.cfg
+LANG_TEMPL = hv_lang.templ
 SETPACKAGEPATH = 1
 
 SRC_PLUG_SHARE = *.lua *.hlf *.lng
@@ -18,6 +18,7 @@ PLUG_AUTHOR        = \"Far Group, Shmuel Zeigerman\"
 BOOTSCRIPT = ../plug/hlfviewer.lua
 SCRIPTS = -
 MODULES = \
+  ../plug*hv_message.lua                 \
   $(LUA_SHARE)*far2/settings.lua         \
   $(LUA_SHARE)*far2/simpledialog.lua
 

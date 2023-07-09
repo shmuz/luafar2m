@@ -1,5 +1,4 @@
 PLUGNAME = lfhistory
-CONFIG   = lfhistory.cfg
 LANG_TEMPL = lfh_lang.templ
 SETPACKAGEPATH = 1
 

@@ -1,5 +1,4 @@
 PLUGNAME = lf4ed
-CONFIG   = lf4ed.cfg
 LANG_TEMPL = lf4ed_lang.templ
 SETPACKAGEPATH = 1
 
@@ -27,7 +26,6 @@ MODULES = \
   ../plug*lf4ed_message.lua              \
   ../plug*sortdialog.lua                 \
   ../plug*sortlines.lua                  \
-  $(LUA_SHARE)*far2/makelang.lua         \
   $(LUA_SHARE)*far2/settings.lua         \
   $(LUA_SHARE)*far2/simpledialog.lua     \
   $(LUA_SHARE)*far2/utils.lua

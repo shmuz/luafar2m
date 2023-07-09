@@ -1,5 +1,4 @@
 PLUGNAME = lftmp
-CONFIG   = tmppanel.cfg
 LANG_TEMPL = tmpp_lang.templ
 SETPACKAGEPATH = 1
 

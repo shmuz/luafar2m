@@ -1,31 +1,6 @@
 -- started: 2022-11-03
 
-local M do
-  local codes = {
-    MTitle              = 0;
-
-    MConfig             = 1;
-    MShowHelpTopic      = 2;
-
-    MProcessEditorInput = 3;
-    MCheckMaskFile      = 4;
-
-    MStyle              = 5;
-    MStr1               = 6;
-    MStr2               = 7;
-    MStr3               = 8;
-
-    MOk                 = 9;
-    MCancel             = 10;
-
-    MDefaultTopic       = 11;
-
-    MNotAnHLF           = 12;
-  }
-  local GetMsg = far.GetMsg
-  M = setmetatable({}, {__index=function(_,k) return GetMsg(codes[k]) end})
-end
-
+local M    = require "hv_message"
 local Sett = require "far2.settings"
 local sd   = require "far2.simpledialog"
 local SETTINGS_KEY  = "shmuz"

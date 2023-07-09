@@ -149,9 +149,9 @@ return setmetatable( {},
   fp:close()
   ----------------------------------------------------------------------------
   for k,v in ipairs(languages) do
-    local suffix = v:match("%.Language=(%w%w%w)")
-    suffix = assert(suffix, v):lower()
-    local fname = lngfile.."_"..suffix..".lng"
+    local lang = assert( v:match("%.Language=(%w+)") )
+    local suffix = lang:lower()=="slovak" and "sky" or lang:sub(1,3)
+    local fname = lngfile.."_"..suffix:lower()..".lng"
     fp = assert(io.open(fname, "w"))
     fp:write(bom_utf8, v, "\n\n")
     fp:write(table.concat(t_out[k+1], "\n"), "\n")

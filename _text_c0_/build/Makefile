@@ -1,5 +1,4 @@
 PLUGNAME = text_c0
-CONFIG   = text_c0.cfg
 
 SRC_PLUG_SHARE = *.lua
 

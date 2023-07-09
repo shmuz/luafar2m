@@ -1,5 +1,4 @@
 PLUGNAME = highlight
-CONFIG   = highlight.cfg
 SETPACKAGEPATH = 1
 
 SRC_PLUG_DIRS = syntaxes

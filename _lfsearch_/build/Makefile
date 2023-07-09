@@ -1,5 +1,4 @@
 PLUGNAME = lfsearch
-CONFIG   = lfsearch.cfg
 LANG_TEMPL = lfs_lang.templ
 C_SOURCE = ../plug/reader.c
 MYCFLAGS = -I$(FARSOURCE)/luafar/src

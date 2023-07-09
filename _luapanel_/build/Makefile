@@ -1,5 +1,4 @@
 PLUGNAME = luapanel
-CONFIG   = luapanel.cfg
 SRC_PLUG_SHARE = *.lua *.hlf
 
 FAR_EXPORTS = \

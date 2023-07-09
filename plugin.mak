@@ -3,7 +3,6 @@
 include ../../config.mak
 
 # The following 4 variables should be defined by the including make file
-CONFIG      ?=
 FAR_EXPORTS ?=
 LANG_TEMPL  ?=
 PLUGNAME    ?=
@@ -17,7 +16,7 @@ endif
 LUAC        = luac5.1
 PATH_PLUGIN = ../plug
 GEN_METHOD  = -plain
-MAKE_LANG = $(LUAEXE) -edofile\"$(LUA_SHARE)/far2/makelang.lua\"\(\"$(LANG_TEMPL)\"\)
+MAKE_LANG = $(LUAEXE) -edofile\"$(LUA_SHARE)/makelang.lua\"\(\"$(LANG_TEMPL)\"\)
 
 ifndef EMBED
   TRG = $(PATH_PLUGIN)/$(PLUGNAME).far-plug-wide

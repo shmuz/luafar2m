@@ -4,6 +4,7 @@
 
 ### auto-generated
 *.lng
+hv_message.lua
 lf4ed_message.lua
 lfh_message.lua
 lfs_message.lua
