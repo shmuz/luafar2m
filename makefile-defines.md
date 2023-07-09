@@ -5,7 +5,6 @@
 1. [SYS_ID](#SYS_ID)
 1. [FAR_EXPORTS](#FAR_EXPORTS)
 1. [LANG_TEMPL](#LANG_TEMPL)
-1. [CONFIG](#CONFIG)
 1. [C_SOURCE](#C_SOURCE)
 1. [FUNC_OPENLIBS](#FUNC_OPENLIBS)
 1. [MYCFLAGS](#MYCFLAGS)
@@ -38,14 +37,6 @@
   supported by the plugin
 - Not required if the plugin does not have `*.templ` files
 - Example: `LANG_TEMPL = polygon_lang.templ`
-
-## CONFIG
-- A configuration file (Lua script) used in generating an "embedding"
-  plugin build (that contains its Lua code embedded in the plugin's DLL)
-- The embedding plugins also embed Lua modules and therefore they are
-  not sensitive to Lua modules' updates.<br>
-- Not needed for not-embedding plugins.
-- Example: `CONFIG = polygon.cfg`
 
 ## C_SOURCE
 - This is the main plugin's C-file

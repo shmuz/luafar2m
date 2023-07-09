@@ -361,16 +361,16 @@ end
 function export.Configure()
   GetPluginConfig()
 
-  local W = 38
+  local X1 = math.max(M.MProcessEditorInput:len(), M.MCheckMaskFile:len()) + 10
   local Items = {
     guid="7A3A74E8-505E-482B-A7F3-2ECE6AC41650";
     help="Config";
-    width=2*W;
+    width=0;
     { tp="dbox";  text=M.MConfig; },
     { tp="chbox"; text=M.MProcessEditorInput; val=Opt.ProcessEditorInput; name="ProcessEditorInput"; },
     { tp="chbox"; text=M.MCheckMaskFile;      val=Opt.CheckMaskFile;      name="CheckMaskFile"; },
-    { tp="edit";  x1=W+5;  ystep=-1;  val=Opt.AssignKeyName;              name="AssignKeyName"; },
-    { tp="edit";  x1=W+5;                     val=Opt.MaskFile;           name="MaskFile"; },
+    { tp="edit";  x1=X1;   ystep=-1;  val=Opt.AssignKeyName; width=28;    name="AssignKeyName"; },
+    { tp="edit";  x1=X1;              val=Opt.MaskFile;      width=28;    name="MaskFile"; },
     { tp="sep"; },
     { tp="text";  text=M.MStyle; },
     { tp="rbutt"; text=M.MStr1;               val=Opt.Style==0;           name="Style0"; },
