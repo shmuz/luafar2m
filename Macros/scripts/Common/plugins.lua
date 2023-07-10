@@ -1,28 +1,50 @@
 -- started    : 2011-02-20
 -- far2m port : 2023-01-11
 
+-- Settings
+local macrokey     = "AltShiftF11"
+local lua_explorer = "far2.lua_explorer"
+-- /Settings
+
 local OsWindows = package.config:sub(1,1)=="\\"
 local F=far.Flags
 
-local breakkeys = {
-  { BreakKey="F3";         command="showinfo";        help="Show plugin info";     },
-  { BreakKey="Enter";      command="load";            help="Load plugin";          },
-  { BreakKey="Ins";        command="forcedload";      help="Forced load plugin";   },
-  { BreakKey="Del";        command="unload";          help="Unload plugin";        },
-  { BreakKey="F8";         command="clearcache";      help="Clear plugin's cache"; },
-  { BreakKey="CtrlEnter";  command="load_all";        help="Load all";             },
-  { BreakKey="CtrlIns";    command="forcedload_all";  help="Forced load all";      },
-  { BreakKey="CtrlDel";    command="unload_all";      help="Unload all";           },
-  { BreakKey="F1";         command="showhelp";        help="Show help";            },
+local Data = {
+  { BreakKey="F3";         command="showinfo";        help="Show plugin info";      os="lw"; },
+  { BreakKey="Enter";      command="load";            help="Load plugin";           os="lw"; },
+  { BreakKey="Ins";        command="forcedload";      help="Forced load plugin";    os="lw"; },
+  { BreakKey="Del";        command="unload";          help="Unload plugin";         os="lw"; },
+  { BreakKey="F8";         command="clearcache";      help="Clear plugin's cache";  os="l";  },
+  {                                                                                 os="lw"; }, --help separator
+  { BreakKey="CtrlEnter";  command="load_all";        help="Load all";              os="lw"; },
+  { BreakKey="CtrlIns";    command="forcedload_all";  help="Forced load all";       os="lw"; },
+  { BreakKey="CtrlDel";    command="unload_all";      help="Unload all";            os="lw"; },
+  { BreakKey="F1";         command="showhelp";        help="Show help";             os="lw"; },
 }
 
-local function ShowHelp()
-  local tbl = {}
-  for i,v in ipairs(breakkeys) do
-    tbl[i] = ("%-16s%s"):format(v.BreakKey, v.help)
+local breakkeys = {}
+for _,v in ipairs(Data) do
+  if v.BreakKey then
+    local ok = v.os:find(OsWindows and "w" or "l")
+    if ok then table.insert(breakkeys,v) end
   end
-  local msg = table.concat(tbl, "\n")
-  far.Message(msg, "Help", "OK", "l")
+end
+
+local helpmessage = {}
+for _,v in ipairs(Data) do
+  local ok = v.os:find(OsWindows and "w" or "l")
+  if ok then
+    table.insert(helpmessage, v.BreakKey==nil and "\1" or ("%-16s%s"):format(v.BreakKey, v.help))
+  end
+end
+helpmessage = table.concat(helpmessage, "\n")
+
+local function IsThisPlugin(pluginfo)
+  if OsWindows then
+    return export.GetGlobalInfo().Guid == pluginfo.GInfo.Guid --luacheck: no global
+  else
+    return far.GetPluginId() == pluginfo.GInfo.SysID
+  end
 end
 
 local properties = {
@@ -96,53 +118,53 @@ local function Main()
     local mItem = items[pos]
     last_module = mItem.info.ModuleName
 
-    if command == "load" then
-      far.LoadPlugin("PLT_PATH", last_module)
-
-    elseif command == "load_all" then
-      for _,v in ipairs(items) do
-        far.LoadPlugin("PLT_PATH", v.info.ModuleName)
+    if command == "showinfo" then
+      if mItem.info.handle then
+        local info = far.GetPluginInformation(mItem.info.handle)
+        if info then
+          require (lua_explorer)(info, "info")
+        end
       end
+
+    elseif command == "load" then
+      far.LoadPlugin("PLT_PATH", last_module)
 
     elseif command == "forcedload" then
       far.ForcedLoadPlugin("PLT_PATH", last_module)
 
-    elseif command == "forcedload_all" then
-      for _,v in ipairs(items) do
-        far.ForcedLoadPlugin("PLT_PATH", v.info.ModuleName)
-      end
-
-    elseif command == "clearcache" then
-      far.ClearPluginCache("PLT_PATH", last_module)
-
     elseif command == "unload" then
       if mItem.info.handle then
-        if far.GetPluginId() ~= mItem.info.GInfo.SysID then
+        if not IsThisPlugin(mItem.info) then
           far.UnloadPlugin(mItem.info.handle)
         else
           mf.postmacro(far.Message, "I'm running this script and cannot unload myself !!!", mItem.text, nil, "w")
         end
       end
 
+    elseif command == "clearcache" then
+      far.ClearPluginCache("PLT_PATH", last_module)
+
+    elseif command == "load_all" then
+      for _,v in ipairs(items) do
+        far.LoadPlugin("PLT_PATH", v.info.ModuleName)
+      end
+
+    elseif command == "forcedload_all" then
+      for _,v in ipairs(items) do
+        far.ForcedLoadPlugin("PLT_PATH", v.info.ModuleName)
+      end
+
     elseif command == "unload_all" then
       for _,v in ipairs(items) do
         if v.info.handle then
-          if far.GetPluginId() ~= v.info.GInfo.SysID then
+          if not IsThisPlugin(v.info) then
             far.UnloadPlugin(v.info.handle)
           end
         end
       end
 
-    elseif command == "showinfo" then
-      if mItem.info.handle then
-        local info = far.GetPluginInformation(mItem.info.handle)
-        if info then
-          require "far2.lua_explorer" (info, "info")
-        end
-      end
-
     elseif command == "showhelp" then
-      ShowHelp()
+      far.Message(helpmessage, "Help", "OK", "l")
 
     end
   end
@@ -150,7 +172,7 @@ end
 
 Macro {
   description="Plugins Control";
-  area="Common"; key="CtrlShiftF11";
+  area="Common"; key=macrokey;
   action=Main;
 }
 
