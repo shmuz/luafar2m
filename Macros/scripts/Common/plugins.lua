@@ -5,15 +5,28 @@ local OsWindows = package.config:sub(1,1)=="\\"
 local F=far.Flags
 
 local breakkeys = {
-  { BreakKey="Enter";    command="load";       },
-  { BreakKey="Ins";      command="forcedload"; },
-  { BreakKey="Del";      command="unload";     },
-  { BreakKey="CtrlDel";  command="clearcache"; },
-  { BreakKey="F3";       command="showinfo";   },
+  { BreakKey="F3";         command="showinfo";        help="Show plugin info";     },
+  { BreakKey="Enter";      command="load";            help="Load plugin";          },
+  { BreakKey="Ins";        command="forcedload";      help="Forced load plugin";   },
+  { BreakKey="Del";        command="unload";          help="Unload plugin";        },
+  { BreakKey="F8";         command="clearcache";      help="Clear plugin's cache"; },
+  { BreakKey="CtrlEnter";  command="load_all";        help="Load all";             },
+  { BreakKey="CtrlIns";    command="forcedload_all";  help="Forced load all";      },
+  { BreakKey="CtrlDel";    command="unload_all";      help="Unload all";           },
+  { BreakKey="F1";         command="showhelp";        help="Show help";            },
 }
 
+local function ShowHelp()
+  local tbl = {}
+  for i,v in ipairs(breakkeys) do
+    tbl[i] = ("%-16s%s"):format(v.BreakKey, v.help)
+  end
+  local msg = table.concat(tbl, "\n")
+  far.Message(msg, "Help", "OK", "l")
+end
+
 local properties = {
-  Title="Load/Unload Plugins", Bottom="Enter=load, Ins=force-load, Del=unload",
+  Title="Load/Unload Plugins", Bottom="F1 - help",
 }
 
 local last_module
@@ -86,8 +99,18 @@ local function Main()
     if command == "load" then
       far.LoadPlugin("PLT_PATH", last_module)
 
+    elseif command == "load_all" then
+      for _,v in ipairs(items) do
+        far.LoadPlugin("PLT_PATH", v.info.ModuleName)
+      end
+
     elseif command == "forcedload" then
       far.ForcedLoadPlugin("PLT_PATH", last_module)
+
+    elseif command == "forcedload_all" then
+      for _,v in ipairs(items) do
+        far.ForcedLoadPlugin("PLT_PATH", v.info.ModuleName)
+      end
 
     elseif command == "clearcache" then
       far.ClearPluginCache("PLT_PATH", last_module)
@@ -101,6 +124,15 @@ local function Main()
         end
       end
 
+    elseif command == "unload_all" then
+      for _,v in ipairs(items) do
+        if v.info.handle then
+          if far.GetPluginId() ~= v.info.GInfo.SysID then
+            far.UnloadPlugin(v.info.handle)
+          end
+        end
+      end
+
     elseif command == "showinfo" then
       if mItem.info.handle then
         local info = far.GetPluginInformation(mItem.info.handle)
@@ -108,6 +140,9 @@ local function Main()
           require "far2.lua_explorer" (info, "info")
         end
       end
+
+    elseif command == "showhelp" then
+      ShowHelp()
 
     end
   end
