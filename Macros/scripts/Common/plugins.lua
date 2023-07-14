@@ -1,5 +1,6 @@
 -- started    : 2011-02-20
 -- far2m port : 2023-01-11
+-- forum      : https://forum.farmanager.com/viewtopic.php?t=13263
 
 -- Settings
 local macrokey     = "AltShiftF11"
@@ -23,18 +24,16 @@ local Data = {
 }
 
 local breakkeys = {}
-for _,v in ipairs(Data) do
-  if v.BreakKey then
-    local ok = v.os:find(OsWindows and "w" or "l")
-    if ok then table.insert(breakkeys,v) end
-  end
-end
-
 local helpmessage = {}
+
 for _,v in ipairs(Data) do
-  local ok = v.os:find(OsWindows and "w" or "l")
-  if ok then
-    table.insert(helpmessage, v.BreakKey==nil and "\1" or ("%-16s%s"):format(v.BreakKey, v.help))
+  if v.os:find(OsWindows and "w" or "l") then
+    if v.BreakKey then
+      table.insert(helpmessage, ("%-16s%s"):format(v.BreakKey, v.help))
+      table.insert(breakkeys,v)
+    else
+      table.insert(helpmessage, "\1")
+    end
   end
 end
 helpmessage = table.concat(helpmessage, "\n")
@@ -43,7 +42,7 @@ local function IsThisPlugin(pluginfo)
   if OsWindows then
     return export.GetGlobalInfo().Guid == pluginfo.GInfo.Guid --luacheck: no global
   else
-    return far.GetPluginId() == pluginfo.GInfo.SysID
+    return far.GetPluginId() == pluginfo.GInfo.SysID --luacheck: no global
   end
 end
 
@@ -142,7 +141,7 @@ local function Main()
       end
 
     elseif command == "clearcache" then
-      far.ClearPluginCache("PLT_PATH", last_module)
+      far.ClearPluginCache("PLT_PATH", last_module) --luacheck: no global
 
     elseif command == "load_all" then
       for _,v in ipairs(items) do
