@@ -91,7 +91,7 @@ local function GetText (aOpt)
     local ms = tOut.moon and require "moonscript"
     local loadstring, loadfile = (ms or _G).loadstring, (ms or _G).loadfile
     if tOut.sequence:find("^@") then
-      local fname = tOut.sequence:sub(2):gsub("%%(.-)%%", win.GetEnv)
+      local fname = tOut.sequence:sub(2):gsub("%$%((.-)%)", win.GetEnv)
       fname  = far.ConvertPath(fname, "CPM_NATIVE") or fname
       f, msg = loadfile(fname)
     else

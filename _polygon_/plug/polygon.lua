@@ -267,7 +267,7 @@ local function OpenFromCommandLine(str)
   if File == "" then
     File = ":memory:"
   else
-    File = File:gsub("%%(.-)%%", win.GetEnv) -- expand environment variables
+    File = File:gsub("%$%((.-)%)", win.GetEnv) -- expand environment variables
     File = far.ConvertPath(File, "CPM_FULL")
   end
   return File, Opt

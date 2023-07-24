@@ -88,7 +88,7 @@ local function TruncStr(s, maxlen)
 end
 
 local function ExpandEnvironmentStr (str)
-  return ( str:gsub("%%([^%%]*)%%", win.GetEnv) )
+  return ( str:gsub("%$%((.-)%)", win.GetEnv) )
 end
 
 local function IsDirectory (PanelItem)

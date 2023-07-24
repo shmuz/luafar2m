@@ -492,7 +492,7 @@ local function OpenMacro (Args, CommandTable, fConfig, sTitle)
     end
   elseif op=="code" or op=="file" then
     if type(Args[2]) == "string" then
-      local chunk = op=="file" and assert(loadfile((Args[2]:gsub("%%(.-)%%",win.GetEnv))))
+      local chunk = op=="file" and assert(loadfile((Args[2]:gsub("%$%((.-)%)", win.GetEnv))))
                                 or assert(loadstring(Args[2]))
       local env = setmetatable({}, { __index=_G })
       setfenv(chunk, env)

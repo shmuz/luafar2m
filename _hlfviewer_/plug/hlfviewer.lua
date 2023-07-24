@@ -279,7 +279,7 @@ function export.OpenCommandLine(cmdbuf)
         end
       else
         -- ptrName указан с путём.
-        ptrName = ptrName:gsub("%$([%w_]+)", win.GetEnv)
+        ptrName = ptrName:gsub("%$%((.-)%)", win.GetEnv)
       end
 
       local FileName = far.ConvertPath(ptrName)
