@@ -1,4 +1,25 @@
-local bin2c = require "bin2c"
+local function bin2c (subj, name, len)
+  local insert = table.insert
+  name = name or "array"
+  len = len or 18
+  local tout = {}
+  local count = 0
+  insert(tout, "char ")
+  insert(tout, name)
+  insert(tout, "[] = {\n")
+  for c in string.gmatch(subj, ".") do
+    if count == 0 then insert(tout, "  ") end
+    local v = string.byte(c)
+    if v < 100 then insert(tout, " ") end
+    insert(tout, v)
+    insert(tout, ",")
+    count = count + 1
+    if count == len then count = 0; insert(tout, "\n"); end
+  end
+  if count ~= 0 then insert(tout, "\n") end
+  insert(tout, "};\n")
+  return table.concat(tout)
+end
 
 local function arrname(item, boot)
   local s
