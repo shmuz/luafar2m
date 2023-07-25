@@ -87,9 +87,7 @@ local function TruncStr(s, maxlen)
   return len <= maxlen and s or s:sub(1,6) .. "..." .. s:sub (len - maxlen + 10)
 end
 
-local function ExpandEnvironmentStr (str)
-  return ( str:gsub("%$%((.-)%)", win.GetEnv) )
-end
+local ExpandEnvironmentStr = win.ExpandEnv
 
 local function IsDirectory (PanelItem)
   return PanelItem.FileAttributes:find"d" and true

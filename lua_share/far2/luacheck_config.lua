@@ -417,7 +417,7 @@ local luafar = {
     ["win"] = {
       fields = {
         "Clock", "CompareString", "CopyFile", "CreateDir", "DeleteFile", "EnumSystemCodePages",
-        "ExtractKey", "FileTimeToLocalFileTime", "FileTimeToSystemTime", "GetACP",
+        "ExpandEnv", "ExtractKey", "FileTimeToLocalFileTime", "FileTimeToSystemTime", "GetACP",
         "GetConsoleScreenBufferInfo", "GetCPInfo", "GetCurrentDir", "GetEnv",
         "GetFileAttr", "GetFileInfo", "GetLocalTime", "GetOEMCP", "GetSystemTime", "GetSystemTimeAsFileTime",
         "GetVirtualKeys", "IsProcess64bit", "lenW", "MoveFile", "MultiByteToWideChar", "OemToUtf8",
