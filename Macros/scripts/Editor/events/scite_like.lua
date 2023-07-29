@@ -54,10 +54,10 @@ local function scite_like(Rec)
     -- check entering inside the region
     if key=="Down" then
       if EI.CurLine ~= EI.BlockStartLine-1 then return false end
-      local line = editor.GetString(nil,EI.BlockStartLine)
+      local line = editor.GetString(nil, EI.BlockStartLine)
       if not (line and line.SelStart>0 and line.SelEnd-line.SelStart+1 <= 1) then return false end
     elseif key=="Up" and EI.CurLine>1 then
-      local line = editor.GetString(nil,EI.CurLine-1)
+      local line = editor.GetString(nil, EI.CurLine-1)
       if not (line and line.SelStart>0 and line.SelEnd-line.SelStart+1 <= 1) then return false end
     else
       return false
@@ -122,7 +122,7 @@ local function scite_like(Rec)
     end
     if newS then
       if clean then editor.UndoRedo(nil,F.EUR_BEGIN); clean=false; end
-      editor.SetString(nil,lnum, newS)
+      editor.SetString(nil, lnum, newS)
     end
     lnum = lnum + 1
   end
@@ -135,7 +135,7 @@ local function scite_like(Rec)
     newY = EI.CurLine
   else
     realX = math.max(1, EI.CurPos + ((key=="Right") and 1 or (key=="BS" or key=="Left") and -1 or textlen))
-    tabX = editor.RealToTab(nil,EI.CurLine, realX)
+    tabX = editor.RealToTab(nil, EI.CurLine, realX)
     newY = math.max(1, EI.CurLine + (key=="Up" and -1 or key=="Down" and 1 or 0))
   end
   editor.SetPosition(nil, newY, realX)
