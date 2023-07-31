@@ -37,24 +37,33 @@ local globals_luamacro = {
   "Object", "PPanel", "Panel", "Plugin", "Viewer", "mf",
 }
 
-local Tt = {}
-local Insert = function(s) table.insert(Tt,s) end
 local function NoCaseCmp(a,b) return a:lower() < b:lower() end
 
-local function ProcessTable (Tbl, Name, Level)
+local Obj = {}
+local Obj_meta = { __index=Obj }
+
+local function NewObj()
+  return setmetatable( { Tt={} }, Obj_meta )
+end
+
+function Obj:Insert(s)
+  table.insert(self.Tt, s)
+end
+
+function Obj:ProcessTable (Tbl, Name, Level)
   Level = (Level or 0) + 1
-  Insert( ('\n[%-10s] = {'):format('"'..Name..'"') )
-  Insert("fields = {")
+  self:Insert( ('\n[%-10s] = {'):format('"'..Name..'"') )
+  self:Insert("fields = {")
   local arr = {} -- used for sorting (good for visual compare)
   for k in pairs(Tbl) do arr[#arr+1]=k end
   table.sort(arr, NoCaseCmp)
   for _,v in ipairs(arr) do
     if type(Tbl[v])=="table" then
       if not (Level==1 and v=="properties") then
-        ProcessTable(Tbl[v],v,Level)
+        self:ProcessTable(Tbl[v],v,Level)
       end
     else
-      Insert( ('"%s";'):format(v) )
+      self:Insert( ('"%s";'):format(v) )
     end
   end
   if Level==1 and type(Tbl.properties) == "table" then
@@ -63,52 +72,53 @@ local function ProcessTable (Tbl, Name, Level)
     for k in pairs(props) do arr[#arr+1]=k end
     table.sort(arr, NoCaseCmp)
     for _,v in ipairs(arr) do
-      if type(v)=="table" then ProcessTable(props[v],v,Level)
-      else Insert( ('"%s";'):format(v) )
+      if type(v)=="table" then self:ProcessTable(props[v],v,Level)
+      else self:Insert( ('"%s";'):format(v) )
       end
     end
   end
-  Insert("};")
-  Insert("};")
+  self:Insert("};")
+  self:Insert("};")
 end
 
 local function Generate (outname)
   assert(outname, "output file not specified")
   local fp = assert( io.open(outname, "w") )
 
-  Insert("local luafar = {")
-  Insert("globals = {")
-  Insert("export = {")
-  Insert("fields = {")
-  Insert(exports)
-  Insert("};")
-  Insert("};")
-  Insert("};")
+  local self = NewObj()
+  self:Insert("local luafar = {")
+  self:Insert("globals = {")
+  self:Insert("export = {")
+  self:Insert("fields = {")
+  self:Insert(exports)
+  self:Insert("};")
+  self:Insert("};")
+  self:Insert("};")
 
-  Insert("read_globals = {")
+  self:Insert("read_globals = {")
   table.sort(globals_luafar, NoCaseCmp)
   for _,name in ipairs(globals_luafar) do
-    if type(_G[name])=="table" then ProcessTable(_G[name], name)
-    else Insert( ('"%s";'):format(name) )
+    if type(_G[name])=="table" then self:ProcessTable(_G[name], name)
+    else self:Insert( ('"%s";'):format(name) )
     end
   end
-  Insert("};")
-  Insert("};")
+  self:Insert("};")
+  self:Insert("};")
 
-  Insert("\n\n")
-  Insert("local luamacro = {")
-  Insert("read_globals = {")
+  self:Insert("\n\n")
+  self:Insert("local luamacro = {")
+  self:Insert("read_globals = {")
   table.sort(globals_luamacro, NoCaseCmp)
   for _,name in ipairs(globals_luamacro) do
-    if type(_G[name])=="table" then ProcessTable(_G[name], name)
-    else Insert( ('"%s";'):format(name) )
+    if type(_G[name])=="table" then self:ProcessTable(_G[name], name)
+    else self:Insert( ('"%s";'):format(name) )
     end
   end
-  Insert("};")
-  Insert("};")
-  Insert("\n\n")
-  Insert("return { luafar=luafar; luamacro=luamacro; }")
-  local str = table.concat(Tt)
+  self:Insert("};")
+  self:Insert("};")
+  self:Insert("\n\n")
+  self:Insert("return { luafar=luafar; luamacro=luamacro; }")
+  local str = table.concat(self.Tt)
   fp:write(str, "\n")
   fp:close()
 end
