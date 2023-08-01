@@ -21,7 +21,7 @@ Macro {
       {"DI_BUTTON",   5,3, 0,3, 0,0,"DIF_CENTERGROUP",1,"&Goto"},
       {"DI_BUTTON",   5,3, 0,3, 0,0,"DIF_CENTERGROUP",0,"Cancel"},
     }
-    if 3 == far.Dialog(-1,-1,64,6,nil,Items) then Goto(data) end
+    if 3 == far.Dialog(nil,-1,-1,64,6,nil,Items) then Goto(data) end
   end;
 }
 

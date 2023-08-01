@@ -460,9 +460,6 @@ function mod:Run()
     if Msg == F.DN_INITDIALOG then
       if inData.initaction then inData.initaction(hDlg); end
 
-    elseif (FarVer == 2) and Msg == F.DN_GETDIALOGINFO then
-      return guid
-
     elseif Msg == F.DN_CLOSE then
       if inData.closeaction and inData[Par1] and not inData[Par1].cancel then
         return inData.closeaction(hDlg, Par1, self:GetDialogState(hDlg))
@@ -533,11 +530,8 @@ function mod:Run()
   local x1, y1 = inData.x1 or -1, inData.y1 or -1
   local x2 = x1==-1 and W or x1+W-1
   local y2 = y1==-1 and H or y1+H-1
-  local hDlg
-  if FarVer == 2 then
-    hDlg = far.DialogInit(x1,y1,x2,y2, help, outData, inData.flags, DlgProc)
-  else
-    hDlg = far.DialogInit(guid, x1,y1,x2,y2, help, outData, inData.flags, DlgProc)
+  local hDlg = far.DialogInit(guid, x1,y1,x2,y2, help, outData, inData.flags, DlgProc)
+  if FarVer == 3 then
     if hDlg and F.FDLG_NONMODAL and 0 ~= band(inData.flags, F.FDLG_NONMODAL) then
       return hDlg -- non-modal dialogs were introduced in build 3.0.5047
     end

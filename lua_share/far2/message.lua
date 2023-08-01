@@ -253,13 +253,11 @@ local function Message (aText, aTitle, aButtons, aFlags, aHelpTopic, aId)
       if param1 > 1 and param1 <= #tb_labels+1 then
         return D[param1].color
       end
-    elseif msg == F.DN_GETDIALOGINFO then
-      return aId
     end
   end
 
   local dflags = aFlags and aFlags:find("w") and F.FDLG_WARNING or 0
-  local ret = far.Dialog(-1, -1, D[1][IDX_X2]+4, D[1][IDX_Y2]+2, aHelpTopic, D, dflags, DlgProc)
+  local ret = far.Dialog(aId, -1, -1, D[1][IDX_X2]+4, D[1][IDX_Y2]+2, aHelpTopic, D, dflags, DlgProc)
   return ret < 0 and ret or (ret - (#D - numbuttons))
 end
 

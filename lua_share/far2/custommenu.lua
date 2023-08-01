@@ -1068,10 +1068,6 @@ local function Menu (props, list)
       DlgSend(hDlg, F.DM_SETINPUTNOTIFY or F.DM_SETMOUSEEVENTNOTIFY, 1) -- keep flag backward compatibility
       list:OnInitDialog (hDlg)
 
-    elseif not osWindows and msg == F.DN_GETDIALOGINFO then
-      list.Log("DN_GETDIALOGINFO")
-      return props.DialogId
-
     elseif osWindows and msg == F.DN_GETVALUE then
       if param1 == pos_usercontrol then
         local tp = param2.GetType
@@ -1190,12 +1186,7 @@ local function Menu (props, list)
     X2, Y2 = X1+X2-1, Y1+Y2-1
   end
 
-  if osWindows then
-    local id = props.DialogId or ("\0"):rep(16)
-    ret = far.Dialog(id, X1, Y1, X2, Y2, props.HelpTopic, Items, 0, DlgProc)
-  else
-    ret = far.Dialog(X1, Y1, X2, Y2, props.HelpTopic, Items, 0, DlgProc)
-  end
+  ret = far.Dialog(props.DialogId, X1, Y1, X2, Y2, props.HelpTopic, Items, 0, DlgProc)
   if ret == pos_usercontrol then
     return ret_item, ret_pos
   end

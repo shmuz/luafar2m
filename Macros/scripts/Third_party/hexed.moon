@@ -103,7 +103,7 @@ GetOffset=->
     {'DI_EDIT',     5,2,54,0,0,'HexEdGotoPos',F.DIF_HISTORY+F.DIF_USELASTHISTORY,0,''},
   }
   result=false
-  hDlg=far.DialogInit -1,-1,60,5,nil,items
+  hDlg=far.DialogInit idPos,-1,-1,60,5,nil,items
   if _pos==far.DialogRun hDlg
     result=tonumber hDlg\GetText _pos
   far.DialogFree hDlg
@@ -158,9 +158,7 @@ UpdateDlg=(hDlg,data)->
 DlgProc=(hDlg,Msg,Param1,Param2)->
   data=dialogs[hDlg\rawhandle!]
   if data
-    if Msg==F.DN_GETDIALOGINFO
-      return id
-    elseif Msg==F.DN_CLOSE
+    if Msg==F.DN_CLOSE
       C.WINPORT_CloseHandle data.file
       dialogs[hDlg\rawhandle!]=nil
     elseif Msg==F.DN_CTLCOLORDIALOG
@@ -357,7 +355,7 @@ DoHex=->
         {F.DI_USERCONTROL,0,1,ww-1,hh-1,0,buffer,0,0,''}
         {F.DI_FIXEDIT,0,0,0,0,0,0,F.DIF_HIDDEN+F.DIF_READONLY,0,''}
       }
-      hDlg=far.DialogInit -1,-1,ww,hh,nil,items,F.FDLG_NONMODAL+F.FDLG_NODRAWSHADOW,DlgProc
+      hDlg=far.DialogInit id,-1,-1,ww,hh,nil,items,F.FDLG_NONMODAL+F.FDLG_NODRAWSHADOW,DlgProc
       if hDlg
         dialogs[hDlg\rawhandle!]=
           :buffer,

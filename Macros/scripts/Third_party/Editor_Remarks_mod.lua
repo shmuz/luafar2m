@@ -113,9 +113,9 @@ local function Options()
     --[[11]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,"DIF_CENTERGROUP",0,M.Delete},
   }
   local edtMask,edtSymb,edtDesc,btnYes,btnDelete = 3,5,7,9,11
-  --local guid = win.Uuid("c3487851-e1d8-450c-b696-51ac45a46b2b")
+  local guid = win.Uuid("c3487851-e1d8-450c-b696-51ac45a46b2b")
 
-  local pos=far.Dialog(-1,-1,44,12,nil,Items)
+  local pos=far.Dialog(guid,-1,-1,44,12,nil,Items)
   if pos==btnYes then
     local Mask=Items[edtMask][10]
     Data.Symb=Items[edtSymb][10]
