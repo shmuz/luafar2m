@@ -82,7 +82,7 @@ end
 
 if Macro then
   Macro { description="Ask AI";
-    area="Common"; key="CtrlB";
+    area="Common"; key="CtrlAltB";
     id="4AFE2367-4DAC-4A74-B1EE-9F14C42991CB";
     action=function()
       mf.acall(bito)

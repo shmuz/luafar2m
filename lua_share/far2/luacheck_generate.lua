@@ -86,6 +86,7 @@ local function Generate (outname)
   local fp = assert( io.open(outname, "w") )
 
   local self = NewObj()
+  self:Insert("-- This file was automatically generated\n")
   self:Insert("local luafar = {")
   self:Insert("globals = {")
   self:Insert("export = {")

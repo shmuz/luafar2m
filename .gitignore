@@ -10,6 +10,7 @@ lfh_message.lua
 lfs_message.lua
 tmpp_message.lua
 _polygon_/plug/modules/string_rc.lua
+lua_share/far2/luacheck_config.lua
 
 ### misc
 misc
