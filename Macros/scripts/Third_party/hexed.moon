@@ -100,7 +100,7 @@ GetOffset=->
   _pos=2
   items={
     {'DI_DOUBLEBOX',3,1,56,3,0,0             ,0,0                                 ,'Go to'},
-    {'DI_EDIT',     5,2,54,0,0,'HexEdGotoPos',F.DIF_HISTORY+F.DIF_USELASTHISTORY,0,''},
+    {'DI_EDIT',     5,2,54,0,0,'HexEdGotoPos',0,F.DIF_HISTORY+F.DIF_USELASTHISTORY,''},
   }
   result=false
   hDlg=far.DialogInit idPos,-1,-1,60,5,nil,items
@@ -352,8 +352,8 @@ DoHex=->
       offset-=offset%16
       items={
         {F.DI_TEXT,0,0,0,0,0,0,0,0,filename}
-        {F.DI_USERCONTROL,0,1,ww-1,hh-1,0,buffer,0,0,''}
-        {F.DI_FIXEDIT,0,0,0,0,0,0,F.DIF_HIDDEN+F.DIF_READONLY,0,''}
+        {F.DI_USERCONTROL,0,1,ww-1,hh-1,buffer,0,0,0,''}
+        {F.DI_FIXEDIT,0,0,0,0,0,0,0,F.DIF_HIDDEN+F.DIF_READONLY,''}
       }
       hDlg=far.DialogInit id,-1,-1,ww,hh,nil,items,F.FDLG_NONMODAL+F.FDLG_NODRAWSHADOW,DlgProc
       if hDlg

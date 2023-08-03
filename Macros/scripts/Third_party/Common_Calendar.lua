@@ -39,7 +39,7 @@ local MsgEng = {
 }
 
 local F = far.Flags
-local _Colors = far.Colors or F -- different between far2 and far3
+local _Colors = far.Colors or F -- luacheck: no global (different between far2 and far3)
 local COLOR_ENB = far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGTEXT)
 local COLOR_DSB = far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGDISABLED)
 local COLOR_WD  = {0x79}
@@ -367,9 +367,8 @@ local Common_Calendar={
   Today         = Today;
   WeekStartDay  = WeekStartDay;
 }
-local function filename() return Calendar() end
 -------------------------------------------------------------------------------
-if _filename then return filename(...) end
+if _filename then return Calendar(...) end
 if not Macro then return {Common_Calendar=Common_Calendar} end
 -------------------------------------------------------------------------------
 

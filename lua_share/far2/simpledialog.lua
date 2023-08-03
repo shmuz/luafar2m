@@ -15,13 +15,11 @@ local Send      = far.SendDlgMessage
 local Colors    = far.Colors or F
 
 local IND_TYPE, IND_X1, IND_Y1, IND_X2, IND_Y2, IND_HISTORY, IND_DATA = 1,2,3,4,5,7,10
-local IND_FOCUS    = (FarVer==2) and 6 or nil
-local IND_SELECTED = (FarVer==2) and 7 or 6
-local IND_MASK     = (FarVer==2) and 7 or 8
-local IND_LIST     = (FarVer==2) and 7 or 6
-local IND_VBUF     = (FarVer==2) and 7 or 6
-local IND_FLAGS    = (FarVer==2) and 8 or 9
-local IND_DFLT     = (FarVer==2) and 9 or nil
+local IND_SELECTED = 6
+local IND_MASK     = 8
+local IND_LIST     = 6
+local IND_VBUF     = 6
+local IND_FLAGS    = 9
 
 local mod = {} -- this module
 local mod_meta = { __index=mod; }
@@ -207,11 +205,13 @@ local FlagsMap = {
     btnnoclose             = F.DIF_BTNNOCLOSE;
     centergroup            = F.DIF_CENTERGROUP;
     centertext             = F.DIF_CENTERTEXT;
+    default                = F.DIF_DEFAULTBUTTON;
     disable                = F.DIF_DISABLE;
     dropdown               = F.DIF_DROPDOWNLIST;
     editexpand             = F.DIF_EDITEXPAND;
     editor                 = F.DIF_EDITOR;
     editpath               = F.DIF_EDITPATH;
+    focus                  = F.DIF_FOCUS;
     group                  = F.DIF_GROUP;
     hidden                 = F.DIF_HIDDEN;
     lefttext               = F.DIF_LEFTTEXT;
@@ -236,9 +236,7 @@ if (FarVer == 2) then
     FlagsMap.colormask             = F.DIF_COLORMASK
     FlagsMap.setcolor              = F.DIF_SETCOLOR
 else
-    FlagsMap.default               = F.DIF_DEFAULTBUTTON
     FlagsMap.editpathexec          = F.DIF_EDITPATHEXEC
-    FlagsMap.focus                 = F.DIF_FOCUS
     FlagsMap.listtrackmouse        = F.DIF_LISTTRACKMOUSE
     FlagsMap.listtrackmouseinfocus = F.DIF_LISTTRACKMOUSEINFOCUS
     FlagsMap.righttext             = F.DIF_RIGHTTEXT
@@ -345,8 +343,6 @@ function mod:Run()
       if inp.hist                then t [IND_HISTORY ] = inp.hist; end
       if inp.val                 then t [IND_SELECTED] = inp.val;  end
       if inp.vbuf                then t [IND_VBUF    ] = inp.vbuf; end
-      if v.focus   and FarVer==2 then t [IND_FOCUS   ] = 1;        end
-      if v.default and FarVer==2 then t [IND_DFLT    ] = 1;        end
       if inp.text                then t [IND_DATA    ] = inp.text; end
       return t
     end

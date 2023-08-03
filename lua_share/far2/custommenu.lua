@@ -1055,8 +1055,7 @@ local function Menu (props, list)
   local ret, ret_item, ret_pos
   local Rect
   local Items = {  -- a hidden element for setting console title
-    osWindows and { F.DI_TEXT,  1,1,8,1,  0,0,0,F.DIF_HIDDEN, "" }
-               or { F.DI_TEXT,  1,1,8,1,  0,0,F.DIF_HIDDEN,0, "" },
+    { F.DI_TEXT,  1,1,8,1,  0,0,0,F.DIF_HIDDEN, "" },
     list:CreateDialogItems(2, 1),
   }
   local pos_title, pos_usercontrol = 1, 2

@@ -100,17 +100,17 @@ local function Options()
   local OldMask=Masks[Idx]
   local Data=OldMask and Rem[OldMask] or {}
   Items={
-    --[[01]]  {"DI_DOUBLEBOX", 3, 1,40,10, 0,nil,0,0,M.DlgTitle},
-    --[[02]]  {"DI_TEXT",      5, 2,38, 2, 0,nil,0,0,M.Mask},
-    --[[03]]  {"DI_EDIT",      5, 3,38, 3, 0,nil,0,0,OldMask},
-    --[[04]]  {"DI_TEXT",      5, 4,38, 4, 0,nil,0,0,M.Symbol},
-    --[[05]]  {"DI_EDIT",      5, 5,38, 5, 0,nil,0,0,Data.Symb},
-    --[[06]]  {"DI_TEXT",      5, 6,38, 4, 0,nil,0,0,M.description},
-    --[[07]]  {"DI_EDIT",      5, 7,38, 5, 0,nil,0,0,Data.Desc},
-    --[[08]]  {"DI_TEXT",      3, 8,40, 8, 0,nil,"DIF_SEPARATOR",  0,""},
-    --[[09]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,"DIF_CENTERGROUP",1,M.Yes},
-    --[[10]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,"DIF_CENTERGROUP",0,M.No},
-    --[[11]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,"DIF_CENTERGROUP",0,M.Delete},
+    --[[01]]  {"DI_DOUBLEBOX", 3, 1,40,10, 0,nil,nil,0,M.DlgTitle},
+    --[[02]]  {"DI_TEXT",      5, 2,38, 2, 0,nil,nil,0,M.Mask},
+    --[[03]]  {"DI_EDIT",      5, 3,38, 3, 0,nil,nil,0,OldMask},
+    --[[04]]  {"DI_TEXT",      5, 4,38, 4, 0,nil,nil,0,M.Symbol},
+    --[[05]]  {"DI_EDIT",      5, 5,38, 5, 0,nil,nil,0,Data.Symb},
+    --[[06]]  {"DI_TEXT",      5, 6,38, 4, 0,nil,nil,0,M.description},
+    --[[07]]  {"DI_EDIT",      5, 7,38, 5, 0,nil,nil,0,Data.Desc},
+    --[[08]]  {"DI_TEXT",      3, 8,40, 8, 0,nil,nil,"DIF_SEPARATOR",""},
+    --[[09]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,nil,"DIF_CENTERGROUP+DIF_DEFAULTBUTTON",M.Yes},
+    --[[10]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,nil,"DIF_CENTERGROUP",M.No},
+    --[[11]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,nil,"DIF_CENTERGROUP",M.Delete},
   }
   local edtMask,edtSymb,edtDesc,btnYes,btnDelete = 3,5,7,9,11
   local guid = win.Uuid("c3487851-e1d8-450c-b696-51ac45a46b2b")

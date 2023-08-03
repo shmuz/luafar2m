@@ -14,7 +14,7 @@ local function progress (text, title)
   local len = math.max(text:len(), title and title:len() or 0, 7)
   local items = {
   --[[01]] {F.DI_SINGLEBOX,0,0,len+4,3,0,0,0,                0, title},
-  --[[02]] {F.DI_TEXT,     2,1,    0,1,0,0,F.DIF_CENTERGROUP,0, text},
+  --[[02]] {F.DI_TEXT,     2,1,    0,1,0,0,0,F.DIF_CENTERGROUP, text},
   }
   return far.DialogInit(idProgress, -1, -1, len+4, 3, nil, items, F.FDLG_NONMODAL)
 end

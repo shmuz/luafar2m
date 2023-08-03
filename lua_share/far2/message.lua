@@ -18,15 +18,15 @@ local min, max = math.min, math.max
 local STARTX, STARTY = 5, 2
 
 -- Dialog API constants
-local IDX_X1, IDX_Y1, IDX_X2, IDX_Y2, IDX_DEFAULT, IDX_DATA = 2,3,4,5,9,10
+local IDX_X1, IDX_Y1, IDX_X2, IDX_Y2, IDX_FLAGS, IDX_DATA = 2,3,4,5,9,10
 
 local function Label (x1, y1, text, color)
-  return {"DI_TEXT", x1,y1,0,y1, 0,0,F.DIF_SHOWAMPERSAND,0, text, color=color}
+  return {"DI_TEXT", x1,y1,0,y1, 0,0,0,F.DIF_SHOWAMPERSAND, text, color=color}
 end
 
 local function Separator (y1, kind, text, color)
   local flags = bor(F.DIF_SHOWAMPERSAND, kind==2 and F.DIF_SEPARATOR2 or F.DIF_SEPARATOR)
-  return {"DI_TEXT", -1,y1,-1,y1, 0,0,flags,0, text or "", color=color}
+  return {"DI_TEXT", -1,y1,-1,y1, 0,0,0,flags, text or "", color=color}
 end
 
 local function WrapText (aText, aMaxLen, aMaxLen1, aMaxItems)
@@ -187,7 +187,7 @@ local function Message (aText, aTitle, aButtons, aFlags, aHelpTopic, aId)
         if delim == "\n" then btnlen = 0 end
       end
     end
-    tb_buttons[numbuttons] = {"DI_BUTTON",  0,btnlines,0,0,  0,0,F.DIF_CENTERGROUP,0, btn}
+    tb_buttons[numbuttons] = {"DI_BUTTON",  0,btnlines,0,0,  0,0,0,F.DIF_CENTERGROUP, btn}
   end
 
   -- Calculate text lines.
@@ -224,7 +224,8 @@ local function Message (aText, aTitle, aButtons, aFlags, aHelpTopic, aId)
       btn[IDX_Y1] = btn[IDX_Y1] + numlines + STARTY
       D[#D+1] = btn
     end
-    tb_buttons[1][IDX_DEFAULT] = 1
+    local btn1 = tb_buttons[1]
+    btn1[IDX_FLAGS] = bor(btn1[IDX_FLAGS], F.DIF_DEFAULTBUTTON)
   end
 
   numchars = min(data.maxchars, max(numchars, aTitle:len()+2))
