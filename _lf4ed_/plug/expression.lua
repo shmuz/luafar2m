@@ -158,20 +158,19 @@ local function LuaScript (data)
   return p1,p2,p3,p4
 end
 
-local function ResultDialog (aHelpTopic, result)
-  local Title = (aHelpTopic=="LuaExpression") and M.MExpr or M.MBlockSum
+local function ResultDialog (aTitle, aHelpTopic, aValue)
   local XX1 = 5 + M.MResult:gsub("&",""):len() + 1
   local Items = {
     guid = "D45FDADC-4918-4D47-B34A-311947D241B2";
     width = 46;
     help = aHelpTopic;
-    {tp="dbox";  text=Title;                                           },
+    {tp="dbox";  text=aTitle;                                          },
     {tp="text";  text=M.MResult;                                       },
-    {tp="edit";  name="edtResult"; ystep=0; x1=XX1; val=result;        },
+    {tp="edit";  name="edtResult"; ystep=0; x1=XX1; val=aValue;        },
     {tp="sep";                                                         },
-    {tp="butt";  text=M.MOk;  default=1;   centergroup=1;             },
-    {tp="butt";  text=M.MInsertText;       centergroup=1; Op="insert" },
-    {tp="butt";  text=M.MCopyToClipboard;  centergroup=1; Op="copy"   },
+    {tp="butt";  text=M.MOk;  default=1;   centergroup=1;              },
+    {tp="butt";  text=M.MInsertText;       centergroup=1; Op="insert"; },
+    {tp="butt";  text=M.MCopyToClipboard;  centergroup=1; Op="copy";   },
   }
   ------------------------------------------------------------------------------
   local dlg = sd.New(Items)
@@ -181,7 +180,7 @@ local function ResultDialog (aHelpTopic, result)
   end
 end
 
-local function BlockSum (history)
+local function BlockSum()
   local ei = assert(editor.GetInfo(), "EditorGetInfo failed")
   local blockEndLine
   local sum = 0
@@ -235,7 +234,7 @@ local function BlockSum (history)
     local last = sum:match("%.(%d+)$")
     sum = sum .. (last and ("0"):rep(2 - #last) or ".00")
   end
-  local Result, Op = ResultDialog("BlockSum", sum)
+  local Result, Op = ResultDialog(M.MBlockSum, "BlockSum", sum)
   if not Result then return end
 
   if Op == "copy" then
@@ -263,7 +262,7 @@ local function BlockSum (history)
   end
 end
 
-local function LuaExpr (history)
+local function LuaExpr()
   local edInfo = editor.GetInfo()
   local text, numline = GetSelectedText()
   if not text then
@@ -285,7 +284,7 @@ local function LuaExpr (history)
     ErrMsg(result) return
   end
 
-  local Result, Op = ResultDialog("LuaExpression", tostring(result))
+  local Result, Op = ResultDialog(M.MExpr, "LuaExpression", tostring(result))
   if Result then
     if Op == "insert" then
       local line = editor.GetString(nil, numline)

@@ -19,6 +19,35 @@ local function progress (text, title)
   return far.DialogInit(idProgress, -1, -1, len+4, 3, nil, items, F.FDLG_NONMODAL)
 end
 
+local function Words(pipe)
+  local buf, eof = "", nil
+  return function()
+    while true do
+      if not eof then
+        local chunk = pipe:read(5)
+        if chunk then
+          buf = buf..chunk
+          while not buf:isvalid() do
+            chunk = pipe:read(1)
+            if chunk then buf = buf..chunk; else break; end
+          end
+        end
+        eof = not chunk
+      end
+      if buf == "" then return end
+      local space, word, other = buf:match("^(%s*)(%S+)(%s.*)")
+      if space then
+        buf = other
+        return space, word
+      elseif eof then
+        space, word = buf:match("(%s*)(.*)") -- will always match
+        buf = ""
+        return space, word
+      end
+    end
+  end
+end
+
 local _name = "bito.ai code assistant"
 local _prompt = "Ask any technical question / use {{%code%}} as seltext placeholder"
 local idInput = win.Uuid"58DD9ECD-CFFA-472E-BFD7-042295C86CAE"
@@ -28,14 +57,14 @@ local function bito (prompt)
     local root = far.InMyConfig().."/"
     local ctxName = root.."ctx.bito"
     local promptName = root.."prompt.bito"
-    local promptFile = assert(io.open(promptName, "w"))
-    promptFile:write(prompt)
-    promptFile:close()
+    local fp = assert(io.open(promptName, "w"))
+    fp:write(prompt)
+    fp:close()
     local ctx = Editor.SelValue
     local fileName = root.."file.bito"
-    local fileFile = assert(io.open(fileName, "w"))
-    fileFile:write(ctx=="" and " " or ctx)
-    fileFile:close()
+    fp = assert(io.open(fileName, "w"))
+    fp:write(ctx=="" and " " or ctx)
+    fp:close()
     local cmd = ('bito -c "%s" -f "%s" -p "%s"'):format(ctxName, fileName, promptName)
     local flags = F.EF_NONMODAL +F.EF_IMMEDIATERETURN +F.EF_DELETEONLYFILEONCLOSE +F.EF_OPENMODE_USEEXISTING
                  +F.EF_DISABLEHISTORY
@@ -50,8 +79,7 @@ local function bito (prompt)
     if s.StringLength>0 then
       editor.InsertString()
       editor.InsertString()
-      i = i+2
-      editor.SetPosition(nil, i)
+      editor.SetPosition(nil, i+2)
     end
     far.Text()
 
@@ -59,21 +87,17 @@ local function bito (prompt)
     linewrap = linewrap or ei.WindowSizeX-5
     local autowrap = bit64.band(ei.Options, F.EOPT_AUTOINDENT)~=0
     if autowrap then editor.SetParam(nil, F.ESPT_AUTOINDENT, 0) end
-    repeat
-      local chunk = pipe:read(5)
-      if not chunk then break end
-      while(not chunk:isvalid()) do
-        chunk = chunk..pipe:read(1)
-      end
+    for space,word in Words(pipe) do
       ei = editor.GetInfo()
-      -- !! it would be better to reformat, but..
-      if ei.CurPos + chunk:match("^(.-)%s*$"):len() > linewrap then
-        chunk = chunk:gsub("^(%p?) ","%1\n"):match".*"
+      if ei.CurPos + space:len() + word:len() > linewrap then
+        space = "\n"
       end
-      editor.InsertText(nil, chunk)
+      editor.InsertText(nil, space)
+      editor.InsertText(nil, word)
       editor.Redraw()
-    until false
+    end
     if autowrap then editor.SetParam(nil, F.ESPT_AUTOINDENT, 1) end
+    pipe:close()
     editor.UndoRedo(nil, F.EUR_END)
     hDlg:send(F.DM_CLOSE)
     editor.SetTitle(nil, "bito.ai response:")
