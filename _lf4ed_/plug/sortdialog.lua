@@ -77,11 +77,13 @@ local function SortDialog (aData, columntype)
       Check(hDlg, Pos.cbxUse3, Pos.edtExpr3, Pos.cbxRev3, Pos.labExpr3, Pos.cbxCase3)
       Check(hDlg, Pos.cbxFileName, Pos.labFileName, Pos.edtFileName)
     elseif msg == F.DN_BTNCLICK then
+      hDlg:EnableRedraw(false)
       if     param1 == Pos.cbxUse1     then Check(hDlg, Pos.cbxUse1, Pos.edtExpr1, Pos.cbxRev1, Pos.labExpr1, Pos.cbxCase1)
       elseif param1 == Pos.cbxUse2     then Check(hDlg, Pos.cbxUse2, Pos.edtExpr2, Pos.cbxRev2, Pos.labExpr2, Pos.cbxCase2)
       elseif param1 == Pos.cbxUse3     then Check(hDlg, Pos.cbxUse3, Pos.edtExpr3, Pos.cbxRev3, Pos.labExpr3, Pos.cbxCase3)
       elseif param1 == Pos.cbxFileName then Check(hDlg, Pos.cbxFileName, Pos.labFileName, Pos.edtFileName)
       elseif param1 == Pos.btnColPat   then hDlg:SetText(Pos.edtColPat, COLPAT_DEFAULT) end
+      hDlg:EnableRedraw(true)
     end
   end
   ----------------------------------------------------------------------------

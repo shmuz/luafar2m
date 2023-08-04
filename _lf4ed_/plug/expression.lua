@@ -158,29 +158,26 @@ local function LuaScript (data)
   return p1,p2,p3,p4
 end
 
-local function ResultDialog (aHelpTopic, aData, result)
+local function ResultDialog (aHelpTopic, result)
   local Title = (aHelpTopic=="LuaExpression") and M.MExpr or M.MBlockSum
   local XX1 = 5 + M.MResult:gsub("&",""):len() + 1
   local Items = {
     guid = "D45FDADC-4918-4D47-B34A-311947D241B2";
     width = 46;
     help = aHelpTopic;
-    {tp="dbox";  text=Title;                                },
-    {tp="text";  text=M.MResult;                            },
-    {tp="edit";  name="edtResult"; ystep=0; x1=XX1; val=result; noload=1; },
-    {tp="chbox"; name="cbxInsert"; text=M.MInsertText;      },
-    {tp="chbox"; name="cbxCopy";   text=M.MCopyToClipboard; },
-    {tp="sep";                                              },
-    {tp="butt";  text=M.MOk;     default=1; centergroup=1;  },
-    {tp="butt";  text=M.MCancel; cancel=1;  centergroup=1;  },
+    {tp="dbox";  text=Title;                                           },
+    {tp="text";  text=M.MResult;                                       },
+    {tp="edit";  name="edtResult"; ystep=0; x1=XX1; val=result;        },
+    {tp="sep";                                                         },
+    {tp="butt";  text=M.MOk;  default=1;   centergroup=1;             },
+    {tp="butt";  text=M.MInsertText;       centergroup=1; Op="insert" },
+    {tp="butt";  text=M.MCopyToClipboard;  centergroup=1; Op="copy"   },
   }
   ------------------------------------------------------------------------------
   local dlg = sd.New(Items)
-  dlg:LoadData(aData)
-  local out = dlg:Run()
+  local out, pos = dlg:Run()
   if out then
-    dlg:SaveData(out, aData)
-    return true
+    return out.edtResult, Items[pos].Op
   end
 end
 
@@ -238,20 +235,19 @@ local function BlockSum (history)
     local last = sum:match("%.(%d+)$")
     sum = sum .. (last and ("0"):rep(2 - #last) or ".00")
   end
-  if not ResultDialog("BlockSum", history, sum) then return end
+  local Result, Op = ResultDialog("BlockSum", sum)
+  if not Result then return end
 
-  sum = history.edtResult
-  if history.cbxCopy then
-    far.CopyToClipboard(sum)
-  end
-  if history.cbxInsert then
+  if Op == "copy" then
+    far.CopyToClipboard(Result)
+  elseif Op == "insert" then
     local y = blockEndLine or ei.CurLine -- position of the last line
     local s = editor.GetString(nil, y)                -- get last line
     editor.SetPosition (nil, y, s.StringText:len()+1) -- insert a new line
     editor.InsertString()                             -- +
     local prefix = "="
     if x_dot then
-      local x = regex.find(tostring(sum), "\\.") or #sum+1
+      local x = Result:find("%.") or Result:len()+1
       if x then x_start = x_dot - (x - 1) end
     end
     if x_start then
@@ -260,7 +256,7 @@ local function BlockSum (history)
       x_start = (ei.BlockType==F.BTYPE_COLUMN) and s.SelStart or 1
     end
     editor.SetPosition (nil, y+1, x_start, nil, nil, ei.LeftPos)
-    editor.InsertText(nil, prefix .. sum)
+    editor.InsertText(nil, prefix .. Result)
     editor.Redraw()
   else
     editor.SetPosition (nil, ei) -- restore the position
@@ -289,21 +285,17 @@ local function LuaExpr (history)
     ErrMsg(result) return
   end
 
-  result = tostring(result)
-  if not ResultDialog("LuaExpression", history, result) then
-    return
-  end
-
-  result = history.edtResult
-  if history.cbxInsert then
-    local line = editor.GetString(nil, numline)
-    local pos = (edInfo.BlockType==F.BTYPE_NONE) and line.StringLength or line.SelEnd
-    editor.SetPosition(nil, numline, pos+1)
-    editor.InsertText(nil, " = " .. result .. " ;")
-    editor.Redraw()
-  end
-  if history.cbxCopy then
-    far.CopyToClipboard(result)
+  local Result, Op = ResultDialog("LuaExpression", tostring(result))
+  if Result then
+    if Op == "insert" then
+      local line = editor.GetString(nil, numline)
+      local pos = (edInfo.BlockType==F.BTYPE_NONE) and line.StringLength or line.SelEnd
+      editor.SetPosition(nil, numline, pos+1)
+      editor.InsertText(nil, " = " .. Result .. " ;")
+      editor.Redraw()
+    elseif Op == "copy" then
+      far.CopyToClipboard(Result)
+    end
   end
 end
 

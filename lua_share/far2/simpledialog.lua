@@ -527,12 +527,11 @@ function mod:Run()
   local x2 = x1==-1 and W or x1+W-1
   local y2 = y1==-1 and H or y1+H-1
   local hDlg = far.DialogInit(guid, x1,y1,x2,y2, help, outData, inData.flags, DlgProc)
-  if FarVer == 3 then
-    if hDlg and F.FDLG_NONMODAL and 0 ~= band(inData.flags, F.FDLG_NONMODAL) then
+  if hDlg then
+    if F.FDLG_NONMODAL and 0 ~= band(inData.flags, F.FDLG_NONMODAL) then
       return hDlg -- non-modal dialogs were introduced in build 3.0.5047
     end
-  end
-  if not hDlg then
+  else
     far.Message("Error occured in far.DialogInit()", "module 'simpledialog'", nil, "w")
     return nil
   end

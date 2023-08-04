@@ -701,6 +701,7 @@ end
 function SRFrame:CheckAdvancedEnab (hDlg)
   local Pos = self.Pos
   if Pos.bAdvanced then
+    hDlg:EnableRedraw(false)
     local bEnab = hDlg:GetCheck(Pos.bAdvanced)
     hDlg:Enable(Pos.labInitFunc,   bEnab)
     hDlg:Enable(Pos.sInitFunc,     bEnab)
@@ -710,6 +711,7 @@ function SRFrame:CheckAdvancedEnab (hDlg)
       hDlg:Enable(Pos.labFilterFunc, bEnab)
       hDlg:Enable(Pos.sFilterFunc,   bEnab)
     end
+    hDlg:EnableRedraw(true)
   end
 end
 
