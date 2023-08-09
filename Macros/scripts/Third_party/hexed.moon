@@ -165,7 +165,8 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
       return far.AdvControl F.ACTL_GETCOLOR,F.COL_VIEWERSTATUS
     elseif Msg==F.DN_CTLCOLORDLGITEM
       DoColor=(index)->
-        far.AdvControl F.ACTL_GETCOLOR,index
+        color=far.AdvControl F.ACTL_GETCOLOR,index
+        {color,color,color,color}
       return switch Param1
         when _title
           DoColor F.COL_VIEWERSTATUS

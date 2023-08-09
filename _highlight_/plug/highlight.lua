@@ -678,7 +678,7 @@ local function HighlightExtra()
       end
     elseif msg == F.DN_CTLCOLORDLGITEM then
       if param1 == Pos.labColor then
-        param2 = bor(band(param2,0xFFFF0000), band(extracolor,0xFFFF))
+        param2[1] = extracolor
         return param2
       end
     end

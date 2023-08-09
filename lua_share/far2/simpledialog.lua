@@ -506,17 +506,7 @@ function mod:Run()
 
     elseif Msg == F.DN_CTLCOLORDLGITEM then
       local colors = outData[Par1].colors
-      if colors then
-        if FarVer == 3 then -- TODO for Far 2
-          return colors
-        else
-          local col = 0
-          for i,v in ipairs(colors) do
-            col = bor(col, lshift(v,8*(i-1)))
-          end
-          return col
-        end
-      end
+      if colors then return colors end
 
     end
 

@@ -66,8 +66,8 @@ local function ConfigDialog (aData, aDateFormats)
       end
 
     elseif msg == F.DN_CTLCOLORDLGITEM then
-      if param1 == Pos.labHighTextColor then return hColor0; end
-      if param1 == Pos.labSelHighTextColor then return hColor1; end
+      if param1 == Pos.labHighTextColor    then param2[1] = hColor0; return param2; end
+      if param1 == Pos.labSelHighTextColor then param2[1] = hColor1; return param2; end
     end
   end
 

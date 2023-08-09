@@ -243,9 +243,9 @@ local function EditorConfigDialog()
       end
 
     elseif msg == F.DN_CTLCOLORDLGITEM then
-      if param1 == Pos.labHighlight then return hColor0; end
-      if param1 == Pos.labGrepLNum1 then return hColor1; end
-      if param1 == Pos.labGrepLNum2 then return hColor2; end
+      if param1 == Pos.labHighlight then param2[1] = hColor0; return param2; end
+      if param1 == Pos.labGrepLNum1 then param2[1] = hColor1; return param2; end
+      if param1 == Pos.labGrepLNum2 then param2[1] = hColor2; return param2; end
     end
   end
 
