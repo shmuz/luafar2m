@@ -76,8 +76,8 @@ local function DoTest()
         Status == "normal"  and 0x0B or
         Status == "warning" and 0x0E or
         Status == "error"   and 0x0C or 0x00
-        Par2[1],Par2[3] = color,color
-        return Par2
+      Par2[1],Par2[3] = color,color
+      return Par2
     end
   end
 
