@@ -1,5 +1,7 @@
 -- The file was renamed to bin2text_mf.lua to avoid require() itself
 
+local CommonKey = "AltShiftF6"
+
 local function ShowProgress(Title, Size)
   if Size then
     if win.ExtractKey()=="ESCAPE" and 1==far.Message("Break the operation?",Title,"&Yes;&No","w") then
@@ -110,7 +112,7 @@ end
 
 Macro {
   description="Create XX-Encoded file";
-  area="Shell"; key="CtrlShiftF2";
+  area="Shell"; key=CommonKey;
   flags="NoPluginPanels NoFolders";
   sortpriority=65;
   action=function() EncodeFile("xx", "xxe") end;
@@ -118,7 +120,7 @@ Macro {
 
 Macro {
   description="Create UU-Encoded file";
-  area="Shell"; key="CtrlShiftF2";
+  area="Shell"; key=CommonKey;
   flags="NoPluginPanels NoFolders";
   sortpriority=60;
   action=function() EncodeFile("uu", "uue") end;
@@ -126,7 +128,7 @@ Macro {
 
 Macro {
   description="Unpack XX-Encoded file";
-  area="Shell"; key="CtrlShiftF2";
+  area="Shell"; key=CommonKey;
   flags="NoPluginPanels NoFolders";
   sortpriority=55;
   action=function() DecodeFile("xx") end;
@@ -134,7 +136,7 @@ Macro {
 
 Macro {
   description="Unpack UU-Encoded file";
-  area="Shell"; key="CtrlShiftF2";
+  area="Shell"; key=CommonKey;
   flags="NoPluginPanels NoFolders";
   sortpriority=50;
   action=function() DecodeFile("uu") end;

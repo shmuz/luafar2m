@@ -5,12 +5,12 @@
 -- Url: https://forum.farmanager.com/viewtopic.php?p=148024#p148024
 -- Based on https://forum.farmanager.com/viewtopic.php?p=146816#p146816
 
-XScale=0 -- scale 0<=XScale<=1 for all dialogs: 0 = original width, 1 = full width, 0.5 = (full - original) / 2
-XStep=0.25 -- width change step
-DX=4 -- indent
+XScale = 0 -- scale 0<=XScale<=1 for all dialogs: 0 = original width, 1 = full width, 0.5 = (full - original) / 2
+XStep = 0.25 -- width change step
+DX = 4 -- indent
 
-XScale=_G.XScale or XScale
-_XScale={id:"",xs:XScale,cw:nil,ch:nil,dw:nil,dh:nil,dl:nil,dt:nil,dr:nil,db:nil,pl:nil,pr:nil} -- original width
+XScale = _G.XScale or XScale
+_XScale = {xs:XScale,cw:nil,ch:nil,dw:nil,dh:nil,dl:nil,dt:nil,dr:nil,db:nil,pl:nil,pr:nil} -- original width
 
 F,GetDlgItem,Guids = far.Flags,far.GetDlgItem,far.Guids
 SetDlgItem,SendDlgMessage = far.SetDlgItem,far.SendDlgMessage
@@ -19,9 +19,9 @@ abs,ceil,floor,fmod,modf = math.abs,math.ceil,math.floor,math.fmod,math.modf
 
 match = string.match
 
-Uuid=win.Uuid
+Uuid = win.Uuid
 
-Guid_DlgXScale=Uuid"D37E1039-B69B-4C63-B750-CBA4B3A7727C"
+Guid_DlgXScale = Uuid"D37E1039-B69B-4C63-B750-CBA4B3A7727C"
 
 transform=
   --[Guid_DlgXScale]: {0,"1.16.A27",3.0} -- Set Dlg.XScale
@@ -67,42 +67,36 @@ re3 = "([F]?)(%d)%.(%d)%.([%-%+]?%d+)"
 re4 = "([F]?)(%d)%.(%d)"
 re5 = "([%-%+]?%d+)%.([%-%+]?%d+)%.([%-%+]?%d+)%.([%-%+]?%d+)"
 
-ConsoleSize=->
-  rr=far.AdvControl"ACTL_GETFARRECT"
+ConsoleSize = ->
+  rr = far.AdvControl"ACTL_GETFARRECT"
   rr.Right-rr.Left+1,rr.Bottom-rr.Top+1
 
 _XScale.cw,_XScale.ch = ConsoleSize!
 
-Proc=(id,hDlg)->
-  if id~=_XScale.id
-    _XScale.id=id
-    if not _XScale[id]
-      _XScale[id]={}
-      {Left:_XScale[id].dl,Top:_XScale[id].dt,Right:_XScale[id].dr,Bottom:_XScale[id].db}=hDlg\GetDlgRect!
-      _XScale[id].dw=_XScale[id].dr-_XScale[id].dl+1
-      _XScale[id].dh=_XScale[id].db-_XScale[id].dt+1
-      _XScale[id].pl=(GetDlgItem hDlg,1)[2]+2
-      _XScale[id].pr=_XScale[id].dw-_XScale[id].pl-1
-      idx=0
-      while true
-        idx+=1
-        item=GetDlgItem hDlg,idx
-        if item
-          _XScale[id][idx]={}
-          _XScale[id][idx][2]=item[2]
-          _XScale[id][idx][3]=item[3]
-          _XScale[id][idx][4]=item[4]
-          _XScale[id][idx][5]=item[5]
-        else
-          break
+Proc = (id,hDlg)->
+  Curr = _XScale[id] or {}
+  if not _XScale[id]
+    _XScale[id] = Curr
+    {Left:Curr.dl,Top:Curr.dt,Right:Curr.dr,Bottom:Curr.db} = hDlg\GetDlgRect!
+    Curr.dw = Curr.dr - Curr.dl + 1
+    Curr.dh = Curr.db - Curr.dt + 1
+    Curr.pl = (GetDlgItem hDlg,1)[2] + 2
+    Curr.pr = Curr.dw - Curr.pl - 1
+    idx = 0
+    while true
+      idx += 1
+      item = GetDlgItem hDlg,idx
+      if item
+        Curr[idx] = { nil,item[2],item[3],item[4],item[5] }
+      else
+        break
   cw,ch = ConsoleSize!
-  if cw~=_XScale.cw or ch~=_XScale.ch
-    _XScale.cw,_XScale.ch = cw,ch
-  dh,pl = _XScale[id].dh,_XScale[id].pl
-  df=cw-DX-_XScale[id].dw
-  diff=_XScale.xs*df
-  dw=_XScale[id].dw+diff
-  pr=dw-pl-1
+  _XScale.cw,_XScale.ch = cw,ch
+  dh,pl = Curr.dh,Curr.pl
+  df = cw-DX-Curr.dw
+  diff = _XScale.xs*df
+  dw = Curr.dw+diff
+  pr = dw-pl-1
   SendDlgMessage hDlg,F.DM_ENABLEREDRAW,0
   SendDlgMessage hDlg,F.DM_RESIZEDIALOG,0,{X:dw,Y:dh}
   for ii in *transform[id]
@@ -110,18 +104,18 @@ Proc=(id,hDlg)->
     if "number"==type ii
       continue if ii<1
       idx,opt = modf ii
-      opt=floor opt*10+0.5
+      opt = floor opt*10+0.5
     else
       idx,opt,ref = match ii,re0
-      idx=tonumber idx
-      opt=tonumber opt
-    item=GetDlgItem hDlg,idx
+      idx = tonumber idx
+      opt = tonumber opt
+    item = GetDlgItem hDlg,idx
     if item  -- prevent error message for out-of-range index (see "hack" above)
-      item[2]=_XScale[id][idx][2]
-      item[3]=_XScale[id][idx][3]
-      item[4]=_XScale[id][idx][4]
-      item[5]=_XScale[id][idx][5]
-      NOTDITEXT=not (item[1]==F.DI_TEXT and item[4]==0)
+      item[2] = Curr[idx][2]
+      item[3] = Curr[idx][3]
+      item[4] = Curr[idx][4]
+      item[5] = Curr[idx][5]
+      NOTDITEXT = not (item[1]==F.DI_TEXT and item[4]==0)
       switch opt
         when 0  -- Stretch full
           if idx==1 and (item[1]==F.DI_DOUBLEBOX or item[1]==F.DI_SINGLEBOX)
@@ -145,7 +139,7 @@ Proc=(id,hDlg)->
             item[4]+=diff
           item[2]+=diff
         when 4  -- Move left
-          item[2]=pl
+          item[2] = pl
         when 5  -- Move half & Stretch full
           if NOTDITEXT
             if item[4]==item[2]
@@ -154,12 +148,12 @@ Proc=(id,hDlg)->
               item[4]+=diff
           item[2]+=diff/2
         when 6  -- Move relative by X
-          x=tonumber match ref,re1
+          x = tonumber match ref,re1
           item[2]+=x
           if NOTDITEXT
             item[4]+=x
         when 7  -- Move relative by Y
-          y=tonumber match ref,re1
+          y = tonumber match ref,re1
           item[3]+=y
           item[5]+=y
         --when 8  -- MoveX full
@@ -171,32 +165,32 @@ Proc=(id,hDlg)->
           if NOTDITEXT
             item[4]+=tonumber x2
         when 10  -- Align to ref.X
-          ref=tonumber ref
-          t=_XScale[id][ref]
+          ref = tonumber ref
+          t = Curr[ref]
           if NOTDITEXT
             item[4]=item[4]+t[2]-item[2]
-          item[2]=t[2]
+          item[2] = t[2]
         when 11  -- Align to ref.Y
-          ref=tonumber ref
-          t=_XScale[id][ref]
-          item[5]=item[5]+t[3]-item[3]
-          item[3]=t[3]
+          ref = tonumber ref
+          t = Curr[ref]
+          item[5] = item[5]+t[3]-item[3]
+          item[3] = t[3]
         when 12  -- Move & Stretch: (colons quantity).(colon number).(dx)
           m,q,n,x = match ref,re3
           if not q
             m,q,n = match ref,re4
-            x=0
-          wc=(dw-pl*2-1)/tonumber q
-          n=tonumber n
-          w=item[4]-item[2]+1
+            x = 0
+          wc = (dw-pl*2-1)/tonumber q
+          n = tonumber n
+          w = item[4]-item[2]+1
           if w>wc
-            w=wc
-          x=tonumber x
-          item[2]=wc*(n-1)+pl+x
+            w = wc
+          x = tonumber x
+          item[2] = wc*(n-1)+pl+x
           if m=="F"
-            item[4]=item[2]+w-1
+            item[4] = item[2]+w-1
           else
-            item[4]=item[2]+wc-1
+            item[4] = item[2]+wc-1
         when 13  -- Free Move & Stretch Relative
           x1,x2,y1,y2 = match ref,re5
           item[2]+=tonumber x1
@@ -206,33 +200,33 @@ Proc=(id,hDlg)->
           item[5]+=tonumber y2
         when 14  -- Free Move & Stretch Absolute
           x1,x2,y1,y2 = match ref,re5
-          item[2]=tonumber x1
-          item[3]=tonumber y1
+          item[2] = tonumber x1
+          item[3] = tonumber y1
           if NOTDITEXT
-            item[4]=tonumber x2
-          item[5]=tonumber y2
+            item[4] = tonumber x2
+          item[5] = tonumber y2
         when 15  -- Set text
-          item[10]=ref
+          item[10] = ref
         when 16  -- Align to ref.X + offset
           x1,x2 = match ref,re2
-          x1=tonumber x1
-          x2=tonumber x2
-          t=_XScale[id][x1]
+          x1 = tonumber x1
+          x2 = tonumber x2
+          t = Curr[x1]
           if NOTDITEXT
-            item[4]=item[4]+t[2]-item[2]+x2
-          item[2]=t[2]+x2
+            item[4] = item[4]+t[2]-item[2]+x2
+          item[2] = t[2]+x2
       if idx==1
         if item[2]<pl-2
-          item[2]=pl-2
+          item[2] = pl-2
         if item[4]>pr+2
-          item[4]=pr+2
+          item[4] = pr+2
       else
         if item[2]<pl
-          item[2]=pl
+          item[2] = pl
         if item[4]>pr
-          item[4]=pr
+          item[4] = pr
       if item[1]==F.DI_EDIT or item[1]==F.DI_FIXEDIT
-        f=SendDlgMessage hDlg,F.DM_EDITUNCHANGEDFLAG,idx,-1
+        f = SendDlgMessage hDlg,F.DM_EDITUNCHANGEDFLAG,idx,-1
         SetDlgItem hDlg,idx,item
         SendDlgMessage hDlg,F.DM_EDITUNCHANGEDFLAG,idx,f
       else
@@ -240,26 +234,26 @@ Proc=(id,hDlg)->
   SendDlgMessage hDlg,F.DM_MOVEDIALOG,1,{X:(cw-dw)/2,Y:(ch-dh)/2}
   SendDlgMessage hDlg,F.DM_ENABLEREDRAW,1
 
-XItems={
+XItems = {
          {F.DI_DOUBLEBOX, 0,0,19,2,0,       0,0,       0,  "XScale"}
          {F.DI_TEXT,      2,1, 9,1,0,       0,0,       0,"0<=X<=1:"}
          {F.DI_EDIT,     11,1,17,1,0,"XScale",0,       0,        ""}
        }
 
-XDlgProc=(hDlg,Msg,Param1,Param2)->
+XDlgProc = (hDlg,Msg,Param1,Param2)->
   if Msg==F.DN_INITDIALOG
     SendDlgMessage hDlg,F.DM_SETTEXT,3,tostring _XScale.xs
   elseif Msg==F.DN_CLOSE and Param1==3
-    res=tonumber SendDlgMessage hDlg,F.DM_GETTEXT,Param1
+    res = tonumber SendDlgMessage hDlg,F.DM_GETTEXT,Param1
     if res
       if res<0
-        res=0
+        res = 0
       elseif res>1
-        res=1
-      _XScale.xs=res
+        res = 1
+      _XScale.xs = res
 
-exec=(hDlg)->
-  id=SendDlgMessage hDlg,F.DM_GETDIALOGINFO
+exec = (hDlg)->
+  id = SendDlgMessage hDlg,F.DM_GETDIALOGINFO
   if id and transform[id.Id]
     Proc id.Id,hDlg
 
@@ -270,21 +264,21 @@ Event
     if event==F.DE_DLGPROCINIT and (param.Msg==F.DN_INITDIALOG or param.Msg==F.DN_RESIZECONSOLE)
       exec param.hDlg
     elseif event==F.DE_DEFDLGPROCINIT and param.Msg==F.DN_KEY
-      name=far.KeyToName param.Param2
+      name = far.KeyToName param.Param2
       if name=="F2"
-        res=far.Dialog Guid_DlgXScale,-1,-1,20,3,nil,XItems,F.FDLG_SMALLDIALOG+F.FDLG_WARNING,XDlgProc
+        res = far.Dialog Guid_DlgXScale,-1,-1,20,3,nil,XItems,F.FDLG_SMALLDIALOG+F.FDLG_WARNING,XDlgProc
         if res==3
           exec param.hDlg
       elseif name=="CtrlAltRight"
         if _XScale.xs<1
           _XScale.xs+=XStep
           if _XScale.xs>1
-            _XScale.xs=1
+            _XScale.xs = 1
           exec param.hDlg
       elseif name=="CtrlAltLeft"
         if _XScale.xs>0
           _XScale.xs-=XStep
           if _XScale.xs<0
-            _XScale.xs=0
+            _XScale.xs = 0
           exec param.hDlg
     false
