@@ -15,7 +15,7 @@ _XScale = {xs:XScale,cw:nil,ch:nil,dw:nil,dh:nil,dl:nil,dt:nil,dr:nil,db:nil,pl:
 F,GetDlgItem,Guids = far.Flags,far.GetDlgItem,far.Guids
 SetDlgItem,SendDlgMessage = far.SetDlgItem,far.SendDlgMessage
 
-abs,ceil,floor,fmod,modf = math.abs,math.ceil,math.floor,math.fmod,math.modf
+floor = math.floor
 
 match = string.match
 
@@ -67,6 +67,8 @@ re3 = "([F]?)(%d)%.(%d)%.([%-%+]?%d+)"
 re4 = "([F]?)(%d)%.(%d)"
 re5 = "([%-%+]?%d+)%.([%-%+]?%d+)%.([%-%+]?%d+)%.([%-%+]?%d+)"
 
+X1,Y1,X2,Y2 = 2,3,4,5
+
 ConsoleSize = ->
   rr = far.AdvControl"ACTL_GETFARRECT"
   rr.Right-rr.Left+1,rr.Bottom-rr.Top+1
@@ -103,134 +105,136 @@ Proc = (id,hDlg)->
     local idx,opt,ref
     if "number"==type ii
       continue if ii<1
-      idx,opt = modf ii
-      opt = floor opt*10+0.5
+      idx = floor ii
+      opt = floor (ii-idx)*10+0.5
     else
       idx,opt,ref = match ii,re0
       idx = tonumber idx
       opt = tonumber opt
+
     item = GetDlgItem hDlg,idx
-    if item  -- prevent error message for out-of-range index (see "hack" above)
-      item[2] = Curr[idx][2]
-      item[3] = Curr[idx][3]
-      item[4] = Curr[idx][4]
-      item[5] = Curr[idx][5]
-      NOTDITEXT = not (item[1]==F.DI_TEXT and item[4]==0)
-      switch opt
-        when 0  -- Stretch full
-          if idx==1 and (item[1]==F.DI_DOUBLEBOX or item[1]==F.DI_SINGLEBOX)
-            item[4]=pr+2
-          else
-            if item[4]==item[2]
-              item[2]+=diff
-            if NOTDITEXT
-              item[4]+=diff
-        when 1  -- Move half
-          if NOTDITEXT and item[4]==item[2]
-            item[4]+=diff/2
-          item[2]+=diff/2
-        when 2  -- Stretch half
-          if item[4]==item[2]
-            item[2]+=diff/2
+    continue if not item -- prevent error message for out-of-range index (see "hack" above)
+    item[X1] = Curr[idx][X1]
+    item[Y1] = Curr[idx][Y1]
+    item[X2] = Curr[idx][X2]
+    item[Y2] = Curr[idx][Y2]
+    NOTDITEXT = not (item[1]==F.DI_TEXT and item[X2]==0)
+
+    switch opt
+      when 0  -- Stretch full
+        if idx==1 and (item[1]==F.DI_DOUBLEBOX or item[1]==F.DI_SINGLEBOX)
+          item[X2] = pr+2
+        else
+          if item[X2]==item[X1]
+            item[X1] += diff
           if NOTDITEXT
-            item[4]+=diff/2
-        when 3  -- Move full
-          if NOTDITEXT and item[4]==item[2]
-            item[4]+=diff
-          item[2]+=diff
-        when 4  -- Move left
-          item[2] = pl
-        when 5  -- Move half & Stretch full
-          if NOTDITEXT
-            if item[4]==item[2]
-              item[4]+=diff/2
-            if diff>=0
-              item[4]+=diff
-          item[2]+=diff/2
-        when 6  -- Move relative by X
-          x = tonumber match ref,re1
-          item[2]+=x
-          if NOTDITEXT
-            item[4]+=x
-        when 7  -- Move relative by Y
-          y = tonumber match ref,re1
-          item[3]+=y
-          item[5]+=y
-        --when 8  -- MoveX full
-        --  item[2]+=diff+item[2]-item[4]
-        --  item[4]+=diff
-        when 9  -- Move & Size relative by X1 & X2
-          x1,x2 = match ref,re2
-          item[2]+=tonumber x1
-          if NOTDITEXT
-            item[4]+=tonumber x2
-        when 10  -- Align to ref.X
-          ref = tonumber ref
-          t = Curr[ref]
-          if NOTDITEXT
-            item[4]=item[4]+t[2]-item[2]
-          item[2] = t[2]
-        when 11  -- Align to ref.Y
-          ref = tonumber ref
-          t = Curr[ref]
-          item[5] = item[5]+t[3]-item[3]
-          item[3] = t[3]
-        when 12  -- Move & Stretch: (colons quantity).(colon number).(dx)
-          m,q,n,x = match ref,re3
-          if not q
-            m,q,n = match ref,re4
-            x = 0
-          wc = (dw-pl*2-1)/tonumber q
-          n = tonumber n
-          w = item[4]-item[2]+1
-          if w>wc
-            w = wc
-          x = tonumber x
-          item[2] = wc*(n-1)+pl+x
-          if m=="F"
-            item[4] = item[2]+w-1
-          else
-            item[4] = item[2]+wc-1
-        when 13  -- Free Move & Stretch Relative
-          x1,x2,y1,y2 = match ref,re5
-          item[2]+=tonumber x1
-          item[3]+=tonumber y1
-          if NOTDITEXT
-            item[4]+=tonumber x2
-          item[5]+=tonumber y2
-        when 14  -- Free Move & Stretch Absolute
-          x1,x2,y1,y2 = match ref,re5
-          item[2] = tonumber x1
-          item[3] = tonumber y1
-          if NOTDITEXT
-            item[4] = tonumber x2
-          item[5] = tonumber y2
-        when 15  -- Set text
-          item[10] = ref
-        when 16  -- Align to ref.X + offset
-          x1,x2 = match ref,re2
-          x1 = tonumber x1
-          x2 = tonumber x2
-          t = Curr[x1]
-          if NOTDITEXT
-            item[4] = item[4]+t[2]-item[2]+x2
-          item[2] = t[2]+x2
-      if idx==1
-        if item[2]<pl-2
-          item[2] = pl-2
-        if item[4]>pr+2
-          item[4] = pr+2
-      else
-        if item[2]<pl
-          item[2] = pl
-        if item[4]>pr
-          item[4] = pr
-      if item[1]==F.DI_EDIT or item[1]==F.DI_FIXEDIT
-        f = SendDlgMessage hDlg,F.DM_EDITUNCHANGEDFLAG,idx,-1
-        SetDlgItem hDlg,idx,item
-        SendDlgMessage hDlg,F.DM_EDITUNCHANGEDFLAG,idx,f
-      else
-        SetDlgItem hDlg,idx,item
+            item[X2] += diff
+      when 1  -- Move half
+        if NOTDITEXT and item[X2]==item[X1]
+          item[X2] += diff/2
+        item[X1] += diff/2
+      when 2  -- Stretch half
+        if item[X2]==item[X1]
+          item[X1] += diff/2
+        if NOTDITEXT
+          item[X2] += diff/2
+      when 3  -- Move full
+        if NOTDITEXT and item[X2]==item[X1]
+          item[X2] += diff
+        item[X1] += diff
+      when 4  -- Move left
+        item[X1] = pl
+      when 5  -- Move half & Stretch full
+        if NOTDITEXT
+          if item[X2]==item[X1]
+            item[X2] += diff/2
+          if diff >= 0
+            item[X2] += diff
+        item[X1] += diff/2
+      when 6  -- Move relative by X
+        x = tonumber match ref,re1
+        item[X1] += x
+        if NOTDITEXT
+          item[X2] += x
+      when 7  -- Move relative by Y
+        y = tonumber match ref,re1
+        item[Y1] += y
+        item[Y2] += y
+      --when 8  -- MoveX full
+      --  item[X1] += diff+item[X1]-item[X2]
+      --  item[X2] += diff
+      when 9  -- Move & Size relative by X1 & X2
+        x1,x2 = match ref,re2
+        item[X1] += tonumber x1
+        if NOTDITEXT
+          item[X2] += tonumber x2
+      when 10  -- Align to ref.X
+        ref = tonumber ref
+        t = Curr[ref]
+        if NOTDITEXT
+          item[X2] = item[X2]+t[X1]-item[X1]
+        item[X1] = t[X1]
+      when 11  -- Align to ref.Y
+        ref = tonumber ref
+        t = Curr[ref]
+        item[Y2] = item[Y2]+t[Y1]-item[Y1]
+        item[Y1] = t[Y1]
+      when 12  -- Move & Stretch: (colons quantity).(colon number).(dx)
+        m,q,n,x = match ref,re3
+        if not q
+          m,q,n = match ref,re4
+          x = 0
+        wc = (dw-pl*2-1)/tonumber q
+        n = tonumber n
+        w = item[X2]-item[X1]+1
+        if w > wc
+          w = wc
+        x = tonumber x
+        item[X1] = wc*(n-1)+pl+x
+        if m=="F"
+          item[X2] = item[X1]+w-1
+        else
+          item[X2] = item[X1]+wc-1
+      when 13  -- Free Move & Stretch Relative
+        x1,x2,y1,y2 = match ref,re5
+        item[X1] += tonumber x1
+        item[Y1] += tonumber y1
+        if NOTDITEXT
+          item[X2] += tonumber x2
+        item[Y2] += tonumber y2
+      when 14  -- Free Move & Stretch Absolute
+        x1,x2,y1,y2 = match ref,re5
+        item[X1] = tonumber x1
+        item[Y1] = tonumber y1
+        if NOTDITEXT
+          item[X2] = tonumber x2
+        item[Y2] = tonumber y2
+      when 15  -- Set text
+        item[10] = ref
+      when 16  -- Align to ref.X + offset
+        x1,x2 = match ref,re2
+        x1 = tonumber x1
+        x2 = tonumber x2
+        t = Curr[x1]
+        if NOTDITEXT
+          item[X2] = item[X2]+t[X1]-item[X1]+x2
+        item[X1] = t[X1]+x2
+    if idx==1
+      if item[X1] < pl-2
+        item[X1] = pl-2
+      if item[X2] > pr+2
+        item[X2] = pr+2
+    else
+      if item[X1] < pl
+        item[X1] = pl
+      if item[X2] > pr
+        item[X2] = pr
+    if item[1]==F.DI_EDIT or item[1]==F.DI_FIXEDIT
+      f = SendDlgMessage hDlg,F.DM_EDITUNCHANGEDFLAG,idx,-1
+      SetDlgItem hDlg,idx,item
+      SendDlgMessage hDlg,F.DM_EDITUNCHANGEDFLAG,idx,f
+    else
+      SetDlgItem hDlg,idx,item
   SendDlgMessage hDlg,F.DM_MOVEDIALOG,1,{X:(cw-dw)/2,Y:(ch-dh)/2}
   SendDlgMessage hDlg,F.DM_ENABLEREDRAW,1
 
