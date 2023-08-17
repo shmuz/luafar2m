@@ -10,7 +10,7 @@ XStep = 0.25 -- width change step
 DX = 4 -- indent
 
 XScale = _G.XScale or XScale
-_XScale = {xs:XScale,cw:nil,ch:nil,dw:nil,dh:nil,dl:nil,dt:nil,dr:nil,db:nil,pl:nil,pr:nil} -- original width
+_XScale = {xs:XScale} -- original width
 
 F,GetDlgItem,Guids = far.Flags,far.GetDlgItem,far.Guids
 SetDlgItem,SendDlgMessage = far.SetDlgItem,far.SendDlgMessage
@@ -73,27 +73,22 @@ ConsoleSize = ->
   rr = far.AdvControl"ACTL_GETFARRECT"
   rr.Right-rr.Left+1,rr.Bottom-rr.Top+1
 
-_XScale.cw,_XScale.ch = ConsoleSize!
-
 Proc = (id,hDlg)->
   Curr = _XScale[id] or {}
   if not _XScale[id]
     _XScale[id] = Curr
-    {Left:Curr.dl,Top:Curr.dt,Right:Curr.dr,Bottom:Curr.db} = hDlg\GetDlgRect!
-    Curr.dw = Curr.dr - Curr.dl + 1
-    Curr.dh = Curr.db - Curr.dt + 1
-    Curr.pl = (GetDlgItem hDlg,1)[2] + 2
+    R = hDlg\GetDlgRect!
+    Curr.dw = R.Right - R.Left + 1
+    Curr.dh = R.Bottom - R.Top + 1
+    Curr.pl = (GetDlgItem hDlg,1)[X1] + 2
     Curr.pr = Curr.dw - Curr.pl - 1
-    idx = 0
-    while true
-      idx += 1
+    for idx=1,math.huge
       item = GetDlgItem hDlg,idx
       if item
-        Curr[idx] = { nil,item[2],item[3],item[4],item[5] }
+        Curr[idx] = { unpack item,1,5 }
       else
         break
   cw,ch = ConsoleSize!
-  _XScale.cw,_XScale.ch = cw,ch
   dh,pl = Curr.dh,Curr.pl
   df = cw-DX-Curr.dw
   diff = _XScale.xs*df
@@ -250,9 +245,9 @@ XDlgProc = (hDlg,Msg,Param1,Param2)->
   elseif Msg==F.DN_CLOSE and Param1==3
     res = tonumber SendDlgMessage hDlg,F.DM_GETTEXT,Param1
     if res
-      if res<0
+      if res < 0
         res = 0
-      elseif res>1
+      elseif res > 1
         res = 1
       _XScale.xs = res
 
@@ -274,15 +269,15 @@ Event
         if res==3
           exec param.hDlg
       elseif name=="CtrlAltRight"
-        if _XScale.xs<1
-          _XScale.xs+=XStep
-          if _XScale.xs>1
+        if _XScale.xs < 1
+          _XScale.xs += XStep
+          if _XScale.xs > 1
             _XScale.xs = 1
           exec param.hDlg
       elseif name=="CtrlAltLeft"
-        if _XScale.xs>0
-          _XScale.xs-=XStep
-          if _XScale.xs<0
+        if _XScale.xs > 0
+          _XScale.xs -= XStep
+          if _XScale.xs < 0
             _XScale.xs = 0
           exec param.hDlg
     false
