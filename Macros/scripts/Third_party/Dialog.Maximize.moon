@@ -99,7 +99,7 @@ Proc = (id,hDlg)->
   for ii in *transform[id]
     local idx,opt,ref
     if "number"==type ii
-      continue if ii<1
+      continue if ii < 1
       idx = floor ii
       opt = floor (ii-idx)*10+0.5
     else

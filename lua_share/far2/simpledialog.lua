@@ -516,7 +516,7 @@ function mod:Run()
   local x1, y1 = inData.x1 or -1, inData.y1 or -1
   local x2 = x1==-1 and W or x1+W-1
   local y2 = y1==-1 and H or y1+H-1
-  local hDlg = far.DialogInit(guid, x1,y1,x2,y2, help, outData, inData.flags, DlgProc)
+  local hDlg = far.DialogInit(guid, x1,y1,x2,y2, help, outData, inData.flags, DlgProc, inData.data)
   if hDlg then
     if F.FDLG_NONMODAL and 0 ~= band(inData.flags, F.FDLG_NONMODAL) then
       return hDlg -- non-modal dialogs were introduced in build 3.0.5047
