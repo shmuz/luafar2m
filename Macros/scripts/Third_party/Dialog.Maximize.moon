@@ -46,18 +46,14 @@ transform=
   [Uuid Guids.UnSelectDialogId               ]: {1,2}         -- Select Gray-
   --[Uuid Guids.FileAttrDlgId                  ]: {1,37} -- File Attributes
   -- LFSearch/Shell
-  [Uuid"3CD8A0BB-8583-4769-BBBC-5B6667D13EF9"]: {1,3,5,11.1,13.1,15.1,18,20.2,21.1,22.1,25.1} -- Shell/Find
-  [Uuid"F7118D4A-FBC3-482E-A462-0167DF7CC346"]: {1,3,5,7}     -- Shell/Replace
-  [Uuid"74D7F486-487D-40D0-9B25-B2BB06171D86"]: {1,3,5,7}     -- Shell/Grep
+  [Uuid"3CD8A0BB-8583-4769-BBBC-5B6667D13EF9"]: {1,3,5,8.1,9.1,11.1,13.1,15.1,18,20.2,21.1,22.1,25.1} -- Shell/Find
+  [Uuid"F7118D4A-FBC3-482E-A462-0167DF7CC346"]: {1,3,5,7,13.1,14.1,16.1,20.2,21.1,24.1,25.1,29.2,30.1,31.5} -- Shell/Replace
+  [Uuid"74D7F486-487D-40D0-9B25-B2BB06171D86"]: {1,3,5,7,10.1,11.1,13.1,18.1,21.1,22.1,27.1,28.1,29.1,30.1,} -- Shell/Grep
   [Uuid"AF8D7072-FF17-4407-9AF4-7323273BA899"]: {1,3,6.1,7.1,11,13,14.4,15.1,16.4,20.2,21.1,22.5,25,27} -- Shell/Rename
   -- LFSearch/Editor
   --# [Uuid"0B81C198-3E20-4339-A762-FFCBBC0C549C"]: {1,3,4.3,7.1,"8.12.F2.2.13",10.1,14.4,15.4,"16.6.1","19.10.20",25,27.2,28.1,29.5} -- Editor/Find
   --# [Uuid"FE62AEB9-E0A1-4ED3-8614-D146356F86FF"]: {1,3,5,6.3,7.3,8.4,9.1,10.4,11.5,"14.10.11","15.16.11.11","17.10.11","20.12.3.1","21.10.20","22.10.20","23.6.1",32,34.2,35.5,36.5} -- Editor/Replace
-  [Uuid"87ED8B17-E2B2-47D0-896D-E2956F396F1A"]: {1,3,5,19.2,20.1,21.5} -- Editor/Multi-Line Replace
-  --# -- Calculator
-  --# [Uuid"E45555AE-6499-443C-AA04-12A1AADAB989"]: {1,3,10,11,12,13,14}
-  --# -- Macroses:
-  --# [Uuid"5B40F3FF-6593-48D2-8F78-4A32C8C36BCA"]: {1,5,12,14} -- Panel.CustomSortByName.lua
+  [Uuid"87ED8B17-E2B2-47D0-896D-E2956F396F1A"]: {1,3,5,9.1,10.1,12.1,14.1,19.2,20.1,21.5} -- Editor/Multi-Line Replace
 
 
 re0 = "^(%d+)%.(%d+)%.(.+)$"
@@ -81,7 +77,6 @@ Proc = (id,hDlg)->
     Curr.dw = R.Right - R.Left + 1
     Curr.dh = R.Bottom - R.Top + 1
     Curr.pl = (GetDlgItem hDlg,1)[X1] + 2
-    Curr.pr = Curr.dw - Curr.pl - 1
     for idx=1,math.huge
       item = GetDlgItem hDlg,idx
       if item
@@ -90,8 +85,7 @@ Proc = (id,hDlg)->
         break
   cw,ch = ConsoleSize!
   dh,pl = Curr.dh,Curr.pl
-  df = cw-DX-Curr.dw
-  diff = _XScale.xs*df
+  diff = _XScale.xs * (cw-DX-Curr.dw)
   dw = Curr.dw+diff
   pr = dw-pl-1
   SendDlgMessage hDlg,F.DM_ENABLEREDRAW,0
@@ -125,7 +119,7 @@ Proc = (id,hDlg)->
           if NOTDITEXT
             item[X2] += diff
       when 1  -- Move half
-        if NOTDITEXT and item[X2]==item[X1]
+        if NOTDITEXT -- and item[X2]==item[X1]
           item[X2] += diff/2
         item[X1] += diff/2
       when 2  -- Stretch half
