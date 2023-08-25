@@ -32,17 +32,6 @@ Macro {
 }
 
 Macro {
-  description="Smart Home";
-  area="Editor"; key="Home";
-  action=function()
-    local info, str = editor.GetInfo(), editor.GetString()
-    local pos = str.StringText:find("%S") or 1
-    editor.SetPosition(nil, nil, pos==info.CurPos and 1 or pos)
-    editor.Redraw()
-  end;
-}
-
-Macro {
   description="Insert Internet Shortcut";
   area="Editor"; key="CtrlF11";
   action=function()
