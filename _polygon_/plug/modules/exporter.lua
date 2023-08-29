@@ -233,9 +233,8 @@ function exporter:recover_data_with_dialog()
   if rc then
     for exec in get_sqlite_exe() do
       local cmd = rc.as_dump and
-        ([[%s "%s" .recover 1> "%s" 2>NUL]]):format(exec, self._filename, rc.targetfile) or
-        ([[%s "%s" .recover 2>NUL | %s "%s" 2>NUL]]):format(exec, self._filename, exec, rc.targetfile)
-      far.Message(cmd)
+        ([[%s "%s" .recover 1> "%s" 2>/dev/null]]):format(exec, self._filename, rc.targetfile) or
+        ([[%s "%s" .recover 2>/dev/null | %s "%s" 2>/dev/null]]):format(exec, self._filename, exec, rc.targetfile)
       if 0==os.execute(cmd) then break end
     end
     panel.UpdatePanel(0)
@@ -475,13 +474,12 @@ function exporter:export_data_as_dump(Args)
       t[i+1] = '"'..s1..' '..Norm(item.FileName)..'"'
     end
   end
-  t[#t+1] = '1>"'..Args.file_name..'" 2>NUL'
+  t[#t+1] = '1>"'..Args.file_name..'" 2>/dev/null'
   local cmd = table.concat(t, " ")
   ------------------------
   far.Message("Please wait...", "", "")
   for exec in get_sqlite_exe() do
     -- use os.execute because win.ShellExecute wouldn't reuse Far console.
-    far.Message(exec..' '..cmd)
     if 0 == os.execute(exec..' '..cmd) then break; end
   end
   ------------------------

@@ -6,6 +6,8 @@
 -- https://github.com/gitbito/CLI/blob/main/version-3.3/bito.exe
 -- https://docs.bito.ai/feature-guides/custom-prompt-templates
 
+local osWindows = package.config:sub(1,1)=="\\"
+
 local linewrap = 80
 
 local F = far.Flags
@@ -54,7 +56,7 @@ local idInput = win.Uuid"58DD9ECD-CFFA-472E-BFD7-042295C86CAE"
 local function bito (prompt)
   prompt = prompt or far.InputBox(idInput, _name, _prompt, "bito.ai prompt", nil, nil, nil, F.FIB_NONE)
   if prompt then
-    local root = far.InMyConfig().."/"
+    local root = osWindows and win.GetEnv("FARLOCALPROFILE").."\\" or far.InMyConfig().."/"
     local ctxName = root.."ctx.bito"
     local promptName = root.."prompt.bito"
     local fp = assert(io.open(promptName, "w"))
@@ -69,17 +71,20 @@ local function bito (prompt)
     local flags = F.EF_NONMODAL +F.EF_IMMEDIATERETURN +F.EF_DELETEONLYFILEONCLOSE +F.EF_OPENMODE_USEEXISTING
                  +F.EF_DISABLEHISTORY
     editor.Editor("bito.md", nil, nil, nil, nil, nil, flags, nil, nil, 65001)
-    editor.SetTitle(nil, "Fetching response...")
+    local wi = far.AdvControl(F.ACTL_GETWINDOWINFO)
+    assert(wi.Type==F.WTYPE_EDITOR, "oops, editor has not been opened")
+    local Id = wi.Id
+    editor.SetTitle(Id, "Fetching response...")
     local hDlg = progress("Waiting for data..")
-    editor.UndoRedo(nil, F.EUR_BEGIN)
-    local ei = editor.GetInfo()
-    local s = editor.GetString(nil, ei.TotalLines)
-    editor.SetPosition(nil, ei.TotalLines, s.StringLength+1)
+    editor.UndoRedo(Id, F.EUR_BEGIN)
+    local ei = editor.GetInfo(Id)
+    local s = editor.GetString(Id, ei.TotalLines)
+    editor.SetPosition(Id, ei.TotalLines, s.StringLength+1)
     local i = ei.TotalLines
     if s.StringLength>0 then
-      editor.InsertString()
-      editor.InsertString()
-      editor.SetPosition(nil, i+2)
+      editor.InsertString(Id)
+      editor.InsertString(Id)
+      editor.SetPosition(Id, i+2)
     end
     far.Text()
 
@@ -88,37 +93,30 @@ local function bito (prompt)
     local autowrap = bit64.band(ei.Options, F.EOPT_AUTOINDENT)~=0
     if autowrap then editor.SetParam(nil, F.ESPT_AUTOINDENT, 0) end
     for space,word in Words(pipe) do
-      ei = editor.GetInfo()
+      ei = editor.GetInfo(Id)
       if ei.CurPos + space:len() + word:len() > linewrap then
         space = "\n"
       end
-      editor.InsertText(nil, space)
-      editor.InsertText(nil, word)
-      editor.Redraw()
+      editor.InsertText(Id, space)
+      editor.InsertText(Id, word)
+      editor.Redraw(Id)
+      if hDlg then hDlg:send(F.DM_CLOSE); hDlg = nil; end
     end
-    if autowrap then editor.SetParam(nil, F.ESPT_AUTOINDENT, 1) end
     pipe:close()
-    editor.UndoRedo(nil, F.EUR_END)
-    hDlg:send(F.DM_CLOSE)
-    editor.SetTitle(nil, "bito.ai response:")
+    if hDlg then hDlg:send(F.DM_CLOSE) end
+    if autowrap then editor.SetParam(Id, F.ESPT_AUTOINDENT, 1) end
+    editor.UndoRedo(Id, F.EUR_END)
+    editor.SetTitle(Id, "bito.ai response:")
   end
 end
 
 if Macro then
   Macro { description="Ask AI";
     area="Common"; key="CtrlAltB";
-    id="4AFE2367-4DAC-4A74-B1EE-9F14C42991CB";
     action=function()
       mf.acall(bito)
     end;
   }
-  return
-end
-
-if _cmdline=="" then
-  sh.acall(bito)
-elseif _cmdline then
-  bito(_cmdline)
 else
   return bito
 end
