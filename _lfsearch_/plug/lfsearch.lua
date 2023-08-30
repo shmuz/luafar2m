@@ -178,7 +178,7 @@ local function OpenFromPanels (userItems)
 end
 
 
-local function OpenFromMacro (args, commandTable)
+local function DoOpenFromMacro (args, commandTable)
   local Op, Where, Cmd = unpack(args)
 
   if Op=="code" or Op=="file" or Op=="command" then
@@ -228,26 +228,28 @@ export.OnError = libUtils.OnError
 export.ProcessEditorEvent = Editors.ProcessEditorEvent
 
 
-function export.OpenPlugin (aFrom, aItem)
-  local userItems = libUtils.LoadUserMenu("_usermenu.lua")
-  if     aFrom == F.OPEN_PLUGINSMENU then return OpenFromPanels(userItems.panels)
-  elseif aFrom == F.OPEN_EDITOR      then OpenFromEditor(userItems.editor)
-  end
-end
-
-
-function export.OpenCommandLine (aItem)
+local function OpenCommandLine (aItem)
   local _, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
   return libUtils.OpenCommandLine(aItem, commandTable, nil, M.MMenuTitle)
 end
 
 
-function export.OpenFromMacro (aItem)
+local function OpenFromMacro (aItem)
   local _, commandTable = libUtils.LoadUserMenu("_usermenu.lua")
-  local val = OpenFromMacro(aItem, commandTable)
+  local val = DoOpenFromMacro(aItem, commandTable)
   if val then
     SaveSettings()
     return val
+  end
+end
+
+
+function export.Open (aFrom, aItem)
+  local userItems = libUtils.LoadUserMenu("_usermenu.lua")
+  if     aFrom == F.OPEN_PLUGINSMENU then return OpenFromPanels(userItems.panels)
+  elseif aFrom == F.OPEN_EDITOR      then return OpenFromEditor(userItems.editor)
+  elseif aFrom == F.OPEN_COMMANDLINE then return OpenCommandLine(aItem)
+  elseif aFrom == F.OPEN_FROMMACRO   then return OpenFromMacro(aItem)
   end
 end
 

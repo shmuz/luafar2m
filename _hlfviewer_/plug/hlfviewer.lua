@@ -219,7 +219,7 @@ local function FindPluginHelp(Name)
   end
 end
 
-function export.OpenCommandLine(cmdbuf)
+local function OpenCommandLine(cmdbuf)
   -- разбор "параметров ком.строки"
   local ModuleName = far.PluginStartupInfo().ModuleName
 
@@ -295,7 +295,7 @@ function export.OpenCommandLine(cmdbuf)
 
 end
 
-function export.OpenFromMacro(Item)
+local function OpenFromMacro(Item)
   if IsHlf() then -- проверяем файл на принадлежность к системе помощи Far Manager
     if ShowCurrentHelpTopic() then
       return true
@@ -303,8 +303,12 @@ function export.OpenFromMacro(Item)
   end
 end
 
-function export.OpenPlugin(OpenFrom, Item)
-  if OpenFrom == F.OPEN_EDITOR then
+function export.Open(OpenFrom, Item)
+  if OpenFrom == F.OPEN_COMMANDLINE then
+    return OpenCommandLine(Item)
+  elseif OpenFrom == F.OPEN_FROMMACRO then
+    return OpenFromMacro(Item)
+  elseif OpenFrom == F.OPEN_EDITOR then
     if IsHlf() then -- проверяем файл на принадлежность к системе помощи Far Manager
       ShowCurrentHelpTopic()
     else

@@ -692,7 +692,7 @@ local function HighlightExtra()
   dlg:Run()
 end
 
-function export.OpenFromMacro (Item)
+local function OpenFromMacro (Item)
   if far.MacroGetArea() == F.MACROAREA_EDITOR then
     if Item[1] == "own" then
       if     Item[2] == "SelectSyntax"   then MenuSelectSyntax()
@@ -703,8 +703,10 @@ function export.OpenFromMacro (Item)
   end
 end
 
-function export.OpenPlugin (From, Item)
-  if From == F.OPEN_EDITOR then
+function export.Open (From, Item)
+  if From == F.OPEN_FROMMACRO then
+    return OpenFromMacro(Item)
+  elseif From == F.OPEN_EDITOR then
     local item, pos = far.Menu({Title=AppTitle, SelectIndex=MenuPos}, {
       {text="&1. Select syntax";   act=MenuSelectSyntax; },
       {text="&2. Highlight extra"; act=HighlightExtra;   },

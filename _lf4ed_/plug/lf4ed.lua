@@ -10,7 +10,7 @@ local SETTINGS_NAME = "plugin_lf4ed"
 
 -- CONFIGURATION : keep it at the file top !!
 local DefaultCfg = {
-  -- Default script will be recompiled and run every time OpenPlugin/OpenFilePlugin
+  -- Default script will be recompiled and run every time Open/OpenFilePlugin
   -- are called: set true for debugging, false for normal use;
   ReloadDefaultScript = false;
 
@@ -585,7 +585,7 @@ function export.Configure (ItemNumber)
   Configure()
 end
 
-function export.OpenFromMacro (aItem)
+local function OpenFromMacro (aItem)
   local map = {
     [F.MACROAREA_SHELL]  = "panels",
     [F.MACROAREA_EDITOR] = "editor",
@@ -599,7 +599,7 @@ function export.OpenFromMacro (aItem)
   end
 end
 
-function export.OpenCommandLine (aItem)
+local function OpenCommandLine (aItem)
   local prefix, command = aItem:match("^(.-):(.*)")
   prefix = prefix:lower()
   ----------------------------------------------------------------------------
@@ -616,7 +616,13 @@ function export.OpenCommandLine (aItem)
   end
 end
 
-local function export_OpenPlugin (aFrom, aItem)
+local function export_Open (aFrom, aItem)
+  if afrom == F.OPEN_COMMANDLINE then
+    return OpenCommandLine(aItem)
+  elseif aFrom == F.OPEN_OPENFROMMACRO then
+    return OpenFromMacro(aItem)
+  end
+
   local map = {
     [F.OPEN_PLUGINSMENU] = "panels",
     [F.OPEN_EDITOR] = "editor",
@@ -721,16 +727,12 @@ local function export_ProcessDialogEvent (Event, Param)
   end
 end
 
-function export.OpenDialog(ItemNumber, hDlg)
-  return export_OpenPlugin(F.OPEN_DIALOG, hDlg)
-end
-
 local function alive(t)
   return t and t[1]
 end
 
 SetExportFunctions = function()
-  export.OpenPlugin         = export_OpenPlugin
+  export.Open               = export_Open
   export.ProcessEditorInput = export_ProcessEditorInput
   export.ProcessEditorEvent = alive(_Plugin.EditorEventHandlers) and export_ProcessEditorEvent
   export.ProcessViewerEvent = alive(_Plugin.ViewerEventHandlers) and export_ProcessViewerEvent

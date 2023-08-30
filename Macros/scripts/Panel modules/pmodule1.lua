@@ -30,12 +30,11 @@ function mod.OpenFilePlugin (Name, Data, OpMode)
   end
 end
 
-function mod.OpenShortcut(Item)
-  return FileToObject(Item.HostFile)
-end
+function mod.Open(OpenFrom, Item)
+  if OpenFrom == F.OPEN_SHORTCUT then
+    return FileToObject(Item.HostFile)
 
-function mod.OpenPlugin(OpenFrom, Item)
-  if OpenFrom == F.OPEN_FINDLIST then -- luacheck: ignore
+  elseif OpenFrom == F.OPEN_FINDLIST then -- luacheck: ignore
     -- If we uncomment the line "return true", then this module will be
     -- used instead of TmpPanel for displaying search results.
     ---- return true
@@ -46,7 +45,7 @@ function mod.GetFindData(object, handle, OpMode)
   return object.List
 end
 
-function mod.GetOpenPluginInfo(object, handle)
+function mod.GetOpenPanelInfo(object, handle)
   return {
     HostFile = object.HostFile;
     PanelTitle = Title;

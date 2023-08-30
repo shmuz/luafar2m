@@ -4,7 +4,7 @@
 -- CONFIGURATION : keep it at the file top !!
 local Cfg = {
   ReloadDefaultScript = true, -- Default script will be recompiled and run every time
-                              -- OpenPlugin/OpenFilePlugin are called: set true for
+                              -- Open/OpenFilePlugin are called: set true for
                               -- debugging, false for normal use;
 
   ReloadOnRequire = true, -- Reload lua libraries each time they are require()d:
@@ -27,13 +27,12 @@ local function Require (name)
   return require (name)
 end
 
-function export.OpenCommandLine (Item)
-  return Env:OpenPlugin(F.OPEN_COMMANDLINE, Item)
-end
+function export.Open (From, Item)
+  if From == F.OPEN_COMMANDLINE then
+    return Env:Open(From, Item)
 
-function export.OpenPlugin (From, Item)
-  if From == F.OPEN_PLUGINSMENU then
-    return Env:OpenPlugin (From, Item)
+  elseif From == F.OPEN_PLUGINSMENU then
+    return Env:Open(From, Item)
 
   elseif From == F.OPEN_DISKMENU or From == F.OPEN_FINDLIST then
     return Env:NewPanel()
@@ -73,7 +72,7 @@ local function InitUpvalues (plugin)
   for _, name in ipairs {
     "ClosePanel",
     "GetFindData",
-    "GetOpenPluginInfo",
+    "GetOpenPanelInfo",
     "ProcessEvent",
     "ProcessKey",
     "PutFiles",

@@ -79,8 +79,10 @@ function mod.OpenFilePlugin (Name, Data, OpMode)
   end
 end
 
-function mod.OpenShortcut(Data)
-  return FileToObject(Data)
+function mod.Open (OpenFrom, Data)
+  if OpenFrom == F.OPEN_SHORTCUT then
+    return FileToObject(Data)
+  end
 end
 
 function mod.GetFindData(object, handle, OpMode)
@@ -109,7 +111,7 @@ function mod.GetFindData(object, handle, OpMode)
   return ret
 end
 
-function mod.GetOpenPluginInfo(object, handle)
+function mod.GetOpenPanelInfo(object, handle)
   return {
     HostFile = object.HostFile;
     PanelTitle = object.Title;

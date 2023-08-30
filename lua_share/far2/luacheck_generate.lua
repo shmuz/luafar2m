@@ -15,9 +15,9 @@ local exports = osWindows and [[
   "ProcessViewerEvent", "PutFiles", "SetDirectory", "SetFindList", "SetStartupInfo",
 ]] or [[
   "ClosePanel", "Compare", "Configure", "DeleteFiles", "ExitFAR", "GetCustomData",
-  "GetFiles", "GetFindData", "GetOpenPluginInfo", "GetPluginInfo", "GetVirtualFindData",
+  "GetFiles", "GetFindData", "GetOpenPanelInfo", "GetPluginInfo", "GetVirtualFindData",
   "MakeDirectory", "OnError", "OpenCommandLine", "OpenDialog", "OpenFilePlugin",
-  "OpenFromMacro", "OpenPlugin", "OpenShortcut", "ProcessConsoleInput", "ProcessDialogEvent",
+  "OpenFromMacro", "Open", "OpenShortcut", "ProcessConsoleInput", "ProcessDialogEvent",
   "ProcessEditorEvent", "ProcessEditorInput", "ProcessEvent", "ProcessHostFile", "ProcessKey",
   "ProcessViewerEvent", "PutFiles", "SetDirectory", "SetFindList",
 ]]

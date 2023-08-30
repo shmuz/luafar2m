@@ -906,7 +906,7 @@ local function InitTmpPanel()
   for _, name in ipairs {
     "ClosePanel",
     "GetFindData",
-    "GetOpenPluginInfo",
+    "GetOpenPanelInfo",
     "ProcessEvent",
     "ProcessKey",
     "PutFiles",
@@ -915,10 +915,10 @@ local function InitTmpPanel()
     export[name] = libTmpPanel.Panel[name]
   end
 
-  local tpGetOpenPluginInfo = export.GetOpenPluginInfo
-  export.GetOpenPluginInfo = function (Panel, Handle)
+  local tpGetOpenPanelInfo = export.GetOpenPanelInfo
+  export.GetOpenPanelInfo = function (Panel, Handle)
     local hist = _Plugin.History["tmppanel"]
-    local Info = tpGetOpenPluginInfo (Panel, Handle)
+    local Info = tpGetOpenPanelInfo (Panel, Handle)
     local a,b = hist.StartSorting:match("(%d+)%s*,%s*(%d+)")
     Info.StartSortMode, Info.StartSortOrder = tonumber(a), tonumber(b) -- w/o tonumber() it crashes Far
     for _,mode in pairs(Info.PanelModesArray) do

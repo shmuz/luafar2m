@@ -382,7 +382,7 @@ function Env:OpenFilePlugin (Name, Data)
 end
 
 
-function Env:OpenPlugin (OpenFrom, Item)
+function Env:Open (OpenFrom, Item)
   -- if IsOldFAR then return nil end
   --  GetOptions (PluginRootKey)
 
@@ -843,9 +843,9 @@ local OPIF_SAFE_FLAGS, OPIF_COMMON_FLAGS do
                   f.OPIF_EXTERNALGET, f.OPIF_EXTERNALDELETE)
 end
 
-function Panel:GetOpenPluginInfo (Handle)
+function Panel:GetOpenPanelInfo (Handle)
   -----------------------------------------------------------------------------
-  --far.Message"GetOpenPluginInfo" --> this crashes FAR if enter then exit viewer/editor
+  --far.Message"GetOpenPanelInfo"  --> this crashes FAR if enter then exit viewer/editor
                                    --  on a file in the emulated file system
   -----------------------------------------------------------------------------
   local Info = {

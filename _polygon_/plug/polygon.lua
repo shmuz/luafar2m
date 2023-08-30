@@ -293,7 +293,7 @@ local function ExecuteLuaCode(code, whatpanel)
 end
 
 
-local function OpenFromMacro(params)
+local function DoOpenFromMacro(params)
   -- Plugin.Call(<guid>, "open", <filename>[, <flags>])
   if params[1] == "open" and type(params[2]) == "string" then
     local opt, filename, flags = {}, params[2], params[3]
@@ -322,7 +322,7 @@ local function OpenFromMacro(params)
 end
 
 
-function export.OpenCommandLine(Item)
+local function OpenCommandLine(Item)
   local FileName, Opt = OpenFromCommandLine(Item)
   if FileName then
     return CreatePanel(FileName, Opt)
@@ -330,27 +330,36 @@ function export.OpenCommandLine(Item)
 end
 
 
-function export.OpenFromMacro(Item)
+local function OpenFromMacro (Item)
   if Item[1] == "open" then
-    local FileName, Opt = OpenFromMacro(Item)
+    local FileName, Opt = DoOpenFromMacro(Item)
     if FileName then
       return CreatePanel(FileName, Opt, F.OPEN_FROMMACRO)
     end
   else
-    return OpenFromMacro(Item)
+    return DoOpenFromMacro(Item)
   end
 end
 
 
-function export.OpenShortcut(Item)
+local function OpenShortcut (Item)
   if Item then
     return CreatePanel(Item)
   end
 end
 
 
-function export.OpenPlugin(OpenFrom, Item)
-  if OpenFrom == F.OPEN_PLUGINSMENU then
+function export.Open (OpenFrom, Item)
+  if OpenFrom == F.OPEN_COMMANDLINE then
+    return OpenCommandLine(Item)
+
+  elseif OpenFrom == F.OPEN_FROMMACRO then
+    return OpenFromMacro(Item)
+
+  elseif OpenFrom == F.OPEN_SHORTCUT then
+    return OpenShortcut(Item)
+
+  elseif OpenFrom == F.OPEN_PLUGINSMENU then
     -- Make sure that the current panel item is a real existing file.
     local info = panel.GetPanelInfo(1)
     if info and info.PanelType == F.PTYPE_FILEPANEL and band(info.Flags,F.OPIF_REALNAMES) ~= 0 then
@@ -366,7 +375,7 @@ function export.OpenPlugin(OpenFrom, Item)
 end
 
 
-function export.GetOpenPluginInfo(object, handle)
+function export.GetOpenPanelInfo(object, handle)
   return object:get_open_panel_info(handle)
 end
 

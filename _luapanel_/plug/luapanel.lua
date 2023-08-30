@@ -27,7 +27,7 @@ function export.GetPluginInfo()
   }
 end
 
-function export.OpenShortcut(Item)
+local function OpenShortcut(Item)
   local obj = { CurDir="", {table = _G} }
   local curtable = _G
   for name in Item:gmatch("[^.]+") do
@@ -42,7 +42,7 @@ function export.OpenShortcut(Item)
   return obj
 end
 
-function export.OpenCommandLine(Item)
+local function OpenCommandLine(Item)
   local obj = { CurDir="", {table = _G} }
   local str = Item:match("^%s*(.-)%s*$") -- trim whitespace from both sides
   local v = _G[str]
@@ -53,8 +53,12 @@ function export.OpenCommandLine(Item)
   return obj
 end
 
-function export.OpenPlugin(OpenFrom, Item)
-  if OpenFrom == F.OPEN_PLUGINSMENU then
+function export.Open (OpenFrom, Item)
+  if OpenFrom == F.OPEN_SHORTCUT then
+    return OpenShortcut(Item)
+  elseif OpenFrom == F.OPEN_COMMANDLINE then
+    return OpenCommandLine(Item)
+  elseif OpenFrom == F.OPEN_PLUGINSMENU then
     return { CurDir="", {table = _G} }
   end
 end
@@ -106,7 +110,7 @@ local PanelModes do
   PanelModes = { m2,m1,m2, m1,m2,m1, m2,m1,m2, m1 }
 end
 
-function export.GetOpenPluginInfo (obj, handle)
+function export.GetOpenPanelInfo (obj, handle)
   return {
     Flags            = F.OPIF_ADDDOTS,
   --CurDir           = obj.CurDir,

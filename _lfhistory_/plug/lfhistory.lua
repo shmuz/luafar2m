@@ -562,7 +562,7 @@ function export.Configure()
   end
 end
 
-function export.OpenFromMacro (Args)
+local function OpenFromMacro (Args)
   local Op = Args[1]
   if Op=="code" or Op=="file" then
     return Utils.OpenMacro(Args, nil, nil, M.mPluginTitle)
@@ -578,12 +578,14 @@ function export.OpenFromMacro (Args)
   end
 end
 
-function export.OpenCommandLine (aItem)
-  return Utils.OpenCommandLine(aItem, GetCommandTable(), nil, M.mPluginTitle)
-end
+function export.Open (From, Item)
+  if From == F.OPEN_COMMANDLINE then
+    return Utils.OpenCommandLine(Item, GetCommandTable(), nil, M.mPluginTitle)
 
-function export.OpenPlugin (From, Item)
-  if From==F.OPEN_PLUGINSMENU or From==F.OPEN_EDITOR or From==F.OPEN_VIEWER then
+  elseif From == F.OPEN_FROMMACRO then
+    return OpenFromMacro(Item)
+
+  elseif From==F.OPEN_PLUGINSMENU or From==F.OPEN_EDITOR or From==F.OPEN_VIEWER then
     local properties = {
       Title=M.mPluginTitle, HelpTopic="Contents", Flags="FMENU_WRAPMODE",
     }
