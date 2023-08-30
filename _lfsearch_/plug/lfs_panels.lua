@@ -904,7 +904,7 @@ local function InitTmpPanel()
   end
 
   for _, name in ipairs {
-    "ClosePlugin",
+    "ClosePanel",
     "GetFindData",
     "GetOpenPluginInfo",
     "ProcessEvent",
@@ -927,7 +927,7 @@ local function InitTmpPanel()
     return Info
   end
 
-  export.ClosePlugin = function(object, handle)
+  export.ClosePanel = function(object, handle)
     local hist = _Plugin.History["tmppanel"]
     if hist.PreserveContents then
       _Plugin.FileList = object:GetItems()

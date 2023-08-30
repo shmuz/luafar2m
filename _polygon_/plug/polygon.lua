@@ -388,7 +388,7 @@ function export.DeleteFiles(object, handle, PanelItems, OpMode)
 end
 
 
-function export.ClosePlugin(object, handle)
+function export.ClosePanel(object, handle)
   for _,mod in ipairs(object.LoadedModules) do
     if type(mod.ClosePanel) == "function" then
       local ok, msg = xpcall(

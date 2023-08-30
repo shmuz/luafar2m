@@ -71,7 +71,7 @@ local function InitUpvalues (plugin)
   plugin.tmppanel.Env = tp.NewEnv (plugin.tmppanel.Env or field(History, "Env"))
   Env = plugin.tmppanel.Env
   for _, name in ipairs {
-    "ClosePlugin",
+    "ClosePanel",
     "GetFindData",
     "GetOpenPluginInfo",
     "ProcessEvent",

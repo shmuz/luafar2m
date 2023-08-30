@@ -127,7 +127,7 @@ function mypanel:set_directory(aHandle, aDir)
       self:set_root_mode()
     else
       if self._panel_mode == "db" then
-        panel.ClosePlugin(aHandle)
+        panel.ClosePanel(aHandle)
         return false
       else
         self:set_database_mode("main")
@@ -143,7 +143,7 @@ function mypanel:set_directory(aHandle, aDir)
       end
     else
       if self._panel_mode == "db" then
-        panel.ClosePlugin(aHandle)
+        panel.ClosePanel(aHandle)
         return false
       elseif self._panel_mode == "query" then
         self:set_database_mode("main")
@@ -1149,7 +1149,7 @@ function mypanel:handle_key_all(handle, key)
     end
     return true
   elseif key=="CtrlShiftBackSlash" then
-    panel.ClosePlugin(handle)
+    panel.ClosePanel(handle)
   end
 end
 

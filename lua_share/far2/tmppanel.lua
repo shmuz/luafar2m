@@ -522,7 +522,7 @@ function Panel:ReplaceRefFiles(Table)
 end
 
 
-function Panel:ClosePlugin (Handle)
+function Panel:ClosePanel (Handle)
   collectgarbage "collect"
 end
 
@@ -693,7 +693,7 @@ do
         if CurFileName ~= ".." then
           GoToFile(CurFileName, 1)
         else
-          panel.ClosePlugin(Handle, ".")
+          panel.ClosePanel(Handle, ".")
         end
         return true
       end
@@ -893,7 +893,7 @@ end
 
 function Panel:SetDirectory (Handle, Dir, OpMode)
   if 0 == band(OpMode, F.OPM_FIND) then
-    panel.ClosePlugin (Handle, (Dir ~= "/" and Dir or nil))
+    panel.ClosePanel (Handle, (Dir ~= "/" and Dir or nil))
     return true
   end
 end
