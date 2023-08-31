@@ -450,6 +450,7 @@ function Env:Configure()
   local DC = math.floor(width/2-1)
 
   local Items = {
+    guid = "dd4492cf-d7a3-431d-b464-3fe4ee63de57";
     width = width;
     help = "Config";
     {tp="dbox"; text=M.MConfigTitle; },

@@ -289,6 +289,7 @@ local function ConfigDialog()
   local DC = (5+W1) + 2
 
   local Items = {
+    guid = "9888a43b-9e55-4022-9c57-d9213c06167d";
     width = (5+W1)*2 + 2;
     help = "SearchResultsPanel";
     { tp="dbox";  text=M.MConfigTitleTmpPanel;   },

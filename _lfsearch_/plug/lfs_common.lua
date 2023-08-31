@@ -196,6 +196,7 @@ local function EditorConfigDialog()
                               M.MBtnGrepLineNumContextColor:len()) + 5
   ----------------------------------------------------------------------------
   local Items = {
+    guid = "69E53E0A-D63E-40CC-B153-602E9633956E";
     width = 76;
     help = "Contents";
     {tp="dbox";  text=M.MConfigTitleEditor; },
@@ -892,8 +893,14 @@ function SRFrame:DoPresets (hDlg)
   hDlg:ShowDialog(0)
   local props = { Title=M.MTitlePresets, Bottom = "F1", HelpTopic="Presets", }
   local presets = _Plugin.History.presets
-  local bkeys = { {BreakKey="F2"},  {BreakKey="INSERT"}, {BreakKey="DELETE"}, {BreakKey="F6"},
-                  {BreakKey="C+S"}, {BreakKey="C+O"}, }
+  local bkeys = {
+    {  action="Save";    BreakKey="F2";      },
+    {  action="SaveAs";  BreakKey="INSERT";  },
+    {  action="Delete";  BreakKey="DELETE";  },
+    {  action="Rename";  BreakKey="F6";      },
+    {  action="Export";  BreakKey="C+S";     },
+    {  action="Import";  BreakKey="C+O";     },
+  }
 
   while true do
     local items = {}
@@ -908,6 +915,7 @@ function SRFrame:DoPresets (hDlg)
     ----------------------------------------------------------------------------
     if not item then break end
     ----------------------------------------------------------------------------
+    props.SelectIndex = pos
     if item.preset then
       self.PresetName = item.text
       local data = item.preset
@@ -954,8 +962,8 @@ function SRFrame:DoPresets (hDlg)
       self:CompleteLoadData(hDlg, data, true)
       break
     ----------------------------------------------------------------------------
-    elseif item.BreakKey == "F2" or item.BreakKey == "INSERT" then
-      local pure_save_name = item.BreakKey == "F2" and self.PresetName
+    elseif item.action == "Save" or item.action == "SaveAs" then
+      local pure_save_name = item.action == "Save" and self.PresetName
       local name = pure_save_name or
         far.InputBox(nil, M.MSavePreset, M.MEnterPresetName, HistPresetNames,
                      self.PresetName, nil, nil, F.FIB_NOUSELASTHISTORY)
@@ -963,6 +971,7 @@ function SRFrame:DoPresets (hDlg)
         if pure_save_name or not presets[name] or
           far.Message(M.MPresetOverwrite, M.MConfirm, M.MBtnYesNo, "w") == 1
         then
+          props.SelectIndex = nil
           local data = self.Dlg:GetDialogState(hDlg)
           presets[name] = data
           self.PresetName = name
@@ -978,10 +987,13 @@ function SRFrame:DoPresets (hDlg)
         end
       end
     ----------------------------------------------------------------------------
-    elseif item.BreakKey == "DELETE" and items[1] then
+    elseif item.action == "Delete" and items[1] then
       local name = items[pos].text
       local msg = ([[%s "%s"?]]):format(M.MDeletePreset, name)
       if far.Message(msg, M.MConfirm, M.MBtnYesNo, "w") == 1 then
+        if pos == #items then
+          props.SelectIndex = pos-1
+        end
         if self.PresetName == name then
           self.PresetName = nil
         end
@@ -989,7 +1001,7 @@ function SRFrame:DoPresets (hDlg)
         _Plugin.SaveSettings()
       end
     ----------------------------------------------------------------------------
-    elseif item.BreakKey == "F6" and items[1] then
+    elseif item.action == "Rename" and items[1] then
       local oldname = items[pos].text
       local name = far.InputBox(nil, M.MRenamePreset, M.MEnterPresetName, HistPresetNames, oldname)
       if name and name ~= oldname then
@@ -1002,7 +1014,7 @@ function SRFrame:DoPresets (hDlg)
         end
       end
     ----------------------------------------------------------------------------
-    elseif item.BreakKey == "C+S" and items[1] then
+    elseif item.action == "Export" and items[1] then
       local fname = far.InputBox(nil, M.MPresetExportTitle, M.MPresetExportPrompt)
       if fname then
         fname = far.ConvertPath(fname)
@@ -1020,7 +1032,7 @@ function SRFrame:DoPresets (hDlg)
         end
       end
     ----------------------------------------------------------------------------
-    elseif item.BreakKey == "C+O" then
+    elseif item.action == "Import" then
       local fname = far.InputBox(nil, M.MPresetImportTitle, M.MPresetImportPrompt)
       if fname then
         local func, msg = loadfile(far.ConvertPath(fname))
