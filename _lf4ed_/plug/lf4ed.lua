@@ -617,9 +617,9 @@ local function OpenCommandLine (aItem)
 end
 
 local function export_Open (aFrom, aItem)
-  if afrom == F.OPEN_COMMANDLINE then
+  if aFrom == F.OPEN_COMMANDLINE then
     return OpenCommandLine(aItem)
-  elseif aFrom == F.OPEN_OPENFROMMACRO then
+  elseif aFrom == F.OPEN_FROMMACRO then
     return OpenFromMacro(aItem)
   end
 
