@@ -73,7 +73,7 @@ local function InitUpvalues (plugin)
     "ClosePanel",
     "GetFindData",
     "GetOpenPanelInfo",
-    "ProcessEvent",
+    "ProcessPanelEvent",
     "ProcessKey",
     "PutFiles",
     "SetDirectory",

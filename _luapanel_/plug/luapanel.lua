@@ -124,7 +124,7 @@ function export.GetOpenPanelInfo (obj, handle)
   }
 end
 
-function export.ProcessEvent (object, handle, Event, Param)
+function export.ProcessPanelEvent (object, handle, Event, Param)
   if Event == F.FE_IDLE then
     panel.UpdatePanel(handle,true)
     panel.RedrawPanel(handle)

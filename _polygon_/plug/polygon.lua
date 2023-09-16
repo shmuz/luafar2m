@@ -437,7 +437,7 @@ function export.ProcessKey(object, handle, key, controlstate)
 end
 
 
-function export.ProcessEvent (object, handle, Event, Param)
+function export.ProcessPanelEvent (object, handle, Event, Param)
   if Event == F.FE_REDRAW then
     polygon_ResetSort()
   end

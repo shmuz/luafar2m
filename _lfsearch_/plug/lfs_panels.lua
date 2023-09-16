@@ -908,7 +908,7 @@ local function InitTmpPanel()
     "ClosePanel",
     "GetFindData",
     "GetOpenPanelInfo",
-    "ProcessEvent",
+    "ProcessPanelEvent",
     "ProcessKey",
     "PutFiles",
     "SetDirectory" }
