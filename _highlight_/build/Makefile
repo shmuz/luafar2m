@@ -1,5 +1,4 @@
 PLUGNAME = highlight
-SETPACKAGEPATH = 1
 
 SRC_PLUG_DIRS = syntaxes
 SRC_PLUG_SHARE = *.lua *.hlf

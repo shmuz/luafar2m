@@ -1,6 +1,5 @@
 PLUGNAME = hlfviewer
 LANG_TEMPL = hv_lang.templ
-SETPACKAGEPATH = 1
 
 SRC_PLUG_SHARE = *.lua *.hlf *.lng
 

@@ -4,7 +4,6 @@ C_SOURCE = ../plug/polygon.c
 MYCFLAGS = -I$(FARSOURCE)/luafar/src
 MYLDFLAGS = -lsqlite3
 FUNC_OPENLIBS = luaopen_polygon
-SETPACKAGEPATH = 1
 
 SRC_PLUG_DIRS = modules
 

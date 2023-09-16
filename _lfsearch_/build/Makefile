@@ -3,7 +3,6 @@ LANG_TEMPL = lfs_lang.templ
 C_SOURCE = ../plug/reader.c
 MYCFLAGS = -I$(FARSOURCE)/luafar/src
 FUNC_OPENLIBS = luaopen_reader
-SETPACKAGEPATH = 1
 
 FAR_EXPORTS =           \
   CLOSEPLUGIN           \

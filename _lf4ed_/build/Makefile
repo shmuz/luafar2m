@@ -1,6 +1,5 @@
 PLUGNAME = lf4ed
 LANG_TEMPL = lf4ed_lang.templ
-SETPACKAGEPATH = 1
 
 SRC_PLUG_DIRS = scripts
 

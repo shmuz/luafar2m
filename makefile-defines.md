@@ -9,7 +9,7 @@
 1. [FUNC_OPENLIBS](#FUNC_OPENLIBS)
 1. [MYCFLAGS](#MYCFLAGS)
 1. [MYLDFLAGS](#MYLDFLAGS)
-1. [SETPACKAGEPATH](#SETPACKAGEPATH)
+1. [NOSETPACKAGEPATH](#NOSETPACKAGEPATH)
 1. [SRC_PLUG_DIRS](#SRC_PLUG_DIRS)
 1. [SRC_PLUG_LIB](#SRC_PLUG_LIB)
 1. [SRC_PLUG_SHARE](#SRC_PLUG_SHARE)
@@ -60,9 +60,9 @@
 - Optional
 - Example: `MYLDFLAGS = -lsqlite3`
 
-## SETPACKAGEPATH
-- If defined then `-DSETPACKAGEPATH` is added to CFLAGS which causes
-  the plugin's path and the "lua_share" path to be prepended to `package.path`
+## NOSETPACKAGEPATH
+- If defined then `-DNOSETPACKAGEPATH` is added to CFLAGS which prevents
+  the plugin's path and the "lua_share" path from being prepended to `package.path`
 
 ## SRC_PLUG_DIRS
 - A list of directories (relative to plugin's path) to be copied during installation

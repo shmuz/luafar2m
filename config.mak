@@ -10,8 +10,8 @@ INC_LUA = /usr/include/luajit-2.1
 LUAEXE = luajit
 # LUAEXE = lua5.1
 
-# Location of lua_share relative to <plugin_dir>/build
-LUA_SHARE = ../../lua_share
+# Location of lua_share
+LUA_SHARE = $(FARSOURCE)/luafar/lua_share
 
 # Settings below do not usually require editing
 # ----------------------------------------------
@@ -20,10 +20,6 @@ INC_FAR = $(FARSOURCE)/far/far2sdk
 
 CFLAGS = -O2 -Wall -Wno-unused-function -fvisibility=hidden \
          -I$(INC_FAR) -I$(INC_LUA) -fPIC $(MYCFLAGS)
-
-ifdef SETPACKAGEPATH
-  CFLAGS += -DSETPACKAGEPATH
-endif
 
 LDFLAGS = -shared -fPIC $(MYLDFLAGS)
 
