@@ -3,8 +3,7 @@
 
 local F = far.Flags
 
-MacroData.menupos = MacroData.menupos or {}
-local data = MacroData.menupos
+local data = mf.GetPersistent("0F7DC3F9-0959-448C-9F1B-0A514E57ABE6")
 
 Macro {
   description="Plugin Menu Remember Pos";
