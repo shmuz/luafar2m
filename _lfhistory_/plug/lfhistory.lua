@@ -162,6 +162,31 @@ local function SortListItems (list, bDirectSort, hDlg)
   end
 end
 
+local function ShowItemInfo (aItem, aConfig)
+  local strTime = GetTimeString(aItem.time)
+  if strTime then
+    local sd = require "far2.simpledialog"
+    local data = aConfig==cfgView and "File:"
+      or aConfig==cfgCommands     and "Command:"
+      or aConfig==cfgFolders      and "Folder:"
+                                   or "Data:"
+    local arr = {}
+    arr[#arr+1] = {tp="dbox"; text="Information"; }
+    arr[#arr+1] = {tp="text"; text=data; }
+    arr[#arr+1] = {tp="edit"; text=aItem.text; readonly=1; }
+    arr[#arr+1] = {tp="text"; text="Time:"; }
+    arr[#arr+1] = {tp="edit"; text=strTime; readonly=1; }
+    if aItem.extra then
+      arr[#arr+1] = {tp="text"; text="Directory:"; }
+      arr[#arr+1] = {tp="edit"; text=aItem.extra; readonly=1; }
+    end
+    arr[#arr+1] = {tp="sep"; }
+    arr[#arr+1] = {tp="butt"; text=M.mOk; default=1; centergroup=1; }
+
+    sd.New(arr):Run()
+  end
+end
+
 local function GetListKeyFunction (HistTypeConfig, HistTypeData)
   return function (self, hDlg, key, Item)
     -----------------------------------------------------------------------------------------------
@@ -203,10 +228,7 @@ local function GetListKeyFunction (HistTypeConfig, HistTypeData)
     elseif key == "F7" then
       if HistTypeConfig ~= cfgLocateFile then
         if Item then
-          local timestring = GetTimeString(Item.time)
-          if timestring then
-            far.Message(Item.text, timestring, ";Ok")
-          end
+          ShowItemInfo(Item, HistTypeConfig)
         end
       end
       return "done"
@@ -377,15 +399,19 @@ local function get_history (aConfig)
   local file = far.InMyConfig("history/" .. aConfig.FarFileName)
   local ini = IniFile.New(file, "nocomment")
   if ini then
-    local far_lines, far_times = {}, {}
-
-    local lines = ini:GetString(aConfig.FarHistoryType, "Lines")
-    if lines then
-      lines = lines:gsub("\\(.)", { ["\\"]="\\"; n="\n"; t="\t"; })
-      for text in lines:gmatch("[^\n]+") do
-        table.insert(far_lines, text)
+    local function ProcessCfgString (aKey, aTarget)
+      local lines = ini:GetString(aConfig.FarHistoryType, aKey)
+      if lines then
+        lines = lines:gsub("\\(.)", { ["\\"]="\\"; n="\n"; t="\t"; })
+        for text in lines:gmatch("[^\n]+") do
+          table.insert(aTarget, text)
+        end
       end
     end
+
+    local far_lines, far_times, far_extras = {}, {}, {}
+    ProcessCfgString("Lines", far_lines)
+    ProcessCfgString("Extras", far_extras)
 
     local times = ini:GetString(aConfig.FarHistoryType, "Times")
     if times then
@@ -402,14 +428,16 @@ local function get_history (aConfig)
 
     for i,name in ipairs(far_lines) do
       local fartime = far_times[i] or 0
+      local extra = far_extras[i]
       local item = map[name]
       if item then
         if item.time < fartime then
           item.time = fartime
+          item.extra = extra
         end
       else
         if fartime >= last_time then
-          item = { text=name; time=fartime; }
+          item = { text=name; time=fartime; extra=extra; }
           table.insert(menu_items, item)
           map[name] = item
         end
