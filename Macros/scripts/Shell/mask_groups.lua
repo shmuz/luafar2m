@@ -96,10 +96,12 @@ local function main()
       end
     elseif item.action=="delete" then
       if pos > 0 then
-        local name = Items[pos].Name
-        table.remove(Items, pos)
-        Guard[name] = nil
-        WasEdited = true
+        if 1==far.Message("Are you sure?", "Delete named mask", ";OkCancel", "w") then
+          local name = Items[pos].Name
+          table.remove(Items, pos)
+          Guard[name] = nil
+          WasEdited = true
+        end
       end
     end
   end

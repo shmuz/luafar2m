@@ -371,12 +371,9 @@ local function GetMaxItems (aConfig)
   return _Plugin.Cfg[aConfig.maxItemsKey]
 end
 
-local function DelayedSaveHistory (hst_name, hst, delay)
-  far.Timer(delay, function(h)
-    h:Close()
-    Sett.msave(SETTINGS_KEY, hst_name, hst)
-    Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _Plugin.Cfg) -- _Plugin.Cfg.bDirectSort
-  end)
+local function SaveHistory (hst_name, hst)
+  Sett.msave(SETTINGS_KEY, hst_name, hst)
+  Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _Plugin.Cfg) -- _Plugin.Cfg.bDirectSort
 end
 
 local function get_history (aConfig)
@@ -471,7 +468,7 @@ local function get_history (aConfig)
   if item and list.pattern ~= "" then
     settings.lastpattern = list.pattern
   end
-  DelayedSaveHistory(aConfig.PluginHistoryType, hst, 200)
+  SaveHistory(aConfig.PluginHistoryType, hst)
   if item then
     return menu_items[itempos], item.BreakKey
   end
@@ -553,7 +550,7 @@ local function LocateFile2()
   if item and list.pattern ~= "" then
     settings.lastpattern = list.pattern
   end
-  DelayedSaveHistory(cfgLocateFile.PluginHistoryType, hst, 200)
+  SaveHistory(cfgLocateFile.PluginHistoryType, hst)
 
   if item then
     if item.BreakKey then
