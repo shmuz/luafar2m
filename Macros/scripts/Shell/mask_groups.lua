@@ -69,6 +69,7 @@ local function main()
   while true do
     table.sort(Items, function(a,b) return a.Name:lower() < b.Name:lower() end)
     local item,pos = far.Menu(Props, Items, Bkeys)
+    Props.SelectIndex = pos
     if not item then
       if not WasEdited then break end
       local choice = far.Message("Do you want to save the changes?", "Save", ";YesNoCancel", "w")
@@ -96,7 +97,7 @@ local function main()
       end
     elseif item.action=="delete" then
       if pos > 0 then
-        if 1==far.Message("Are you sure?", "Delete named mask", ";OkCancel", "w") then
+        if 1==far.Message("Are you sure?", "Delete a named mask", ";OkCancel", "w") then
           local name = Items[pos].Name
           table.remove(Items, pos)
           Guard[name] = nil
