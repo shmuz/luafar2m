@@ -12,6 +12,7 @@ tmpp_message.lua
 _polygon_/plug/modules/string_rc.lua
 
 ### misc
+_build
 misc
 luafar.session
 assa.diff
