@@ -1,4 +1,4 @@
-project(lf4ed)
+project(highlight)
 
 set(SOURCES
   ${FARSOURCE}/luafar/src/luaplug.c
@@ -8,8 +8,7 @@ add_library (${PROJECT_NAME} MODULE ${SOURCES})
 set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
 
 set(EXPNAMES
-  CONFIGURE  EXITFAR  MAYEXITFAR  OPENPLUGIN  PROCESSEDITOREVENT
-  PROCESSEDITORINPUT  PROCESSVIEWEREVENT  PROCESSDIALOGEVENT
+  OPENPLUGIN PROCESSEDITOREVENT PROCESSEDITORINPUT
 )
 
 set(EXPORTS "")
@@ -19,15 +18,16 @@ endforeach()
 
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE ${EXPORTS}
-  PRIVATE "-DSYS_ID=0x6F332978"
+  PRIVATE "-DSYS_ID=0xF6138DC9"
   PRIVATE "-DPLUG_MINFARVERSION=MAKEFARVERSION(2,4)"
-  PRIVATE "-DPLUG_VERSION=3,9,3,0"
-  PRIVATE "-DPLUG_TITLE=\"LuaFAR for Editor\""
-  PRIVATE "-DPLUG_DESCRIPTION=\"A host for scripts and script packets\""
+  PRIVATE "-DPLUG_VERSION=0,5,1,0"
+  PRIVATE "-DPLUG_TITLE=\"Highlight\""
+  PRIVATE "-DPLUG_DESCRIPTION=\"Syntax highlighter for editor\""
   PRIVATE "-DPLUG_AUTHOR=\"Shmuel Zeigerman\""
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${FARSOURCE}/far/far2sdk)
+target_include_directories(${PROJECT_NAME} PRIVATE
+  ${FARSOURCE}/far/far2sdk)
 
 set(INSTALL_DIR "${INSTALL_DIR}/${PROJECT_NAME}")
 
@@ -38,25 +38,14 @@ set_target_properties(${PROJECT_NAME}
     SUFFIX ".far-plug-wide")
 
 set(MY_LIST
-  config.lua
-  expression.lua
-  lf4ed.lua
-  sortdialog.lua
-  sortlines.lua
-  wrap.lua
-  _usermenu.lua
-  lf4ed_eng.hlf
-  lf4ed_rus.hlf
+  highlight.lua
+  highlight_eng.hlf
 )
 
 foreach(elem ${MY_LIST})
   configure_file("plug/${elem}" "${INSTALL_DIR}/plug/${elem}" COPYONLY)
 endforeach()
 
-add_custom_target(${PROJECT_NAME}_lang ALL
-  minilua ${LUA_SHARE}/makelang.lua ${CMAKE_CURRENT_SOURCE_DIR}/plug/lf4ed_lang.templ ${INSTALL_DIR}/plug
-)
-
 add_custom_target(${PROJECT_NAME}_files ALL
-  COMMAND cp -rf "${CMAKE_CURRENT_SOURCE_DIR}/plug/scripts" "${INSTALL_DIR}/plug/"
+  COMMAND cp -rf "${CMAKE_CURRENT_SOURCE_DIR}/plug/syntaxes" "${INSTALL_DIR}/plug/"
 )

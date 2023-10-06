@@ -1,4 +1,4 @@
-project(lf4ed)
+project(lfhistory)
 
 set(SOURCES
   ${FARSOURCE}/luafar/src/luaplug.c
@@ -8,8 +8,7 @@ add_library (${PROJECT_NAME} MODULE ${SOURCES})
 set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
 
 set(EXPNAMES
-  CONFIGURE  EXITFAR  MAYEXITFAR  OPENPLUGIN  PROCESSEDITOREVENT
-  PROCESSEDITORINPUT  PROCESSVIEWEREVENT  PROCESSDIALOGEVENT
+  CONFIGURE OPENPLUGIN
 )
 
 set(EXPORTS "")
@@ -19,11 +18,11 @@ endforeach()
 
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE ${EXPORTS}
-  PRIVATE "-DSYS_ID=0x6F332978"
+  PRIVATE "-DSYS_ID=0xA745761D"
   PRIVATE "-DPLUG_MINFARVERSION=MAKEFARVERSION(2,4)"
-  PRIVATE "-DPLUG_VERSION=3,9,3,0"
-  PRIVATE "-DPLUG_TITLE=\"LuaFAR for Editor\""
-  PRIVATE "-DPLUG_DESCRIPTION=\"A host for scripts and script packets\""
+  PRIVATE "-DPLUG_VERSION=3,11,1,0"
+  PRIVATE "-DPLUG_TITLE=\"LuaFAR History\""
+  PRIVATE "-DPLUG_DESCRIPTION=\"History of commands, files and folders\""
   PRIVATE "-DPLUG_AUTHOR=\"Shmuel Zeigerman\""
 )
 
@@ -38,15 +37,10 @@ set_target_properties(${PROJECT_NAME}
     SUFFIX ".far-plug-wide")
 
 set(MY_LIST
-  config.lua
-  expression.lua
-  lf4ed.lua
-  sortdialog.lua
-  sortlines.lua
-  wrap.lua
-  _usermenu.lua
-  lf4ed_eng.hlf
-  lf4ed_rus.hlf
+  lfhistory.lua
+  lfh_config.lua
+  lfh_eng.hlf
+  lfh_rus.hlf
 )
 
 foreach(elem ${MY_LIST})
@@ -54,9 +48,5 @@ foreach(elem ${MY_LIST})
 endforeach()
 
 add_custom_target(${PROJECT_NAME}_lang ALL
-  minilua ${LUA_SHARE}/makelang.lua ${CMAKE_CURRENT_SOURCE_DIR}/plug/lf4ed_lang.templ ${INSTALL_DIR}/plug
-)
-
-add_custom_target(${PROJECT_NAME}_files ALL
-  COMMAND cp -rf "${CMAKE_CURRENT_SOURCE_DIR}/plug/scripts" "${INSTALL_DIR}/plug/"
+  minilua ${LUA_SHARE}/makelang.lua ${CMAKE_CURRENT_SOURCE_DIR}/plug/lfh_lang.templ ${INSTALL_DIR}/plug
 )

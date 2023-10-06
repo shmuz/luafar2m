@@ -2,7 +2,7 @@ local run = select(2, ...)
 if run ~= 1 then return end
 
 local home = os.getenv("HOME")
-local plugins = home.."/luafar2m"
+local plugins = home.."/luafar2m/_build/install"
 
 -- load plugins
 if os.getenv("FARHOME") == home.."/far2m/_build/install" then
