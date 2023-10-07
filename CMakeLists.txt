@@ -2,7 +2,8 @@ cmake_minimum_required (VERSION 3.1.0)
 
 project (plugins)
 
-set(FARSOURCE ~/far2m)
+# There must be a symlink far2m_src pointing to far2m source directory
+set(FARSOURCE ${CMAKE_SOURCE_DIR}/far2m_src)
 set(LUA_SHARE ${FARSOURCE}/luafar/lua_share)
 
 include(GNUInstallDirs)
@@ -83,3 +84,11 @@ add_subdirectory (_hlfviewer_)
 add_subdirectory (_lftmp_)
 add_subdirectory (_luapanel_)
 add_subdirectory (_polygon_)
+
+install(DIRECTORY "${INSTALL_DIR}/" DESTINATION "lib/far2m/Plugins/luafar" USE_SOURCE_PERMISSIONS COMPONENT base FILES_MATCHING
+    PATTERN "plug/*.far-plug-*")
+#   PATTERN "*.far-plug-*")
+
+install(DIRECTORY "${INSTALL_DIR}/" DESTINATION "share/far2m/Plugins/luafar" USE_SOURCE_PERMISSIONS COMPONENT base FILES_MATCHING
+    PATTERN "*.far-plug-*" EXCLUDE
+    PATTERN "*")

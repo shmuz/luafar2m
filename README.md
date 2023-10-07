@@ -5,10 +5,12 @@ written in [Lua](https://www.lua.org/) 5.1 programming language.
 
 ## How to build plugins
 
-1. Edit the first line in config.mak (`FARSOURCE`) to point to Far2M source tree on your disk.
+1. Make sure that `far2m_src` symlink points to the far2m source directory.
 
-2. Execute `make` to build all the plugins.
+2. `mkdir _build && cd _build`
+   `cmake ..`
+   `make`
 
 ## Installation
-
-Assuming far2m is already installed execute `sudo make install=1`
+   `cd _build`
+   `sudo make install`
