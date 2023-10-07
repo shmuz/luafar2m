@@ -7,10 +7,14 @@ written in [Lua](https://www.lua.org/) 5.1 programming language.
 
 1. Make sure that `far2m_src` symlink points to the far2m source directory.
 
-2. `mkdir _build && cd _build`
-   `cmake ..`
-   `make`
+```
+   mkdir _build && cd _build
+   cmake ..
+   make
+```
 
 ## Installation
-   `cd _build`
-   `sudo make install`
+```
+   cd _build
+   sudo make install
+```
