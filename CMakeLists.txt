@@ -86,9 +86,15 @@ add_subdirectory (_luapanel_)
 add_subdirectory (_polygon_)
 
 install(DIRECTORY "${INSTALL_DIR}/" DESTINATION "lib/far2m/Plugins/luafar" USE_SOURCE_PERMISSIONS COMPONENT base FILES_MATCHING
-    PATTERN "plug/*.far-plug-*")
-#   PATTERN "*.far-plug-*")
+    PATTERN "*.far-plug-*"
+    PATTERN "highlight/plug/syntaxes"  EXCLUDE
+    PATTERN "lf4ed/plug/scripts"       EXCLUDE
+    PATTERN "lfsearch/plug/doc"        EXCLUDE
+    PATTERN "lfsearch/plug/scripts"    EXCLUDE
+    PATTERN "polygon/plug/modules"     EXCLUDE
+)
 
 install(DIRECTORY "${INSTALL_DIR}/" DESTINATION "share/far2m/Plugins/luafar" USE_SOURCE_PERMISSIONS COMPONENT base FILES_MATCHING
     PATTERN "*.far-plug-*" EXCLUDE
-    PATTERN "*")
+    PATTERN "*"
+)
