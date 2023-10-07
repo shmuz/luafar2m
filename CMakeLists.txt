@@ -2,6 +2,10 @@ cmake_minimum_required (VERSION 3.1.0)
 
 project (plugins)
 
+string(ASCII 27 Esc)
+set(ColorNormal "${Esc}[m")
+set(ColorRed "${Esc}[1;31m")
+
 # There must be a symlink far2m_src pointing to far2m source directory
 set(FARSOURCE ${CMAKE_SOURCE_DIR}/far2m_src)
 set(LUA_SHARE ${FARSOURCE}/luafar/lua_share)
@@ -76,14 +80,85 @@ endif()
 add_executable (minilua ${FARSOURCE}/luafar/src/minilua.c)
 target_link_libraries(minilua PRIVATE ${LUALIB})
 
-add_subdirectory (_lf4ed_)
-add_subdirectory (_lfhistory_)
-add_subdirectory (_lfsearch_)
-add_subdirectory (_highlight_)
-add_subdirectory (_hlfviewer_)
-add_subdirectory (_lftmp_)
-add_subdirectory (_luapanel_)
-add_subdirectory (_polygon_)
+if (NOT DEFINED LF4ED OR LF4ED)
+    message(STATUS "LF4ED plugin enabled")
+    add_subdirectory (_lf4ed_)
+else()
+    message(STATUS "${ColorRed}LF4ED plugin disabled due to LF4ED=${LF4ED}${ColorNormal}")
+    install(CODE "
+        execute_process(COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_INSTALL_PREFIX}/lib/far2m/Plugins/luafar/lf4ed/plug/lf4ed.far-plug-wide)
+        " COMPONENT system)
+endif()
+
+if (NOT DEFINED LFHISTORY OR LFHISTORY)
+    message(STATUS "LFHISTORY plugin enabled")
+    add_subdirectory (_lfhistory_)
+else()
+    message(STATUS "${ColorRed}LFHISTORY plugin disabled due to LFHISTORY=${LFHISTORY}${ColorNormal}")
+    install(CODE "
+        execute_process(COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_INSTALL_PREFIX}/lib/far2m/Plugins/luafar/lfhistory/plug/lfhistory.far-plug-wide)
+        " COMPONENT system)
+endif()
+
+if (NOT DEFINED LFSEARCH OR LFSEARCH)
+    message(STATUS "LFSEARCH plugin enabled")
+    add_subdirectory (_lfsearch_)
+else()
+    message(STATUS "${ColorRed}LFSEARCH plugin disabled due to LFSEARCH=${LFSEARCH}${ColorNormal}")
+    install(CODE "
+        execute_process(COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_INSTALL_PREFIX}/lib/far2m/Plugins/luafar/lfsearch/plug/lfsearch.far-plug-wide)
+        " COMPONENT system)
+endif()
+
+if (NOT DEFINED HLFVIEWER OR HLFVIEWER)
+    message(STATUS "HLFVIEWER plugin enabled")
+    add_subdirectory (_hlfviewer_)
+else()
+    message(STATUS "${ColorRed}HLFVIEWER plugin disabled due to HLFVIEWER=${HLFVIEWER}${ColorNormal}")
+    install(CODE "
+        execute_process(COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_INSTALL_PREFIX}/lib/far2m/Plugins/luafar/hlfviewer/plug/hlfviewer.far-plug-wide)
+        " COMPONENT system)
+endif()
+
+if (NOT DEFINED LFTMP OR LFTMP)
+    message(STATUS "LFTMP plugin enabled")
+    add_subdirectory (_lftmp_)
+else()
+    message(STATUS "${ColorRed}LFTMP plugin disabled due to LFTMP=${LFTMP}${ColorNormal}")
+    install(CODE "
+        execute_process(COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_INSTALL_PREFIX}/lib/far2m/Plugins/luafar/lftmp/plug/lftmp.far-plug-wide)
+        " COMPONENT system)
+endif()
+
+if (NOT DEFINED LUAPANEL OR LUAPANEL)
+    message(STATUS "LUAPANEL plugin enabled")
+    add_subdirectory (_luapanel_)
+else()
+    message(STATUS "${ColorRed}LUAPANEL plugin disabled due to LUAPANEL=${LUAPANEL}${ColorNormal}")
+    install(CODE "
+        execute_process(COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_INSTALL_PREFIX}/lib/far2m/Plugins/luafar/luapanel/plug/luapanel.far-plug-wide)
+        " COMPONENT system)
+endif()
+
+if (NOT DEFINED POLYGON OR POLYGON)
+    message(STATUS "POLYGON plugin enabled")
+    add_subdirectory (_polygon_)
+else()
+    message(STATUS "${ColorRed}POLYGON plugin disabled due to POLYGON=${POLYGON}${ColorNormal}")
+    install(CODE "
+        execute_process(COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_INSTALL_PREFIX}/lib/far2m/Plugins/luafar/polygon/plug/polygon.far-plug-wide)
+        " COMPONENT system)
+endif()
+
+if (DEFINED HIGHLIGHT AND HIGHLIGHT)
+    message(STATUS "HIGHLIGHT plugin enabled")
+    add_subdirectory (_highlight_)
+else()
+    message(STATUS "${ColorRed}HIGHLIGHT plugin disabled, use -DHIGHLIGHT=yes if you need it${ColorNormal}")
+    install(CODE "
+        execute_process(COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_INSTALL_PREFIX}/lib/far2m/Plugins/luafar/highlight/plug/highlight.far-plug-wide)
+        " COMPONENT system)
+endif()
 
 install(DIRECTORY "${INSTALL_DIR}/" DESTINATION "lib/far2m/Plugins/luafar" USE_SOURCE_PERMISSIONS COMPONENT base FILES_MATCHING
     PATTERN "*.far-plug-*"
