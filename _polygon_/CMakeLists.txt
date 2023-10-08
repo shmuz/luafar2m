@@ -8,6 +8,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFUNC_OPENLIBS=luaopen_polygon")
 add_library (${PROJECT_NAME} MODULE ${SOURCES})
 set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
 
+target_include_directories(polygon PRIVATE ${SQLITE3_INCLUDE_DIR})
+target_link_libraries(polygon ${SQLITE3_LIBRARY})
+
 set(EXPNAMES
   CLOSEPLUGIN  CONFIGURE  DELETEFILES  FREEFINDDATA  GETFINDDATA
   GETOPENPLUGININFO  OPENFILEPLUGIN  OPENPLUGIN  PROCESSEVENT
@@ -40,8 +43,6 @@ set_target_properties(${PROJECT_NAME}
     LIBRARY_OUTPUT_DIRECTORY "${INSTALL_DIR}/plug"
     PREFIX ""
     SUFFIX ".far-plug-wide")
-
-target_link_libraries(${PROJECT_NAME} PRIVATE sqlite3)
 
 set(MY_LIST
   polygon.lua
