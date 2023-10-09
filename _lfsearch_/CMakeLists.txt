@@ -47,7 +47,6 @@ set(MY_LIST
   lfs_editengine.lua
   lfs_editmain.lua
   lfs_editors.lua
-  lfs_message.lua
   lfs_mreplace.lua
   lfs_panels.lua
   lfs_rename.lua
