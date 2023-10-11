@@ -3,20 +3,20 @@
 -- Author:                  Shmuel Zeigerman
 -- Published:               2015-11-24 (https://forum.farmanager.com/viewtopic.php?f=60&t=9940)
 -- Language:                Lua 5.1
--- Minimal Far version:     3.0.3777
+-- Minimal Far3 version:    3.0.3777
+-- Minimal far2m version:   2.5
 -- Far plugin:              LuaMacro
 -- Dependencies:            Lua module far2.simpledialog
 ------------------------------------------------------------------------------------------------
 
---local build = select(4, far.AdvControl("ACTL_GETFARMANAGERVERSION",true))
---if build < 3777 then return end
-
 local MacroKey = "CtrlShiftM"
+local LE       = "far2.lua_explorer"
 local Title    = "Post macro"
 local DlgGuid  = "2C4EFD54-A419-47E5-99B6-C9FD2D386AEC"
 local HelpGuid = "59154DF0-40D8-495C-BDF2-B97803745D8F"
 local DB_Key   = "Post macro utility"
 local DB_Name  = "Options"
+local osWindows = package.config:sub(1,1) == "\\"
 local F = far.Flags
 local SendMsg = far.SendDlgMessage
 
@@ -26,12 +26,25 @@ local DefaultOpt = {
   reuse = false;  -- true: reuse environment
   loop = false;   -- true: call the dialog again after the macro execution is finished
 }
+
+local ExpandEnv, GetPanelInfo
+if osWindows then
+  local build = select(4, far.AdvControl("ACTL_GETFARMANAGERVERSION",true))
+  if build < 3777 then return end
+  ExpandEnv = function(aStr) return (aStr:gsub("%%(.-)%%", win.GetEnv)) end
+  GetPanelInfo = function(whatPanel) return panel.GetPanelInfo(nil,whatPanel) end
+else
+  ExpandEnv = win.ExpandEnv
+  GetPanelInfo = panel.GetPanelInfo
+end
+
 local Env = {}
 
 local Help = [[
 Controls:
   Sequence   - either Lua/MoonScript chunk or @<filename>
-               if it begins with an '=' then far.Show() is called on it.
+               if it begins with an '=' then far.Show is called on it
+               if it begins with an '>' then Lua Explorer is called on it
   Parameters - comma separated list of Lua/MoonScript expressions
   [x] Reuse environment - use the previous Lua environment for the new run
   [x] Loop this dialog  - call this dialog again after the execution
@@ -90,13 +103,18 @@ local function GetText (aOpt)
   Items.closeaction = function (hDlg, Param1, tOut)
     local ms = tOut.moon and require "moonscript"
     local loadstring, loadfile = (ms or _G).loadstring, (ms or _G).loadfile
-    if tOut.sequence:find("^@") then
-      local fname = win.ExpandEnv(tOut.sequence:sub(2))
+    local seq = tOut.sequence
+    if seq:find("^@") then
+      local fname = ExpandEnv(tOut.sequence:sub(2))
       fname  = far.ConvertPath(fname, "CPM_NATIVE") or fname
       f, msg = loadfile(fname)
     else
-      local s = tOut.sequence:find("^=") and "far.Show("..tOut.sequence:sub(2)..")"
-      f, msg = loadstring(s or tOut.sequence)
+      if seq:find("^=") then
+        seq = "far.Show("..seq:sub(2)..")"
+      elseif seq:find("^>") then
+        seq = ('require %q (%s, "obj")'):format(LE, seq:sub(2))
+      end
+      f, msg = loadstring(seq)
     end
     if not f then far.Message(msg, Title, nil, "w"); return 0; end
     f2, msg = loadstring("return "..tOut.params)
@@ -149,7 +167,7 @@ local function Execute()
   Env.WI = far.AdvControl("ACTL_GETWINDOWINFO")
   Env.EI = Area.Editor and editor.GetInfo() or nil
   Env.VI = Area.Viewer and viewer.GetInfo() or nil
-  if panel.CheckPanelsExist() then Env.API, Env.PPI = panel.GetPanelInfo(1), panel.GetPanelInfo(0) end
+  if panel.CheckPanelsExist() then Env.API, Env.PPI = GetPanelInfo(1), GetPanelInfo(0) end
 
   mf.postmacro(f, f2())
   if Opt.loop then mf.postmacro(Execute) end
