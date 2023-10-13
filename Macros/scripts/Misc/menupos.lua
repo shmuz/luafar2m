@@ -3,7 +3,7 @@
 
 local F = far.Flags
 
-local data = mf.GetPersistent("0F7DC3F9-0959-448C-9F1B-0A514E57ABE6")
+local data = mf.mload("shmuz", "FarMenuPositions") or {}
 
 Macro {
   description="Plugin Menu Remember Pos";
@@ -50,3 +50,10 @@ Macro {
     if V then Menu.Select(V, 0) end
   end;
 }
+
+Event {
+  description="Save menu positions";
+  group="ExitFAR";
+  action=function() mf.msave("shmuz", "FarMenuPositions", data) end;
+}
+
