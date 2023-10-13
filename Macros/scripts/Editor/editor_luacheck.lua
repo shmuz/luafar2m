@@ -49,7 +49,7 @@ local function GetOptions()
         local env = {}
         setfenv(f, env)("far") -- the argument tells the config. file it is run from Far environment
         if env.luafar or env.lf4ed or env.luamacro then
-          local cfg = require "far2.luacheck_config"
+          local cfg = require "luacheck_config"
           local luafar = env.luafar and cfg.luafar
           local lf4 = env.lf4ed and cfg.lf4ed
           local luamacro = env.luamacro and cfg.luamacro

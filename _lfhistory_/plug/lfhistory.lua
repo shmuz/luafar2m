@@ -21,12 +21,38 @@ local DefaultCfg = {
   bShowDates        = true,
   bKeepSelectedItem = false,
   bDirectSort       = true,
-  iSizeCmd          = 1000,
-  iSizeView         = 1000,
-  iSizeFold         = 1000,
   HighTextColor     = 0x3A,
   SelHighTextColor  = 0x0A,
   iDateFormat       = 2,
+  view = {
+    iSize        = 1000;
+    lastpattern  = nil;
+    last_time    = 0;
+    searchmethod = "dos";
+    xlat         = false;
+  },
+  commands = {
+    iSize        = 1000;
+    lastpattern  = nil;
+    last_time    = 0;
+    searchmethod = "dos";
+    xlat         = false;
+  },
+  folders = {
+    iSize        = 1000;
+    lastpattern  = nil;
+    last_time    = 0;
+    searchmethod = "dos";
+    xlat         = false;
+  },
+  locatefile = {
+    iSize        = nil;
+    lastpattern  = nil;
+    last_time    = nil;
+    searchmethod = "dos";
+    xlat         = false;
+    bDynResize   = true;
+  },
 }
 
 local cfgView = {
@@ -40,7 +66,6 @@ local cfgView = {
     "ShiftEnter", "ShiftNumEnter",
     "CtrlPgUp", "RCtrlPgUp", "CtrlPgDn", "RCtrlPgDn",
   },
-  maxItemsKey = "iSizeView",
 }
 
 local cfgCommands = {
@@ -52,7 +77,6 @@ local cfgCommands = {
     "CtrlEnter", "RCtrlEnter", "CtrlNumEnter", "RCtrlNumEnter",
     "ShiftEnter", "ShiftNumEnter",
   },
-  maxItemsKey = "iSizeCmd",
 }
 
 local cfgFolders = {
@@ -64,17 +88,15 @@ local cfgFolders = {
     "CtrlEnter", "RCtrlEnter", "CtrlNumEnter", "RCtrlNumEnter",
     "ShiftEnter", "ShiftNumEnter",
   },
-  maxItemsKey = "iSizeFold",
 }
 
 local cfgLocateFile = {
-  PluginHistoryType  = "locatefile",
+  PluginHistoryType = "locatefile",
   title = "mTitleLocateFile",
   brkeys = {
     "F3", "F4",
     "CtrlEnter", "RCtrlEnter", "CtrlNumEnter", "RCtrlNumEnter",
   },
-  bDynResize = true,
 }
 
 local DateFormats = {
@@ -348,8 +370,8 @@ local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems)
   local listProps = {
     ----debug         = true,
     autocenter    = Cfg.bAutoCenter,
-    resizeW       = ConfigValue(aHistTypeConfig, "bDynResize"),
-    resizeH       = ConfigValue(aHistTypeConfig, "bDynResize"),
+    resizeW       = ConfigValue(aHistTypeData, "bDynResize"),
+    resizeH       = ConfigValue(aHistTypeData, "bDynResize"),
     resizeScreen  = true,
     col_highlight = Cfg.HighTextColor,
     col_selectedhighlight = Cfg.SelHighTextColor,
@@ -367,22 +389,19 @@ local function MakeMenuParams (aHistTypeConfig, aHistTypeData, aItems)
   return menuProps, list
 end
 
-local function GetMaxItems (aConfig)
-  return _Plugin.Cfg[aConfig.maxItemsKey]
-end
-
 local function SaveHistory (hst_name, hst)
-  Sett.msave(SETTINGS_KEY, hst_name, hst)
+  if hst_name then
+    Sett.msave(SETTINGS_KEY, hst_name, hst)
+  end
   Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _Plugin.Cfg) -- _Plugin.Cfg.bDirectSort
 end
 
-local function get_history (aConfig)
+local function get_history (aConfig, aVar)
   local menu_items, map = {}, {}
 
   -- add plugin database items
   local hst = Sett.mload(SETTINGS_KEY, aConfig.PluginHistoryType) or {}
   local plugin_items = Field(hst, "items")
-  local settings = Field(hst, "settings")
   for _,v in ipairs(plugin_items) do
     if v.text and not map[v.text] then
       table.insert(menu_items, v)
@@ -391,7 +410,7 @@ local function get_history (aConfig)
   end
 
   -- add Far database items
-  local last_time = settings.last_time or 0
+  local last_time = aVar.last_time or 0
 
   local file = far.InMyConfig("history/" .. aConfig.FarFileName)
   local ini = IniFile.New(file, "nocomment")
@@ -442,16 +461,15 @@ local function get_history (aConfig)
     end
   end
 
-  settings.last_time = win.GetSystemTimeAsFileTime()
+  aVar.last_time = win.GetSystemTimeAsFileTime()
 
-  local maxitems = GetMaxItems(aConfig)
-  if #menu_items > maxitems then
+  if #menu_items > aVar.iSize then
     -- sort menu items: oldest records go first
     table.sort(menu_items, function(a,b) return (a.time or 0) < (b.time or 0) end)
 
     -- remove excessive items; leave checked items;
     local i = 1
-    while (#menu_items >= i) and (#menu_items > maxitems) do
+    while (#menu_items >= i) and (#menu_items > aVar.iSize) do
       if menu_items[i].checked then i = i+1 -- leave the item
       else table.remove(menu_items, i)      -- remove the item
       end
@@ -459,14 +477,14 @@ local function get_history (aConfig)
   end
 
   -- execute the menu
-  local menuProps, list = MakeMenuParams(aConfig, settings, menu_items)
+  local menuProps, list = MakeMenuParams(aConfig, aVar, menu_items)
   SortListItems(list, _Plugin.Cfg.bDirectSort, nil)
   local item, itempos = custommenu.Menu(menuProps, list)
-  settings.searchmethod = list.searchmethod
-  settings.xlat = list.xlat
+  aVar.searchmethod = list.searchmethod
+  aVar.xlat = list.xlat
   hst["items"] = list.items
   if item and list.pattern ~= "" then
-    settings.lastpattern = list.pattern
+    aVar.lastpattern = list.pattern
   end
   SaveHistory(aConfig.PluginHistoryType, hst)
   if item then
@@ -481,7 +499,7 @@ local function IsCmdLineAvail()
 end
 
 local function commands_history()
-  local item, key = get_history(cfgCommands)
+  local item, key = get_history(cfgCommands, _Plugin.Cfg.commands)
   if item and IsCmdLineAvail() then
     if IsCtrlEnter(key) then
       panel.SetCmdLine(item.text)
@@ -492,7 +510,7 @@ local function commands_history()
 end
 
 local function folders_history()
-  get_history(cfgFolders)
+  get_history(cfgFolders, _Plugin.Cfg.folders)
 end
 
 local function CallViewer (fname, disablehistory)
@@ -506,7 +524,7 @@ local function CallEditor (fname, disablehistory)
 end
 
 local function view_history()
-  local item, key = get_history(cfgView)
+  local item, key = get_history(cfgView, _Plugin.Cfg.view)
 
   if not item then return end
   local fname = item.text
@@ -539,18 +557,18 @@ local function LocateFile2()
   end
 
   local hst = Sett.mload(SETTINGS_KEY, cfgLocateFile.PluginHistoryType) or {}
-  local settings = Field(hst, "settings")
 
-  local menuProps, list = MakeMenuParams(cfgLocateFile, settings, items)
+  local aVar = _Plugin.Cfg.locatefile
+  local menuProps, list = MakeMenuParams(cfgLocateFile, aVar, items)
   list.searchstart = 2
 
   local item, itempos = custommenu.Menu(menuProps, list)
-  settings.searchmethod = list.searchmethod
-  settings.xlat = list.xlat
+  aVar.searchmethod = list.searchmethod
+  aVar.xlat = list.xlat
   if item and list.pattern ~= "" then
-    settings.lastpattern = list.pattern
+    aVar.lastpattern = list.pattern
   end
-  SaveHistory(cfgLocateFile.PluginHistoryType, hst)
+  SaveHistory(nil)
 
   if item then
     if item.BreakKey then
@@ -638,9 +656,34 @@ function export.Open (From, Item)
   end
 end
 
+local function FillDefaults (trg, src, guard)
+  guard = guard or {} -- handle cyclic references
+  for k,v in pairs(src) do
+    if trg[k] == nil then
+      if type(v) == "table" then
+        if guard[v] then
+          trg[k] = guard[v]
+        else
+          local t = {}
+          trg[k] = t
+          guard[v] = t
+          FillDefaults(t, v, guard)
+        end
+      else
+        trg[k] = v
+      end
+    elseif type(trg[k]) == "table" then
+      if type(v)=="table" and guard[v]==nil then
+        guard[v] = trg[k]
+        FillDefaults(trg[k], v, guard)
+      end
+    end
+  end
+end
+
 if not _Plugin then
   _Plugin = {}
   _Plugin.Cfg = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
-  setmetatable(_Plugin.Cfg, {__index = DefaultCfg})
+  FillDefaults(_Plugin.Cfg, DefaultCfg)
   export.OnError = Utils.OnError
 end

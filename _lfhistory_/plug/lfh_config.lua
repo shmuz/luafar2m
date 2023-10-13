@@ -51,6 +51,9 @@ local function ConfigDialog (aData, aDateFormats)
   end
 
   dlg:LoadData(aData)
+  Elem.iSizeCmd.val  = aData.commands.iSize
+  Elem.iSizeView.val = aData.view.iSize
+  Elem.iSizeFold.val = aData.folders.iSize
 
   local hColor0 = aData.HighTextColor
   local hColor1 = aData.SelHighTextColor
@@ -73,10 +76,11 @@ local function ConfigDialog (aData, aDateFormats)
 
   local out = dlg:Run()
   if out then
+    if tonumber(out.iSizeCmd)  then aData.commands.iSize = tonumber(out.iSizeCmd) end
+    if tonumber(out.iSizeView) then aData.view.iSize     = tonumber(out.iSizeView) end
+    if tonumber(out.iSizeFold) then aData.folders.iSize  = tonumber(out.iSizeFold) end
+    out.iSizeCmd, out.iSizeView, out.iSizeFold = nil,nil,nil -- prepare to dlg:SaveData()
     dlg:SaveData(out, aData)
-    aData.iSizeCmd  = tonumber(aData.iSizeCmd)
-    aData.iSizeView = tonumber(aData.iSizeView)
-    aData.iSizeFold = tonumber(aData.iSizeFold)
     aData.HighTextColor    = hColor0
     aData.SelHighTextColor = hColor1
     return true
