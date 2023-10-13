@@ -11,10 +11,10 @@ else
 
 end
 
-ignore = {
-  "212", -- unused argument
-  "421", -- shadowing a local variable
-}
+---   ignore = {
+---     "212", -- unused argument
+---     "421", -- shadowing a local variable
+---   }
 
 -- quiet                     = nil -- Integer in range 0..3   0
 -- color                     = nil -- Boolean   true
