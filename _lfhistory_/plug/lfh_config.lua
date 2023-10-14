@@ -1,10 +1,17 @@
 -- file created: 2010-03-16
+-- luacheck: globals _Plugin
 
 local F = far.Flags
 local sd = require "far2.simpledialog"
 local M  = require "lfh_message"
+local main
 
-local function ConfigDialog (aData, aDateFormats)
+local function Init(data)
+  main = data
+end
+
+local function ConfigDialog ()
+  local aData = _Plugin.Cfg
   local offset = 5 + math.max(M.mBtnHighTextColor:len(), M.mBtnSelHighTextColor:len()) + 10
   local swid = M.mTextSample:len()
   local Items = {
@@ -45,7 +52,7 @@ local function ConfigDialog (aData, aDateFormats)
   local Pos, Elem = dlg:Indexes()
 
   local time = os.time()
-  for _,fmt in ipairs(aDateFormats) do
+  for _,fmt in ipairs(main.DateFormats) do
     local t = { Text = fmt and os.date(fmt, time) or M.mDontShowDates }
     table.insert(Elem.iDateFormat.list, t)
   end
@@ -79,12 +86,105 @@ local function ConfigDialog (aData, aDateFormats)
     if tonumber(out.iSizeCmd)  then aData.commands.iSize = tonumber(out.iSizeCmd) end
     if tonumber(out.iSizeView) then aData.view.iSize     = tonumber(out.iSizeView) end
     if tonumber(out.iSizeFold) then aData.folders.iSize  = tonumber(out.iSizeFold) end
-    out.iSizeCmd, out.iSizeView, out.iSizeFold = nil,nil,nil -- prepare to dlg:SaveData()
-    dlg:SaveData(out, aData)
+    out.iSizeCmd, out.iSizeView, out.iSizeFold = nil,nil,nil
     aData.HighTextColor    = hColor0
     aData.SelHighTextColor = hColor1
-    return true
+    dlg:SaveData(out, aData)
+    main.SaveHistory()
   end
 end
 
-return ConfigDialog
+local function RegexDialog (aStr)
+  local Items = {
+    guid = "4F55D7A5-0CAA-4533-A440-840553845DB0";
+    --help = "PluginConfig"; --TODO
+    { tp="dbox"; text="Add/Edit an exclusion list item";   },
+    { tp="text"; text="Pattern (regular expression):";     },
+    { tp="edit"; text=aStr; name="pattern";                },
+    { tp="sep";                                            },
+    { tp="butt"; text=M.mOk;     centergroup=1; default=1; },
+    { tp="butt"; text=M.mCancel; centergroup=1; cancel=1;  },
+  }
+
+  local retvalue = nil
+  Items.closeaction = function(_hDlg, _Par1, tOut)
+    if tOut.pattern ~= "" and pcall(regex.new, tOut.pattern) then
+      retvalue = tOut.pattern
+    else
+      far.Message(("Invalid pattern: \"%s\"" ):format(tOut.pattern), M.mError, M.mOk, "w")
+      return 0
+    end
+  end
+
+  sd.New(Items):Run()
+  return retvalue
+end
+
+local function EditExcludes (aItem)
+  local exclude = _Plugin.Cfg[aItem.tag].exclude
+  local title = aItem.text:match(" (.*)"):gsub("%s+", " ")
+  local Props = { Title=title; Bottom="Edit: Del, Ins, F4"; }
+  local Items = {}
+  local Bkeys = "Del Ins F4"
+  local modif = false
+
+  for i,v in ipairs(exclude) do Items[i] = v end
+
+  while true do
+    local item, pos = far.Menu(Props, Items, Bkeys)
+    if not item then break end
+    Props.SelectIndex = pos
+
+    if item.BreakKey == "Del" and Items[pos] then
+      modif = true
+      table.remove(Items, pos)
+      if not Items[pos] then Props.SelectIndex = pos-1 end
+
+    elseif item.BreakKey == "Ins" then
+      local txt = RegexDialog("")
+      if txt then
+        modif = true
+        table.insert(Items, Items[pos] and pos or 1, { text=txt; })
+      end
+
+    elseif item.BreakKey == "F4" and Items[pos] then
+      local txt = RegexDialog(Items[pos].text)
+      if txt then
+        modif = true
+        Items[pos].text = txt
+      end
+
+    end
+  end
+  if modif and 1 == far.Message("The exclusion list was changed. Save?", "Confirm", ";YesNo", "w") then
+    _Plugin.Cfg[aItem.tag].exclude = Items
+    main.SaveHistory()
+  end
+end
+
+local function ConfigMenu()
+  local Props = { Title=M.mPluginTitle; }
+  local Items = {
+    { tag="general";  text="&1. General settings";              },
+    { separator=true;                                           },
+    { tag="commands"; text="&2. Commands history:  exclusions"; },
+    { tag="view";     text="&3. View/edit history: exclusions"; },
+    { tag="folders";  text="&4. Folders history:   exclusions"; },
+  }
+
+  while true do
+    local item,pos = far.Menu(Props,Items)
+    if not item then break end
+    Props.SelectIndex = pos
+    if item.tag == "general" then
+      ConfigDialog()
+    else
+      EditExcludes(item)
+    end
+  end
+end
+
+return {
+  Init = Init;
+  ConfigMenu = ConfigMenu;
+}

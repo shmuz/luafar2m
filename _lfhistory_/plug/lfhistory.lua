@@ -3,14 +3,16 @@
 
 far.ReloadDefaultScript = true
 package.loaded["far2.custommenu"] = nil
+package.loaded["lfh_config"] = nil
 
 local SETTINGS_KEY  = "lfhistory"
 local SETTINGS_NAME = "settings"
 
 local IniFile    = require "inifile"
-local custommenu = require "far2.custommenu"
+local Custommenu = require "far2.custommenu"
 local Utils      = require "far2.utils"
 local Sett       = require "far2.settings"
+local Config     = require "lfh_config"
 local M          = require "lfh_message"
 local F          = far.Flags
 local Field      = Sett.field
@@ -30,6 +32,7 @@ local DefaultCfg = {
     last_time    = 0;
     searchmethod = "dos";
     xlat         = false;
+    exclude      = {};
   },
   commands = {
     iSize        = 1000;
@@ -37,6 +40,7 @@ local DefaultCfg = {
     last_time    = 0;
     searchmethod = "dos";
     xlat         = false;
+    exclude      = {};
   },
   folders = {
     iSize        = 1000;
@@ -44,6 +48,7 @@ local DefaultCfg = {
     last_time    = 0;
     searchmethod = "dos";
     xlat         = false;
+    exclude      = {};
   },
   locatefile = {
     iSize        = nil;
@@ -51,6 +56,7 @@ local DefaultCfg = {
     last_time    = nil;
     searchmethod = "dos";
     xlat         = false;
+    exclude      = nil;
     bDynResize   = true;
   },
 }
@@ -383,7 +389,7 @@ local function MakeMenuParams (aConfig, aData, aItems)
     showdates     = aConfig ~= cfgLocateFile and dateformat,
     dateformat    = dateformat,
   }
-  local list = custommenu.NewList(listProps, aItems)
+  local list = Custommenu.NewList(listProps, aItems)
   list.keyfunction = GetListKeyFunction(aConfig, aData)
   list.CanClose = aConfig.CanClose
   return menuProps, list
@@ -410,6 +416,12 @@ local function get_history (aConfig, aData)
   end
 
   -- add Far database items
+  local exclude = {}
+  for _,v in ipairs(aData.exclude) do
+    local ok, rx = pcall(regex.new, v.text)
+    if ok then table.insert(exclude, rx) end
+  end
+
   local last_time = aData.last_time or 0
 
   local file = far.InMyConfig("history/" .. aConfig.FarFileName)
@@ -446,16 +458,22 @@ local function get_history (aConfig, aData)
       local fartime = far_times[i] or 0
       local extra = far_extras[i]
       local item = map[name]
-      if item then
+      if item then -- an existing item
         if item.time < fartime then
           item.time = fartime
           item.extra = extra
         end
-      else
-        if fartime >= last_time then
-          item = { text=name; time=fartime; extra=extra; }
-          table.insert(menu_items, item)
-          map[name] = item
+      else -- a new item
+        if fartime >= last_time then -- if this is not a deleted item
+          local ok = true -- check exclusions
+          for _,rx in ipairs(exclude) do
+            if rx:match(name) then ok=false; break; end
+          end
+          if ok then
+            item = { text=name; time=fartime; extra=extra; }
+            table.insert(menu_items, item)
+            map[name] = item
+          end
         end
       end
     end
@@ -479,7 +497,7 @@ local function get_history (aConfig, aData)
   -- execute the menu
   local menuProps, list = MakeMenuParams(aConfig, aData, menu_items)
   SortListItems(list, _Plugin.Cfg.bDirectSort, nil)
-  local item, itempos = custommenu.Menu(menuProps, list)
+  local item, itempos = Custommenu.Menu(menuProps, list)
   aData.searchmethod = list.searchmethod
   aData.xlat = list.xlat
   hst["items"] = list.items
@@ -560,7 +578,7 @@ local function LocateFile()
   local menuProps, list = MakeMenuParams(cfgLocateFile, aData, items)
   list.searchstart = 2
 
-  local item, itempos = custommenu.Menu(menuProps, list)
+  local item, itempos = Custommenu.Menu(menuProps, list)
   aData.searchmethod = list.searchmethod
   aData.xlat = list.xlat
   if item and list.pattern ~= "" then
@@ -596,11 +614,7 @@ function export.GetPluginInfo()
 end
 
 function export.Configure()
-  package.loaded.lfh_config = nil
-  local dlg = require "lfh_config"
-  if dlg(_Plugin.Cfg, DateFormats) then
-    Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _Plugin.Cfg)
-  end
+  Config.ConfigMenu()
 end
 
 local function OpenFromMacro (Args)
@@ -679,9 +693,19 @@ local function FillDefaults (trg, src, guard)
   end
 end
 
-if not _Plugin then
-  _Plugin = {}
-  _Plugin.Cfg = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
+local function InitConfigModule()
+  Config.Init {
+    SaveHistory = SaveHistory;
+    DateFormats = DateFormats;
+  }
+end
+
+do
+  if not _Plugin then
+    _Plugin = {}
+    _Plugin.Cfg = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
+  end
   FillDefaults(_Plugin.Cfg, DefaultCfg)
+  InitConfigModule()
   export.OnError = Utils.OnError
 end
