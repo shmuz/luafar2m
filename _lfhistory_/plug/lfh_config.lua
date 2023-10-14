@@ -165,12 +165,19 @@ end
 local function ConfigMenu()
   local Props = { Title=M.mPluginTitle; }
   local Items = {
-    { tag="general";  text="&1. General settings";              },
-    { separator=true;                                           },
-    { tag="commands"; text="&2. Commands history:  exclusions"; },
-    { tag="view";     text="&3. View/edit history: exclusions"; },
-    { tag="folders";  text="&4. Folders history:   exclusions"; },
+    { tag="general";  text=M.mGeneralSettings;                      },
+    { separator=true;                                               },
+    { tag="commands"; text=M.mMenuCommands .. ": " ..M.mExclusions; },
+    { tag="view";     text=M.mMenuView     .. ": " ..M.mExclusions; },
+    { tag="folders";  text=M.mMenuFolders  .. ": " ..M.mExclusions; },
   }
+  local j = 1
+  for i,v in ipairs(Items) do
+    if v.separator==nil then
+      v.text = ("&%d. %s"):format(j, v.text)
+      j = j+1
+    end
+  end
 
   while true do
     local item,pos = far.Menu(Props,Items)
