@@ -94,12 +94,13 @@ local function ConfigDialog ()
   end
 end
 
-local function RegexDialog (aStr)
+local function ExclusionDialog (aStr)
+  local title = aStr=="" and M.mExcludeDlgTitleAdd or M.mExcludeDlgTitleEdit
   local Items = {
     guid = "4F55D7A5-0CAA-4533-A440-840553845DB0";
-    --help = "PluginConfig"; --TODO
-    { tp="dbox"; text="Add/Edit an exclusion list item";   },
-    { tp="text"; text="Pattern (regular expression):";     },
+    help = "ExclusionDialog";
+    { tp="dbox"; text=title;                               },
+    { tp="text"; text=M.mExcludeDlgPrompt;                 },
     { tp="edit"; text=aStr; name="pattern";                },
     { tp="sep";                                            },
     { tp="butt"; text=M.mOk;     centergroup=1; default=1; },
@@ -111,7 +112,7 @@ local function RegexDialog (aStr)
     if tOut.pattern ~= "" and pcall(regex.new, tOut.pattern) then
       retvalue = tOut.pattern
     else
-      far.Message(("Invalid pattern: \"%s\"" ):format(tOut.pattern), M.mError, M.mOk, "w")
+      far.Message(("%s: \"%s\"" ):format(M.mExcludeDlgError, tOut.pattern), M.mError, M.mOk, "w")
       return 0
     end
   end
@@ -120,35 +121,44 @@ local function RegexDialog (aStr)
   return retvalue
 end
 
-local function EditExcludes (aItem)
-  local exclude = _Plugin.Cfg[aItem.tag].exclude
-  local title = aItem.text:match(" (.*)"):gsub("%s+", " ")
-  local Props = { Title=title; Bottom="Edit: Del, Ins, F4"; }
+local function ExclusionMenu (aData, aTitle)
+  local exclude = aData.exclude
+  local Props = { Title=aTitle; Bottom="Ins, Del, F4"; HelpTopic="ExclusionMenu"; }
   local Items = {}
-  local Bkeys = "Del Ins F4"
+  local Bkeys = "Ins Del F4"
   local modif = false
 
   for i,v in ipairs(exclude) do Items[i] = v end
 
   while true do
     local item, pos = far.Menu(Props, Items, Bkeys)
-    if not item then break end
-    Props.SelectIndex = pos
+    if item then Props.SelectIndex = pos end
 
-    if item.BreakKey == "Del" and Items[pos] then
-      modif = true
-      table.remove(Items, pos)
-      if not Items[pos] then Props.SelectIndex = pos-1 end
+    if not item then
+      if not modif then break end
+      local R = far.Message(M.mExcludeDlgSaveQuery, M.mPluginTitle, ";YesNoCancel", "w")
+      if R == 1 then
+        aData.exclude = Items
+        main.SaveHistory()
+        break
+      elseif R == 2 then
+        break
+      end
 
     elseif item.BreakKey == "Ins" then
-      local txt = RegexDialog("")
+      local txt = ExclusionDialog("")
       if txt then
         modif = true
         table.insert(Items, Items[pos] and pos or 1, { text=txt; })
       end
 
-    elseif item.BreakKey == "F4" and Items[pos] then
-      local txt = RegexDialog(Items[pos].text)
+    elseif item.BreakKey == "Del" and Items[pos] then
+      modif = true
+      table.remove(Items, pos)
+      if not Items[pos] then Props.SelectIndex = pos-1 end
+
+    elseif (item.BreakKey == "F4" or item.BreakKey == nil) and Items[pos] then
+      local txt = ExclusionDialog(Items[pos].text)
       if txt then
         modif = true
         Items[pos].text = txt
@@ -156,25 +166,21 @@ local function EditExcludes (aItem)
 
     end
   end
-  if modif and 1 == far.Message("The exclusion list was changed. Save?", "Confirm", ";YesNo", "w") then
-    _Plugin.Cfg[aItem.tag].exclude = Items
-    main.SaveHistory()
-  end
 end
 
 local function ConfigMenu()
-  local Props = { Title=M.mPluginTitle; }
+  local Props = { Title=M.mPluginTitle; HelpTopic="ConfigMenu"; }
   local Items = {
-    { tag="general";  text=M.mGeneralSettings;                      },
+    { tag="general";  data=M.mGeneralSettings;                      },
     { separator=true;                                               },
-    { tag="commands"; text=M.mMenuCommands .. ": " ..M.mExclusions; },
-    { tag="view";     text=M.mMenuView     .. ": " ..M.mExclusions; },
-    { tag="folders";  text=M.mMenuFolders  .. ": " ..M.mExclusions; },
+    { tag="commands"; data=M.mMenuCommands .. ": " ..M.mExclusions; },
+    { tag="view";     data=M.mMenuView     .. ": " ..M.mExclusions; },
+    { tag="folders";  data=M.mMenuFolders  .. ": " ..M.mExclusions; },
   }
   local j = 1
   for i,v in ipairs(Items) do
     if v.separator==nil then
-      v.text = ("&%d. %s"):format(j, v.text)
+      v.text = ("&%d. %s"):format(j, v.data)
       j = j+1
     end
   end
@@ -186,7 +192,7 @@ local function ConfigMenu()
     if item.tag == "general" then
       ConfigDialog()
     else
-      EditExcludes(item)
+      ExclusionMenu(_Plugin.Cfg[item.tag], item.data)
     end
   end
 end

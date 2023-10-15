@@ -418,8 +418,10 @@ local function get_history (aConfig, aData)
   -- add Far database items
   local exclude = {}
   for _,v in ipairs(aData.exclude) do
-    local ok, rx = pcall(regex.new, v.text)
-    if ok then table.insert(exclude, rx) end
+    if v.text ~= "" then
+      local ok, rx = pcall(regex.new, v.text)
+      if ok then table.insert(exclude, rx) end
+    end
   end
 
   local last_time = aData.last_time or 0
