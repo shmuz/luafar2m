@@ -1,20 +1,5 @@
-### binaries
-*.o
-*.far-plug-wide
-
-### auto-generated
-*.lng
-hv_message.lua
-lf4ed_message.lua
-lfh_message.lua
-lfs_message.lua
-tmpp_message.lua
-_polygon_/plug/modules/string_rc.lua
-
 ### misc
 _build
 misc
-luafar.session
-assa.diff
 SciTE*.properties
-**/scripts/cclike.lua
+Macros/scripts/cclike.lua
