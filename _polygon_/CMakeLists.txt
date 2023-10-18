@@ -8,8 +8,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFUNC_OPENLIBS=luaopen_polygon")
 add_library (${PROJECT_NAME} MODULE ${SOURCES})
 set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
 
-target_include_directories(polygon PRIVATE ${SQLITE3_INCLUDE_DIR})
-target_link_libraries(polygon ${SQLITE3_LIBRARY})
+target_include_directories(polygon PRIVATE ${SQLITE3_INCLUDE_DIRS})
+target_link_libraries(polygon ${SQLITE3_LIBRARIES})
 
 set(EXPNAMES
   CLOSEPLUGIN  CONFIGURE  DELETEFILES  FREEFINDDATA  GETFINDDATA
