@@ -29,7 +29,7 @@ if not rex.new then
     if from then from, to = (from-1)/sz+1, to/sz; return from, to, cap; end
   end
   methods.tfindW = function(r, s, init)
-   local from, to, t = r:tfind(s, sz*(init-1)+1)
+    local from, to, t = r:tfind(s, sz*(init-1)+1)
     if from then from, to = (from-1)/sz+1, to/sz; return from, to, t; end
   end
 end
@@ -80,7 +80,7 @@ do
 end
 
 -- NOT USED: IS IT REALLY NEEDED?
--- local function toreal(id, y, pos) return editor.TabToReal(nil,y,pos) end
+local function toreal(id, y, pos) return editor.TabToReal(id, y, pos) end
 
 local function template(str, ...)
   local rep = {...}
@@ -182,13 +182,13 @@ element: #%d]]):format(msg, filename, classname, numelement)
   return Out
 end
 
-local function MakeGetString (ymin, ymax, ymin_paint)
+local function MakeGetString (EditorID, ymin, ymax, ymin_paint)
   local func = editor.GetStringW
   local y = ymin - 1
   return function()
     if y < ymax then
       y = y + 1
-      return func(nil,y,3), y, y >= ymin_paint
+      return func(EditorID,y,3), y, y >= ymin_paint
     end
   end
 end
@@ -196,13 +196,13 @@ end
 local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, extracolor)
   local current -- current item of Syn
   local pat_close
---local ID = ei.EditorID
+  local ID = ei.EditorID
 
   local openbracket, bstack, bpattern, opattern, params, posbracket
   if Syn.bracketmatch then
     -- Try 2 positions: current and previous to current.
     -- The current position is checked first.
-    local curstr = editor.GetString(nil, nil, 3)
+    local curstr = editor.GetString(ID, nil, 3)
     for k=0, ei.CurPos==1 and 0 or 1 do
       posbracket = ei.CurPos-k
       local char = curstr:sub(posbracket, posbracket)
@@ -219,7 +219,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
             bpattern, opattern = rex.new("([{}])"), "{\0\0\0"
           end
           params = {ei.CurLine,posbracket,posbracket,Syn.bracketcolor,acFlags,Priority+1,Owner}
-          --editor.AddColor(nil,ei.CurLine,posbracket,posbracket,Syn.bracketcolor,acFlags,Priority+1,Owner)
+          --editor.AddColor(ID,ei.CurLine,posbracket,posbracket,Syn.bracketcolor,acFlags,Priority+1,Owner)
           break
         end
       end
@@ -244,7 +244,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
           end
         end
         if need_paint and color then
-          editor.AddColor(nil, y, from, to, color, acFlags, Priority, Owner)
+          editor.AddColor(ID, y, from, to, color, acFlags, Priority, Owner)
         end
         left = (to >= from and to or from) + 1
 
@@ -273,7 +273,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
           end
 
           if need_paint and old_left <= to then
-            editor.AddColor(nil, y, old_left, to, color, acFlags, Priority, Owner)
+            editor.AddColor(ID, y, old_left, to, color, acFlags, Priority, Owner)
           end
 
           if nextline == nil then
@@ -287,7 +287,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
           local from, to = pat_close:findW(str, left)
           if not from then from, to = PatEndLine:findW(str, left) end
           if need_paint and left <= to then
-            editor.AddColor(nil, y, left, to, current.color, acFlags, Priority, Owner)
+            editor.AddColor(ID, y, left, to, current.color, acFlags, Priority, Owner)
           end
           if from <= to then
             left = to + 1
@@ -314,7 +314,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
               if bstack > 0 then
                 bstack = bstack - 1
               else
-                editor.AddColor(nil, y, from, to, Syn.bracketcolor, acFlags, Priority+1, Owner)
+                editor.AddColor(ID, y, from, to, Syn.bracketcolor, acFlags, Priority+1, Owner)
                 bstack = nil
                 break
               end
@@ -334,7 +334,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
             local N = #bstack
             if y == ei.CurLine and from == posbracket then
               if N ~= 0 then
-                editor.AddColor(nil, bstack[N-1], bstack[N], bstack[N],
+                editor.AddColor(ID, bstack[N-1], bstack[N], bstack[N],
                                 Syn.bracketcolor, acFlags, Priority+1, Owner)
               end
               bstack = nil
@@ -361,18 +361,18 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
         if not from then break end
         start = to>=from and to+1 or from+1
         if to >= from then
-          editor.AddColor(nil, y, from, to, extracolor, acFlags, Priority+2, Owner)
+          editor.AddColor(ID, y, from, to, extracolor, acFlags, Priority+2, Owner)
         end
       end
     end
 
   end
-  if params then editor.AddColor(nil, unpack(params)) end
+  if params then editor.AddColor(ID, unpack(params)) end
 end
 
 local function RedrawExtraPattern (ei, Priority, extrapattern, extracolor)
---local ID = ei.EditorID
-  local GetNextString = MakeGetString(
+  local ID = ei.EditorID
+  local GetNextString = MakeGetString(ID,
     ei.TopScreenLine,
     math.min(ei.TopScreenLine+ei.WindowSizeY-1, ei.TotalLines),
     ei.TopScreenLine)
@@ -388,7 +388,7 @@ local function RedrawExtraPattern (ei, Priority, extrapattern, extracolor)
         if not from then break end
         start = to>=from and to+1 or from+1
         if to >= from then
-          editor.AddColor(nil, y, from, to, extracolor, acFlags, Priority+2, Owner)
+          editor.AddColor(ID, y, from, to, extracolor, acFlags, Priority+2, Owner)
         end
       end
     end
@@ -722,13 +722,13 @@ end
 local FirstLineMap = {}
 local function OnNewEditor (id, ei)
   if ei then
-    local firstline = editor.GetString(nil,1,3):lower()
+    local firstline = editor.GetString(id,1,3):lower()
     local name = firstline:match("highlight:%s*([%w_]+)")
     if name and FirstLineMap[name] then
       SetClass(id, FirstLineMap[name], false)
     else
       for _,class in ipairs(Classes) do
-        if far.ProcessName(F.PN_CMPNAMELIST, class.filemask, ei.FileName, F.PN_SKIPPATH) then
+        if far.ProcessName("PN_CMPNAMELIST", class.filemask, ei.FileName, F.PN_SKIPPATH) then
           SetClass(id, class, false); break
         end
       end
