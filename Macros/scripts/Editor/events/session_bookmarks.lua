@@ -16,7 +16,7 @@ Event {
       if Arr and Arr[1] then
         local Info = editor.GetInfo()
         for _,v in ipairs(Arr) do
-          editor.AddColor(nil,v.Line,Info.LeftPos,Info.LeftPos,Color,colorFlags)
+          editor.AddColor(nil,v.Line,Info.LeftPos,Info.LeftPos,colorFlags,Color)
         end
       end
     end

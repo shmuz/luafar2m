@@ -41,6 +41,6 @@ Event
             jj,kk,curr=line\find("([%w_]+)",pos)
             if not jj then break
             if not OptCaseSensitive then curr=curr\lower!
-            if curr==words[id] then editor.AddColor nil,ii,jj,kk,color,"ECF_AUTODELETE"
+            if curr==words[id] then editor.AddColor nil,ii,jj,kk,"ECF_AUTODELETE",color
             pos=kk+1
     elseif event==F.EE_CLOSE then words[id]=nil
