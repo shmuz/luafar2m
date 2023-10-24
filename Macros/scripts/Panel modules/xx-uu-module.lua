@@ -196,7 +196,7 @@ end
 -- @returns   : true (if success)
 --              nil,errormessage,errorcode (if failure)
 --
-function mod.PutFiles(object, handle, Items, Move, OpMode)
+function mod.PutFiles(object, handle, Items, Move, SrcPath, OpMode)
   local is_edit = (bit64.band(OpMode,F.OPM_EDIT) ~= 0)
   if is_edit or not win.GetFileAttr(object.HostFile)
     or 1==far.Message("Are you sure to overwrite the archive content?", object.Title, ";YesNo", "w")
@@ -205,8 +205,6 @@ function mod.PutFiles(object, handle, Items, Move, OpMode)
       local msg = ("%d MB copied"):format(size/0x100000)
       far.Message(msg, object.Title, "")
     end
-    -- local SrcPath = object.HostFile:match("(.*)/") or "."
-    local SrcPath = "."
     if object.Lib.encfile(SrcPath.."/"..Items[1].FileName, object.HostFile, nil, callback) then
       if not is_edit then
         object.FileName = Items[1].FileName
