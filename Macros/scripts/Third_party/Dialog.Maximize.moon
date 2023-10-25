@@ -1,3 +1,5 @@
+if true return
+
 -- Dialog.Maximize.moon
 -- Resizing dialogs, aligning the positions of dialog elements
 -- Keys: F2 in dialogs or CtrlAltRight or CtrlAltLeft
