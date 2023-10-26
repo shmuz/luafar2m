@@ -285,7 +285,7 @@ end
 --   .sSearchPat    string
 local function Find (aData)
   local PI = panel.GetPanelInfo(1)
-  local handle = PI and PI.PanelHandle
+  local handle = PI and PI.PluginHandle
   if not handle then return; end
 
   -- Preparations

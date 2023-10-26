@@ -282,7 +282,7 @@ local function ExecuteLuaCode(code, whatpanel)
       local pi = panel.GetPanelInfo(whatpanel)
       if pi and pi.PluginObject then
         obj_info = pi.PluginObject:get_info()
-        handle = pi.PanelHandle
+        handle = pi.PluginHandle
       end
     end
     local env = setmetatable({}, {__index=_G})
@@ -311,7 +311,7 @@ local function DoOpenFromMacro(params)
     if (whatpanel==0 or whatpanel==1) and (type(code)=="string") then
       local info = panel.GetPanelInfo(whatpanel==0 and 1 or 0)
       if info and info.PluginObject then
-        info.PluginObject:open_query(info.PanelHandle, code)
+        info.PluginObject:open_query(info.PluginHandle, code)
       end
     end
 
