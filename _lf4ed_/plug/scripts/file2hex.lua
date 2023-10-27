@@ -19,6 +19,9 @@ ffi.cdef[[
   int fclose(FILE*);
 ]]
 
+local F = far.Flags
+local band, rshift = bit64.band, bit64.rshift
+
 local function ShowProgress(Title, Size)
   if Size then
     if win.ExtractKey()=="ESCAPE" and 1==far.Message("Break the operation?",Title,"&Yes;&No","w") then
@@ -36,12 +39,12 @@ end
 --  flags="NoPluginPanels NoFolders";
 local function File2Hex()
   local info = panel.GetPanelInfo(1)
-  if info.Plugin then return end
+  if band(info.Flags, F.PFLAGS_PLUGIN) ~= 0 then return end
+
   local item = panel.GetCurrentPanelItem(1)
   if item.FileAttributes:find("d") then return end
 
   local Title = "Convert file contents to HEX";
-  local band, rshift = bit64.band, bit64.rshift
   local dir = panel.GetPanelDirectory(1)
   local name_in = dir.."/"..item.FileName
   local name_out = name_in..".hex"

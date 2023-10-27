@@ -650,7 +650,7 @@ end
 local function MakeItemList (panelInfo, searchArea)
   local itemList, flags = {}, {recurse=true}
   local bRealNames = (band(panelInfo.Flags, F.PFLAGS_REALNAMES) ~= 0)
-  local bPlugin = panelInfo.Plugin
+  local bPlugin = (band(panelInfo.Flags, F.PFLAGS_PLUGIN) ~= 0)
   local sPanelDir = panel.GetPanelDirectory(1) or ""
 
   if searchArea == "FromCurrFolder" or searchArea == "OnlyCurrFolder" then
@@ -847,7 +847,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     local FileFilter = tParams.FileFilter
     if FileFilter then FileFilter:StartingToFilter() end
     local panelInfo = panel.GetPanelInfo(1)
-    local bPlugin = panelInfo.Plugin
+    local bPlugin = (band(panelInfo.Flags, F.PFLAGS_PLUGIN) ~= 0)
     local itemList, flags = MakeItemList(panelInfo, area)
     if aData.bSearchSymLinks then
       flags.symlinks = true
@@ -958,7 +958,7 @@ local function CollectAllItems (aData, tParams, fFileMask, fDirMask, fDirExMask,
   if FileFilter then FileFilter:StartingToFilter() end
 
   local panelInfo = panel.GetPanelInfo(1)
-  local bPlugin = panelInfo.Plugin
+  local bPlugin = (band(panelInfo.Flags, F.PFLAGS_PLUGIN) ~= 0)
   local area = CheckSearchArea(aData.sSearchArea)
   local itemList, flags = MakeItemList(panelInfo, area)
   if aData.bSearchSymLinks then

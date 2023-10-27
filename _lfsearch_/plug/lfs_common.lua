@@ -135,7 +135,7 @@ end
 local function GetSearchAreas(aData)
   local Info = panel.GetPanelInfo(1)
   local RootFolderItem = {}
-  if Info.PanelType==F.PTYPE_FILEPANEL and not Info.Plugin then
+  if Info.PanelType==F.PTYPE_FILEPANEL and 0==band(Info.Flags, F.PFLAGS_PLUGIN) then
     RootFolderItem.Text = M.MSaRootFolder .. panel.GetPanelDirectory(1):match("/[^/]*")
   else
     RootFolderItem.Text = M.MSaRootFolder

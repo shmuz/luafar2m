@@ -139,7 +139,9 @@ end
 local function CanRun()
   for i=0,1 do
     local inf = panel.GetPanelInfo(i)
-    if inf.Visible==0 or band(inf.Flags, F.PFLAGS_REALNAMES)==0 then return false end
+    if band(inf.Flags, F.PFLAGS_VISIBLE)==0 or band(inf.Flags, F.PFLAGS_REALNAMES)==0 then
+      return false
+    end
   end
   return true
 end
