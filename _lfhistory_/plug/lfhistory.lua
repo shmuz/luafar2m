@@ -423,6 +423,11 @@ local function get_history (aConfig, aData)
       if ok then table.insert(exclude, rx) end
     end
   end
+  local function IsExclusion(name)
+    for _,rx in ipairs(exclude) do
+      if rx:find(name) then return true; end -- don't use rx:match() here!
+    end
+  end
 
   local last_time = aData.last_time or 0
 
@@ -467,11 +472,7 @@ local function get_history (aConfig, aData)
         end
       else -- a new item
         if fartime >= last_time then -- if this is not a deleted item
-          local ok = true -- check exclusions
-          for _,rx in ipairs(exclude) do
-            if rx:match(name) then ok=false; break; end
-          end
-          if ok then
+          if not IsExclusion(name) then
             item = { text=name; time=fartime; extra=extra; }
             table.insert(menu_items, item)
             map[name] = item
