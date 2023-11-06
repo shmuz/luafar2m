@@ -3,7 +3,7 @@
 .Options CtrlColorChar=\
 
 @Contents
-$ #LuaFAR History (version 3.12.1) - Help Contents -#
+$ #LuaFAR History (version 3.12.2) - Help Contents -#
  #LuaFAR History# is a plugin for displaying histories of commands,
 folders, and viewed/edited files.
 
