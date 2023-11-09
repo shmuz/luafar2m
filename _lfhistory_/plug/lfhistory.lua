@@ -118,6 +118,10 @@ local function ConfigValue(Cfg, Key)
   return _Plugin.Cfg[Key]
 end
 
+local function GetFileAttrEx(fname)
+  return win.GetFileAttr(fname)
+end
+
 local function IsCtrlEnter (key)
   return key=="CtrlEnter" or key=="RCtrlEnter" or key=="CtrlNumEnter" or key=="RCtrlNumEnter"
 end
@@ -154,7 +158,7 @@ local function TellFileIsDirectory (fname)
 end
 
 local function FindFile (fname)
-  local attr = win.GetFileAttr(fname)
+  local attr = GetFileAttrEx(fname)
   if attr and not attr:find"d" then
     local dir, name = fname:match("^(.*/)(.*)$")
     if panel.SetPanelDirectory(1, dir) then
@@ -237,7 +241,7 @@ local function GetListKeyFunction (aConfig, aData)
             end
           end
         end
-        local attr = win.GetFileAttr(fname)
+        local attr = GetFileAttrEx(fname)
         if not attr then
           TellFileNotExist(fname)
           return "done"
@@ -266,7 +270,7 @@ local function GetListKeyFunction (aConfig, aData)
         far.Message(M.mPleaseWait, "", "")
         self:DeleteNonexistentItems(hDlg,
             function(t) return t.text:find("^%w%w+:") -- some plugin's prefix
-                               or win.GetFileAttr(t.text) or t.checked end,
+                               or GetFileAttrEx(t.text) or t.checked end,
             function(n) return 1 == far.Message((M.mDeleteItemsQuery):format(n),
                         M.mDeleteNonexistentTitle, ";YesNo", "w") end)
         hDlg:send("DM_REDRAW")
@@ -296,7 +300,7 @@ local function GetListKeyFunction (aConfig, aData)
         return "done"
       end
       if aConfig==cfgView then
-        local attr = win.GetFileAttr(Item.text)
+        local attr = GetFileAttrEx(Item.text)
         if not attr then
           TellFileNotExist(Item.text)
           return "done"
