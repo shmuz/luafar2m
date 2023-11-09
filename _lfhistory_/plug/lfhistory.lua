@@ -269,7 +269,7 @@ local function GetListKeyFunction (aConfig, aData)
                                or win.GetFileAttr(t.text) or t.checked end,
             function(n) return 1 == far.Message((M.mDeleteItemsQuery):format(n),
                         M.mDeleteNonexistentTitle, ";YesNo", "w") end)
-        hDlg:Redraw()
+        hDlg:send("DM_REDRAW")
       end
       return "done"
     -----------------------------------------------------------------------------------------------
@@ -284,7 +284,7 @@ local function GetListKeyFunction (aConfig, aData)
             function(t) return t.checked end,
             function(n) return 1 == far.Message((M.mDeleteItemsQuery):format(n),
                         M.mDeleteItemsTitle, ";YesNo", "w") end)
-        hDlg:Redraw()
+        hDlg:send("DM_REDRAW")
       end
       return "done"
     -----------------------------------------------------------------------------------------------
