@@ -1,29 +1,33 @@
-local lfhistory=0xA745761D
+local LFHistory = 0xA745761D
+
+local function condition() return Plugin.Exist(LFHistory) end
+
+local function LFH_run(cmd) Plugin.Call(LFHistory, "own", cmd) end
 
 Macro {
-  description="LF History: Commands";
-  area="Shell"; key="AltF8";
-  condition=function() return Plugin.Exist(lfhistory) end;
-  action=function() Plugin.Call(lfhistory, "own", "commands") end;
+  description="LuaFAR History: commands";
+  area="Shell Info QView Tree"; key="AltF8";
+  condition=condition;
+  action=function() LFH_run"commands" end;
 }
 
 Macro {
-  description="LF History: View/Edit";
+  description="LuaFAR History: view/edit";
   area="Shell Editor Viewer"; key="AltF11";
-  condition=function() return Plugin.Exist(lfhistory) end;
-  action=function() Plugin.Call(lfhistory, "own", "view") end;
+  condition=condition;
+  action=function() LFH_run"view" end;
 }
 
 Macro {
-  description="LF History: Folders";
+  description="LuaFAR History: folders";
   area="Shell"; key="AltF12";
-  condition=function() return Plugin.Exist(lfhistory) end;
-  action=function() Plugin.Call(lfhistory, "own", "folders") end;
+  condition=condition;
+  action=function() LFH_run"folders" end;
 }
 
 Macro {
-  description="LF History: Locate file";
+  description="LuaFAR History: locate file";
   area="Shell"; key="ShiftSpace";
-  condition=function() return Plugin.Exist(lfhistory) end;
-  action=function() Plugin.Call(lfhistory, "own", "locate") end;
+  condition=condition;
+  action=function() LFH_run"locate" end;
 }
