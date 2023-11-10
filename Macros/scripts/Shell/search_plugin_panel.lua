@@ -5,6 +5,9 @@
 local MacroKey = "ShiftF7"
 local Title = "Search in plugin's panel"
 
+local SETTINGS_KEY  = "shmuz"
+local SETTINGS_NAME = "search_plugin_panel"
+
 local F = far.Flags
 local farhost = far.Host
 
@@ -125,8 +128,7 @@ local function GetDialogData()
   end
 
   -- load data
-  local key, subkey = "temp", "search_plugin_panel.lua"
-  local data = Settings.mload(key, subkey) or {}
+  local data = Settings.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
   -- initialize dialog
   Elem.bRegExpr.val = data.bRegExpr
   Elem.bCaseSens.val = data.bCaseSens
@@ -136,7 +138,7 @@ local function GetDialogData()
   -- run dialog
   data = dlg:Run()
   -- save data and return
-  if data then Settings.msave(key, subkey, data); end
+  if data then Settings.msave(SETTINGS_KEY, SETTINGS_NAME, data); end
   return data
 end
 
