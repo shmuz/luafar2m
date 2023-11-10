@@ -26,6 +26,9 @@ local function Settings()
   -- Конец файла Profile\SimSU\Editor_Remarks.cfg
 end
 
+local SETTINGS_KEY  = "SimSU"
+local SETTINGS_NAME = "Remarks"
+
 -- Встроенные языки / Built-in languages
 local function Messages()
   local lang = win.GetEnv("FARLANG")
@@ -77,7 +80,7 @@ local S=Settings()
 
 -------------------------------------------------------------------------------
 local F=far.Flags
-local Rem=mf.mload("SimSU","Remarks") or {}
+local Rem=mf.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
 
 local function Options()
 -- Функция настройки символов комментирования.
@@ -128,7 +131,7 @@ local function Options()
   else
     return nil
   end
-  mf.msave("SimSU","Remarks",Rem)
+  mf.msave(SETTINGS_KEY, SETTINGS_NAME, Rem)
   return Data.Symb
 end
 
