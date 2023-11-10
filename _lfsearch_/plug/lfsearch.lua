@@ -1,8 +1,8 @@
 -- lfsearch.lua
 -- luacheck: globals lfsearch _Plugin
 
-local SETTINGS_KEY  = "shmuz"
-local SETTINGS_NAME = "plugin_lfsearch"
+local SETTINGS_KEY  = ("%08X"):format(far.GetPluginId())
+local SETTINGS_NAME = "settings"
 local F = far.Flags
 local MenuFlags = bit64.bor(F.FMENU_WRAPMODE, F.FMENU_AUTOHIGHLIGHT)
 _G.lfsearch = {}

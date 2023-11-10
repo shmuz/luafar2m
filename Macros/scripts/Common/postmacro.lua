@@ -14,8 +14,8 @@ local LE       = "far2.lua_explorer"
 local Title    = "Post macro"
 local DlgGuid  = "2C4EFD54-A419-47E5-99B6-C9FD2D386AEC"
 local HelpGuid = "59154DF0-40D8-495C-BDF2-B97803745D8F"
-local DB_Key   = "Post macro utility"
-local DB_Name  = "Options"
+local DB_Key   = "shmuz"
+local DB_Name  = "Post macro"
 local osWindows = package.config:sub(1,1) == "\\"
 local F = far.Flags
 local SendMsg = far.SendDlgMessage

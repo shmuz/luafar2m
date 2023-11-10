@@ -3,8 +3,8 @@
 local M    = require "hv_message"
 local Sett = require "far2.settings"
 local sd   = require "far2.simpledialog"
-local SETTINGS_KEY  = "shmuz"
-local SETTINGS_NAME = "plugin_hlfviewer"
+local SETTINGS_KEY  = ("%08X"):format(far.GetPluginId())
+local SETTINGS_NAME = "settings"
 
 local F = far.Flags
 local VK = win.GetVirtualKeys()

@@ -12,8 +12,8 @@ local Cfg = {
 }
 
 -- UPVALUES : keep them above all function definitions !!
-local SETTINGS_KEY  = "shmuz"
-local SETTINGS_NAME = "plugin_lftmp"
+local SETTINGS_KEY  = ("%08X"):format(far.GetPluginId())
+local SETTINGS_NAME = "settings"
 
 local Sett  = require "far2.settings"
 local Utils = require "far2.utils"

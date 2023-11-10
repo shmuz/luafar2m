@@ -3,7 +3,7 @@
 local settings = require "far2.settings"
 local sdialog  = require "far2.simpledialog"
 local M        = require "modules.string_rc"
-local SETTINGS_KEY = "polygon"
+local SETTINGS_KEY = ("%08X"):format(far.GetPluginId())
 
 local Data
 local mod = {} -- this module

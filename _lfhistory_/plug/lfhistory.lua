@@ -5,7 +5,7 @@ far.ReloadDefaultScript = true
 package.loaded["far2.custommenu"] = nil
 package.loaded["lfh_config"] = nil
 
-local SETTINGS_KEY  = "lfhistory"
+local SETTINGS_KEY  = ("%08X"):format(far.GetPluginId())
 local SETTINGS_NAME = "settings"
 
 local IniFile    = require "inifile"
@@ -132,7 +132,9 @@ local function IsCtrlPgDn (key) return key=="CtrlPgDn" or key=="RCtrlPgDn" end
 
 local function ExecuteFromCmdLine(str, newwindow)
   panel.SetCmdLine(str)
-  far.MacroPost(newwindow and "Keys('ShiftEnter')" or "Keys('Enter')")
+  far.MacroPost(newwindow and "Keys('ShiftEnter')" or "Keys('Enter')",
+    "KMFLAGS_ENABLEOUTPUT") -- this flag was not needed until some FAR change between 09-12 Aug-23
+    -- (without this flag there are panels drawn on the console upon Ctrl-O press)
 end
 
 local function GetTimeString (filetime)
