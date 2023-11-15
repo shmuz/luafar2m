@@ -4,13 +4,13 @@ cmake_minimum_required (VERSION 3.1.0)
 
 project (plugins)
 
+# FARSOURCE must not be defined via $HOME
+set(FARSOURCE ${CMAKE_SOURCE_DIR}/../far2m)
+set(LUA_SHARE ${FARSOURCE}/luafar/lua_share)
+
 string(ASCII 27 Esc)
 set(ColorNormal "${Esc}[m")
 set(ColorRed "${Esc}[1;31m")
-
-# There must be a symlink far2m_src pointing to far2m source directory
-set(FARSOURCE ${CMAKE_SOURCE_DIR}/far2m_src)
-set(LUA_SHARE ${FARSOURCE}/luafar/lua_share)
 
 include(GNUInstallDirs)
 
