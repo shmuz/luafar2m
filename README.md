@@ -5,7 +5,7 @@ written in [Lua](https://www.lua.org/) 5.1 programming language.
 
 ## How to build plugins
 
-- Make sure that `far2m_src` symlink points to the far2m source directory.
+- Make sure that `FARSOURCE` in CMakeLists.txt points to the far2m source directory.
 ```
    mkdir _build && cd _build
    cmake ..
