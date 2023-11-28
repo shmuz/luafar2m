@@ -53,7 +53,7 @@ local function OpenCommandLine(Item)
   return obj
 end
 
-function export.Open (OpenFrom, Item)
+function export.Open (OpenFrom, _Id, Item)
   if OpenFrom == F.OPEN_SHORTCUT then
     return OpenShortcut(Item)
   elseif OpenFrom == F.OPEN_COMMANDLINE then

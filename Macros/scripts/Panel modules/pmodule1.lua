@@ -30,7 +30,7 @@ function mod.OpenFilePlugin (Name, Data, OpMode)
   end
 end
 
-function mod.Open(OpenFrom, Item)
+function mod.Open(OpenFrom, _Id, Item)
   if OpenFrom == F.OPEN_SHORTCUT then
     return FileToObject(Item.HostFile)
 

@@ -616,7 +616,7 @@ local function OpenCommandLine (aItem)
   end
 end
 
-local function export_Open (aFrom, aItem)
+local function export_Open (aFrom, _aId, aItem)
   if aFrom == F.OPEN_COMMANDLINE then
     return OpenCommandLine(aItem)
   elseif aFrom == F.OPEN_FROMMACRO then
@@ -639,7 +639,7 @@ local function export_Open (aFrom, aItem)
       if not item then break end
 
       history.SelectIndex = pos
-      item.hDlg = (sFrom == "dialog") and aItem or nil
+      item.hDlg = (sFrom == "dialog") and aItem.hDlg or nil
       local ok, result, bRetToMainMenu = RunMenuItem(item)
       if not ok then break end
 

@@ -349,7 +349,7 @@ local function OpenShortcut (Item)
 end
 
 
-function export.Open (OpenFrom, Item)
+function export.Open (OpenFrom, _Id, Item)
   if OpenFrom == F.OPEN_COMMANDLINE then
     return OpenCommandLine(Item)
 

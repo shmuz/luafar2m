@@ -244,7 +244,7 @@ local function OpenFromMacro (aItem)
 end
 
 
-function export.Open (aFrom, aItem)
+function export.Open (aFrom, _aId, aItem)
   local userItems = libUtils.LoadUserMenu("_usermenu.lua")
   if     aFrom == F.OPEN_PLUGINSMENU then return OpenFromPanels(userItems.panels)
   elseif aFrom == F.OPEN_EDITOR      then return OpenFromEditor(userItems.editor)

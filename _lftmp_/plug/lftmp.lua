@@ -27,7 +27,7 @@ local function Require (name)
   return require (name)
 end
 
-function export.Open (From, Item)
+function export.Open (From, _Id, Item)
   if From == F.OPEN_COMMANDLINE then
     return Env:Open(From, Item)
 

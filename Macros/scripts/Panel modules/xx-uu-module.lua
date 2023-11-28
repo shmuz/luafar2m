@@ -79,7 +79,7 @@ function mod.OpenFilePlugin (Name, Data, OpMode)
   end
 end
 
-function mod.Open (OpenFrom, Data)
+function mod.Open (OpenFrom, _Id, Data)
   if OpenFrom == F.OPEN_SHORTCUT then
     return FileToObject(Data)
   end

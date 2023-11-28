@@ -703,7 +703,7 @@ local function OpenFromMacro (Item)
   end
 end
 
-function export.Open (From, Item)
+function export.Open (From, _Id, Item)
   if From == F.OPEN_FROMMACRO then
     return OpenFromMacro(Item)
   elseif From == F.OPEN_EDITOR then

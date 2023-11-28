@@ -303,7 +303,7 @@ local function OpenFromMacro(Item)
   end
 end
 
-function export.Open(OpenFrom, Item)
+function export.Open(OpenFrom, _Id, Item)
   if OpenFrom == F.OPEN_COMMANDLINE then
     return OpenCommandLine(Item)
   elseif OpenFrom == F.OPEN_FROMMACRO then

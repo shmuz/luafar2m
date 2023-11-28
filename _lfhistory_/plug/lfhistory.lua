@@ -640,7 +640,7 @@ local function OpenFromMacro (Args)
   end
 end
 
-function export.Open (From, Item)
+function export.Open (From, _Id, Item)
   if From == F.OPEN_COMMANDLINE then
     return Utils.OpenCommandLine(Item, GetCommandTable(), nil, M.mPluginTitle)
 
