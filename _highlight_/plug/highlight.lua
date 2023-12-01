@@ -670,7 +670,7 @@ local function HighlightExtra()
       if param1 == Pos.btColor then
         local c = far.ColorDialog(extracolor)
         if c then
-          extracolor = c
+          extracolor = c.PaletteColor
           hDlg:send(F.DM_REDRAW)
         end
       else

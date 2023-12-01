@@ -234,13 +234,13 @@ local function EditorConfigDialog()
     if msg == F.DN_BTNCLICK then
       if param1 == Pos.btnHighlight then
         local c = far.ColorDialog(hColor0)
-        if c then hColor0 = c; hDlg:Redraw(); end
+        if c then hColor0 = c.PaletteColor; hDlg:Redraw(); end
       elseif param1 == Pos.btnGrepLNum1 then
         local c = far.ColorDialog(hColor1)
-        if c then hColor1 = c; hDlg:Redraw(); end
+        if c then hColor1 = c.PaletteColor; hDlg:Redraw(); end
       elseif param1 == Pos.btnGrepLNum2 then
         local c = far.ColorDialog(hColor2)
-        if c then hColor2 = c; hDlg:Redraw(); end
+        if c then hColor2 = c.PaletteColor; hDlg:Redraw(); end
       end
 
     elseif msg == F.DN_CTLCOLORDLGITEM then
