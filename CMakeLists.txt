@@ -126,6 +126,16 @@ else()
         " COMPONENT system)
 endif()
 
+if (NOT DEFINED MACROPANEL OR MACROPANEL)
+    message(STATUS "MACROPANEL plugin enabled")
+    add_subdirectory (_macropanel_)
+else()
+    message(STATUS "${ColorRed}MACROPANEL plugin disabled due to MACROPANEL=${MACROPANEL}${ColorNormal}")
+    install(CODE "
+        execute_process(COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_INSTALL_PREFIX}/lib/far2m/Plugins/luafar/macropanel/plug/macropanel.far-plug-wide)
+        " COMPONENT system)
+endif()
+
 if (NOT DEFINED POLYGON OR POLYGON)
     find_package(Sqlite3)
     if (Sqlite3_FOUND)
