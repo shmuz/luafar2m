@@ -14,7 +14,7 @@ Macro {
     editor.UndoRedo(nil,"EUR_BEGIN")
     editor.SetPosition(nil,nil,1)
     editor.InsertString()
-    editor.SetPosition(nil,info)
+    editor.SetPosition(nil, info.CurLine, info.CurPos)
     editor.SetString(nil, nil, line.StringText, eol)
     editor.UndoRedo(nil,"EUR_END")
     info.CurLine = info.CurLine + 1

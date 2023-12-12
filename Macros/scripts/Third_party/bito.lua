@@ -9,6 +9,8 @@
 local osWindows = package.config:sub(1,1)=="\\"
 
 local linewrap = 80
+local _name = "bito.ai code assistant"
+local _prompt = "&Ask any technical question / use {{%code%}} as seltext placeholder"
 
 local F = far.Flags
 local idProgress = win.Uuid"3E5021C5-47C7-4446-8E3B-13D3D9052FD8"
@@ -19,6 +21,24 @@ local function progress (text, title)
   --[[02]] {F.DI_TEXT,     2,1,    0,1,0,0,0,F.DIF_CENTERGROUP, text},
   }
   return far.DialogInit(idProgress, -1, -1, len+4, 3, nil, items, F.FDLG_NONMODAL)
+end
+
+local function GetQuestion()
+  local sd = require "far2.simpledialog"
+  local items = {
+    guid = "58DD9ECD-CFFA-472E-BFD7-042295C86CAE";
+    width = 100;
+    {tp="dbox"; text=_name; },
+    {tp="text"; text=_prompt; },
+    {tp="edit"; hist="bito.ai prompt"; uselasthistory=1; name="quest"; },
+    {tp="text"; text="&Line wrap:"; },
+    {tp="fixedit"; y1=""; x1=16; width=3; mask="999"; text=linewrap; name="wrap"; },
+  }
+  local out = sd.New(items):Run()
+  if out then
+    linewrap = tonumber(out.wrap)
+    return out.quest
+  end
 end
 
 local function Words(pipe)
@@ -50,11 +70,8 @@ local function Words(pipe)
   end
 end
 
-local _name = "bito.ai code assistant"
-local _prompt = "Ask any technical question / use {{%code%}} as seltext placeholder"
-local idInput = win.Uuid"58DD9ECD-CFFA-472E-BFD7-042295C86CAE"
 local function bito (prompt)
-  prompt = prompt or far.InputBox(idInput, _name, _prompt, "bito.ai prompt", nil, nil, nil, F.FIB_NONE)
+  prompt = prompt or GetQuestion()
   if prompt then
     local root = osWindows and win.GetEnv("FARLOCALPROFILE").."\\" or far.InMyConfig().."/"
     local ctxName = root.."ctx.bito"
@@ -80,11 +97,10 @@ local function bito (prompt)
     local ei = editor.GetInfo(Id)
     local s = editor.GetString(Id, ei.TotalLines)
     editor.SetPosition(Id, ei.TotalLines, s.StringLength+1)
-    local i = ei.TotalLines
     if s.StringLength>0 then
       editor.InsertString(Id)
       editor.InsertString(Id)
-      editor.SetPosition(Id, i+2)
+      editor.SetPosition(Id, ei.TotalLines+2)
     end
     far.Text()
 
@@ -111,7 +127,8 @@ local function bito (prompt)
 end
 
 if Macro then
-  Macro { description="Ask AI";
+  Macro {
+    description="Ask AI";
     area="Common"; key="CtrlAltB";
     action=function()
       mf.acall(bito)
