@@ -68,7 +68,7 @@ target_link_libraries(minilua PRIVATE ${LIBLUA_LIBRARIES})
 
 if (NOT DEFINED LF4ED OR LF4ED)
     message(STATUS "LF4ED plugin enabled")
-    add_subdirectory (_lf4ed_)
+    add_subdirectory (Plugins/lf4ed)
 else()
     message(STATUS "${ColorRed}LF4ED plugin disabled due to LF4ED=${LF4ED}${ColorNormal}")
     install(CODE "
@@ -78,7 +78,7 @@ endif()
 
 if (NOT DEFINED LFHISTORY OR LFHISTORY)
     message(STATUS "LFHISTORY plugin enabled")
-    add_subdirectory (_lfhistory_)
+    add_subdirectory (Plugins/lfhistory)
 else()
     message(STATUS "${ColorRed}LFHISTORY plugin disabled due to LFHISTORY=${LFHISTORY}${ColorNormal}")
     install(CODE "
@@ -88,7 +88,7 @@ endif()
 
 if (NOT DEFINED LFSEARCH OR LFSEARCH)
     message(STATUS "LFSEARCH plugin enabled")
-    add_subdirectory (_lfsearch_)
+    add_subdirectory (Plugins/lfsearch)
 else()
     message(STATUS "${ColorRed}LFSEARCH plugin disabled due to LFSEARCH=${LFSEARCH}${ColorNormal}")
     install(CODE "
@@ -98,7 +98,7 @@ endif()
 
 if (NOT DEFINED HLFVIEWER OR HLFVIEWER)
     message(STATUS "HLFVIEWER plugin enabled")
-    add_subdirectory (_hlfviewer_)
+    add_subdirectory (Plugins/hlfviewer)
 else()
     message(STATUS "${ColorRed}HLFVIEWER plugin disabled due to HLFVIEWER=${HLFVIEWER}${ColorNormal}")
     install(CODE "
@@ -108,7 +108,7 @@ endif()
 
 if (NOT DEFINED LFTMP OR LFTMP)
     message(STATUS "LFTMP plugin enabled")
-    add_subdirectory (_lftmp_)
+    add_subdirectory (Plugins/lftmp)
 else()
     message(STATUS "${ColorRed}LFTMP plugin disabled due to LFTMP=${LFTMP}${ColorNormal}")
     install(CODE "
@@ -118,7 +118,7 @@ endif()
 
 if (NOT DEFINED LUAPANEL OR LUAPANEL)
     message(STATUS "LUAPANEL plugin enabled")
-    add_subdirectory (_luapanel_)
+    add_subdirectory (Plugins/luapanel)
 else()
     message(STATUS "${ColorRed}LUAPANEL plugin disabled due to LUAPANEL=${LUAPANEL}${ColorNormal}")
     install(CODE "
@@ -128,7 +128,7 @@ endif()
 
 if (NOT DEFINED MACROPANEL OR MACROPANEL)
     message(STATUS "MACROPANEL plugin enabled")
-    add_subdirectory (_macropanel_)
+    add_subdirectory (Plugins/macropanel)
 else()
     message(STATUS "${ColorRed}MACROPANEL plugin disabled due to MACROPANEL=${MACROPANEL}${ColorNormal}")
     install(CODE "
@@ -140,7 +140,7 @@ if (NOT DEFINED POLYGON OR POLYGON)
     find_package(Sqlite3)
     if (Sqlite3_FOUND)
         message(STATUS "POLYGON plugin enabled")
-        add_subdirectory(_polygon_)
+        add_subdirectory (Plugins/polygon)
     else()
         message(STATUS "${ColorRed}POLYGON plugin disabled due to not found sqlite3 package${ColorNormal}")
     endif()
@@ -153,7 +153,7 @@ endif()
 
 if (DEFINED HIGHLIGHT AND HIGHLIGHT)
     message(STATUS "HIGHLIGHT plugin enabled")
-    add_subdirectory (_highlight_)
+    add_subdirectory (Plugins/highlight)
 else()
     message(STATUS "${ColorRed}HIGHLIGHT plugin disabled, use -DHIGHLIGHT=yes if you need it${ColorNormal}")
     install(CODE "
