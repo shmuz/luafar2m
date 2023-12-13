@@ -4,22 +4,24 @@
 @Contents
 $ #Introduction#
   This plugin shows currently installed macros and events in Far Manager panels.
-  
+
   The plugin can be activated from either: plugins menu, command line
 or folder shortcuts.
-  
+
  ~Key combinations in the panel~@KeyCombinations@
  ~Activation from the command line~@CommandLine@
 
 @KeyCombinations
 $ #Key combinations in the panel#
-  
+
   #Ctrl-F3#        sort macros/events by description
   #Ctrl-F4#        sort macros by area, sort events by group
   #Ctrl-F5#        sort macros by key
   #LCtrl-0...9#    set panel mode 0...9
   #F3#, #NumPad5#    open macrofile containing current item in viewer
   #F4#             open macrofile containing current item in editor
+  #F5#             toggle mode between "macros" and "events"
+  #F6#             toggle filter ON and OFF
   #Ctrl-Q#         quick view (works only with items whose descriptions
                  are valid file names)
   #Alt-Shift-F3#   locate macrofile in passive panel
@@ -43,7 +45,7 @@ $ #Command line#
   #Note:#
   Commands "macros" and "events" can be abbreviated to "m" and "e"
   correspondingly, e.g. instead of #mp:macros# one can write #mp:m#.
-  
+
   #Example:#
       #mp:macros . ed|vi f[35]#
   will display only those macros whose area contains "ed" or "vi"

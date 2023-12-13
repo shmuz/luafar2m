@@ -83,20 +83,14 @@ local pat_cmdline = regex.new ([[
 ]], "ix")
 
 function export.Open(OpenFrom, _ItemNumber, Item)
--- local t1=os.clock()
--- for k=1,1000 do export.GetFindData({type="macros"},nil,nil) end
--- far.Message(os.clock()-t1)
-
   if OpenFrom == F.OPEN_PLUGINSMENU then
-    local menuitem = far.Menu({Title=Title},
-      { {text="&1. Show macros",type="macros"}, {text="&2. Show events",type="events"} })
-    if menuitem then return { type=menuitem.type } end
+    return { type="macros" }
 
   elseif OpenFrom == F.OPEN_COMMANDLINE then
     local macros, events, f1, f2, f3 = pat_cmdline:match(Item)
     if macros or events then
       f1, f2, f3 = f1 and regex.new(f1,"i"), f2 and regex.new(f2,"i"), f3 and regex.new(f3,"i")
-      return { type=macros and "macros" or "events", f1=f1, f2=f2, f3=f3 }
+      return { type=macros and "macros" or "events", f1=f1, f2=f2, f3=f3, filter=true }
     end
 
   elseif OpenFrom == F.OPEN_SHORTCUT then
@@ -145,7 +139,8 @@ function export.GetFindData (object, handle, OpMode)
       if description==nil or description=="" then
         description = ("[index = %d]"):format(index)
       end
-      if  (not object.f1 or object.f1:find(description)) and
+      if not object.filter or
+          (not object.f1 or object.f1:find(description)) and
           (not object.f2 or object.f2:find(area)) and
           (not object.f3 or object.f3:find(key))
       then
@@ -157,7 +152,8 @@ function export.GetFindData (object, handle, OpMode)
       if description==nil or description=="" then
         description = ("[index = %d]"):format(index)
       end
-      if  (not object.f1 or object.f1:find(description)) and
+      if not object.filter or
+          (not object.f1 or object.f1:find(description)) and
           (not object.f2 or object.f2:find(group))
       then
         data[#data+1] = { FileName=description, CustomColumnData = { group,"",filename,startline,filemask } }
@@ -262,13 +258,6 @@ function export.ProcessPanelEvent (object, handle, Event, Param)
   if Event == F.FE_IDLE then
     panel.UpdatePanel(handle,true)
     panel.RedrawPanel(handle)
-  elseif Event == F.FE_CHANGEVIEWMODE then
-    local info = panel.GetPanelInfo(handle)
-    Settings.LastPanelMode = tostring(info.ViewMode):byte()
---elseif Event == F.FE_CHANGESORTPARAMS then
---  local info = panel.GetPanelInfo(handle)
---  Settings.LastSortMode = info.SortMode
---  Settings.LastSortOrder = band(info.Flags,F.PFLAGS_REVERSESORTORDER)==0 and 0 or 1
   end
 end
 
@@ -319,6 +308,16 @@ function export.ProcessKey (object, handle, Key, ControlState)
       return true
     end
 
+  -- F6: toggle mode between macros and events
+  elseif not (A or C or S) and Key==VK.F5 then
+    object.type = object.type=="macros" and "events" or "macros"
+    panel.UpdatePanel(handle)
+
+  -- CtrlH: toggle filter
+  elseif not (A or C or S) and Key==VK.F6 then
+    object.filter = not object.filter
+    panel.UpdatePanel(handle)
+
   end
 end
 
@@ -334,5 +333,9 @@ function export.GetFiles (object, handle, PanelItems, Move, DestPath, OpMode)
 end
 
 function export.ClosePanel (object, handle)
+  local info = panel.GetPanelInfo(handle)
+  Settings.LastPanelMode = tostring(info.ViewMode):byte()
+  Settings.LastSortMode = info.SortMode
+  Settings.LastSortOrder = band(info.Flags,F.PFLAGS_REVERSESORTORDER)==0 and 0 or 1
   SaveSettings()
 end
