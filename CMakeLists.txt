@@ -67,7 +67,7 @@ add_executable (minilua ${FARSOURCE}/luafar/src/minilua.c)
 target_link_libraries(minilua PRIVATE ${LIBLUA_LIBRARIES})
 
 function(AddPlugin Var Name Active)
-  if ((DEFINED ${Var} AND ${Var}) OR (NOT DEFINED${Var} AND ${Active}))
+  if ((DEFINED ${Var} AND ${Var}) OR (NOT DEFINED ${Var} AND ${Active}))
       message(STATUS "${Var} plugin enabled")
       add_subdirectory (Plugins/${Name})
   else()
