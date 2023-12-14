@@ -2,22 +2,31 @@
 --------------------------------------------------------------------------------
 -- luacheck: new_globals Settings
 
-far.ReloadDefaultScript = true
+-- Create a panel module
+local mod  = {}
+mod.Info = {
+  Guid        = win.Uuid("B8DD2917-FEF1-4049-B98D-DD51ABFF78F3"); -- mandatory field
+  Version     = "0.13.0.0";
+  Title       = "Macro Panel";
+  Description = "Panel-mode macro browser";
+  Author      = "Shmuel Zeigerman";
+}
 
 local SETTINGS_KEY  = ("%08X"):format(far.GetPluginId())
-local SETTINGS_NAME = "settings"
+local SETTINGS_NAME = "macropanel"
 
-local Sett = require "far2.settings"
+local Sett = mf -- require "far2.settings"
 
 local F = far.Flags
 local Title = "Macro Panel"
 local VK = win.GetVirtualKeys()
 local band, bor = bit64.band, bit64.bor
 local LStricmp = far.LStricmp
+local thisDir = (...):match(".+/")
 
-local LoadSettings, SaveSettings, SettingsAreLoaded do
-  function LoadSettings()
-    _G.Settings = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {
+local Settings, SaveSettings do
+  local function LoadSettings()
+    Settings = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {
         LastPanelMode = ("1"):byte();
         LastSortMode  = F.SM_NAME;
         LastSortOrder = 0;
@@ -28,12 +37,6 @@ local LoadSettings, SaveSettings, SettingsAreLoaded do
     Sett.msave(SETTINGS_KEY, SETTINGS_NAME, Settings)
   end
 
-  function SettingsAreLoaded()
-    return Settings and Settings.LastPanelMode ~= nil
-  end
-end
-
-if not SettingsAreLoaded() then
   LoadSettings()
 end
 
@@ -68,21 +71,12 @@ local function LocateFile (fname, whatpanel)
   return false
 end
 
-function export.GetPluginInfo()
-  return {
-    CommandPrefix = "mp",
-    Flags = 0,
-    PluginConfigStrings = { Title },
-    PluginMenuStrings = { Title },
-  }
-end
-
 local pat_cmdline = regex.new ([[
   ^ \s* (?: (macros | m) | (events | e) )
   (?: \s+(\S+) (?: \s+(\S+) (?: \s+(\S+) )? )? )? (?: \s | $)
 ]], "ix")
 
-function export.Open(OpenFrom, _ItemNumber, Item)
+function mod.Open(OpenFrom, Item)
   if OpenFrom == F.OPEN_PLUGINSMENU then
     return { type="macros" }
 
@@ -99,14 +93,9 @@ function export.Open(OpenFrom, _ItemNumber, Item)
   end
 end
 
-function export.Configure()
-  far.Message("Nothing to configure as yet", Title)
-end
-
-function export.GetFindData (object, handle, OpMode)
+function mod.GetFindData (object, handle, OpMode)
   --if band(OpMode, F.OPM_FIND) ~= 0 then return end
-  local sequence = [[
-    local idx, kind = ...
+  local function GetMacroOrEvent(idx, kind)
     while true do
       local m = mf.GetMacroCopy(idx)
       if not m then return 0 end
@@ -123,13 +112,13 @@ function export.GetFindData (object, handle, OpMode)
       end
       idx = idx+1
     end
-  ]]
+  end
   local data = {}
   local objtype = object.type
   local idx = 1
   while true do
-    local t = far.MacroExecute(sequence, nil, idx, objtype)
-    if not t then -- error occured: do not create panel
+    local t = { GetMacroOrEvent(idx, objtype) }
+    if not t[1] then -- error occured: do not create panel
       far.Message("Can not retrieve "..objtype, Title, nil, "w")
       return
     end
@@ -203,8 +192,7 @@ local EventPanelModes do
   EventPanelModes = { m2,m1,m2, m1,m2,m1, m2,m1,m2, m1 }
 end
 
-function export.GetOpenPanelInfo (object, handle)
---far.MacroPost[[print"."]]
+function mod.GetOpenPanelInfo (object, handle)
   return {
     Flags            = OpenPanelInfoFlags,
     PanelTitle       = ("%s (%s)"):format(Title, object.type),
@@ -217,7 +205,7 @@ function export.GetOpenPanelInfo (object, handle)
   }
 end
 
-function export.Compare (object, handle, Item1, Item2, Mode)
+function mod.Compare (object, handle, Item1, Item2, Mode)
   local r
   if object.type == "macros" then
     if Mode == F.SM_EXT then
@@ -254,14 +242,14 @@ function export.Compare (object, handle, Item1, Item2, Mode)
 
 end
 
-function export.ProcessPanelEvent (object, handle, Event, Param)
+function mod.ProcessPanelEvent (object, handle, Event, Param)
   if Event == F.FE_IDLE then
     panel.UpdatePanel(handle,true)
     panel.RedrawPanel(handle)
   end
 end
 
-function export.ProcessKey (object, handle, Key, ControlState)
+function mod.ProcessKey (object, handle, Key, ControlState)
   if band(Key, F.PKF_PREPROCESS) ~= 0 then
     return false
   end
@@ -273,10 +261,14 @@ function export.ProcessKey (object, handle, Key, ControlState)
   -- suppress the silly Far error message
   if not (A or C or S) and Key == VK.F7 then
     return true
-  end
+
+  -- F1: help
+  elseif not (A or C or S) and Key==VK.F1 then
+    far.ShowHelp(thisDir, nil, F.FHELP_CUSTOMPATH)
+    return true
 
   -- F3:view or F4:edit macrofile
-  if not (A or C or S) and (Key==VK.F3 or Key==VK.CLEAR or Key==VK.F4) then
+  elseif not (A or C or S) and (Key==VK.F3 or Key==VK.CLEAR or Key==VK.F4) then
     local item = panel.GetCurrentPanelItem(handle)
     local cdata = item.CustomColumnData
     if cdata and cdata[P_FILENAME] then
@@ -321,7 +313,7 @@ function export.ProcessKey (object, handle, Key, ControlState)
   end
 end
 
-function export.GetFiles (object, handle, PanelItems, Move, DestPath, OpMode)
+function mod.GetFiles (object, handle, PanelItems, Move, DestPath, OpMode)
   -- quick view
   if 0 ~= band(OpMode, F.OPM_QUICKVIEW) then
     local item = PanelItems[1]
@@ -332,10 +324,32 @@ function export.GetFiles (object, handle, PanelItems, Move, DestPath, OpMode)
   end
 end
 
-function export.ClosePanel (object, handle)
+function mod.ClosePanel (object, handle)
   local info = panel.GetPanelInfo(handle)
   Settings.LastPanelMode = tostring(info.ViewMode):byte()
   Settings.LastSortMode = info.SortMode
   Settings.LastSortOrder = band(info.Flags,F.PFLAGS_REVERSESORTORDER)==0 and 0 or 1
   SaveSettings()
 end
+
+CommandLine {
+  description = "Macro Panel";
+  prefixes = "mp";
+  action = function(prefix,text)
+    return mod, mod.Open(F.OPEN_COMMANDLINE, text)
+  end;
+}
+
+MenuItem {
+  description = mod.Info.Description;
+  menu   = "Plugins";
+  area   = "Shell";
+  guid   = "D1F37D2D-20F4-4151-820E-236E7B4A42CC";
+  text   = mod.Info.Title;
+  action = function(OpenFrom, Item)
+    return mod, mod.Open(OpenFrom, Item)
+  end;
+}
+
+-- Load the module
+PanelModule(mod)
