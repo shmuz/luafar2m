@@ -12,8 +12,8 @@ mod.Info = {
   Author      = "Shmuel Zeigerman";
 }
 
-local SETTINGS_KEY  = ("%08X"):format(far.GetPluginId())
-local SETTINGS_NAME = "macropanel"
+local SETTINGS_KEY  = "shmuz"
+local SETTINGS_NAME = "MacroPanel"
 
 local Sett = mf -- require "far2.settings"
 

@@ -229,6 +229,7 @@ local function EditorAction (op, data)
   end
 
   editor.UndoRedo(nil,F.EUR_END)
+  editor.Select(nil,F.BTYPE_NONE) -- prevent leaving an empty selection
   editor.SetPosition(nil,editorInfo)
 
   if data.bAdvanced then tParams.FinalFunc() end
