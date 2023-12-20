@@ -84,7 +84,6 @@ function(AddPlugin Name Active)
 endfunction()
 
 AddPlugin( highlight   0 )
-AddPlugin( hlfviewer   1 )
 AddPlugin( lf4ed       1 )
 AddPlugin( lfhistory   1 )
 AddPlugin( lfsearch    1 )
