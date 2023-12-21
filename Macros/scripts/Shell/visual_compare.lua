@@ -30,12 +30,18 @@ local function join(s1, s2)
 end
 
 -- collect items, skip directories
-local function Collect(whatPanel)
+local function Collect(whatPanel, limit)
   local selTable = {}
   local aInfo = panel.GetPanelInfo(whatPanel)
   for k=1,aInfo.SelectedItemsNumber do
     local item = GetSelectedItem(whatPanel,k)
-    if isfile(item) then table.insert(selTable,item) end
+    if isfile(item) then
+      if #selTable < limit then
+        table.insert(selTable,item)
+      else
+        selTable = {}; break -- too many selected items, use current item
+      end
+    end
   end
   if selTable[1] == nil then
     local item = GetCurrentItem(whatPanel)
@@ -50,7 +56,7 @@ local function Run(mode)
   local dirPassive = panel.GetPanelDirectory(PSV)
   local trgActive, trgPassive
 ----------------------------------------------------------------------------------------------------
-  local selAct, selPass = Collect(ACT), Collect(PSV)
+  local selAct, selPass = Collect(ACT,2), Collect(PSV,1)
   if #selAct == 1 then
     local aItem = selAct[1]
     trgActive = join(dirActive, aItem.FileName)
