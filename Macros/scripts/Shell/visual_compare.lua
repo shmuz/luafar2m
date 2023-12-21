@@ -29,35 +29,45 @@ local function join(s1, s2)
   return s1=="" and s2 or s1:find("/$") and s1..s2 or s1.."/"..s2
 end
 
+-- collect items, skip directories
+local function Collect(whatPanel)
+  local selTable = {}
+  local aInfo = panel.GetPanelInfo(whatPanel)
+  for k=1,aInfo.SelectedItemsNumber do
+    local item = GetSelectedItem(whatPanel,k)
+    if isfile(item) then table.insert(selTable,item) end
+  end
+  if selTable[1] == nil then
+    local item = GetCurrentItem(whatPanel)
+    if isfile(item) then table.insert(selTable,item) end
+  end
+  return selTable
+end
+
 local function Run(mode)
   local ACT,PSV = 1,0 -- active and passive panels
-  local aInfo = panel.GetPanelInfo(ACT)
-  local pInfo = panel.GetPanelInfo(PSV)
   local dirActive  = panel.GetPanelDirectory(ACT)
   local dirPassive = panel.GetPanelDirectory(PSV)
   local trgActive, trgPassive
-
-  if aInfo.SelectedItemsNumber == 1 or aInfo.SelectedItemsNumber > 2 then
-    local aItem = aInfo.SelectedItemsNumber == 1 and GetSelectedItem(ACT,1) or GetCurrentItem(ACT)
-    if isfile(aItem) then
-      trgActive = join(dirActive, aItem.FileName)
-      if pInfo.SelectedItemsNumber == 1 then
-        local pItem = GetSelectedItem(PSV,1)
-        if bit64.band(pItem.Flags, F.PPIF_SELECTED) ~= 0 then
-          trgPassive = join(dirPassive, pItem.FileName)
-        end
-      end
-      if not trgPassive then
-        local trg2 = join(dirPassive, extract_name(aItem.FileName))
-        if fexist(trg2) then trgPassive = trg2 end
+----------------------------------------------------------------------------------------------------
+  local selAct, selPass = Collect(ACT), Collect(PSV)
+  if #selAct == 1 then
+    local aItem = selAct[1]
+    trgActive = join(dirActive, aItem.FileName)
+    if #selPass == 1 then
+      local pItem = selPass[1]
+      if bit64.band(pItem.Flags, F.PPIF_SELECTED) ~= 0 then
+        trgPassive = join(dirPassive, pItem.FileName)
       end
     end
-  elseif aInfo.SelectedItemsNumber == 2 then
-    local item1, item2 = GetSelectedItem(ACT,1), GetSelectedItem(ACT,2)
-    if isfile(item1) and isfile(item2) then
-      trgActive = join(dirActive, item1.FileName)
-      trgPassive = join(dirActive, item2.FileName)
+    if not trgPassive then
+      local trg2 = join(dirPassive, extract_name(aItem.FileName))
+      if fexist(trg2) then trgPassive = trg2 end
     end
+  elseif #selAct == 2 then
+    local item1, item2 = selAct[1], selAct[2]
+    trgActive = join(dirActive, item1.FileName)
+    trgPassive = join(dirActive, item2.FileName)
   end
 
   if trgActive and trgPassive then
