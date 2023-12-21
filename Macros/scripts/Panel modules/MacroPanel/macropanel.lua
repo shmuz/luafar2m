@@ -1,6 +1,5 @@
--- started: 2013-10-30
+-- started: 2013-10-30 (as a plugin)
 --------------------------------------------------------------------------------
--- luacheck: new_globals Settings
 
 -- Create a panel module
 local mod  = {}
@@ -344,7 +343,7 @@ MenuItem {
   description = mod.Info.Description;
   menu   = "Plugins";
   area   = "Shell";
-  guid   = "D1F37D2D-20F4-4151-820E-236E7B4A42CC";
+  guid   = "788CFB39-783F-431B-9CB2-C277E867ECE2";
   text   = mod.Info.Title;
   action = function(OpenFrom, Item)
     return mod, mod.Open(OpenFrom, Item)

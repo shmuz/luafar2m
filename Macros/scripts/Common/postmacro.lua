@@ -54,8 +54,8 @@ Preset "global" variables:
   Message = far.Message
   Show    = far.Show
   WI      = far.AdvControl("ACTL_GETWINDOWINFO") -- window info
-  API     = panel.GetPanelInfo(nil,1)            -- active panel info
-  PPI     = panel.GetPanelInfo(nil,0)            -- passive panel info
+  API     = panel.GetPanelInfo(1)                -- active panel info
+  PPI     = panel.GetPanelInfo(0)                -- passive panel info
   EI      = editor.GetInfo()                     -- editor info
   VI      = viewer.GetInfo()                     -- viewer info
   Cnt     = automatic counter of runs in the current Lua environment]]

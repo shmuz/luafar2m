@@ -1314,7 +1314,7 @@ end
 
 -- cdata.sOp: operation - either "grep" or "count"
 local function Grep_ProcessFile (fdata, fullname, cdata)
-  local fp = io.open(fullname,"rb") or io.open([[\\?\]]..fullname,"rb")
+  local fp = io.open(fullname,"rb")
   if not fp then
     MsgCannotOpenFile(fullname)
     return
