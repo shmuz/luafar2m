@@ -378,7 +378,7 @@ function mypanel:get_open_panel_info(handle)
   end
 
   local Info  = self._panel_info
-  local Flags = 0
+  local Flags = bit64.bor(F.OPIF_USEHIGHLIGHTING)
   return {
     CurDir           = CurDir;
     Flags            = Flags;

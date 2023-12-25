@@ -96,7 +96,7 @@ local function GetPairForCompare()
   elseif #selAct == 1 and #selPass == 1 then
     trgActive  = fullname(dirActive,  selAct[1].FileName)
     trgPassive = fullname(dirPassive, selPass[1].FileName)
-  elseif next(selAct) then
+  elseif next(selAct) and dirPassive ~= "" then
     local name1 = (selAct[1] or selAct.Current).FileName
     local fullname2 = join(dirPassive, extract_name(name1))
     if fexist(fullname2) then
