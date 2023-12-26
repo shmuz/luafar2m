@@ -1,6 +1,7 @@
 project(luapanel)
 
 set(SOURCES
+  plug/GlobalInfo.c
   ${FARSOURCE}/luafar/src/luaplug.c
 )
 
@@ -18,12 +19,7 @@ endforeach()
 
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE ${EXPORTS}
-  PRIVATE "-DSYS_ID=0x50F187DF"
   PRIVATE "-DPLUG_MINFARVERSION=MAKEFARVERSION(2,4)"
-  PRIVATE "-DPLUG_VERSION=0,2,0,0"
-  PRIVATE "-DPLUG_TITLE=\"Lua Panel\""
-  PRIVATE "-DPLUG_DESCRIPTION=\"Panel-mode Lua-state browser\""
-  PRIVATE "-DPLUG_AUTHOR=\"Shmuel Zeigerman\""
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE

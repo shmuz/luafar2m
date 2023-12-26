@@ -1,6 +1,7 @@
 project(lf4ed)
 
 set(SOURCES
+  plug/GlobalInfo.c
   ${FARSOURCE}/luafar/src/luaplug.c
 )
 
@@ -19,12 +20,7 @@ endforeach()
 
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE ${EXPORTS}
-  PRIVATE "-DSYS_ID=0x6F332978"
   PRIVATE "-DPLUG_MINFARVERSION=MAKEFARVERSION(2,4)"
-  PRIVATE "-DPLUG_VERSION=3,9,3,0"
-  PRIVATE "-DPLUG_TITLE=\"LuaFAR for Editor\""
-  PRIVATE "-DPLUG_DESCRIPTION=\"A host for scripts and script packets\""
-  PRIVATE "-DPLUG_AUTHOR=\"Shmuel Zeigerman\""
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${FARSOURCE}/far/far2sdk)

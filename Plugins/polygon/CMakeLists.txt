@@ -1,6 +1,7 @@
 project(polygon)
 
 set(SOURCES
+  plug/GlobalInfo.c
   plug/polygon.c
 )
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFUNC_OPENLIBS=luaopen_polygon")
@@ -24,12 +25,7 @@ endforeach()
 
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE ${EXPORTS}
-  PRIVATE "-DSYS_ID=0xD4BC5EA7"
   PRIVATE "-DPLUG_MINFARVERSION=MAKEFARVERSION(2,4)"
-  PRIVATE "-DPLUG_VERSION=1,8,2,0"
-  PRIVATE "-DPLUG_TITLE=\"Polygon\""
-  PRIVATE "-DPLUG_DESCRIPTION=\"Plugin for viewing and editing SQLite3 database files\""
-  PRIVATE "-DPLUG_AUTHOR=\"Artem Senichev, Shmuel Zeigerman\""
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE

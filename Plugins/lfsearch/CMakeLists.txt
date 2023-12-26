@@ -1,6 +1,7 @@
 project(lfsearch)
 
 set(SOURCES
+  plug/GlobalInfo.c
   plug/reader.c
 )
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFUNC_OPENLIBS=luaopen_reader")
@@ -21,12 +22,7 @@ endforeach()
 
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE ${EXPORTS}
-  PRIVATE "-DSYS_ID=0x8E11EA75"
   PRIVATE "-DPLUG_MINFARVERSION=MAKEFARVERSION(2,4)"
-  PRIVATE "-DPLUG_VERSION=3,45,5,0"
-  PRIVATE "-DPLUG_TITLE=\"LuaFAR Search\""
-  PRIVATE "-DPLUG_DESCRIPTION=\"Plugin for search and replace\""
-  PRIVATE "-DPLUG_AUTHOR=\"Shmuel Zeigerman\""
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE

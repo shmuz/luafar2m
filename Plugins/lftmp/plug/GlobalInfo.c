@@ -1,0 +1,12 @@
+#include <farplug-wide.h>
+
+SHAREDSYMBOL void WINAPI EXP_NAME(GetGlobalInfo)(struct GlobalInfo *aInfo)
+{
+  struct VersionInfo Version = { 3,1,2,0 };
+  aInfo->StructSize    = sizeof(*aInfo);
+  aInfo->SysID         = 0xE2500D1C;
+  aInfo->Version       = Version;
+  aInfo->Title         = L"LuaFAR Temp. Panel";
+  aInfo->Description   = L"A Lua clone of TmpPanel plugin";
+  aInfo->Author        = L"Far Group, Shmuel Zeigerman";
+}

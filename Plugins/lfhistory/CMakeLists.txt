@@ -2,6 +2,7 @@ project(lfhistory)
 
 set(SOURCES
   ${FARSOURCE}/luafar/src/luaplug.c
+  plug/GlobalInfo.c
 )
 
 add_library (${PROJECT_NAME} MODULE ${SOURCES})
@@ -18,12 +19,7 @@ endforeach()
 
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE ${EXPORTS}
-  PRIVATE "-DSYS_ID=0xA745761D"
   PRIVATE "-DPLUG_MINFARVERSION=MAKEFARVERSION(2,4)"
-  PRIVATE "-DPLUG_VERSION=3,12,2,0"
-  PRIVATE "-DPLUG_TITLE=\"LuaFAR History\""
-  PRIVATE "-DPLUG_DESCRIPTION=\"History of commands, files and folders\""
-  PRIVATE "-DPLUG_AUTHOR=\"Shmuel Zeigerman\""
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${FARSOURCE}/far/far2sdk)

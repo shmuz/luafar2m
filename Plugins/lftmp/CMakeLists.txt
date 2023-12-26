@@ -1,6 +1,7 @@
 project(lftmp)
 
 set(SOURCES
+  plug/GlobalInfo.c
   ${FARSOURCE}/luafar/src/luaplug.c
 )
 
@@ -20,12 +21,7 @@ endforeach()
 
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE ${EXPORTS}
-  PRIVATE "-DSYS_ID=0xE2500D1C"
   PRIVATE "-DPLUG_MINFARVERSION=MAKEFARVERSION(2,4)"
-  PRIVATE "-DPLUG_VERSION=3,1,2,0"
-  PRIVATE "-DPLUG_TITLE=\"LuaFAR Temp. Panel\""
-  PRIVATE "-DPLUG_DESCRIPTION=\"A Lua clone of TmpPanel plugin\""
-  PRIVATE "-DPLUG_AUTHOR=\"Far Group, Shmuel Zeigerman\""
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
