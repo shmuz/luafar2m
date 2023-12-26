@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "luaplug.c"
 
 #ifdef __cplusplus
 extern "C" {

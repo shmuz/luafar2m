@@ -1,8 +1,8 @@
 project(lfhistory)
 
 set(SOURCES
-  ${FARSOURCE}/luafar/src/luaplug.c
   plug/GlobalInfo.c
+  ${FARSOURCE}/luafar/src/luaplug.c
 )
 
 add_library (${PROJECT_NAME} MODULE ${SOURCES})

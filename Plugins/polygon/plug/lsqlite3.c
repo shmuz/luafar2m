@@ -3605,7 +3605,7 @@ static void create_meta(lua_State *L, const char *name, const luaL_Reg *lib) {
     lua_pop(L, 1);
 }
 
-static int luaopen_lsqlite3(lua_State *L) {
+int luaopen_lsqlite3(lua_State *L) {
     create_meta(L, sqlite_meta, dblib);
     create_meta(L, sqlite_vm_meta, vmlib);
     create_meta(L, sqlite_bu_meta, dbbulib);

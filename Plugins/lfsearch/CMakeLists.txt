@@ -3,6 +3,7 @@ project(lfsearch)
 set(SOURCES
   plug/GlobalInfo.c
   plug/reader.c
+  ${FARSOURCE}/luafar/src/luaplug.c
 )
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFUNC_OPENLIBS=luaopen_reader")
 
@@ -26,8 +27,7 @@ target_compile_definitions(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-  ${FARSOURCE}/far/far2sdk
-  ${FARSOURCE}/luafar/src)
+  ${FARSOURCE}/far/far2sdk)
 
 set(INSTALL_DIR "${INSTALL_DIR}/${PROJECT_NAME}")
 

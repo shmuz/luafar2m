@@ -112,7 +112,8 @@ local function GetText (aOpt)
       if seq:find("^=") then
         seq = "far.Show("..seq:sub(2)..")"
       elseif seq:find("^>") then
-        seq = ('require %q (%s, "obj")'):format(LE, seq:sub(2))
+        local fmt = ms and '(require %q) %s, "obj"' or 'require %q (%s, "obj")'
+        seq = fmt:format(LE, seq:sub(2))
       end
       f, msg = loadstring(seq)
     end
