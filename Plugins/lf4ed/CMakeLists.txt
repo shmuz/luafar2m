@@ -20,7 +20,6 @@ endforeach()
 
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE ${EXPORTS}
-  PRIVATE "-DPLUG_MINFARVERSION=MAKEFARVERSION(2,4)"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${FARSOURCE}/far/far2sdk)

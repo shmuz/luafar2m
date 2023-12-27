@@ -1,6 +1,6 @@
 #include <farplug-wide.h>
 
-SHAREDSYMBOL void WINAPI EXP_NAME(GetGlobalInfo)(struct GlobalInfo *aInfo)
+SHAREDSYMBOL void WINAPI GetGlobalInfoW(struct GlobalInfo *aInfo)
 {
   struct VersionInfo Version = { 1,8,2,0 };
   aInfo->StructSize    = sizeof(*aInfo);
@@ -10,3 +10,10 @@ SHAREDSYMBOL void WINAPI EXP_NAME(GetGlobalInfo)(struct GlobalInfo *aInfo)
   aInfo->Description   = L"Plugin for viewing and editing SQLite3 database files";
   aInfo->Author        = L"Artem Senichev, Shmuel Zeigerman";
 }
+//---------------------------------------------------------------------------
+
+SHAREDSYMBOL int WINAPI GetMinFarVersionW(void)
+{
+  return MAKEFARVERSION(2,4);
+}
+//---------------------------------------------------------------------------
