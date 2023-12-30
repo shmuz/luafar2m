@@ -109,14 +109,10 @@ local function LoadUserModules(object, aLoadCommon, aLoadIndividual)
   end
 
   -- Load common modules (from %farprofile%\PluginsData\polygon)
---~   if aLoadCommon then
---~     local dir = win.GetEnv("FARPROFILE")
---~     if dir and dir~="" then
---~       dir = dir .. "\\PluginsData\\polygon"
---~       far.RecursiveSearch(dir, "*.lua", LoadOneUserFile, F.FRS_RECUR, AddModule)
---~       -- Far build >= 3810 required for calling far.RecursiveSearch with extra parameters
---~     end
---~   end
+  if aLoadCommon then
+    local dir = far.InMyConfig("plugins/luafar/polygon")
+    far.RecursiveSearch(dir, "*.lua", LoadOneUserFile, F.FRS_RECUR, AddModule)
+  end
 
   -- Load modules specified in the database itself in a special table
   if aLoadIndividual then
@@ -251,19 +247,18 @@ end
 local function OpenFromCommandLine(str)
   local File = ""
   local Opt = {}
-  for pos, word in str:gmatch("()(%S+)") do
-    if word:sub(1,1) == "-" then
-      if     word == "-startdebug" then plugdebug.Start() -- undocumented
-      elseif word == "-stopdebug"  then plugdebug.Stop()  -- undocumented
-      else AddOptions(Opt, word:sub(2))
+  local args = { far.SplitCmdLine(str) }
+  for _, arg in ipairs(args) do
+    if arg:sub(1,1) == "-" then
+      if     arg == "-startdebug" then plugdebug.Start() -- undocumented
+      elseif arg == "-stopdebug"  then plugdebug.Stop()  -- undocumented
+      else AddOptions(Opt, arg:sub(2))
       end
     else
-      File = str:sub(pos)
+      File = arg
       break
     end
   end
-  File = File:gsub("\"", "")
-  File = File:gsub("^%s*(.-)%s*$", "%1")
   if File == "" then
     File = ":memory:"
   else
@@ -380,7 +375,7 @@ function export.GetOpenPanelInfo(object, handle)
 end
 
 
-function export.GetFindData(object, handle, OpMode)
+function export.GetFindData(object, handle, _OpMode)
   return object:get_find_data(handle)
 end
 
@@ -392,7 +387,7 @@ function export.SetDirectory(object, handle, Dir, OpMode)
 end
 
 
-function export.DeleteFiles(object, handle, PanelItems, OpMode)
+function export.DeleteFiles(object, handle, PanelItems, _OpMode)
   return object:delete_items(handle, PanelItems)
 end
 
