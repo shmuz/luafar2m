@@ -20,8 +20,14 @@ Macro {
 
 Macro {
   description = "git diff: luafar2m";
-  area="Shell"; key=SharedKey; sortpriority=46;
+  area="Shell"; key=SharedKey; sortpriority=47;
   action=function() ShowDiff("luafar2m") end;
+}
+
+Macro {
+  description = "git diff: scite-config";
+  area="Shell"; key=SharedKey; sortpriority=46;
+  action=function() ShowDiff("scite-config") end;
 }
 
 Macro {

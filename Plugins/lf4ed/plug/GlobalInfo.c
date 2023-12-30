@@ -2,7 +2,7 @@
 
 SHAREDSYMBOL void WINAPI GetGlobalInfoW(struct GlobalInfo *aInfo)
 {
-  struct VersionInfo Version = { 3,9,3,0 };
+  struct VersionInfo Version = { 3,9,4,0 };
   aInfo->StructSize    = sizeof(*aInfo);
   aInfo->SysID         = 0x6F332978;
   aInfo->Version       = Version;

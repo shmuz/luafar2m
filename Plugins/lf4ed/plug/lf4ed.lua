@@ -167,53 +167,7 @@ local EditorMenuItems = {
   { text = "::MScriptParams", action = fScriptParams },
 }
 
--- Split command line into separate arguments.
--- * The function does not raise errors: any input string is acceptable and
---   is split into arguments according to the rules below.
--- * An argument is:
---   a) sequence enclosed within a pair of non-escaped double quotes; can
---      contain spaces; enclosing double quotes are stripped from the argument.
---   b) sequence containing non-space, non-unescaped-double-quote characters.
--- * Arguments of both kinds can contain escaped double quotes;
--- * Backslashes escape only double quotes; non-escaped double qoutes either
---   start or end an argument.
-local function SplitCommandLine (str)
-  local out = {}
-  local from = 1
-  while true do
-    local to
-    from = str:find("%S", from)
-    if not from then break end
-    if str:sub(from,from) == '"' then
-      from, to = from+1, from+1
-      while true do
-        local c = str:sub(to,to)
-        if c == '' or c == '"' then
-          out[#out+1] = str:sub(from,to-1)
-          from = to+1
-          break
-        elseif str:sub(to,to+1) == [[\"]] then to = to+2
-        else to = to+1
-        end
-      end
-    else
-      to = from
-      while true do
-        local c = str:sub(to,to)
-        if c == '' or c == '"' or c:find("%s") then break
-        elseif str:sub(to,to+1) == [[\"]] then to = to+2
-        else to = to+1
-        end
-      end
-      out[#out+1] = str:sub(from,to-1)
-      from = to
-    end
-  end
-  for i,v in ipairs(out) do out[i]=v:gsub([[\"]], [["]]) end
-  return out
-end
-
-local function MakeAddCommand (Items, Env, FileName)
+local function MakeAddCommand (_Items, Env, FileName)
   return function (aCommand, aAction, aDescription)
     if type(aCommand)=="string" and type(aAction)=="function" then
       setfenv(aAction, Env)
@@ -473,7 +427,7 @@ Available commands:
   far.Message(syn, M.MPluginName..": "..M.MCommandSyntaxTitle, ";Ok", "l")
 end
 
-local function ExecuteCommand (args, sFrom)
+local function ExecuteCommand (args, _sFrom)
   local env = setmetatable({}, {__index=_G})
   for _,v in ipairs(args) do
     if v.command then
@@ -538,9 +492,8 @@ end
 -- This function processes both command line calls and calls from macros.
 -------------------------------------------------------------------------------
 local function ProcessCommand (args, sFrom)
-  if #args==0 then return CommandSyntaxMessage() end
   local opt, async
-  local args2 = {}
+  local actions = {}
   for i,v in ipairs(args) do
     local param
     if opt then
@@ -555,7 +508,7 @@ local function ProcessCommand (args, sFrom)
       if not cmd_arr then return CommandSyntaxMessage() end
       local cmd = SelectCommand(v, cmd_arr)
       if not cmd then return end
-      table.insert(args2, { command=cmd; unpack(args, i+1); })
+      actions[#actions+1] = { command=cmd; unpack(args, i+1); }
       break
     end
     if opt == "a" then
@@ -563,25 +516,29 @@ local function ProcessCommand (args, sFrom)
     else
       if param ~= "" then
         if opt=="r" then
-          table.insert(args2, { opt=opt; param=param; unpack(args, i+1); })
+          actions[#actions+1] = { opt=opt; param=param; unpack(args, i+1); }
           break
         else
-          table.insert(args2, { opt=opt; param=param; })
+          actions[#actions+1] = { opt=opt; param=param; }
         end
         opt = nil
       end
     end
   end
-  if async then
-    ---- autocomplete:good; Escape response:bad when timer period < 20;
-    far.Timer(30, function(h) h:Close() ExecuteCommand(args2, sFrom) end)
+  if actions[1] then
+    if async then
+      ---- autocomplete:good; Escape response:bad when timer period < 20;
+      far.Timer(30, function(h) h:Close() ExecuteCommand(actions, sFrom) end)
+    else
+      ---- autocomplete:bad; Escape responsiveness:good;
+      return ExecuteCommand(actions, sFrom)
+    end
   else
-    ---- autocomplete:bad; Escape responsiveness:good;
-    return ExecuteCommand(args2, sFrom)
+    return CommandSyntaxMessage()
   end
 end
 
-function export.Configure (ItemNumber)
+function export.Configure (_ItemNumber)
   Configure()
 end
 
@@ -594,25 +551,20 @@ local function OpenFromMacro (aItem)
   }
   local area = map[far.MacroGetArea()]
   if area then
-    local args = SplitCommandLine(aItem)
+    local args = { far.SplitCmdLine(aItem) }
     ProcessCommand(args, area)
   end
 end
 
-local function OpenCommandLine (aItem)
-  local prefix, command = aItem:match("^(.-):(.*)")
-  prefix = prefix:lower()
-  ----------------------------------------------------------------------------
-  if prefix == "lfe" then
-    local expr = command:match("^%s*=(.*)")
-    if expr then
-      local f = assert(loadstring("far.Show(".. expr..")"))
-      local env = setmetatable({}, {__index=_G})
-      setfenv(f,env)()
-    else
-      local args = SplitCommandLine(command)
-      ProcessCommand(args, "panels")
-    end
+local function OpenCommandLine (command)
+  local expr = command:match("^%s*=(.*)")
+  if expr then
+    local f = assert(loadstring("far.Show(".. expr..")"))
+    local env = setmetatable({}, {__index=_G})
+    setfenv(f,env)()
+  else
+    local args = { far.SplitCmdLine(command) }
+    ProcessCommand(args, "panels")
   end
 end
 
@@ -656,7 +608,7 @@ local function export_Open (aFrom, _aId, aItem)
 end
 
 function export.GetPluginInfo()
-  local flags = bor(F.PF_EDITOR, F.PF_DISABLEPANELS, F.PF_FULLCMDLINE)
+  local flags = bor(F.PF_EDITOR, F.PF_DISABLEPANELS)
   local useritems = _Plugin.UserItems
   if useritems then
     if #useritems.panels > 0 then flags = band(flags, bnot(F.PF_DISABLEPANELS)) end
