@@ -184,12 +184,12 @@ local function GetNextPath(s)
   return s:match("(.*/).+")
 end
 
-local function JumpToNearestFolder(path, breakkey)
+local function JumpToNearestFolder(path, whatpanel)
   if 1 == far.Message(path.."\n"..M.mJumpToNearestFolder, M.mPathNotFound, ";YesNo", "w") then
     while true do
       local nextpath = GetNextPath(path)
       if nextpath then
-        if panel.SetPanelDirectory(breakkey==nil and 1 or 0, nextpath) then
+        if panel.SetPanelDirectory(whatpanel, nextpath) then
           return true
         end
         path = nextpath
@@ -340,12 +340,12 @@ local function GetListKeyFunction (aConfig, aData)
 end
 
 function cfgView.CanClose (_list, item, breakkey)
-  if item and (IsCtrlPgUp(breakkey) or IsCtrlPgDn(breakkey)) and not FindFile(item.text) then
+  if item and not FindFile(item.text) then
     if IsCtrlPgDn(breakkey) then
       TellFileNotExist(item.text)
       return false
-    else
-      return JumpToNearestFolder(item.text, breakkey)
+    elseif IsCtrlPgUp(breakkey) then
+      return JumpToNearestFolder(item.text, breakkey and 0 or 1)
     end
   end
   return true
@@ -361,12 +361,12 @@ function cfgFolders.CanClose (_list, item, breakkey)
     return true
   end
   ----------------------------------------------------------------------------
-  if panel.SetPanelDirectory(breakkey==nil and 1 or 0, item.text) then
+  if panel.SetPanelDirectory(breakkey and 0 or 1, item.text) then
     return true
   end
   ----------------------------------------------------------------------------
   if GetNextPath(item.text) then -- check before asking user
-    return JumpToNearestFolder(item.text, breakkey)
+    return JumpToNearestFolder(item.text, breakkey and 0 or 1)
   else
     far.Message(item.text, M.mPathNotFound, nil, "w")
     return false
