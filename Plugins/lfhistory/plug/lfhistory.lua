@@ -180,6 +180,27 @@ local function FindFile (fname)
   return false
 end
 
+local function GetNextPath(s)
+  return s:match("(.*/).+")
+end
+
+local function JumpToNearestFolder(path, breakkey)
+  if 1 == far.Message(path.."\n"..M.mJumpToNearestFolder, M.mPathNotFound, ";YesNo", "w") then
+    while true do
+      local nextpath = GetNextPath(path)
+      if nextpath then
+        if panel.SetPanelDirectory(breakkey==nil and 1 or 0, nextpath) then
+          return true
+        end
+        path = nextpath
+      else
+        far.Message(path, M.mPathNotFound, nil, "w")
+        break
+      end
+    end
+  end
+end
+
 local function SortListItems (list, bDirectSort, hDlg)
   _Plugin.Cfg.bDirectSort = bDirectSort
   if bDirectSort then
@@ -320,8 +341,12 @@ end
 
 function cfgView.CanClose (_list, item, breakkey)
   if item and (IsCtrlPgUp(breakkey) or IsCtrlPgDn(breakkey)) and not FindFile(item.text) then
-    TellFileNotExist(item.text)
-    return false
+    if IsCtrlPgDn(breakkey) then
+      TellFileNotExist(item.text)
+      return false
+    else
+      return JumpToNearestFolder(item.text, breakkey)
+    end
   end
   return true
 end
@@ -340,28 +365,11 @@ function cfgFolders.CanClose (_list, item, breakkey)
     return true
   end
   ----------------------------------------------------------------------------
-  local GetNextPath = function(s) return s:match("(.*/).+") end
-  if not GetNextPath(item.text) then -- check before asking user
+  if GetNextPath(item.text) then -- check before asking user
+    return JumpToNearestFolder(item.text, breakkey)
+  else
     far.Message(item.text, M.mPathNotFound, nil, "w")
     return false
-  end
-  ----------------------------------------------------------------------------
-  if 1 ~= far.Message(item.text.."\n"..M.mJumpToNearestFolder, M.mPathNotFound, ";YesNo", "w") then
-    return false
-  end
-  ----------------------------------------------------------------------------
-  local path = item.text
-  while true do
-    local nextpath = GetNextPath(path)
-    if nextpath then
-      if panel.SetPanelDirectory(breakkey==nil and 1 or 0, nextpath) then
-        return true
-      end
-      path = nextpath
-    else
-      far.Message(path, M.mPathNotFound, nil, "w")
-      return false
-    end
   end
 end
 
