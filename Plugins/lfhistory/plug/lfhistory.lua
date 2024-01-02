@@ -340,12 +340,16 @@ local function GetListKeyFunction (aConfig, aData)
 end
 
 function cfgView.CanClose (_list, item, breakkey)
-  if item and not FindFile(item.text) then
+  if item then
     if IsCtrlPgDn(breakkey) then
-      TellFileNotExist(item.text)
-      return false
+      if not FindFile(item.text) then
+        TellFileNotExist(item.text)
+        return false
+      end
     elseif IsCtrlPgUp(breakkey) then
-      return JumpToNearestFolder(item.text, breakkey and 0 or 1)
+      if not FindFile(item.text) then
+        return JumpToNearestFolder(item.text, breakkey and 0 or 1)
+      end
     end
   end
   return true
