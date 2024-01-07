@@ -88,5 +88,6 @@ if not Macro then DoTest() return end
 Macro {
   description="Test regular expressions";
   area="Common"; key="AltShiftF2";
+  flags="NoPluginPanels";
   action=function() DoTest() end;
 }

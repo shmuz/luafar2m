@@ -25,6 +25,12 @@ Macro {
 }
 
 Macro {
+  description = "git diff: luafar-far2l";
+  area="Shell"; key=SharedKey; sortpriority=46.5;
+  action=function() ShowDiff("luafar-far2l") end;
+}
+
+Macro {
   description = "git diff: scite-config";
   area="Shell"; key=SharedKey; sortpriority=46;
   action=function() ShowDiff("scite-config") end;
