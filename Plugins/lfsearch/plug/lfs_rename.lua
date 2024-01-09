@@ -223,7 +223,7 @@ local function UserDialog (aData, aList, aDlgTitle)
     { tp="dbox";  text=aDlgTitle;                                                                  },
     { tp="text";  text=M.MDlgFileMask;                                                             },
     { tp="edit";  x1=X1; y1="";                  name="sFileMask";         hist="Masks";           },
-    { tp="rbutt"; text=M.MDlgRenameInAll;        name="rSearchInAll";      group=1;                },
+    { tp="rbutt"; text=M.MDlgRenameInAll;        name="rSearchInAll";      group=1;  val=1;        },
     { tp="rbutt"; text=M.MDlgRenameInSelected;   name="rSearchInSelected";                         },
     { tp="chbox"; text=M.MDlgRenameFiles;        name="bRenFiles";        x1=W+4; ystep=-1; val=1; },
     { tp="chbox"; text=M.MDlgRenameFolders;      name="bRenFolders";      x1="";                   },

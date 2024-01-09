@@ -348,7 +348,7 @@ function cfgView.CanClose (_list, item, breakkey)
       end
     elseif IsCtrlPgUp(breakkey) then
       if not FindFile(item.text) then
-        return JumpToNearestFolder(item.text, breakkey and 0 or 1)
+        return JumpToNearestFolder(item.text, 1)
       end
     end
   end

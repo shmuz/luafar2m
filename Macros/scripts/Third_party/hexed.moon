@@ -1,6 +1,6 @@
 -- Author: Vadim Yegorov (zg)
 -- URL: https://github.com/trexinc/evil-programmers/blob/master/LuaHexEd/Macros/scripts/hexed.moon
--- Adaptation to far2l: Shmuel Zeigerman
+-- Adaptation to far2m: Shmuel Zeigerman
 
 --BACKUP YOUR FILES BEFORE USE
 if not jit then return -- LuaJIT required
