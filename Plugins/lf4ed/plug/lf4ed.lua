@@ -645,7 +645,7 @@ end
 
 local function export_ProcessEditorInput (Rec)
   local EventType = Rec.EventType
-  if (EventType==F.FARMACRO_KEY_EVENT) or (EventType==F.KEY_EVENT) then
+  if EventType==F.KEY_EVENT then
     local item = _Plugin.HotKeyTable[KeyComb(Rec)]
     if item then
       if Rec.KeyDown then

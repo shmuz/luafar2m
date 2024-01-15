@@ -6,7 +6,7 @@ OptCaseSensitive=false
 -- End of options
 
 F=far.Flags
-band,bor,lshift,rshift = bit.band, bit.bor, bit.lshift, bit.rshift
+band,bor,lshift,rshift = bit64.band, bit64.bor, bit64.lshift, bit64.rshift
 color = actl.GetColor "COL_EDITORTEXT"
 color = bor lshift(band(color,0xF),4), rshift(color,4)
 words={}

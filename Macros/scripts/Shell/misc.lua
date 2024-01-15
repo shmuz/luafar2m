@@ -42,6 +42,9 @@ Macro {
   action=function()
     local home = os.getenv("HOME")
     local dir = panel.GetPanelDirectory(1)
+    if dir == "" then -- TmpPanel ?
+      dir = APanel.Current:match("(.*)/") or ""
+    end
     local dir2 = dir:gsub("^("..home.."/far2)l", "%1m")
     if dir2 == dir then return end
     dir2 = dir2:gsub("^("..home.."/far2m/far)2l", "%1")
