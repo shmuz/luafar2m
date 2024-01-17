@@ -45,3 +45,11 @@ Macro {
     far.Message("Done")
   end
 }
+
+Macro {
+  description="Show panels";
+  area="Shell"; key="MsRClick";
+  condition=function(key) return not (APanel.Visible or PPanel.Visible); end;
+  action=function() Keys("CtrlO") end;
+}
+
