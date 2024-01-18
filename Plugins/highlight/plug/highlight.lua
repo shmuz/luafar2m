@@ -113,9 +113,10 @@ local COLNAMES = {
 }
 
 local function ProcessFullColor(color)
-  if type(color) == "number" then
+  local tp = type(color)
+  if tp == "number" or tp == "table" then
     return color
-  elseif type(color) == "string" then
+  elseif tp == "string" then
     local fg,bg = color:match("(%l+)[%- ]+on[%- ]+(%l+)") -- e.g. "yellow on gold"
     if fg and COLNAMES[fg] and COLNAMES[bg] then
       return bor(COLNAMES[fg], lshift(COLNAMES[bg],4))
