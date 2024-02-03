@@ -307,12 +307,10 @@ if Macro then
   Macro {
     description=Title;
     area="Editor"; key=MacroKey;
-    condition=function()
+    action=function()
       local data = get_data_from_dialog()
       if data then Work(data) end
-      return true
     end;
-    action=function() end;
   }
 else
   local w = far.AdvControl("ACTL_GETWINDOWTYPE")
