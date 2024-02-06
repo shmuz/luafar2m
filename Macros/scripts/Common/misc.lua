@@ -69,3 +69,10 @@ Macro {
     mf.xlat('', 1)
   end;
 }
+
+NoMacro {
+  description="Key logger";
+  area="Common"; key="/.+/";
+  condition=function(key) far.Log(key) end;
+}
+
