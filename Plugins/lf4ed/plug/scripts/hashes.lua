@@ -50,13 +50,13 @@ local function sha1_sum(fname, callback)
 end
 
 local function Work()
-  local panelInfo = panel.GetPanelInfo(1)
+  local panelInfo = panel.GetPanelInfo(nil, 1)
   if not panelInfo then return end
 
   local filelist = {}
   local hasSelection = false
   for i=1,panelInfo.ItemsNumber do
-    local item = panel.GetPanelItem(1,i)
+    local item = panel.GetPanelItem(nil,1,i)
     if 0~=band(item.Flags,F.PPIF_SELECTED) then
       hasSelection = true
       if not item.FileAttributes:find"d" then
@@ -66,7 +66,7 @@ local function Work()
     end
   end
   if not hasSelection then
-    local item = panel.GetCurrentPanelItem(1)
+    local item = panel.GetCurrentPanelItem(nil, 1)
     if not item.FileAttributes:find("d") then
       table.insert(filelist, item)
     end
@@ -88,7 +88,7 @@ local function Work()
   for i,item in ipairs(filelist) do
     local fname = item.FileName
     if not fname:find("[\\/]") then
-      local dir = assert(panel.GetPanelDirectory(1))
+      local dir = assert(panel.GetPanelDirectory(nil.1))
       fname = (dir:find("[\\/]$") and dir or dir.."/") .. fname
     end
     item.FullName = fname
@@ -120,8 +120,8 @@ local function Work()
   end
 
   if selected[1] then
-    panel.SetSelection (1,selected,false)
-    panel.RedrawPanel(1)
+    panel.SetSelection (nil,1,selected,false)
+    panel.RedrawPanel(nil,1)
   end
   far.AdvControl("ACTL_REDRAWALL")
 

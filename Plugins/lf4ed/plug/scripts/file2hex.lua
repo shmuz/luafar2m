@@ -38,14 +38,14 @@ end
 --  area="Shell"; key=Shortcut;
 --  flags="NoPluginPanels NoFolders";
 local function File2Hex()
-  local info = panel.GetPanelInfo(1)
+  local info = panel.GetPanelInfo(nil, 1)
   if band(info.Flags, F.PFLAGS_PLUGIN) ~= 0 then return end
 
-  local item = panel.GetCurrentPanelItem(1)
+  local item = panel.GetCurrentPanelItem(nil, 1)
   if item.FileAttributes:find("d") then return end
 
   local Title = "Convert file contents to HEX";
-  local dir = panel.GetPanelDirectory(1)
+  local dir = panel.GetPanelDirectory(nil, 1)
   local name_in = dir.."/"..item.FileName
   local name_out = name_in..".hex"
   local f_in =assert(C.fopen(name_in, "rb"))
@@ -69,7 +69,7 @@ local function File2Hex()
   end
   C.fclose(f_out)
   C.fclose(f_in)
-  panel.UpdatePanel(1)
+  panel.UpdatePanel(nil, 1)
   far.AdvControl("ACTL_REDRAWALL")
 end
 

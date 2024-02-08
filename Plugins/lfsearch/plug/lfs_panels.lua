@@ -651,13 +651,13 @@ local function MakeItemList (panelInfo, searchArea)
   local itemList, flags = {}, {recurse=true}
   local bRealNames = (band(panelInfo.Flags, F.PFLAGS_REALNAMES) ~= 0)
   local bPlugin = (band(panelInfo.Flags, F.PFLAGS_PLUGIN) ~= 0)
-  local sPanelDir = panel.GetPanelDirectory(1) or ""
+  local sPanelDir = panel.GetPanelDirectory(nil,1) or ""
 
   if searchArea == "FromCurrFolder" or searchArea == "OnlyCurrFolder" then
     if bRealNames then
       if bPlugin then
         for i=1, panelInfo.ItemsNumber do
-          local name = panel.GetPanelItem(1,i).FileName
+          local name = panel.GetPanelItem(nil,1,i).FileName
           if name ~= ".." and name ~= "." then
             itemList[#itemList+1] = name
           end
@@ -673,7 +673,7 @@ local function MakeItemList (panelInfo, searchArea)
     if bRealNames then
       local curdir_slash = bPlugin and "" or sPanelDir:gsub("/?$","/",1)
       for i=1, panelInfo.SelectedItemsNumber do
-        local item = panel.GetSelectedPanelItem(1, i)
+        local item = panel.GetSelectedPanelItem(nil, 1, i)
         itemList[#itemList+1] = curdir_slash .. item.FileName
       end
     end
@@ -846,7 +846,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   do -- was: "Search_ProcessAllItems (aData, userbreak, Search_ProcessFile)"
     local FileFilter = tParams.FileFilter
     if FileFilter then FileFilter:StartingToFilter() end
-    local panelInfo = panel.GetPanelInfo(1)
+    local panelInfo = panel.GetPanelInfo(nil,1)
     local bPlugin = (band(panelInfo.Flags, F.PFLAGS_PLUGIN) ~= 0)
     local itemList, flags = MakeItemList(panelInfo, area)
     if aData.bSearchSymLinks then
@@ -957,7 +957,7 @@ local function CollectAllItems (aData, tParams, fFileMask, fDirMask, fDirExMask,
   local FileFilter = tParams.FileFilter
   if FileFilter then FileFilter:StartingToFilter() end
 
-  local panelInfo = panel.GetPanelInfo(1)
+  local panelInfo = panel.GetPanelInfo(nil,1)
   local bPlugin = (band(panelInfo.Flags, F.PFLAGS_PLUGIN) ~= 0)
   local area = CheckSearchArea(aData.sSearchArea)
   local itemList, flags = MakeItemList(panelInfo, area)

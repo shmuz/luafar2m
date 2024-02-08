@@ -2,17 +2,17 @@
 -- description="Find an upper non-directory item";
 -- area="Shell"; key="CtrlShiftHome";
 local function JumpToNonDir()
-  local pInfo = panel.GetPanelInfo(1)
+  local pInfo = panel.GetPanelInfo(nil, 1)
   if pInfo then
     local lower, upper = 1, pInfo.ItemsNumber
     while upper-lower >= 2 do -- binary search
       local curr = math.floor((lower+upper)/2)
-      local item = panel.GetPanelItem(1,curr)
+      local item = panel.GetPanelItem(nil,1,curr)
       if item.FileAttributes:find("d") then lower = curr
       else upper = curr
       end
     end
-    panel.RedrawPanel(1,{ CurrentItem=upper; TopPanelItem=upper-8; })
+    panel.RedrawPanel(nil,1,{ CurrentItem=upper; TopPanelItem=upper-8; })
   end
 end
 

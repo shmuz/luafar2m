@@ -538,8 +538,8 @@ local function DoAction (Params, aDir, aLog)
     end
   end
 
-  local panelInfo = panel.GetPanelInfo(1)
-  local dir = panel.GetPanelDirectory(1)
+  local panelInfo = panel.GetPanelInfo(nil,1)
+  local dir = panel.GetPanelDirectory(nil,1)
   if dir ~= "" then dir = dir:gsub("/?$", "/", 1) end
   local ItemsNumber = Params.rSearchInAll and panelInfo.ItemsNumber or panelInfo.SelectedItemsNumber
   local GetItem = Params.rSearchInAll and panel.GetPanelItem or panel.GetSelectedPanelItem
@@ -551,7 +551,7 @@ local function DoAction (Params, aDir, aLog)
   ShowProgress(dir~="" and dir or M.MRenamePluginDir)
 
   for i=1, ItemsNumber do
-    local item = GetItem(1, i)
+    local item = GetItem(nil, 1, i)
     if item and item.FileName ~= ".." then ItemList[#ItemList+1] = item end
   end
 
@@ -598,7 +598,7 @@ local function GetLogFileName()
 end
 
 local function main()
-  local panelInfo = panel.GetPanelInfo(1)
+  local panelInfo = panel.GetPanelInfo(nil,1)
   if panelInfo.ItemsNumber <= 1 then
     far.Message(M.MRenameNothingToRename, AppName)
     return
@@ -608,14 +608,14 @@ local function main()
   local list = {}
   if (panelInfo.SelectedItemsNumber > 1) or
         (panelInfo.SelectedItemsNumber == 1 and
-        bit64.band(panel.GetSelectedPanelItem(1, 1).Flags, F.PPIF_SELECTED) ~= 0) then
+        bit64.band(panel.GetSelectedPanelItem(nil, 1, 1).Flags, F.PPIF_SELECTED) ~= 0) then
     for i=1, panelInfo.SelectedItemsNumber do
-      local item = panel.GetSelectedPanelItem (1, i)
+      local item = panel.GetSelectedPanelItem (nil, 1, i)
       table.insert(list, item.FileName)
     end
   else
     for i=1, panelInfo.ItemsNumber do
-      local item = panel.GetPanelItem (1, i)
+      local item = panel.GetPanelItem (nil, 1, i)
       if item.FileName ~= ".." then table.insert(list, item.FileName) end
     end
   end
@@ -623,7 +623,7 @@ local function main()
   local tParams = UserDialog(HistData, list, AppName)
   if not tParams then return end
 
-  local dir = panel.GetPanelDirectory(1)
+  local dir = panel.GetPanelDirectory(nil, 1)
   if not (dir == "" or dir:find("[\\/]$")) then dir = dir.."/" end
 
   local log = NewLog(HistData.bLogFile)
@@ -653,13 +653,13 @@ for k = #List,1,-3 do
     far.Message(src.."\n\n"..dst.."\n\n"..msg, "Warning", nil, "wl")
   end
 end
-panel.UpdatePanel(1)
-panel.RedrawPanel(1)]])
+panel.UpdatePanel(nil,1)
+panel.RedrawPanel(nil,1)]])
   end
 
   log:WriteFile(dir..GetLogFileName())
-  panel.UpdatePanel(1); panel.RedrawPanel(1)
-  panel.UpdatePanel(0); panel.RedrawPanel(0)
+  panel.UpdatePanel(nil,1); panel.RedrawPanel(nil,1)
+  panel.UpdatePanel(nil,0); panel.RedrawPanel(nil,0)
 end
 
 return {

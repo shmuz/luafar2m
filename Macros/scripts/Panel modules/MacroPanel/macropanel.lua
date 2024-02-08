@@ -51,15 +51,15 @@ local function LocateFile (fname, whatpanel)
   local attr = win.GetFileAttr(fname)
   if attr and not attr:find"d" then
     local dir, name = fname:match("^(.*/)([^/]*)$")
-    if panel.SetPanelDirectory(whatpanel, dir) then
-      local pinfo = panel.GetPanelInfo(whatpanel)
+    if panel.SetPanelDirectory(nil, whatpanel, dir) then
+      local pinfo = panel.GetPanelInfo(nil, whatpanel)
       for i=1, pinfo.ItemsNumber do
-        local item = panel.GetPanelItem(whatpanel, i)
+        local item = panel.GetPanelItem(nil, whatpanel, i)
         if item.FileName == name then
           local rect = pinfo.PanelRect
           local hheight = math.floor((rect.bottom - rect.top - 4) / 2)
           local topitem = pinfo.TopPanelItem
-          panel.RedrawPanel(whatpanel, { CurrentItem = i,
+          panel.RedrawPanel(nil, whatpanel, { CurrentItem = i,
             TopPanelItem = i>=topitem and i<topitem+hheight and topitem or
                            i>hheight and i-hheight or 0 })
           return true
@@ -285,7 +285,7 @@ function mod.ProcessKey (object, handle, Key, ControlState)
     local cdata = item.CustomColumnData
     if cdata and cdata[P_FILENAME] then
       if LocateFile(cdata[P_FILENAME], 0) then
-        panel.SetActivePanel(0)
+        panel.SetActivePanel(nil, 0)
       end
       return true
     end

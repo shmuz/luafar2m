@@ -274,7 +274,7 @@ local function ExecuteLuaCode(code, whatpanel)
   if chunk then
     local obj_info, handle
     if whatpanel==0 or whatpanel==1 then
-      local pi = panel.GetPanelInfo(whatpanel)
+      local pi = panel.GetPanelInfo(nil,whatpanel)
       if pi and pi.PluginObject then
         obj_info = pi.PluginObject:get_info()
         handle = pi.PluginHandle
@@ -304,7 +304,7 @@ local function DoOpenFromMacro(params)
   elseif params[1] == "sql" then
     local whatpanel, code = params[2], params[3]
     if (whatpanel==0 or whatpanel==1) and (type(code)=="string") then
-      local info = panel.GetPanelInfo(whatpanel==0 and 1 or 0)
+      local info = panel.GetPanelInfo(nil, whatpanel==0 and 1 or 0)
       if info and info.PluginObject then
         info.PluginObject:open_query(info.PluginHandle, code)
       end
@@ -356,9 +356,9 @@ function export.Open (OpenFrom, _Id, Item)
 
   elseif OpenFrom == F.OPEN_PLUGINSMENU then
     -- Make sure that the current panel item is a real existing file.
-    local info = panel.GetPanelInfo(1)
+    local info = panel.GetPanelInfo(nil,1)
     if info and info.PanelType == F.PTYPE_FILEPANEL and band(info.Flags,F.OPIF_REALNAMES) ~= 0 then
-      local item = panel.GetCurrentPanelItem(1)
+      local item = panel.GetCurrentPanelItem(nil,1)
       if item and not item.FileAttributes:find("d") then
         local FileName = far.ConvertPath(item.FileName, "CPM_FULL")
         if FileName then
@@ -478,7 +478,7 @@ function export.ProcessPanelEvent (object, handle, Event, Param)
     end
   end
   if ret and Event==F.FE_COMMAND then
-    panel.SetCmdLine("")
+    panel.SetCmdLine(nil, "")
   end
   return ret
 end

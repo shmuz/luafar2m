@@ -131,7 +131,7 @@ local function IsCtrlPgUp (key) return key=="CtrlPgUp" or key=="RCtrlPgUp" end
 local function IsCtrlPgDn (key) return key=="CtrlPgDn" or key=="RCtrlPgDn" end
 
 local function ExecuteFromCmdLine(str, newwindow)
-  panel.SetCmdLine(str)
+  panel.SetCmdLine(nil, str)
   far.MacroPost(newwindow and "Keys('ShiftEnter')" or "Keys('Enter')",
     "KMFLAGS_ENABLEOUTPUT") -- this flag was not needed until some FAR change between 09-12 Aug-23
     -- (without this flag there are panels drawn on the console upon Ctrl-O press)
@@ -161,15 +161,15 @@ local function FindFile (fname)
   local attr = GetFileAttrEx(fname)
   if attr and not attr:find"d" then
     local dir, name = fname:match("^(.*/)(.*)$")
-    if panel.SetPanelDirectory(1, dir) then
-      local pinfo = panel.GetPanelInfo(1)
+    if panel.SetPanelDirectory(nil, 1, dir) then
+      local pinfo = panel.GetPanelInfo(nil, 1)
       for i=1, pinfo.ItemsNumber do
-        local item = panel.GetPanelItem(1, i)
+        local item = panel.GetPanelItem(nil, 1, i)
         if item.FileName == name then
           local rect = pinfo.PanelRect
           local hheight = math.floor((rect.bottom - rect.top - 4) / 2)
           local topitem = pinfo.TopPanelItem
-          panel.RedrawPanel(1, { CurrentItem = i,
+          panel.RedrawPanel(nil, 1, { CurrentItem = i,
             TopPanelItem = i>=topitem and i<topitem+hheight and topitem or
                            i>hheight and i-hheight or 0 })
           return true
@@ -189,7 +189,7 @@ local function JumpToNearestFolder(path, whatpanel)
     while true do
       local nextpath = GetNextPath(path)
       if nextpath then
-        if panel.SetPanelDirectory(whatpanel, nextpath) then
+        if panel.SetPanelDirectory(nil, whatpanel, nextpath) then
           return true
         end
         path = nextpath
@@ -361,11 +361,11 @@ function cfgFolders.CanClose (_list, item, breakkey)
   end
   ----------------------------------------------------------------------------
   if IsCtrlEnter(breakkey) then
-    panel.SetCmdLine(item.text)
+    panel.SetCmdLine(nil, item.text)
     return true
   end
   ----------------------------------------------------------------------------
-  if panel.SetPanelDirectory(breakkey and 0 or 1, item.text) then
+  if panel.SetPanelDirectory(nil, breakkey and 0 or 1, item.text) then
     return true
   end
   ----------------------------------------------------------------------------
@@ -539,7 +539,7 @@ local function commands_history()
   local item, key = get_history(cfgCommands, _Plugin.Cfg.commands)
   if item and IsCmdLineAvail() then
     if IsCtrlEnter(key) then
-      panel.SetCmdLine(item.text)
+      panel.SetCmdLine(nil, item.text)
     else
       ExecuteFromCmdLine(item.text, key ~= nil)
     end
@@ -569,7 +569,7 @@ local function view_history()
   local shift_enter = (key=="ShiftEnter" or key=="ShiftNumEnter")
 
   if IsCtrlEnter(key) then
-    panel.SetCmdLine(fname)
+    panel.SetCmdLine(nil, fname)
 
   elseif key == nil or shift_enter or IsCtrlPgDn(key) then
     if item.typ == "V" then CallViewer(fname, shift_enter)
@@ -583,12 +583,12 @@ local function view_history()
 end
 
 local function LocateFile()
-  local info = panel.GetPanelInfo(1)
+  local info = panel.GetPanelInfo(nil, 1)
   if not (info and info.PanelType==F.PTYPE_FILEPANEL) then return end
 
-  local items = { PanelInfo=info; PanelDirectory=panel.GetPanelDirectory(1); }
+  local items = { PanelInfo=info; PanelDirectory=panel.GetPanelDirectory(nil,1); }
   for k=1,info.ItemsNumber do
-    local v = panel.GetPanelItem(1,k)
+    local v = panel.GetPanelItem(nil,1,k)
     local prefix = v.FileAttributes:find("d") and "/" or ""
     items[k] = {text=prefix..v.FileName; FileName=v.FileName; }
   end
@@ -608,12 +608,12 @@ local function LocateFile()
   if item then
     if item.BreakKey then
       local data = items[itempos].FileName
-      if IsCtrlEnter(item.BreakKey) then panel.SetCmdLine(data)
+      if IsCtrlEnter(item.BreakKey) then panel.SetCmdLine(nil,data)
       elseif item.BreakKey == "F3" then CallViewer(data)
       elseif item.BreakKey == "F4" then CallEditor(data)
       end
     else
-      panel.RedrawPanel(1,{CurrentItem=itempos})
+      panel.RedrawPanel(nil,1,{CurrentItem=itempos})
     end
   end
 end

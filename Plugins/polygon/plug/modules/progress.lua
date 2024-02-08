@@ -39,8 +39,8 @@ end
 
 function progress:hide()
   if self._visible then
-    panel.RedrawPanel(1)
-    panel.RedrawPanel(0)
+    panel.RedrawPanel(nil,1)
+    panel.RedrawPanel(nil,0)
     self._visible = false
   end
 end

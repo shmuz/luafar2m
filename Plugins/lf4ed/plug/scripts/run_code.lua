@@ -38,8 +38,8 @@ Preset "global" variables:
   Message = far.Message
   Show    = far.Show
   WI      = far.AdvControl("ACTL_GETWINDOWINFO") -- window info
-  API     = panel.GetPanelInfo(1)                -- active panel info
-  PPI     = panel.GetPanelInfo(0)                -- passive panel info
+  API     = panel.GetPanelInfo(nil,1)            -- active panel info
+  PPI     = panel.GetPanelInfo(nil,0)            -- passive panel info
   EI      = editor.GetInfo()                     -- editor info
   VI      = viewer.GetInfo()                     -- viewer info
   Cnt     = automatic counter of runs in the current Lua environment]]
@@ -151,7 +151,9 @@ local function Execute()
   Env.WI = actl.GetWindowInfo()
   Env.EI = far.MacroGetArea()==F.MACROAREA_EDITOR and editor.GetInfo() or nil
   Env.VI = far.MacroGetArea()==F.MACROAREA_VIEWER and viewer.GetInfo() or nil
-  if panel.CheckPanelsExist() then Env.API, Env.PPI = panel.GetPanelInfo(1), panel.GetPanelInfo(0) end
+  if panel.CheckPanelsExist() then
+    Env.API, Env.PPI = panel.GetPanelInfo(nil,1), panel.GetPanelInfo(nil,0)
+  end
 
   --mf.postmacro(f, f2())
   f( f2() )

@@ -45,7 +45,7 @@ Macro {
     Qmode = not Qmode
     if Qmode and is_active_dir() then
       set_passive_path()
-      panel.RedrawPanel(0)
+      panel.RedrawPanel(nil, 0)
     end
     far.Message("Quick view mode is "..(Qmode and "ON" or "OFF"), "", "")
     win.Sleep(600)

@@ -91,8 +91,8 @@ local function DecodeFile(method)
   if message then
     far.Message(message, Title, nil, "w")
   else
-    panel.UpdatePanel(1)
-    panel.UpdatePanel(0)
+    panel.UpdatePanel(nil, 1)
+    panel.UpdatePanel(nil, 0)
     far.AdvControl("ACTL_REDRAWALL")
   end
 end
@@ -105,7 +105,7 @@ local function EncodeFile(method, ext)
     local firstline = "begin 644 "..APanel.Current:match("[^\\/]+$")
     assert( lib.encfile(APanel.Path.."/"..APanel.Current, outname, firstline,
                         function(size) return ShowProgress(Title,size) end) )
-    panel.UpdatePanel(1)
+    panel.UpdatePanel(nil, 1)
     far.AdvControl("ACTL_REDRAWALL")
   end
 end

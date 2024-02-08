@@ -8,8 +8,8 @@
 --        Passive panel: either 1 selected or having the same name  --> file2
 
 local F = far.Flags
-local function GetCurrentItem(pan)         return panel.GetCurrentPanelItem(pan) end
-local function GetSelectedItem(pan,index)  return panel.GetSelectedPanelItem(pan,index) end
+local function GetCurrentItem(pan)         return panel.GetCurrentPanelItem(nil,pan) end
+local function GetSelectedItem(pan,index)  return panel.GetSelectedPanelItem(nil,pan,index) end
 local function isfile(item)                return not item.FileAttributes:find("d") end
 local function extract_name(s)             return s:match("[^/]+$") end
 
@@ -23,10 +23,10 @@ end
 
 local function Run()
   local ACT,PSV = 1,0 -- active and passive panels
-  local aInfo = panel.GetPanelInfo(ACT)
-  local pInfo = panel.GetPanelInfo(PSV)
-  local dirActive  = panel.GetPanelDirectory(ACT)
-  local dirPassive = panel.GetPanelDirectory(PSV)
+  local aInfo = panel.GetPanelInfo(nil,ACT)
+  local pInfo = panel.GetPanelInfo(nil,PSV)
+  local dirActive  = panel.GetPanelDirectory(nil,ACT)
+  local dirPassive = panel.GetPanelDirectory(nil,PSV)
   local trgActive, trgPassive
 
   if aInfo.SelectedItemsNumber == 1 or aInfo.SelectedItemsNumber > 2 then

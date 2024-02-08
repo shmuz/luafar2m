@@ -2,17 +2,17 @@
 -- description="Find an upper non-directory item";
 -- area="Shell"; key="CtrlShiftHome";
 local function JumpToNonDir()
-  local pInfo = panel.GetPanelInfo(1)
+  local pInfo = panel.GetPanelInfo(nil, 1)
   if pInfo then
     local lower, upper = 1, pInfo.ItemsNumber
     while upper-lower >= 2 do -- binary search
       local curr = math.floor((lower+upper)/2)
-      local item = panel.GetPanelItem(1,curr)
+      local item = panel.GetPanelItem(nil,1,curr)
       if item.FileAttributes:find("d") then lower = curr
       else upper = curr
       end
     end
-    panel.RedrawPanel(1,{ CurrentItem=upper; TopPanelItem=upper-8; })
+    panel.RedrawPanel(nil,1,{ CurrentItem=upper; TopPanelItem=upper-8; })
   end
 end
 
@@ -32,7 +32,7 @@ Macro {
   description="Jump to home directory";
   area="Shell"; key="Ctrl`";
   action=function()
-    panel.SetPanelDirectory(1, os.getenv"HOME")
+    panel.SetPanelDirectory(nil, 1, os.getenv"HOME")
   end;
 }
 
@@ -41,14 +41,14 @@ Macro {
   area="Shell"; key="CtrlS";
   action=function()
     local home = os.getenv("HOME")
-    local dir = panel.GetPanelDirectory(1)
+    local dir = panel.GetPanelDirectory(nil, 1)
     if dir == "" then -- TmpPanel ?
       dir = APanel.Current:match("(.*)/") or ""
     end
     local dir2 = dir:gsub("^("..home.."/far2)l", "%1m")
     if dir2 == dir then return end
     dir2 = dir2:gsub("^("..home.."/far2m/far)2l", "%1")
-    panel.SetPanelDirectory(0, dir2)
+    panel.SetPanelDirectory(nil, 0, dir2)
   end;
 }
 
@@ -68,9 +68,9 @@ Macro {
   area="Shell"; key="AltShiftF4";
   action=function()
     local files = {}
-    local info = panel.GetPanelInfo(1)
+    local info = panel.GetPanelInfo(nil, 1)
     for k=1, info.SelectedItemsNumber do
-      local item = panel.GetSelectedPanelItem(1,k)
+      local item = panel.GetSelectedPanelItem(nil,1,k)
       if not item.FileAttributes:find("d") then
         files[#files+1] = item.FileName:gsub("[ ?*'\"\\]", "\\%0")
       end

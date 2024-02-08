@@ -126,7 +126,7 @@ end
 
 function export.ProcessPanelEvent (object, handle, Event, Param)
   if Event == F.FE_IDLE then
-    panel.UpdatePanel(handle,true)
+    panel.UpdatePanel(handle,nil,true)
     panel.RedrawPanel(handle)
   elseif Event == F.FE_CHANGEVIEWMODE then
     local info = panel.GetPanelInfo(handle)
@@ -151,7 +151,7 @@ function export.ProcessKey (object, handle, Key, ControlState)
         object[#object] = nil -- pop the element off the stack
         object.CurDir = object.CurDir:match("(.+)%..+") or ""
         panel.UpdatePanel(handle)
-        panel.RedrawPanel(handle, info)
+        panel.RedrawPanel(handle, nil, info)
         return true
       end
     else  -- try to "enter" a table
@@ -160,7 +160,7 @@ function export.ProcessKey (object, handle, Key, ControlState)
         object[#object+1] = { table=curr, info=panel.GetPanelInfo(handle) }
         object.CurDir = object.CurDir=="" and item.FileName or object.CurDir.."."..item.FileName
         panel.UpdatePanel(handle)
-        panel.RedrawPanel(handle, {CurrentItem=1})
+        panel.RedrawPanel(handle, nil, {CurrentItem=1})
         return true
       end
     end

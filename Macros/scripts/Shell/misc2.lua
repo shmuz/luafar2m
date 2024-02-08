@@ -1,15 +1,15 @@
 local SharedKey = "CtrlAltE"
 
 local function ShowDiff (aName)
-  local dir = panel.GetPanelDirectory(1)
-  panel.SetPanelDirectory(1, os.getenv("HOME").."/"..aName)
+  local dir = panel.GetPanelDirectory(nil, 1)
+  panel.SetPanelDirectory(nil, 1, os.getenv("HOME").."/"..aName)
   local file = "/tmp/"..aName..".diff"
   local fp = io.popen("git diff >"..file)
   if fp then
     fp:close()
     Plugin.Command(far.GetPluginId(), "edit:[1,1]"..file)
   end
-  panel.SetPanelDirectory(1, dir);
+  panel.SetPanelDirectory(nil, 1, dir);
 end
 
 Macro {

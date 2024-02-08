@@ -133,10 +133,10 @@ local function CheckSearchArea(area)
 end
 
 local function GetSearchAreas(aData)
-  local Info = panel.GetPanelInfo(1)
+  local Info = panel.GetPanelInfo(nil,1)
   local RootFolderItem = {}
   if Info.PanelType==F.PTYPE_FILEPANEL and 0==band(Info.Flags, F.PFLAGS_PLUGIN) then
-    RootFolderItem.Text = M.MSaRootFolder .. panel.GetPanelDirectory(1):match("/[^/]*")
+    RootFolderItem.Text = M.MSaRootFolder .. panel.GetPanelDirectory(nil,1):match("/[^/]*")
   else
     RootFolderItem.Text = M.MSaRootFolder
     RootFolderItem.Flags = F.LIF_GRAYED

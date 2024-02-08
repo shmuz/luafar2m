@@ -57,7 +57,7 @@ end
 
 
 function exporter:get_destination_dir()
-  local dir = panel.GetPanelDirectory(0)
+  local dir = panel.GetPanelDirectory(nil, 0)
   if dir == "" then -- passive panel's directory is unknown, choose host file directory
     dir = self._filename:match(".*/") or ""
   end
@@ -72,7 +72,7 @@ function exporter:export_data_with_dialog()
   local data = config.load().exporter
 
   -- Get source table/view name
-  local item = panel.GetCurrentPanelItem(1)
+  local item = panel.GetCurrentPanelItem(nil, 1)
   if not (item and item.FileName~=".." and item.FileAttributes:find("d")) then
     return false
   end
@@ -132,9 +132,9 @@ function exporter:dump_data_with_dialog()
 
   -- Collect selected items for dump
   local t_selected = {}
-  local p_info = panel.GetPanelInfo(1)
+  local p_info = panel.GetPanelInfo(nil, 1)
   for i=1,p_info.SelectedItemsNumber do
-    local item = panel.GetSelectedPanelItem(1, i)
+    local item = panel.GetSelectedPanelItem(nil, 1, i)
     if item
        and item.FileName ~= ".."
        and item.FileAttributes:find("d")
@@ -237,8 +237,8 @@ function exporter:recover_data_with_dialog()
         ([[%s "%s" .recover 2>/dev/null | %s "%s" 2>/dev/null]]):format(exec, self._filename, exec, rc.targetfile)
       if 0==os.execute(cmd) then break end
     end
-    panel.UpdatePanel(0)
-    panel.RedrawPanel(0)
+    panel.UpdatePanel(nil,0)
+    panel.RedrawPanel(nil,0)
   end
 end
 
@@ -483,11 +483,11 @@ function exporter:export_data_as_dump(Args)
     if 0 == os.execute(exec..' '..cmd) then break; end
   end
   ------------------------
-  panel.RedrawPanel(1)
-  panel.RedrawPanel(0)
+  panel.RedrawPanel(nil,1)
+  panel.RedrawPanel(nil,0)
   ------------------------
-  panel.UpdatePanel(0)
-  panel.RedrawPanel(0)
+  panel.UpdatePanel(nil,0)
+  panel.RedrawPanel(nil,0)
 end
 
 

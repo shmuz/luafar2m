@@ -4,24 +4,14 @@
 
 local DIRSEP = string.sub(package.config, 1, 1)
 local OS_WIN = (DIRSEP == "\\")
-local tPanel
 local TMPDIR, GetHistory, SetHistory
 
 if OS_WIN then
-  local pan = _G.panel
-  tPanel = { GetPanelDirectory=function(...) return pan.GetPanelDirectory(nil,...).Name end; }
-  setmetatable(tPanel,
-    { __index = function(t,k)
-                  return function(...) return pan[k](nil, ...) end
-                end;
-    })
-  ----------------------------------------------------------------
   GetHistory = function(s1,s2) return _Plugin.History:field(s1)[s2] end
   SetHistory = function(s1,s2,val) _Plugin.History:setfield(s1.."."..s2, val) end
   ----------------------------------------------------------------
   TMPDIR = assert(win.GetEnv("Temp"))
 else
-  tPanel = _G.panel
   GetHistory = function(s1,s2) return _Plugin.History[s1][s2] end
   SetHistory = function(s1,s2,val) _Plugin.History[s1][s2] = val end
   TMPDIR = "/tmp"
@@ -921,7 +911,7 @@ end
 do -- former selftest2.lua
 
 local TestDir = join(TMPDIR, "LFSearch_Test")
-local CurDir = assert(tPanel.GetPanelDirectory(1))
+local CurDir = assert(panel.GetPanelDirectory(nil, 1))
 if CurDir == "" then CurDir = far.GetCurrentDirectory() end
 --------------------------------------------------------------------------------
 
@@ -969,7 +959,7 @@ end
 
 local function PrAssert(condition, ...) -- protected assert
   if condition then return condition, ... end
-  tPanel.SetPanelDirectory(1, CurDir)
+  panel.SetPanelDirectory(nil, 1, CurDir)
   RemoveTree()
   error((...) or "asserion failed", 3)
 end
@@ -977,7 +967,7 @@ end
 
 local function test_one_mask (mask, files, num)
   for _,f in ipairs(files) do AddFile(nil, f) end
-  PrAssert(tPanel.SetPanelDirectory(1, TestDir))
+  PrAssert(panel.SetPanelDirectory(nil, 1, TestDir))
   local dt = { sFileMask = mask, sSearchArea = "OnlyCurrFolder" }
   local arr = lfsearch.SearchFromPanel(dt)
   PrAssert(arr)
@@ -1032,7 +1022,7 @@ local function test_search (lib)
     "файл-01.бин", "файл-02.бин", "файл-03.бин",
   }
 
-  PrAssert(tPanel.SetPanelDirectory(1, TestDir))
+  PrAssert(panel.SetPanelDirectory(nil, 1, TestDir))
   for _,f in ipairs(files) do AddFile(nil, f, f) end
 
   local dt = { sFileMask = "*", sSearchArea = "OnlyCurrFolder" }
@@ -1081,7 +1071,7 @@ local function test_replace (lib)
     "файл-01.бин", "файл-02.бин", "файл-03.бин",
   }
 
-  PrAssert(tPanel.SetPanelDirectory(1, TestDir))
+  PrAssert(panel.SetPanelDirectory(nil, 1, TestDir))
 
   -- a file will contain 4 lines with its name in each line
   local function AddMyFiles()
@@ -1167,7 +1157,7 @@ local function test_dir_filter()
     end
   end, "FRS_RECUR")
 
-  PrAssert(tPanel.SetPanelDirectory(1, root_dir))
+  PrAssert(panel.SetPanelDirectory(nil, 1, root_dir))
 
   local dt = { sFileMask = "*", sSearchArea = "FromCurrFolder" }
 
@@ -1210,7 +1200,7 @@ function selftest.test_panels_search_replace (lib_list)
     test_replace(lib)
   end
   test_dir_filter()
-  tPanel.SetPanelDirectory(1, CurDir)
+  panel.SetPanelDirectory(nil, 1, CurDir)
   RemoveTree()
 end
 

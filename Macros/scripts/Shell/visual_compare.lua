@@ -24,19 +24,19 @@ local FarCmdsId = FAR3 and "3A2AF458-43E2-4715-AFEA-93D33D56C0C2" or far.GetPlug
 
 local function GetCurrentItem(pan)
   if FAR3 then return panel.GetCurrentPanelItem(nil,pan)
-  else return panel.GetCurrentPanelItem(pan)
+  else return panel.GetCurrentPanelItem(nil, pan)
   end
 end
 
 local function GetSelectedItem(pan,index)
   if FAR3 then return panel.GetSelectedPanelItem(nil,pan,index)
-  else return panel.GetSelectedPanelItem(pan,index)
+  else return panel.GetSelectedPanelItem(nil,pan,index)
   end
 end
 
 local function GetPanelDirectory(pan)
   if FAR3 then return panel.GetPanelDirectory(nil,pan).Name
-  else return panel.GetPanelDirectory(pan)
+  else return panel.GetPanelDirectory(nil,pan)
   end
 end
 
@@ -67,7 +67,7 @@ end
 -- collect items, skip directories
 local function Collect(whatPanel, limit)
   local selTable = {}
-  local aInfo = panel.GetPanelInfo(whatPanel)
+  local aInfo = panel.GetPanelInfo(nil,whatPanel)
   for k=1,aInfo.SelectedItemsNumber do
     local item = GetSelectedItem(whatPanel,k)
     if isfile(item) and isselected(item) then

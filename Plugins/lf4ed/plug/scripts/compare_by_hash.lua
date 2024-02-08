@@ -60,10 +60,10 @@ local function CompareByHash()
   ShowWaitMessage()
   for _,pan in ipairs {act,pas} do
     local pan_code = (pan==act and 1 or 0)
-    panel.UpdatePanel(pan_code) -- it's important to acquire actual information
-    local info = panel.GetPanelInfo(pan_code)
+    panel.UpdatePanel(nil,pan_code) -- it's important to acquire actual information
+    local info = panel.GetPanelInfo(nil,pan_code)
     for i=1,info.ItemsNumber do
-      local v=panel.GetPanelItem(pan_code,i)
+      local v=panel.GetPanelItem(nil,pan_code,i)
       pan.List[i]=v
       if is_dir(v) then Equal[v]=true
       else pan.Size[v.FileSize]=true
@@ -75,7 +75,7 @@ local function CompareByHash()
   for _,pan in ipairs {act,pas} do
     local other = pan==act and pas or act
     local pan_code = (pan==act and 1 or 0)
-    local dir = panel.GetPanelDirectory(pan_code)
+    local dir = panel.GetPanelDirectory(nil,pan_code)
     for _,v in ipairs(pan.List) do
       if not is_dir(v) and other.Size[v.FileSize] then
         pan.Map[v]=true
@@ -129,16 +129,16 @@ local function CompareByHash()
   for _,pan in ipairs {act,pas} do
     local pan_code = (pan==act and 1 or 0)
     for i,v in ipairs(pan.List) do
-      panel.SetSelection(pan_code, i, not Equal[v])
+      panel.SetSelection(nil, pan_code, i, not Equal[v])
     end
-    panel.RedrawPanel(pan_code)
+    panel.RedrawPanel(nil, pan_code)
   end
   far.Message("Done", Title)
 end
 
 local function CanRun()
   for i=0,1 do
-    local inf = panel.GetPanelInfo(i)
+    local inf = panel.GetPanelInfo(nil, i)
     if band(inf.Flags, F.PFLAGS_VISIBLE)==0 or band(inf.Flags, F.PFLAGS_REALNAMES)==0 then
       return false
     end

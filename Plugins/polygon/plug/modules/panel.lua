@@ -215,8 +215,8 @@ function mypanel:open_object(aHandle, aSchema, aObject)
 
       local count = dbx.get_row_count(self._db, self._schema, self._objname)
       if count and count >= 50000 then -- sorting is very slow on big tables
-        panel.SetSortMode(aHandle, "SM_UNSORTED")
-        panel.SetSortOrder(aHandle, false)
+        panel.SetSortMode(aHandle, nil, "SM_UNSORTED")
+        panel.SetSortOrder(aHandle, nil, false)
       end
       return true
     end
@@ -299,8 +299,8 @@ function mypanel:do_open_query(handle, query)
 
   local position = word1~="update" and {CurrentItem=1} or nil -- don't reset position on update
   self:invalidate_panel_info()
-  panel.UpdatePanel(handle, false)
-  panel.RedrawPanel(handle, position)
+  panel.UpdatePanel(handle, nil, false)
+  panel.RedrawPanel(handle, nil, position)
   return true
 end
 
@@ -405,7 +405,7 @@ function mypanel:get_find_data(handle)
     if self._panel_mode == "db" then
       local rc = self:get_panel_list_db()
       if rc then
-        panel.SetDirectoriesFirst(handle, false)
+        panel.SetDirectoriesFirst(handle, nil, false)
         return rc
       else
         self:set_root_mode() -- go up one level
@@ -1031,8 +1031,8 @@ function mypanel:handle_key_db(handle, key)
   elseif key == "F5" then        -- export table/view data
     local ex = exporter.newexporter(self._db, self._filename, self._schema)
     if ex:export_data_with_dialog() then
-      panel.UpdatePanel(0)
-      panel.RedrawPanel(0)
+      panel.UpdatePanel(nil,0)
+      panel.RedrawPanel(nil,0)
     end
     return true
   elseif key == "ShiftF5" then
@@ -1085,7 +1085,7 @@ function mypanel:handle_key_tbview(handle, key)
         -- call SetSortOrder() requesting the current sort order. Hopefully, the future Far Manager
         -- versions won't optimize such a case out and will always initiate sorting operation.
         -- As for Far 3.0.5886 (September 2021) it is OK.
-        panel.SetSortOrder(handle, bit64.band(info.Flags, F.PFLAGS_REVERSESORTORDER)~=0)
+        panel.SetSortOrder(handle, nil, bit64.band(info.Flags, F.PFLAGS_REVERSESORTORDER)~=0)
       end
     end
     return true
@@ -1096,7 +1096,7 @@ end
 function mypanel:handle_key_table(handle, key)
   if key == "F4" or key == "Enter" then -- edit row
     if key == "Enter" then
-      local item = panel.GetCurrentPanelItem(1)
+      local item = panel.GetCurrentPanelItem(nil, 1)
       if not (item and item.FileName ~= "..") then     -- skip action for ".."
         return false
       end
@@ -1176,7 +1176,7 @@ end
 
 function mypanel:view_db_object()
   -- Get selected object name
-  local item = panel.GetCurrentPanelItem(1)
+  local item = panel.GetCurrentPanelItem(nil,1)
   if not item or item.FileName == ".." then
     return
   end
@@ -1220,7 +1220,7 @@ end
 
 function mypanel:view_db_create_sql()
   -- Get selected object name
-  local item = panel.GetCurrentPanelItem(1)
+  local item = panel.GetCurrentPanelItem(nil,1)
   if item and item.FileName ~= ".." then
     local RealItemName = item.FileName
     local cr_sql = dbx.get_creation_sql(self._db, self._schema, RealItemName)
@@ -1406,7 +1406,7 @@ function mypanel:sql_query_history(handle)
         if query then self:open_query(handle, query); break; end
 
       elseif item.action == "insert" then
-        if query then panel.SetCmdLine(query); break; end
+        if query then panel.SetCmdLine(nil,query); break; end
 
       elseif item.action == "copy" then
         if query then far.CopyToClipboard(query); break; end
