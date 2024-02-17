@@ -14,7 +14,7 @@ PLUG_DESCRIPTION   = \"Displays some text from a file in 'Alternative full' pane
 PLUG_AUTHOR        = \"Shmuel Zeigerman\"
 
 # Embedding data
-BOOTSCRIPT = ../plug/text_c0.lua
+BOOTSCRIPT = ../src/text_c0.lua
 SCRIPTS = -
 MODULES = -
 

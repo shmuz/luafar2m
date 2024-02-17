@@ -1,7 +1,7 @@
 project(highlight)
 
 set(SOURCES
-  plug/GlobalInfo.c
+  src/GlobalInfo.c
   ${FARSOURCE}/luafar/src/luaplug.c
 )
 
@@ -38,9 +38,9 @@ set(MY_LIST
 )
 
 foreach(elem ${MY_LIST})
-  configure_file("plug/${elem}" "${INSTALL_DIR}/plug/${elem}" COPYONLY)
+  configure_file("src/${elem}" "${INSTALL_DIR}/plug/${elem}" COPYONLY)
 endforeach()
 
 add_custom_target(${PROJECT_NAME}_files ALL
-  COMMAND cp -rf "${CMAKE_CURRENT_SOURCE_DIR}/plug/syntaxes" "${INSTALL_DIR}/plug/"
+  COMMAND cp -rf "${CMAKE_CURRENT_SOURCE_DIR}/src/syntaxes" "${INSTALL_DIR}/plug/"
 )

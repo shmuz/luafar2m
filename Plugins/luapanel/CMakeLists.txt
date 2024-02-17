@@ -1,7 +1,7 @@
 project(luapanel)
 
 set(SOURCES
-  plug/GlobalInfo.c
+  src/GlobalInfo.c
   ${FARSOURCE}/luafar/src/luaplug.c
 )
 
@@ -38,5 +38,5 @@ set(MY_LIST
 )
 
 foreach(elem ${MY_LIST})
-  configure_file("plug/${elem}" "${INSTALL_DIR}/plug/${elem}" COPYONLY)
+  configure_file("src/${elem}" "${INSTALL_DIR}/plug/${elem}" COPYONLY)
 endforeach()

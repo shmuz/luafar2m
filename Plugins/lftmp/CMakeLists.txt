@@ -1,7 +1,7 @@
 project(lftmp)
 
 set(SOURCES
-  plug/GlobalInfo.c
+  src/GlobalInfo.c
   ${FARSOURCE}/luafar/src/luaplug.c
 )
 
@@ -41,9 +41,9 @@ set(MY_LIST
 )
 
 foreach(elem ${MY_LIST})
-  configure_file("plug/${elem}" "${INSTALL_DIR}/plug/${elem}" COPYONLY)
+  configure_file("src/${elem}" "${INSTALL_DIR}/plug/${elem}" COPYONLY)
 endforeach()
 
 add_custom_target(${PROJECT_NAME}_lang ALL
-  minilua ${LUA_SHARE}/makelang.lua ${CMAKE_CURRENT_SOURCE_DIR}/plug/tmpp_lang.templ ${INSTALL_DIR}/plug
+  minilua ${LUA_SHARE}/makelang.lua ${CMAKE_CURRENT_SOURCE_DIR}/src/tmpp_lang.templ ${INSTALL_DIR}/plug
 )

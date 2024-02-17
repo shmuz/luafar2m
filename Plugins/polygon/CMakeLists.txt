@@ -1,9 +1,9 @@
 project(polygon)
 
 set(SOURCES
-  plug/GlobalInfo.c
-  plug/polygon.c
-  plug/lsqlite3.c
+  src/GlobalInfo.c
+  src/polygon.c
+  src/lsqlite3.c
   ${FARSOURCE}/luafar/src/luaplug.c
 )
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFUNC_OPENLIBS=luaopen_polygon")
@@ -56,14 +56,9 @@ set(MY_LIST
 )
 
 foreach(elem ${MY_LIST})
-  configure_file("plug/${elem}" "${INSTALL_DIR}/plug/${elem}" COPYONLY)
+  configure_file("src/${elem}" "${INSTALL_DIR}/plug/${elem}" COPYONLY)
 endforeach()
 
 add_custom_target(${PROJECT_NAME}_lang ALL
-  minilua ${LUA_SHARE}/makelang.lua ${CMAKE_CURRENT_SOURCE_DIR}/plug/polygon_lang.templ ${INSTALL_DIR}/plug
+  minilua ${LUA_SHARE}/makelang.lua ${CMAKE_CURRENT_SOURCE_DIR}/src/polygon_lang.templ ${INSTALL_DIR}/plug
 )
-
-# add_custom_target(${PROJECT_NAME}_files ALL
-#   COMMAND cp -rf "${CMAKE_CURRENT_SOURCE_DIR}/plug/scripts" "${INSTALL_DIR}/plug/"
-#   COMMAND cp -rf "${CMAKE_CURRENT_SOURCE_DIR}/plug/doc" "${INSTALL_DIR}/plug/"
-# )
