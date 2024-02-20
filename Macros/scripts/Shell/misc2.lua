@@ -45,3 +45,13 @@ Macro {
     far.Message("Done")
   end
 }
+
+Macro {
+  description="Quick search";
+  area="Shell"; key="/LAlt\\S/";
+  action=function()
+    local ch = akey(1):sub(-1)
+    Keys("Alt*", ch)
+  end;
+}
+
