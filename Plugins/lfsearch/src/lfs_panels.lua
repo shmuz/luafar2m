@@ -64,7 +64,7 @@ local function SwapEndian (str)
 end
 
 local function IsDevice(FileData)
-  return FileData.FileAttributes:find("[fgk]") -- device_fifo | device_char | device_sock
+  return FileData.FileAttributes:find("[fgjk]") -- device_fifo| device_char| device_block| device_sock
 end
 
 local function MaskGenerator (mask, skippath)
@@ -1320,8 +1320,7 @@ end
 local function Grep_ProcessFile (fdata, fullname, cdata)
   local fp = io.open(fullname,"rb")
   if not fp then
-    MsgCannotOpenFile(fullname)
-    return
+    return -- don't show message (this can be just a broken symlink)
   end
   cdata.nFilesProcessed = cdata.nFilesProcessed + 1
   ---------------------------------------------------------------------------
