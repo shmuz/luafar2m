@@ -63,6 +63,10 @@ local function SwapEndian (str)
   return (string.gsub(str, "(.)(.)(.)(.)", "%4%3%2%1"))
 end
 
+local function IsDevice(FileData)
+  return FileData.FileAttributes:find("[fgk]") -- device_fifo | device_char | device_sock
+end
+
 local function MaskGenerator (mask, skippath)
   if not CheckMask(mask) then
     return false
@@ -749,7 +753,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
     if isFolder and bNoFolders then return end
     ---------------------------------------------------------------------------
     nTotalFiles = nTotalFiles + 1
-    if isFolder or bNoTextSearch then
+    if bNoTextSearch or isFolder or IsDevice(fdata) then
       tFoundFiles[#tFoundFiles+1] = fullname
       return DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, 0, userbreak) and "break"
     end
@@ -1477,8 +1481,8 @@ local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
   for k=1,#fileList,2 do
     if userbreak:ConfirmEscape() then break end
     local fdata, fullname = fileList[k], fileList[k+1]
-    local bCanProcess = true
-    if sOp == "replace" and fdata.FileAttributes:find("r") then
+    local bCanProcess = not IsDevice(fdata)
+    if bCanProcess and sOp == "replace" and fdata.FileAttributes:find("r") then
       if sProcessReadonly == "none" then
         bCanProcess = false
       elseif sProcessReadonly ~= "all" then
