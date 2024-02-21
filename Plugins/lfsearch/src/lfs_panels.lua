@@ -740,8 +740,6 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   local Find = Regex.findW or Regex.find
   local bTextSearch = (tParams.tMultiPatterns and tParams.tMultiPatterns.NumPatterns > 0) or
                       (not tParams.tMultiPatterns and tParams.sSearchPat ~= "")
-  local bNoTextSearch = not bTextSearch
-  local bNoFolders = bTextSearch or not aData.bSearchFolders
   local reader = bTextSearch and assert(libReader.new(4*1024*1024)) -- (default = 4 MiB)
 
   local function Search_ProcessFile (fdata, fullname)
@@ -749,11 +747,13 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
       return DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, 0, userbreak) and "break"
     end
     ---------------------------------------------------------------------------
-    local isFolder = fdata.FileAttributes:find("d")
-    if isFolder and bNoFolders then return end
+    if fdata.FileAttributes:find("d") and (bTextSearch or not aData.bSearchFolders)
+    or (bTextSearch and IsDevice(fdata)) then
+      return
+    end
     ---------------------------------------------------------------------------
     nTotalFiles = nTotalFiles + 1
-    if bNoTextSearch or isFolder or IsDevice(fdata) then
+    if not bTextSearch then
       tFoundFiles[#tFoundFiles+1] = fullname
       return DisplaySearchState(fullname, #tFoundFiles, nTotalFiles, 0, userbreak) and "break"
     end
