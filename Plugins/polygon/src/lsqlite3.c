@@ -190,12 +190,11 @@ static const char *sqlite_blob_meta = ":sqlite3:blob";
         } \
     } while (0)
 #else
+#define MAX52 (1LL << 52)
+#define FIT52(v) ((v >= 0 && v < MAX52) || (v < 0 && v >= -MAX52))
 #define PUSH_INT64(L,i64in,fallback) \
     do { \
-        sqlite_int64 i64 = i64in; \
-        lua_Number n = (lua_Number)i64; \
-        lua_pushnumber(L, n); n = lua_tonumber(L, -1); lua_pop(L, 1); \
-        if ((sqlite_int64)n == i64) lua_pushnumber(L, n); \
+        if (FIT52(i64in)) lua_pushnumber(L, i64in); \
         else fallback; \
     } while (0)
 #endif
