@@ -685,7 +685,7 @@ end
 
 function SRFrame:CheckRegexChange (hDlg)
   local Pos = self.Pos
-  local bRegex = hDlg:GetCheck(Pos.bRegExpr)
+  local bRegex = hDlg:GetCheck(Pos.bRegExpr)==1
 
   if bRegex then hDlg:SetCheck(Pos.bWholeWords, false) end
   hDlg:Enable(Pos.bWholeWords, not bRegex)
@@ -703,7 +703,7 @@ function SRFrame:CheckAdvancedEnab (hDlg)
   local Pos = self.Pos
   if Pos.bAdvanced then
     hDlg:EnableRedraw(false)
-    local bEnab = hDlg:GetCheck(Pos.bAdvanced)
+    local bEnab = hDlg:GetCheck(Pos.bAdvanced)==1
     hDlg:Enable(Pos.labInitFunc,   bEnab)
     hDlg:Enable(Pos.sInitFunc,     bEnab)
     hDlg:Enable(Pos.labFinalFunc,  bEnab)
@@ -719,7 +719,7 @@ end
 function SRFrame:CheckWrapAround (hDlg)
   local Pos = self.Pos
   if self.bInEditor and Pos.bWrapAround then
-    local bEnab = hDlg:GetCheck(Pos.rScopeGlobal) and hDlg:GetCheck(Pos.rOriginCursor)
+    local bEnab = hDlg:GetCheck(Pos.rScopeGlobal)==1 and hDlg:GetCheck(Pos.rOriginCursor)==1
     hDlg:Enable(Pos.bWrapAround, bEnab)
   end
 end
@@ -780,7 +780,7 @@ function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
 
     -- Set origin
     local key = bScript and "sOrigin"
-                or hDlg:GetCheck(Pos.rScopeGlobal) and "sOriginInGlobal"
+                or hDlg:GetCheck(Pos.rScopeGlobal)==1 and "sOriginInGlobal"
                 or "sOriginInBlock"
     local name = Data[key]=="scope" and "rOriginScope" or "rOriginCursor"
     hDlg:SetCheck(Pos[name], true)
@@ -846,7 +846,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
     end
   ----------------------------------------------------------------------------
   elseif msg == F.DN_KEY and param2 == F.KEY_F4 then
-    if param1 == Pos.sReplacePat and hDlg:GetCheck(Pos.bRepIsFunc) then
+    if param1 == Pos.sReplacePat and hDlg:GetCheck(Pos.bRepIsFunc) == 1 then
       local txt = sdialog.OpenInEditor(hDlg:GetText(Pos.sReplacePat), "lua")
       if txt then hDlg:SetText(Pos.sReplacePat, txt) end
       return true

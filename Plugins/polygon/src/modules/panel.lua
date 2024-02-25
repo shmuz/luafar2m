@@ -712,23 +712,23 @@ function mypanel:set_column_mask(handle)
   local btnSet, btnReset = 2*col_num+4, 2*col_num+5
 
   local function SetEnable(hDlg)
-    hDlg:send(F.DM_ENABLEREDRAW, 0)
+    hDlg:EnableRedraw(0)
     for pos = 1,col_num do
-      local enab = hDlg:send(F.DM_GETCHECK, 2*pos+1)
-      hDlg:send(F.DM_ENABLE, 2*pos, enab)
+      local enab = hDlg:GetCheck(2*pos+1) == 1
+      hDlg:Enable(2*pos, enab)
     end
-    hDlg:send(F.DM_ENABLEREDRAW, 1)
+    hDlg:EnableRedraw(1)
   end
 
   Items.proc = function(hDlg, Msg, Param1, Param2)
     if Msg == F.DN_INITDIALOG then
       SetEnable(hDlg)
-      hDlg:send(F.DM_SETFOCUS, 3)
+      hDlg:SetFocus(3)
     elseif Msg == F.DN_BTNCLICK then
       if Param1==btnSet or Param1==btnReset then
-        hDlg:send(F.DM_ENABLEREDRAW, 0)
-        for pos = 1,col_num do hDlg:send(F.DM_SETCHECK, 2*pos+1, Param1==btnSet); end
-        hDlg:send(F.DM_ENABLEREDRAW, 1)
+        hDlg:EnableRedraw(0)
+        for pos = 1,col_num do hDlg:SetCheck(2*pos+1, Param1==btnSet); end
+        hDlg:EnableRedraw(1)
       end
       SetEnable(hDlg)
     end

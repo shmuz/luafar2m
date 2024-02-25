@@ -584,8 +584,8 @@ end
           return KEEP_DIALOG_OPEN
         end
         aData.sSearchArea = IndexToSearchArea(hDlg:ListGetCurPos(Pos.cmbSearchArea).SelectPos)
-        aData.bUseDirFilter = hDlg:GetCheck(Pos.bUseDirFilter)
-        aData.bUseFileFilter = hDlg:GetCheck(Pos.bUseFileFilter)
+        aData.bUseDirFilter = hDlg:GetCheck(Pos.bUseDirFilter)==1
+        aData.bUseFileFilter = hDlg:GetCheck(Pos.bUseFileFilter)==1
       end
       -- store selected code pages no matter what user pressed: OK or Esc.
       if Pos.cmbCodePage then

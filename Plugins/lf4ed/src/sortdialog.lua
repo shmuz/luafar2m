@@ -66,7 +66,7 @@ local function SortDialog (aData, columntype)
   ------------------------------------------------------------------------------
   -- Handlers of dialog events --
   local function Check (hDlg, c1, ...)
-    local enbl = hDlg:GetCheck(c1)
+    local enbl = hDlg:GetCheck(c1) == 1
     for _, elem in ipairs {...} do hDlg:Enable(elem, enbl) end
   end
 

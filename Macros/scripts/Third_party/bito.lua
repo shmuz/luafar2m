@@ -116,10 +116,10 @@ local function bito (prompt)
       editor.InsertText(Id, space)
       editor.InsertText(Id, word)
       editor.Redraw(Id)
-      if hDlg then hDlg:send(F.DM_CLOSE); hDlg = nil; end
+      if hDlg then hDlg:Close(); hDlg = nil; end
     end
     pipe:close()
-    if hDlg then hDlg:send(F.DM_CLOSE) end
+    if hDlg then hDlg:Close() end
     if autowrap then editor.SetParam(Id, F.ESPT_AUTOINDENT, 1) end
     editor.UndoRedo(Id, F.EUR_END)
     editor.SetTitle(Id, "bito.ai response:")

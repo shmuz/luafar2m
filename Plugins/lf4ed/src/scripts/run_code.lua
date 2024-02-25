@@ -77,7 +77,7 @@ local function GetText (aOpt)
   end
 
   local function set_ext(hDlg)
-    local ext = hDlg:GetCheck(Pos.moon) and "moon" or "lua"
+    local ext = hDlg:GetCheck(Pos.moon)==1 and "moon" or "lua"
     Elem.sequence.ext, Elem.params.ext = ext, ext
   end
 

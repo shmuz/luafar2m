@@ -131,25 +131,25 @@ local function row_dialog(db, schema, table_name, rowid_name, db_data, row_id)
   end
 
   Items.keyaction = function (hDlg, Param1, key)
-    local pos = hDlg:send(F.DM_GETFOCUS)
+    local pos = hDlg:GetFocus()
     local item = Items[pos]
-    local txt = item.Colname and hDlg:send(F.DM_GETTEXT, pos)
+    local txt = item.Colname and hDlg:GetText(pos)
     if not txt then return end
     -- toggle original row text and NULLTEXT
     if key == "CtrlN" then
       if txt:upper() == NULLTEXT:upper() then
-        hDlg:send(F.DM_SETTEXT, pos, item.Orig or "")
+        hDlg:SetText(pos, item.Orig or "")
       else
-        hDlg:send(F.DM_SETTEXT, pos, NULLTEXT)
+        hDlg:SetText(pos, NULLTEXT)
       end
     -- toggle normalization (it's especially handy when typing a ' requires language switching)
     elseif key == "CtrlO" then
       local s = txt:match("^'(.*)'$")
       if s then -- already normalized -> denormalize
         s = s:gsub("''", "'")
-        hDlg:send(F.DM_SETTEXT, pos, s)
+        hDlg:SetText(pos, s)
       else -- normalize
-        hDlg:send(F.DM_SETTEXT, pos, Norm(txt))
+        hDlg:SetText(pos, Norm(txt))
       end
     -- view row in the viewer
     elseif key == "F3" then
@@ -174,7 +174,7 @@ local function row_dialog(db, schema, table_name, rowid_name, db_data, row_id)
     local out = { quan = math.max(1, tonumber(tOut.quan) or 1) }
     for pos,item in ipairs(Items) do
       if item.Colname then
-        local txt = hDlg:send(F.DM_GETTEXT, pos)
+        local txt = hDlg:GetText(pos)
         if (not row_id) or (txt ~= item.Orig) then
           table.insert(out, { colname=item.Colname; value=txt; })
         end

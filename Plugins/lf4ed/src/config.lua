@@ -25,7 +25,7 @@ local function ExecuteDialog (aData)
   local Pos = dlg:Indexes()
   function Items.proc(hDlg, Msg, Par1, Par2)
     if Msg==F.DN_INITDIALOG or (Msg==F.DN_BTNCLICK and Par1==Pos.RequireWithReload) then
-      local enb = hDlg:GetCheck(Pos.RequireWithReload)
+      local enb = hDlg:GetCheck(Pos.RequireWithReload) == 1
       hDlg:Enable(Pos.txtExclude, enb)
       hDlg:Enable(Pos.ExcludeFromReload, enb)
     end

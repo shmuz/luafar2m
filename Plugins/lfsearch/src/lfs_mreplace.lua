@@ -62,7 +62,7 @@ local function ReplaceDialog (Data)
   local Pos,Elem = dlg:Indexes()
 
   local function CheckRegexChange (hDlg)
-    local bRegex = hDlg:GetCheck(Pos.bRegExpr)
+    local bRegex = hDlg:GetCheck(Pos.bRegExpr) == 1
     hDlg:Enable(Pos.bWholeWords, not bRegex)
     hDlg:Enable(Pos.bExtended,   bRegex)
     hDlg:Enable(Pos.bFileAsLine, bRegex)
@@ -70,7 +70,7 @@ local function ReplaceDialog (Data)
   end
 
   local function CheckAdvancedEnab (hDlg)
-    local bEnab = hDlg:GetCheck(Pos.bAdvanced)
+    local bEnab = hDlg:GetCheck(Pos.bAdvanced) == 1
     hDlg:Enable(Pos.labInitFunc,  bEnab)
     hDlg:Enable(Pos.sInitFunc,    bEnab)
     hDlg:Enable(Pos.labFinalFunc, bEnab)
@@ -101,7 +101,7 @@ local function ReplaceDialog (Data)
         CheckAdvancedEnab(hDlg)
       end
     elseif msg == F.DN_KEY and param2 == F.KEY_F4 then
-      if param1 == Pos.sReplacePat and hDlg:GetCheck(Pos.bRepIsFunc) then
+      if param1 == Pos.sReplacePat and hDlg:GetCheck(Pos.bRepIsFunc) == 1 then
         local txt = sd.OpenInEditor(hDlg:GetText(Pos.sReplacePat), "lua")
         if txt then hDlg:SetText(Pos.sReplacePat, txt) end
         return true

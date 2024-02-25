@@ -182,15 +182,15 @@ local function Main()
 
   dItems.initaction = function(hDlg)
     local val = FarVer==3 and (ST.useexpr and 1 or 0) or ST.useexpr
-    SendMsg(hDlg, F.DM_ENABLE, Pos.toboolean, val)
-    SendMsg(hDlg, F.DM_ENABLE, Pos.lbExpr,    val)
-    SendMsg(hDlg, F.DM_ENABLE, Pos.edExpr,    val)
+    hDlg:Enable(Pos.toboolean, val)
+    hDlg:Enable(Pos.lbExpr, val)
+    hDlg:Enable(Pos.edExpr, val)
   end
 
   Elem.useexpr.action = function(hDlg, p1, p2)
-    SendMsg(hDlg, F.DM_ENABLE, Pos.toboolean, p2)
-    SendMsg(hDlg, F.DM_ENABLE, Pos.lbExpr,    p2)
-    SendMsg(hDlg, F.DM_ENABLE, Pos.edExpr,    p2)
+    hDlg:Enable(Pos.toboolean, p2)
+    hDlg:Enable(Pos.lbExpr, p2)
+    hDlg:Enable(Pos.edExpr, p2)
   end
 
   local function GetFunc(txt)

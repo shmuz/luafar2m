@@ -3,8 +3,6 @@
 -- Author:                  Shmuel Zeigerman
 -- Published:               2015-11-24 (https://forum.farmanager.com/viewtopic.php?f=60&t=9940)
 -- Language:                Lua 5.1
--- Minimal Far3 version:    3.0.3777
--- Minimal far2m version:   2.5
 -- Far plugin:              LuaMacro
 -- Dependencies:            Lua module far2.simpledialog
 ------------------------------------------------------------------------------------------------
@@ -18,7 +16,6 @@ local DB_Key   = "shmuz"
 local DB_Name  = "Post macro"
 local osWindows = package.config:sub(1,1) == "\\"
 local F = far.Flags
-local SendMsg = far.SendDlgMessage
 
 -- Options
 local DefaultOpt = {
@@ -93,7 +90,7 @@ local function GetText (aOpt)
   end
 
   local function set_ext(hDlg)
-    local ext = SendMsg(hDlg, "DM_GETCHECK", Pos.moon)==F.BSTATE_CHECKED and "moon" or "lua"
+    local ext = hDlg:GetCheck(Pos.moon)==F.BSTATE_CHECKED and "moon" or "lua"
     Elem.sequence.ext, Elem.params.ext = ext, ext
   end
 
@@ -120,8 +117,8 @@ local function GetText (aOpt)
     if not f then far.Message(msg, Title, nil, "w"); return 0; end
     f2, msg = loadstring("return "..tOut.params)
     if not f2 then far.Message(msg, Title, nil, "w"); return 0; end
-    SendMsg(hDlg, "DM_ADDHISTORY", Pos.sequence, tOut.sequence)
-    SendMsg(hDlg, "DM_ADDHISTORY", Pos.params, tOut.params)
+    hDlg:AddHistory(Pos.sequence, tOut.sequence)
+    hDlg:AddHistory(Pos.params, tOut.params)
   end
 
   local out = dlg:Run()

@@ -47,10 +47,10 @@ local function InsertMacro()
     if Msg == F.DN_BTNCLICK then
       local item = data[Param1]
       if item.name=="bActivePanel" or item.name=="bPassivePanel" then
-        local enable = far.SendDlgMessage(hDlg,"DM_GETCHECK",Param1)
-        far.SendDlgMessage(hDlg,"DM_ENABLE",Param1+1,enable)
-        far.SendDlgMessage(hDlg,"DM_ENABLE",Param1+2,enable)
-        far.SendDlgMessage(hDlg,"DM_ENABLE",Param1+3,enable)
+        local enable = hDlg:GetCheck(Param1) == 1
+        hDlg:Enable(Param1+1, enable)
+        hDlg:Enable(Param1+2, enable)
+        hDlg:Enable(Param1+3, enable)
       end
     end
   end;

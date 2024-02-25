@@ -69,10 +69,10 @@ local function ConfigDialog ()
     if msg == F.DN_BTNCLICK then
       if param1 == Pos.btnHighTextColor then
         local c = far.ColorDialog(hColor0)
-        if c then hColor0 = c.PaletteColor; hDlg:send("DM_REDRAW"); end
+        if c then hColor0 = c.PaletteColor; hDlg:Redraw(); end
       elseif param1 == Pos.btnSelHighTextColor then
         local c = far.ColorDialog(hColor1)
-        if c then hColor1 = c.PaletteColor; hDlg:send("DM_REDRAW"); end
+        if c then hColor1 = c.PaletteColor; hDlg:Redraw(); end
       end
 
     elseif msg == F.DN_CTLCOLORDLGITEM then

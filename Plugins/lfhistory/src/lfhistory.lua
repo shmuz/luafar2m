@@ -294,7 +294,7 @@ local function GetListKeyFunction (aConfig, aData)
                                or GetFileAttrEx(t.text) or t.checked end,
             function(n) return 1 == far.Message((M.mDeleteItemsQuery):format(n),
                         M.mDeleteNonexistentTitle, ";YesNo", "w") end)
-        hDlg:send("DM_REDRAW")
+        hDlg:Redraw()
       end
       return "done"
     -----------------------------------------------------------------------------------------------
@@ -309,7 +309,7 @@ local function GetListKeyFunction (aConfig, aData)
             function(t) return t.checked end,
             function(n) return 1 == far.Message((M.mDeleteItemsQuery):format(n),
                         M.mDeleteItemsTitle, ";YesNo", "w") end)
-        hDlg:send("DM_REDRAW")
+        hDlg:Redraw()
       end
       return "done"
     -----------------------------------------------------------------------------------------------

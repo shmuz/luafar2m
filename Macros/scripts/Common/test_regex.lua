@@ -1,9 +1,6 @@
 -- Started     : 2023-07-01
--- Portability : Far3 (b5285+) / far2m
 
-local osWindows = package.config:sub(1,1)=="\\"
 local F = far.Flags
-local Send = far.SendDlgMessage
 
 local function DoTest()
   local sd = require "far2.simpledialog"
@@ -37,39 +34,39 @@ local function DoTest()
 
   function Items.proc(hDlg, Msg, Par1, Par2)
     if Msg == F.DN_EDITCHANGE and (Par1==Pos.expr or Par1==Pos.subj or Par1==Pos.subst) then
-      Send(hDlg, F.DM_ENABLEREDRAW, 0)
-      Send(hDlg, F.DM_LISTDELETE, Pos.groups)
-      local expr  = Send(hDlg, F.DM_GETTEXT, Pos.expr)
+      hDlg:EnableRedraw(0)
+      hDlg:ListDelete(Pos.groups)
+      local expr  = hDlg:GetText(Pos.expr)
       local ok, rex = pcall(regex.new, expr)
       if not ok then
         Status = "error"
-        Send(hDlg, F.DM_SETTEXT, Pos.result, "")
-        Send(hDlg, F.DM_SETTEXT, Pos.status, rex)
+        hDlg:SetText(Pos.result, "")
+        hDlg:SetText(Pos.status, rex)
       else
         Status = "warning"
-        local subj = Send(hDlg, F.DM_GETTEXT, Pos.subj)
+        local subj = hDlg:GetText(Pos.subj)
         local fr,to,offs = rex:exec(subj)
         if fr then
           Status = "normal"
           local txt = ("$0: %d-%d %s"):format(fr, to, subj:sub(fr,to))
-          Send(hDlg, F.DM_LISTADD, Pos.groups, {{Text=txt}})
+          hDlg:ListAdd(Pos.groups, {{Text=txt}})
           for k=1,#offs,2 do
             txt = ("$%d: %d-%d %s"):format((k+1)/2, offs[k], offs[k+1], subj:sub(offs[k],offs[k+1]))
-            Send(hDlg, F.DM_LISTADD, Pos.groups, {{Text=txt}})
+            hDlg:ListAdd(Pos.groups, {{Text=txt}})
           end
         end
 
-        local subst = Send(hDlg, F.DM_GETTEXT, Pos.subst)
+        local subst = hDlg:GetText(Pos.subst)
         -- convert replace pattern to LuaFAR syntax ($3 -> %3, \$ -> $, \\ -> \)
         subst = subst:gsub("%%", "%%%%")
         subst = regex.gsub(subst, [[ \$([0-9a-zA-Z]) | \\([$\\]) ]],
           function(a,b) return a and "%"..a or b end, nil, "x")
         -- get replace result
         local result = rex:gsub(subj, subst)
-        Send(hDlg, F.DM_SETTEXT, Pos.result, result)
-        Send(hDlg, F.DM_SETTEXT, Pos.status, fr and "Found" or "Not found")
+        hDlg:SetText(Pos.result, result)
+        hDlg:SetText(Pos.status, fr and "Found" or "Not found")
       end
-      Send(hDlg, F.DM_ENABLEREDRAW, 1)
+      hDlg:EnableRedraw(1)
 
     elseif Msg==F.DN_CTLCOLORDLGITEM and Par1==Pos.status then
       local color =

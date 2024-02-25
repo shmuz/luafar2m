@@ -17,7 +17,6 @@ local Info = { --luacheck: no unused
   Title         = Title;
 }
 local F = far.Flags
-local Send = far.SendDlgMessage
 local KEEP_DIALOG_OPEN = 0
 
 local function ShowHelp()
@@ -118,7 +117,7 @@ local function get_data_from_dialog()
   function Elem.Presets.action (hDlg,Par1,Par2)
     local PrMenu = require "far2.presets"
     Data.presets = Data.presets or {}
-    Send(hDlg, F.DM_SHOWDIALOG, 0)
+    hDlg:ShowDialog(0)
 
     local preset, modified = PrMenu(PresetParams, Data.presets,
       function() return Dlg:GetDialogState(hDlg) end,
@@ -131,8 +130,8 @@ local function get_data_from_dialog()
       settings.msave(SETTINGS_KEY, SETTINGS_SUBKEY, Data)
     end
 
-    Send(hDlg, F.DM_SHOWDIALOG, 1)
-    Send(hDlg, F.DM_SETFOCUS, Pos.btnOK)
+    hDlg:ShowDialog(1)
+    hDlg:SetFocus(Pos.btnOK)
   end
 
   for _,v in ipairs(items) do

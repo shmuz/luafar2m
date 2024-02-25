@@ -107,9 +107,9 @@ local function GetDialogData()
   local Pos, Elem = dlg:Indexes()
 
   local function EnableControls(hDlg)
-    local is_regex = hDlg:send("DM_GETCHECK", Pos.bRegExpr) == 1
-    hDlg:send("DM_ENABLE", Pos.bWholeWords, is_regex and 0 or 1)
-    if is_regex then hDlg:send("DM_SETCHECK", Pos.bWholeWords, 0); end
+    local is_regex = hDlg:GetCheck(Pos.bRegExpr) == 1
+    hDlg:Enable(Pos.bWholeWords, is_regex and 0 or 1)
+    if is_regex then hDlg:SetCheck(Pos.bWholeWords, 0); end
   end
 
   Items.initaction = EnableControls

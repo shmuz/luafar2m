@@ -452,20 +452,20 @@ local function ShowSettings()
 
   local function CheckEnableFastLines (hDlg)
     if not state then return end
-    local enab = hDlg:send(F.DM_GETCHECK, Pos.cbFastAll)
-    hDlg:send(F.DM_ENABLE, Pos.labFastLinesAll, enab)
-    hDlg:send(F.DM_ENABLE, Pos.edFastLinesAll, enab)
-    enab = hDlg:send(F.DM_GETCHECK, Pos.cbFastCur)
-    hDlg:send(F.DM_ENABLE, Pos.labFastLinesCur, enab)
-    hDlg:send(F.DM_ENABLE, Pos.edFastLinesCur, enab)
+    local enab = hDlg:GetCheck(Pos.cbFastAll) == 1
+    hDlg:Enable(Pos.labFastLinesAll, enab)
+    hDlg:Enable(Pos.edFastLinesAll, enab)
+    enab = hDlg:GetCheck(Pos.cbFastCur) == 1
+    hDlg:Enable(Pos.labFastLinesCur, enab)
+    hDlg:Enable(Pos.edFastLinesCur, enab)
   end
 
   local function RereadEditFields (hDlg)
     if not state then return end
-    state.nFastLines = NormalizeFastLines(hDlg:send(F.DM_GETTEXT, Pos.edFastLinesCur))
-    hDlg:send(F.DM_SETTEXT, Pos.edFastLinesCur, state.nFastLines)
-    state.nColorPriority = NormalizeColorPriority(hDlg:send(F.DM_GETTEXT, Pos.edPriorCur))
-    hDlg:send(F.DM_SETTEXT, Pos.edPriorCur, state.nColorPriority)
+    state.nFastLines = NormalizeFastLines(hDlg:GetText(Pos.edFastLinesCur))
+    hDlg:SetText(Pos.edFastLinesCur, state.nFastLines)
+    state.nColorPriority = NormalizeColorPriority(hDlg:GetText(Pos.edPriorCur))
+    hDlg:SetText(Pos.edPriorCur, state.nColorPriority)
   end
 
   function Items.proc (hDlg,Msg,Param1,Param2)
@@ -489,7 +489,7 @@ local function ShowSettings()
         end
       elseif Param1 == Pos.btBench then
         RereadEditFields(hDlg)
-        hDlg:send(F.DM_SETTEXT, Pos.edBench, "")
+        hDlg:SetText(Pos.edBench, "")
         local t1 = win.Clock()
         for k=1,math.huge do
           --editor.Redraw() --> this works from a dialog in Far3 but not in Far2M
@@ -499,7 +499,7 @@ local function ShowSettings()
             t1=(t2-t1)*1000/k; break
           end
         end
-        hDlg:send(F.DM_SETTEXT, Pos.edBench, ("%f msec"):format(t1))
+        hDlg:SetText(Pos.edBench, ("%f msec"):format(t1))
       end
     end
   end
@@ -627,13 +627,13 @@ local function HighlightExtra()
   local Pos,Elem = dlg:Indexes()
 
   local function CheckRegexChange (hDlg)
-    local bRegex = hDlg:send(F.DM_GETCHECK, Pos.bRegExpr)
+    local bRegex = hDlg:GetCheck(Pos.bRegExpr) == 1
 
-    if bRegex then hDlg:send(F.DM_SETCHECK, Pos.bWholeWords, false) end
-    hDlg:send(F.DM_ENABLE, Pos.bWholeWords, not bRegex)
+    if bRegex then hDlg:SetCheck(Pos.bWholeWords, false) end
+    hDlg:Enable(Pos.bWholeWords, not bRegex)
 
-    if not bRegex then hDlg:send(F.DM_SETCHECK, Pos.bExtended, false) end
-    hDlg:send(F.DM_ENABLE, Pos.bExtended, bRegex)
+    if not bRegex then hDlg:SetCheck(Pos.bExtended, false) end
+    hDlg:Enable(Pos.bExtended, bRegex)
   end
 
   function Items.closeaction(hDlg, param1, data)
@@ -672,7 +672,7 @@ local function HighlightExtra()
         local c = far.ColorDialog(extracolor)
         if c then
           extracolor = c.PaletteColor
-          hDlg:send(F.DM_REDRAW)
+          hDlg:Redraw()
         end
       else
         CheckRegexChange(hDlg)

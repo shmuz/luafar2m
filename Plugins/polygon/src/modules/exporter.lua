@@ -99,15 +99,15 @@ function exporter:export_data_with_dialog()
   ------------------------------------------------------------------------------
   Items.proc = function(hDlg, Msg, Param1, Param2)
     if Msg == F.DN_INITDIALOG then
-      hDlg:send(F.DM_SETCHECK, data.format=="csv" and Pos.csv or Pos.text, true)
-      hDlg:send(F.DM_SETCHECK, Pos.multiline, data.multiline)
+      hDlg:SetCheck(data.format=="csv" and Pos.csv or Pos.text, true)
+      hDlg:SetCheck(Pos.multiline, data.multiline)
 
     elseif Msg == F.DN_BTNCLICK then
       if Param1 == Pos.csv or Param1 == Pos.text then
-        local csv = hDlg:send(F.DM_GETCHECK, Pos.csv)
+        local csv = hDlg:GetCheck(Pos.csv) == 1
         local fname = dst_file_name .. (csv and ".csv" or ".txt")
-        hDlg:send(F.DM_SETTEXT, Pos.targetfile, fname)
-        hDlg:send(F.DM_ENABLE, Pos.multiline, csv)
+        hDlg:SetText(Pos.targetfile, fname)
+        hDlg:Enable(Pos.multiline, csv)
       end
     end
   end
@@ -164,8 +164,8 @@ function exporter:dump_data_with_dialog()
   ------------------------------------------------------------------------------
   function Items.initaction(hDlg)
     if t_selected[1] == nil then
-      hDlg:send(F.DM_SETCHECK, Pos.dumpall, true)
-      hDlg:send(F.DM_ENABLE,   Pos.dumpall, false)
+      hDlg:SetCheck(Pos.dumpall, true)
+      hDlg:Enable(Pos.dumpall, false)
     end
   end
 
@@ -212,11 +212,11 @@ function exporter:recover_data_with_dialog()
   local Pos, Elem = dlg:Indexes()
   ------------------------------------------------------------------------------
   local function set_output_name(hDlg)
-    local as_dump = hDlg:send("DM_GETCHECK", Pos.as_dump)
+    local as_dump = hDlg:GetCheck(Pos.as_dump) == 1
     local fname = self._filename:match("[^/]+$"):gsub("(.*)%.[^.]*$", "%1")
     local target = ("%s%s.recovered.%s"):format(
       self:get_destination_dir(), fname, as_dump and "dump" or "db")
-    hDlg:send("DM_SETTEXT", Pos.targetfile, target)
+    hDlg:SetText(Pos.targetfile, target)
   end
 
   Items.initaction = set_output_name

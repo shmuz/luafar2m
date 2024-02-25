@@ -289,7 +289,7 @@ local function UserDialog (aData, aList, aDlgTitle)
       text = "<S> "..m_sErrSearch
     elseif m_sErrReplace then
       text = "<R> "..m_sErrReplace
-    elseif not hDlg:GetCheck(Pos.bRepIsFunc) and m_tReplace.MaxGroupNumber >= m_uRegex:bracketscount() then
+    elseif 0 == hDlg:GetCheck(Pos.bRepIsFunc) and m_tReplace.MaxGroupNumber >= m_uRegex:bracketscount() then
       m_sErrMaxGroup = "inexistent group"
       text = "<R> "..m_sErrMaxGroup
     else
@@ -324,7 +324,7 @@ local function UserDialog (aData, aList, aDlgTitle)
   local function UpdateReplacePat (hDlg)
     local repl = hDlg:GetText(Pos.sReplacePat)
     m_sErrReplace = nil
-    if hDlg:GetCheck(Pos.bRepIsFunc) then
+    if hDlg:GetCheck(Pos.bRepIsFunc) == 1 then
       local func, msg = loadstring("local T,M,R = ...\n" .. repl, M.MReplaceFunction)
       if func then m_tReplace = setfenv(func, NewEnvir())
       else m_sErrReplace = msg
@@ -339,7 +339,7 @@ local function UserDialog (aData, aList, aDlgTitle)
   end
 
   local function CheckAdvancedEnab (hDlg)
-    local bEnab = hDlg:GetCheck(Pos.bAdvanced)
+    local bEnab = hDlg:GetCheck(Pos.bAdvanced) == 1
     hDlg:Enable(Pos.labInitFunc,  bEnab)
     hDlg:Enable(Pos.sInitFunc,    bEnab)
     hDlg:Enable(Pos.labFinalFunc, bEnab)
@@ -352,7 +352,7 @@ local function UserDialog (aData, aList, aDlgTitle)
       UpdateSearchPat(hDlg)
       UpdateReplacePat(hDlg)
       UpdatePreviewLabel(hDlg)
-      if not (hDlg:GetCheck(Pos.bRenFolders) or hDlg:GetCheck(Pos.bRenFolders)) then
+      if 0 == hDlg:GetCheck(Pos.bRenFolders) then
         hDlg:SetCheck(Pos.bRenFiles, true)
       end
       CheckAdvancedEnab(hDlg)
@@ -368,9 +368,9 @@ local function UserDialog (aData, aList, aDlgTitle)
 
     elseif msg == F.DN_BTNCLICK then
       if param1 == Pos.bRenFiles then
-        if not hDlg:GetCheck(Pos.bRenFiles) then hDlg:SetCheck(Pos.bRenFolders,true) end
+        if 0 == hDlg:GetCheck(Pos.bRenFiles) then hDlg:SetCheck(Pos.bRenFolders,true) end
       elseif param1 == Pos.bRenFolders then
-        if not hDlg:GetCheck(Pos.bRenFolders) then hDlg:SetCheck(Pos.bRenFiles,true) end
+        if 0 == hDlg:GetCheck(Pos.bRenFolders) then hDlg:SetCheck(Pos.bRenFiles,true) end
       elseif param1 == Pos.bRepIsFunc then
         UpdateReplacePat(hDlg)
         UpdatePreviewLabel(hDlg)
@@ -398,7 +398,7 @@ local function UserDialog (aData, aList, aDlgTitle)
           Common.GotoEditField(hDlg, Pos.sReplacePat)
           return KEEP_DIALOG_OPEN
         end
-        if hDlg:GetCheck(Pos.bAdvanced) then
+        if hDlg:GetCheck(Pos.bAdvanced) == 1 then
           local msg2
           local sInitFunc = hDlg:GetText(Pos.sInitFunc)
           m_InitFunc, msg2 = loadstring (sInitFunc or "", "Initial")
