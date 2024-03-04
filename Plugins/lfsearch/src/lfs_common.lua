@@ -581,9 +581,14 @@ local function ProcessDialogData (aData, bReplace, bInEditor, bUseMultiPatterns,
     else
       params.ReplacePat = aData.sReplacePat
       if aData.bRegExpr then
-        local ok, ret = pcall(RepLib.TransformReplacePat, params.ReplacePat)
-        if ok then params.ReplacePat = ret
-        else ErrorMsg(ret, M.MReplacePattern..": "..M.MSyntaxError); return
+        local repl, msg = RepLib.TransformReplacePat(params.ReplacePat)
+        if repl then
+          if repl.MaxGroupNumber > params.Regex:capturecount() then
+            ErrorMsg(M.MReplacePattern..": "..M.MErrorGroupNumber); return nil,"sReplacePat"
+          end
+          params.ReplacePat = repl
+        else
+          ErrorMsg(msg, M.MReplacePattern..": "..M.MSyntaxError); return nil,"sReplacePat"
         end
       end
     end
