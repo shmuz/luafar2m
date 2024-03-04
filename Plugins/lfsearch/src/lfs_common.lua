@@ -12,6 +12,7 @@ local band, bnot, bor = bit64.band, bit64.bnot, bit64.bor
 local Utf8, Utf32 = win.Utf32ToUtf8, win.Utf8ToUtf32
 local uchar = ("").char
 local F = far.Flags
+local TransformReplacePat = RepLib.TransformReplacePat
 local KEEP_DIALOG_OPEN = 0
 
 local function ErrorMsg (text, title)
@@ -576,12 +577,12 @@ local function ProcessDialogData (aData, bReplace, bInEditor, bUseMultiPatterns,
     if aData.bRepIsFunc then
       local func, msg = loadstring("local T,M,R,LN = ...\n" .. aData.sReplacePat, M.MReplaceFunction)
       if func then params.ReplacePat = setfenv(func, params.Envir)
-      else ErrorMsg(msg, M.MReplaceFunction..": "..M.MSyntaxError); return
+      else ErrorMsg(msg, M.MReplaceFunction..": "..M.MSyntaxError); return nil,"sReplacePat"
       end
     else
       params.ReplacePat = aData.sReplacePat
       if aData.bRegExpr then
-        local repl, msg = RepLib.TransformReplacePat(params.ReplacePat)
+        local repl, msg = TransformReplacePat(params.ReplacePat)
         if repl then
           if repl.MaxGroupNumber > params.Regex:capturecount() then
             ErrorMsg(M.MReplacePattern..": "..M.MErrorGroupNumber); return nil,"sReplacePat"
@@ -598,17 +599,17 @@ local function ProcessDialogData (aData, bReplace, bInEditor, bUseMultiPatterns,
     if aData.sFilterFunc then
       local func, msg = loadstring("local s,n=...\n"..aData.sFilterFunc, "Line Filter")
       if func then params.FilterFunc = setfenv(func, params.Envir)
-      else ErrorMsg(msg, "Line Filter function: " .. M.MSyntaxError); return
+      else ErrorMsg(msg, "Line Filter function: " .. M.MSyntaxError); return nil,"sFilterFunc"
       end
     end
     -------------------------------------------------------------------------
     local func, msg = loadstring (aData.sInitFunc or "", "Initial")
     if func then params.InitFunc = setfenv(func, params.Envir)
-    else ErrorMsg(msg, "Initial Function: " .. M.MSyntaxError); return
+    else ErrorMsg(msg, "Initial Function: " .. M.MSyntaxError); return nil,"sInitFunc"
     end
     func, msg = loadstring (aData.sFinalFunc or "", "Final")
     if func then params.FinalFunc = setfenv(func, params.Envir)
-    else ErrorMsg(msg, "Final Function: " .. M.MSyntaxError); return
+    else ErrorMsg(msg, "Final Function: " .. M.MSyntaxError); return nil,"sFinalFunc"
     end
     -------------------------------------------------------------------------
   end
