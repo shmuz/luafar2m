@@ -1222,9 +1222,6 @@ end
 local arg = ...
 if arg == "run" or type(arg)=="table" then
   selftest.test_all()
-  if not OS_WIN then
-    far.Message("All tests OK", "LuaFAR Search")
-  end
 end
 
 return selftest

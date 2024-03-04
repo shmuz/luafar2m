@@ -1,4 +1,3 @@
--- luacheck: globals AddToMenu
+-- luacheck: globals AddToMenu AddCommand
 
-AddToMenu ("ep", ":sep:")
-AddToMenu ("ep", "=== Self-test ===", nil, "scripts/test_lfsearch", "run")
+AddCommand("test", "scripts/test_lfsearch")
