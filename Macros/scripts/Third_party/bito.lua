@@ -85,8 +85,7 @@ local function bito (prompt)
     fp:write(ctx=="" and " " or ctx)
     fp:close()
     local cmd = ('bito -c "%s" -f "%s" -p "%s"'):format(ctxName, fileName, promptName)
-    local flags = F.EF_NONMODAL +F.EF_IMMEDIATERETURN +F.EF_DELETEONLYFILEONCLOSE +F.EF_OPENMODE_USEEXISTING
-                 +F.EF_DISABLEHISTORY
+    local flags = F.EF_NONMODAL +F.EF_IMMEDIATERETURN  +F.EF_OPENMODE_USEEXISTING +F.EF_DISABLEHISTORY
     editor.Editor("bito.md", nil, nil, nil, nil, nil, flags, nil, nil, 65001)
     local wi = far.AdvControl(F.ACTL_GETWINDOWINFO)
     assert(wi.Type==F.WTYPE_EDITOR, "oops, editor has not been opened")
