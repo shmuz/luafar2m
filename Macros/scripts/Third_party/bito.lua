@@ -108,11 +108,10 @@ local function bito (prompt)
     local autowrap = bit64.band(ei.Options, F.EOPT_AUTOINDENT)~=0
     if autowrap then editor.SetParam(nil, F.ESPT_AUTOINDENT, 0) end
     for space,word in Words(pipe) do
-      ei = editor.GetInfo(Id)
-      if ei.CurPos + space:len() + word:len() > linewrap then
-        space = "\n"
-      end
       editor.InsertText(Id, space)
+      if editor.GetInfo(Id).CurPos + word:len() > linewrap then
+        editor.InsertText(Id, "\n")
+      end
       editor.InsertText(Id, word)
       editor.Redraw(Id)
       if hDlg then hDlg:Close(); hDlg = nil; end
