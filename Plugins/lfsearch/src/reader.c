@@ -1,8 +1,7 @@
-// started: 2012-02-05
-#define _FILE_OFFSET_BITS 64
+// 2012-02-05 : started
+// 2024-03-14 : use WinPort file API instead of stdio.h due to fopen failures (Permission denied)
 
-#include <farplug-wide.h>
-#include <stdio.h>
+#include <windows.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -20,12 +19,24 @@ extern "C" {
   #define luaL_register(L,n,l)	(luaL_setfuncs(L,l,0))
 #endif
 
+wchar_t* check_utf8_string (lua_State *L, int pos, size_t* pTrgSize); // luafar.so
+
 #define CHUNK 0x4000 // 16 Kib
 
 static const char ReaderType[] = "LFSearch.ChunkReader";
 
+static BOOL GetFileOffset(HANDLE fp, LONGLONG *offset)
+{
+  LARGE_INTEGER liDistanceToMove, liFileOffset;
+  liDistanceToMove.QuadPart = 0;
+  BOOL Ok = WINPORT(SetFilePointerEx)(fp, liDistanceToMove, &liFileOffset, FILE_CURRENT);
+  if (Ok)
+    *offset = liFileOffset.QuadPart;
+  return Ok;
+}
+
 typedef struct {
-  FILE *fp;       // FILE object
+  HANDLE fp;      // FILE object
   size_t overlap; // number of CHUNKs in overlap (this value does not change after initialization)
   size_t top;     // number of CHUNKs currently read
   char *data;     // allocated memory buffer
@@ -35,6 +46,7 @@ static int NewReader (lua_State *L)
 {
   TReader* ud = (TReader*)lua_newuserdata(L, sizeof(TReader));
   memset(ud, 0, sizeof(TReader));
+  ud->fp = INVALID_HANDLE_VALUE;
   ud->overlap = luaL_checkinteger(L, 1) / 2 / CHUNK;
   if (ud->overlap == 0) ud->overlap = 1;
   ud->data = (char*) malloc(ud->overlap * 2 * CHUNK);
@@ -52,14 +64,16 @@ static TReader* GetReader (lua_State *L, int pos)
 static TReader* CheckReader (lua_State *L, int pos)
 {
   TReader* ud = (TReader*) luaL_checkudata(L, pos, ReaderType);
-  if (ud->data == NULL) luaL_argerror(L, pos, "attempt to access a deleted reader");
+  if (ud->data == NULL)
+    luaL_argerror(L, pos, "attempt to access a deleted reader");
   return ud;
 }
 
 static TReader* CheckReaderWithFile (lua_State *L, int pos)
 {
   TReader* ud = CheckReader(L, pos);
-  if (ud->fp == NULL) luaL_argerror(L, pos, "attempt to access a closed reader file");
+  if (ud->fp == INVALID_HANDLE_VALUE)
+    luaL_argerror(L, pos, "attempt to access a closed reader file");
   return ud;
 }
 
@@ -69,18 +83,23 @@ static int Reader_getnextchunk (lua_State *L)
   size_t M = ud->overlap;
   size_t N = M * 2;
   size_t top = ud->top;
-  size_t tail = 0;
-  int firstread = (0 == ftello(ud->fp));
+  DWORD tail = 0;
+  LONGLONG offset;
+  BOOL firstread;
 
-  if (feof(ud->fp) || ferror(ud->fp))
+  if (!GetFileOffset(ud->fp, &offset))
     return 0;
+  firstread = (0 == offset);
+
   if (top == N) {
     memcpy(ud->data, ud->data + M*CHUNK, M*CHUNK);
-    top = M; ud->top = M;
+    ud->top = top = M;
   }
   while (top < N) {
-    tail = fread(ud->data + top*CHUNK, 1, CHUNK, ud->fp);
-    if (tail == CHUNK) {
+    BOOL Ok = WINPORT(ReadFile)(ud->fp, ud->data + top*CHUNK, CHUNK, &tail, NULL);
+    if (!Ok || tail == 0)
+      return 0;
+    else if (tail == CHUNK) {
       tail = 0;
       ++top;
     }
@@ -102,9 +121,9 @@ static int Reader_getnextchunk (lua_State *L)
 static int Reader_delete (lua_State *L)
 {
   TReader *ud = GetReader(L, 1);
-  if (ud->fp) {
-    fclose(ud->fp);
-    ud->fp = NULL;
+  if (ud->fp != INVALID_HANDLE_VALUE) {
+    WINPORT(CloseHandle)(ud->fp);
+    ud->fp = INVALID_HANDLE_VALUE;
   }
   if (ud->data) {
     free(ud->data);
@@ -116,19 +135,22 @@ static int Reader_delete (lua_State *L)
 static int Reader_ftell (lua_State *L)
 {
   TReader *ud = CheckReaderWithFile(L, 1);
-  lua_pushnumber(L, ftello(ud->fp));
+  LONGLONG offset = 0;
+  GetFileOffset(ud->fp, &offset);
+  lua_pushnumber(L, offset);
   return 1;
 }
 
 static int Reader_closefile (lua_State *L)
 {
-  int ret = 0;
   TReader *ud = CheckReader(L, 1);
-  if (ud->fp) {
-    ret = fclose(ud->fp);
-    ud->fp = NULL;
+  if (ud->fp != INVALID_HANDLE_VALUE) {
+    WINPORT(CloseHandle)(ud->fp);
+    ud->fp = INVALID_HANDLE_VALUE;
+    lua_pushinteger(L, 1);
   }
-  lua_pushinteger(L, ret);
+  else
+    lua_pushinteger(L, 0);
   return 1;
 }
 
@@ -137,13 +159,19 @@ static int Reader_openfile (lua_State *L)
   int ret = 0;
   TReader *ud = CheckReader(L, 1);
 
-  if (ud->fp) {
-    fclose(ud->fp);
-    ud->fp = NULL;
-  }
+  if (ud->fp != INVALID_HANDLE_VALUE)
+    WINPORT(CloseHandle)(ud->fp);
 
-  ud->fp = fopen(luaL_checkstring(L, 2), "rb");
-  if (ud->fp) {
+  ud->fp = WINPORT(CreateFile) (
+    check_utf8_string(L, 2, NULL),
+    FILE_READ_DATA,
+    FILE_SHARE_READ + FILE_SHARE_WRITE,
+    NULL,
+    OPEN_EXISTING,
+    FILE_FLAG_SEQUENTIAL_SCAN,
+    NULL);
+
+  if (ud->fp != INVALID_HANDLE_VALUE) {
     ud->top = 0;
     ret = 1;
   }

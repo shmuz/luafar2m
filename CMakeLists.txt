@@ -62,6 +62,7 @@ endif()
 find_package(LibLua REQUIRED)
 
 include_directories(${LIBLUA_INCLUDE_DIRS})
+include_directories(${FARSOURCE}/WinPort)
 
 add_executable (minilua ${FARSOURCE}/luafar/src/minilua.c)
 target_link_libraries(minilua PRIVATE ${LIBLUA_LIBRARIES})
