@@ -961,7 +961,7 @@ local function PrAssert(condition, ...) -- protected assert
   if condition then return condition, ... end
   panel.SetPanelDirectory(nil, 1, CurDir)
   RemoveTree()
-  error((...) or "asserion failed", 3)
+  error((...) or "assertion failed", 3)
 end
 --------------------------------------------------------------------------------
 
@@ -1191,6 +1191,37 @@ local function test_dir_filter()
   RemoveTree(root_dir)
 end
 
+local function test_panel_encodings (lib)
+  local dir = os.getenv("FARHOME").."/Plugins/luafar/lua_share/far2/test/codepage"
+  PrAssert(panel.SetPanelDirectory(nil, 1, dir))
+
+  local total = 0
+  for k=1,10000 do
+    local item = panel.GetPanelItem(nil,1,k)
+    if not item then break end
+    if not item.FileAttributes:find("d") then
+      local enc = item.FileName:match("^%d+")
+      if enc and enc ~= "65000" then -- skip UTF-7
+        total = total + 1
+      end
+    end
+  end
+  PrAssert(total > 0)
+
+  local dt = {
+    sFileMask         = "/^\\d+.*\\.txt$/";
+    sSearchArea       = "OnlyCurrFolder";
+    iSelectedCodePage = -1; -- default code pages
+    sRegexLib         = lib;
+  }
+
+  for k=1,2 do
+    dt.sSearchPat = k==1 and "foobar" or "вхождение"
+    local arr = lfsearch.SearchFromPanel(dt)
+    PrAssert(arr and #arr == (k==1 and 0 or total))
+  end
+end
+
 function selftest.test_panels_search_replace (lib_list)
   assert(type(lfsearch) == "table")
   CreateTree()
@@ -1198,6 +1229,9 @@ function selftest.test_panels_search_replace (lib_list)
   for _,lib in ipairs(lib_list) do
     test_search(lib)
     test_replace(lib)
+    if not OS_WIN then
+      test_panel_encodings(lib)
+    end
   end
   test_dir_filter()
   panel.SetPanelDirectory(nil, 1, CurDir)
