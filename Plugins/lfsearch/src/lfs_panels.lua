@@ -280,9 +280,9 @@ local function GetFileEncoding (fp, fname)
       end
     end
   end
-  -- Try far.GetFileEncoding (that uses uchardet)
+  -- Try far.DetectCodePage (that uses uchardet)
   fp:seek("set", 0)
-  local cp = far.GetFileEncoding(fname) or 20127 -- US-ASCII
+  local cp = far.DetectCodePage(fname) or 20127 -- US-ASCII
   return cp, nil
 end
 
