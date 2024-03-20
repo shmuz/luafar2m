@@ -40,7 +40,7 @@ local NewLog do
 
   function Log:WriteFile (filename)
     if not self.real then return end
-    local fp = assert( io.open(filename, "w") )
+    local fp = assert( win.OpenFile(filename, "w") )
 
     if self.header[1] then
       for _,v in ipairs(self.header) do fp:write(v, "\n") end
@@ -663,5 +663,5 @@ panel.RedrawPanel(nil,1)]])
 end
 
 return {
-  main = main,
+  main = function() far.SudoCRCall(main) end;
 }
