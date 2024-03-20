@@ -1010,12 +1010,12 @@ local function Replace_CreateOutputFile (fullname, numlines, codepage, bom, user
   end
   if tmpname ~= nil then
     if numlines <= 0 then
-      fOut = io.open(tmpname, "wb")
+      fOut = win.OpenFile(tmpname, "w")
       if bom then fOut:write(bom) end
     else
-      local fIn = io.open(fullname, "rb")
+      local fIn = win.OpenFile(fullname, "r")
       if fIn then
-        fOut = io.open(tmpname, "wb")
+        fOut = win.OpenFile(tmpname, "w")
         if fOut then
           if bom then
             fIn:seek("set", #bom)
@@ -1158,7 +1158,7 @@ end
 local function Replace_ProcessFile (fdata, fullname, cdata)
 --local ExtendedName = [[\\?\]] .. fullname
   local ExtendedName = fullname
-  local fp = io.open(ExtendedName, "rb")
+  local fp = win.OpenFile(ExtendedName, "r")
   if not fp then
     MsgCannotOpenFile(fullname)
     return
@@ -1318,7 +1318,7 @@ end
 
 -- cdata.sOp: operation - either "grep" or "count"
 local function Grep_ProcessFile (fdata, fullname, cdata)
-  local fp = io.open(fullname,"rb")
+  local fp = win.OpenFile(fullname,"r")
   if not fp then
     return -- don't show message (this can be just a broken symlink)
   end
@@ -1556,7 +1556,7 @@ local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
     for _,v in ipairs(cdata.tGrep) do
       if v[1] then
         numfile = numfile + 1
-        fp = fp or assert(io.open(fname, "wb"))
+        fp = fp or assert(win.OpenFile(fname, "w"))
         fp:write(("[%d] %s : %d\n"):format(numfile, v.FileName, v.nMatches))
         local last_numline = -1
         for m=1,#v,2 do
@@ -1593,11 +1593,11 @@ local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
 end
 
 local function ReplaceFromPanel (aData, aWithDialog, aScriptCall)
-  return ReplaceOrGrep("replace", aData, aWithDialog, aScriptCall)
+  far.SudoCRCall(ReplaceOrGrep, "replace", aData, aWithDialog, aScriptCall)
 end
 
 local function GrepFromPanel (aData, aWithDialog, aScriptCall)
-  return ReplaceOrGrep("grep", aData, aWithDialog, aScriptCall)
+  far.SudoCRCall(ReplaceOrGrep, "grep", aData, aWithDialog, aScriptCall)
 end
 
 return {
