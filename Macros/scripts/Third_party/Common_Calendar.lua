@@ -124,6 +124,7 @@ do
   end
 end
 -------------------------------------------------------------------------------
+local Send = far.SendDlgMessage
 local DaysInMonth={[0]=31,31,28,31,30,31,30,31,31,30,31,30,31,[13]=31}
 local MaxDayNum = DateToDnum {wYear=9999; wMonth=12; wDay=31}
 
@@ -259,9 +260,9 @@ local function Calendar(DateTime)
 
   local function Rebuild(hDlg,dT)
     IsRebuilding=true
-    hDlg:EnableRedraw(0)
-    hDlg:SetText(Pos.Year,("%04d"):format(dT.wYear))
-    hDlg:ListSetCurPos(Pos.Month,{SelectPos=dT.wMonth})
+    Send(hDlg,F.DM_ENABLEREDRAW,0)
+    Send(hDlg,F.DM_SETTEXT,Pos.Year,("%04d"):format(dT.wYear))
+    Send(hDlg,F.DM_LISTSETCURPOS,Pos.Month,{SelectPos=dT.wMonth})
     local day=WeekStartDay(MonthFirstDay(dT))
     ITic=nil
     local elem={}
@@ -287,8 +288,8 @@ local function Calendar(DateTime)
         day=IncDay(day,1)
       end
     end
-    hDlg:SetText(Pos.Date,("%02d.%02d.%04d"):format(dT.wDay,dT.wMonth,dT.wYear))
-    hDlg:EnableRedraw(1)
+    Send(hDlg,F.DM_SETTEXT,Pos.Date,("%02d.%02d.%04d"):format(dT.wDay,dT.wMonth,dT.wYear))
+    Send(hDlg,F.DM_ENABLEREDRAW,1)
     IsRebuilding=false
   end
 
@@ -331,20 +332,20 @@ local function Calendar(DateTime)
       elseif Param1==Pos.Today    then
         Current=Today()
         dt=CopyDate(Current)
-        hDlg:SetFocus(Pos.Close)
+        Send(hDlg,F.DM_SETFOCUS,Pos.Close)
       else return
       end
       Rebuild(hDlg,dt)
     elseif Msg==F.DN_EDITCHANGE and Param1==Pos.Year then
-      local year=tonumber(hDlg:GetText(Pos.Year))
+      local year=tonumber(Send(hDlg,F.DM_GETTEXT, Pos.Year))
       if year and year>0 then
-        local pos=hDlg:GetCursorPos(Pos.Year)
+        local pos=Send(hDlg,F.DM_GETCURSORPOS,Pos.Year)
         dt.wYear=year
         Rebuild(hDlg,dt)
-        hDlg:SetCursorPos(Pos.Year,pos)
+        Send(hDlg,F.DM_SETCURSORPOS,Pos.Year,pos)
       end
     elseif Msg==F.DN_EDITCHANGE and Param1==Pos.Month then
-      local month=hDlg:ListGetCurPos(Pos.Month).SelectPos
+      local month=Send(hDlg,F.DM_LISTGETCURPOS, Pos.Month).SelectPos
       ChangeMonth(dt,month)
       Rebuild(hDlg,dt)
     end
