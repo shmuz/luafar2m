@@ -130,7 +130,7 @@ local function row_dialog(db, schema, table_name, rowid_name, db_data, row_id)
     table.insert(Items, { tp="butt"; text=M.cancel; centergroup=1; cancel=1;  })
   end
 
-  Items.keyaction = function (hDlg, Param1, key)
+  local keyaction = function (hDlg, Param1, key)
     local pos = hDlg:GetFocus()
     local item = Items[pos]
     local txt = item.Colname and hDlg:GetText(pos)
@@ -186,7 +186,9 @@ local function row_dialog(db, schema, table_name, rowid_name, db_data, row_id)
   end
 
   Items.proc = function(hDlg, Msg, Par1, Par2)
-    if Msg == F.DN_CLOSE then
+    if Msg == "EVENT_KEY" then
+      keyaction(hDlg, Par1, Par2)
+    elseif Msg == F.DN_CLOSE then
       return closeaction(hDlg, Par1, Par2)
     end
   end
