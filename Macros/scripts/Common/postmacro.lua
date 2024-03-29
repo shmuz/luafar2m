@@ -94,10 +94,8 @@ local function GetText (aOpt)
     Elem.sequence.ext, Elem.params.ext = ext, ext
   end
 
-  Items.initaction, Elem.lua.action, Elem.moon.action = set_ext, set_ext, set_ext
-
   local f, f2, msg
-  Items.closeaction = function (hDlg, Param1, tOut)
+  local function closeaction (hDlg, Param1, tOut)
     local ms = tOut.moon and require "moonscript"
     local loadstring, loadfile = (ms or _G).loadstring, (ms or _G).loadfile
     local seq = tOut.sequence
@@ -119,6 +117,18 @@ local function GetText (aOpt)
     if not f2 then far.Message(msg, Title, nil, "w"); return 0; end
     hDlg:AddHistory(Pos.sequence, tOut.sequence)
     hDlg:AddHistory(Pos.params, tOut.params)
+  end
+
+  Items.proc = function(hDlg, Msg, Par1, Par2)
+    if Msg == F.DN_INITDIALOG then
+      set_ext(hDlg)
+    elseif Msg == F.DN_BTNCLICK then
+      if Par1 == Pos.lua or Par1 == Pos.moon then
+        set_ext(hDlg)
+      end
+    elseif Msg == F.DN_CLOSE then
+      return closeaction(hDlg, Par1, Par2)
+    end
   end
 
   local out = dlg:Run()

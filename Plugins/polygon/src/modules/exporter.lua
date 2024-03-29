@@ -162,16 +162,16 @@ function exporter:dump_data_with_dialog()
   local dlg = sdialog.New(Items)
   local Pos = dlg:Indexes()
   ------------------------------------------------------------------------------
-  function Items.initaction(hDlg)
-    if t_selected[1] == nil then
-      hDlg:SetCheck(Pos.dumpall, true)
-      hDlg:Enable(Pos.dumpall, false)
-    end
-  end
-
-  function Items.closeaction(hDlg, Param1, tOut)
-    if not check_output_file(tOut.targetfile) then
-      return KEEP_DIALOG_OPEN
+  Items.proc = function(hDlg, Msg, Par1, Par2)
+    if Msg == F.DN_INITDIALOG then
+      if t_selected[1] == nil then
+        hDlg:SetCheck(Pos.dumpall, true)
+        hDlg:Enable(Pos.dumpall, false)
+      end
+    elseif Msg == F.DN_CLOSE then
+      if not check_output_file(Par2.targetfile) then
+        return KEEP_DIALOG_OPEN
+      end
     end
   end
   ------------------------------------------------------------------------------
@@ -209,7 +209,7 @@ function exporter:recover_data_with_dialog()
     {tp="butt";  text=M.cancel; centergroup=1; cancel=1;           },
   }
   local dlg = sdialog.New(Items)
-  local Pos, Elem = dlg:Indexes()
+  local Pos = dlg:Indexes()
   ------------------------------------------------------------------------------
   local function set_output_name(hDlg)
     local as_dump = hDlg:GetCheck(Pos.as_dump) == 1
@@ -219,13 +219,17 @@ function exporter:recover_data_with_dialog()
     hDlg:SetText(Pos.targetfile, target)
   end
 
-  Items.initaction = set_output_name
-  Elem.as_dump.action = set_output_name
-  Elem.as_db.action = set_output_name
-
-  function Items.closeaction(hDlg, Param1, tOut)
-    if not check_output_file(tOut.targetfile) then
-      return KEEP_DIALOG_OPEN
+  Items.proc = function(hDlg, Msg, Par1, Par2)
+    if Msg == F.DN_INITDIALOG then
+      set_output_name(hDlg)
+    elseif Msg == F.DN_BTNCLICK then
+      if Par1 == Pos.as_dump or Par1 == Pos.as_db then
+        set_output_name(hDlg)
+      end
+    elseif Msg == F.DN_CLOSE then
+      if not check_output_file(Par2.targetfile) then
+        return KEEP_DIALOG_OPEN
+      end
     end
   end
   ------------------------------------------------------------------------------

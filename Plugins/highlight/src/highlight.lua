@@ -636,7 +636,7 @@ local function HighlightExtra()
     hDlg:Enable(Pos.bExtended, bRegex)
   end
 
-  function Items.closeaction(hDlg, param1, data)
+  local function closeaction(hDlg, param1, data)
     if param1 == Pos.btReset then
       SetExtraPattern(editor.GetInfo().EditorID, nil)
     elseif param1 == Pos.btOk then
@@ -682,6 +682,8 @@ local function HighlightExtra()
         param2[1] = extracolor
         return param2
       end
+    elseif msg == F.DN_CLOSE then
+      return closeaction(hDlg, param1, param2)
     end
   end
 

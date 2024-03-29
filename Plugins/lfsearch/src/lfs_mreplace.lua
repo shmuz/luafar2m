@@ -77,7 +77,7 @@ local function ReplaceDialog (Data)
     hDlg:Enable(Pos.sFinalFunc,   bEnab)
   end
 
-  Items.closeaction = function(hDlg, param1, tOut)
+  local closeaction = function(hDlg, param1, tOut)
     local tmpData = {}
     dlg:SaveData(tOut, tmpData)
     tmpData.sRegexLib = RegexLibs[tOut.cmbRegexLib]
@@ -100,12 +100,14 @@ local function ReplaceDialog (Data)
       elseif param1==Pos.bAdvanced then
         CheckAdvancedEnab(hDlg)
       end
-    elseif msg == F.DN_KEY and param2 == F.KEY_F4 then
+    elseif msg == "EVENT_KEY" and param2 == "F4" then
       if param1 == Pos.sReplacePat and hDlg:GetCheck(Pos.bRepIsFunc) == 1 then
         local txt = sd.OpenInEditor(hDlg:GetText(Pos.sReplacePat), "lua")
         if txt then hDlg:SetText(Pos.sReplacePat, txt) end
         return true
       end
+    elseif msg == F.DN_CLOSE then
+      return closeaction(hDlg, param1, param2)
     end
   end
 

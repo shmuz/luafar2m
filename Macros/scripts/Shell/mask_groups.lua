@@ -1,6 +1,8 @@
 -- Started: 2023-05-06
 -- Depends on modules: inifile, far2.simpledialog
 
+local F = far.Flags
+
 local function Trim(txt)
   return txt:match("%s*(.-)%s*$")
 end
@@ -18,7 +20,7 @@ local function EditItem(aName, aVal, aGuard)
     {tp="butt"; text="Cancel"; centergroup=1; cancel=1;  },
   }
 
-  function Items.closeaction(hDlg, Par1, tOut)
+  local function closeaction(hDlg, Par1, tOut)
     local name,val = Trim(tOut.name),Trim(tOut.val)
     if name=="" or val=="" then
       far.Message("Either Name or Mask is empty", "Error", nil, "w")
@@ -26,6 +28,12 @@ local function EditItem(aName, aVal, aGuard)
     elseif name ~= aName and aGuard[name] then
       far.Message(("The entry '%s' already exists"):format(name), "Error", nil, "w")
       return 0
+    end
+  end
+
+  Items.proc = function(hDlg, Msg, Par1, Par2)
+    if Msg == F.DN_CLOSE then
+      return closeaction(hDlg, Par1, Par2)
     end
   end
 

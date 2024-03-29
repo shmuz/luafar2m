@@ -851,7 +851,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
       end
     end
   ----------------------------------------------------------------------------
-  elseif msg == F.DN_KEY and param2 == F.KEY_F4 then
+  elseif msg == "EVENT_KEY" and param2 == "F4" then
     if param1 == Pos.sReplacePat and hDlg:GetCheck(Pos.bRepIsFunc) == 1 then
       local txt = sdialog.OpenInEditor(hDlg:GetText(Pos.sReplacePat), "lua")
       if txt then hDlg:SetText(Pos.sReplacePat, txt) end
@@ -1124,11 +1124,17 @@ local function ConfigDialog()
   ----------------------------------------------------------------------------
   local Dlg = sdialog.New(Items)
 
-  function Items.closeaction (hDlg, param1, state)
+  local function closeaction (hDlg, param1, state)
     local ok, errmsg = TransformLogFilePat(state.sLogFileName)
     if not ok then
       ErrorMsg(errmsg, "Log file name")
       return KEEP_DIALOG_OPEN
+    end
+  end
+
+  function Items.proc (hDlg, Msg, Par1, Par2)
+    if Msg == F.DN_CLOSE then
+      return closeaction(hDlg, Par1, Par2)
     end
   end
 

@@ -51,10 +51,6 @@ local TmpPanelDefaults = {
   PreserveContents         = true,
 }
 
-local KEY_INS     = F.KEY_INS
-local KEY_NUMPAD0 = F.KEY_NUMPAD0
-local KEY_SPACE   = F.KEY_SPACE
-
 local function MsgCannotOpenFile (name)
   ErrorMsg(M.MCannotOpenFile.."\n"..name)
 end
@@ -319,13 +315,15 @@ local function ConfigDialog()
   local dlg = sd.New(Items)
   local Pos = dlg:Indexes()
 
-  Items[Pos.reset].action = function(hDlg,Par1,Par2)
-    for i,v in ipairs(Items) do
-      if v.name then
-        local val = TmpPanelDefaults[v.name]
-        if val ~= nil then
-          if     v.tp == "edit"  then hDlg:SetText(i, val)
-          elseif v.tp == "chbox" then hDlg:SetCheck(i, val)
+  Items.proc = function(hDlg, Msg, Par1, Par2)
+    if Msg == F.DN_BTNCLICK and Par1 == Pos.reset then
+      for i,v in ipairs(Items) do
+        if v.name then
+          local val = TmpPanelDefaults[v.name]
+          if val ~= nil then
+            if     v.tp == "edit"  then hDlg:SetText(i, val)
+            elseif v.tp == "chbox" then hDlg:SetCheck(i, val)
+            end
           end
         end
       end
@@ -439,7 +437,7 @@ local function DirectoryFilterDialog (aData)
   local Dlg = sd.New(Items)
   local Pos = Dlg:Indexes()
 
-  function Items.closeaction (hDlg, param1, tOut)
+  local function closeaction (hDlg, param1, tOut)
     local mask1 = tOut.sDirMask -- this mask is allowed to be empty
     if not (mask1 == "" or CheckMask(mask1)) then
       GotoEditField(hDlg, Pos.sDirMask)
@@ -449,6 +447,12 @@ local function DirectoryFilterDialog (aData)
     if not (mask2 == "" or CheckMask(mask2)) then
       GotoEditField(hDlg, Pos.sDirExMask)
       return KEEP_DIALOG_OPEN
+    end
+  end
+
+  Items.proc = function(hDlg, Msg, Par1, Par2)
+    if Msg == F.DN_CLOSE then
+      return closeaction(hDlg, Par1, Par2)
     end
   end
 
@@ -549,9 +553,9 @@ end
         end
       end
     --------------------------------------------------------------------------------------
-    elseif msg == F.DN_KEY then
+    elseif msg == "EVENT_KEY" then
       if param1 == Pos.cmbCodePage then
-        if param2==KEY_INS or param2==KEY_NUMPAD0 or param2==KEY_SPACE then
+        if param2=="Ins" or param2=="NumPad0" or param2=="Space" then
           local pos = hDlg:ListGetCurPos(param1)
           if pos.SelectPos > 2 then -- if not ("Default code pages" or "Checked code pages")
             local item = hDlg:ListGetItem(param1, pos.SelectPos)

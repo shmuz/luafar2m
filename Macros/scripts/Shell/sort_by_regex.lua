@@ -69,7 +69,7 @@ local function GetRegexFromDialog()
     {tp="butt"; text="Cancel", centergroup=1, cancel=1;    },
   }
 
-  Items.closeaction = function(hDlg, Param1, tOut)
+  local closeaction = function(hDlg, Param1, tOut)
     local tmpHandle = GetRegex(tOut.sSearchPat, tOut.bCaseSens)
     if tmpHandle then
       Handle = tmpHandle
@@ -77,6 +77,12 @@ local function GetRegexFromDialog()
     else
       far.Message("Invalid regex", "Error", nil, "w")
       return 0 -- do not close dialog
+    end
+  end
+
+  Items.proc = function(hDlg, Msg, Par1, Par2)
+    if Msg == F.DN_CLOSE then
+      return closeaction(hDlg, Par1, Par2)
     end
   end
 

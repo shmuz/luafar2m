@@ -293,7 +293,7 @@ local function Calendar(DateTime)
     IsRebuilding=false
   end
 
-  Items.keyaction = function(hDlg,Param1,KeyName)
+  local keyaction = function(hDlg,Param1,KeyName)
     if Param1==Pos.User then
       if     KeyName=="Left"      then dt=IncDay(dt,-WEEK)
       elseif KeyName=="Up"        then dt=IncDay(dt,-1)
@@ -309,7 +309,7 @@ local function Calendar(DateTime)
     end
   end
 
-  Items.mouseaction = function(hDlg,Param1,Param2)
+  local mouseaction = function(hDlg,Param1,Param2)
     if Param1==Pos.User then
       if Param2.ButtonState==F.FROM_LEFT_1ST_BUTTON_PRESSED then
         local i=math.floor(Param2.MousePositionX/CELL_WIDTH)*WEEK+Param2.MousePositionY+1
@@ -348,6 +348,10 @@ local function Calendar(DateTime)
       local month=Send(hDlg,F.DM_LISTGETCURPOS, Pos.Month).SelectPos
       ChangeMonth(dt,month)
       Rebuild(hDlg,dt)
+    elseif Msg == "EVENT_KEY" then
+      return keyaction(hDlg, Param1, Param2)
+    elseif Msg == "EVENT_MOUSE" then
+      return mouseaction(hDlg, Param1, Param2)
     end
   end
 

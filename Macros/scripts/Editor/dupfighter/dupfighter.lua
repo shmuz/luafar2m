@@ -178,16 +178,16 @@ local function Main()
     {tp="butt";  text=M.CANCEL; centergroup=1; cancel=1;                         },
   }
   local dlg = sDialog.New(dItems)
-  local Pos, Elem = dlg:Indexes()
+  local Pos = dlg:Indexes()
 
-  dItems.initaction = function(hDlg)
+  local initaction = function(hDlg)
     local val = FarVer==3 and (ST.useexpr and 1 or 0) or ST.useexpr
     hDlg:Enable(Pos.toboolean, val)
     hDlg:Enable(Pos.lbExpr, val)
     hDlg:Enable(Pos.edExpr, val)
   end
 
-  Elem.useexpr.action = function(hDlg, p1, p2)
+  local useexpr_action = function(hDlg, p2)
     hDlg:Enable(Pos.toboolean, p2)
     hDlg:Enable(Pos.lbExpr, p2)
     hDlg:Enable(Pos.edExpr, p2)
@@ -197,7 +197,7 @@ local function Main()
     return loadstring("local L=... return "..txt)
   end
 
-  dItems.closeaction = function(hDlg, p1, tOut)
+  local closeaction = function(hDlg, p1, tOut)
     if tOut.useexpr then
       local f, msg = GetFunc(tOut.edExpr)
       if f then
@@ -209,6 +209,19 @@ local function Main()
       end
     end
   end
+
+  dItems.proc = function(hDlg, Msg, Par1, Par2)
+    if Msg == F.DN_INITDIALOG then
+      initaction(hDlg)
+    elseif Msg == F.DN_BTNCLICK then
+      if Par1 == Pos.useexpr then
+        useexpr_action(hDlg, Par2)
+      end
+    elseif Msg == F.DN_CLOSE then
+      return closeaction(hDlg, Par1, Par2)
+    end
+  end
+
 
   dlg:LoadData(ST)
   local out = dlg:Run()

@@ -112,10 +112,7 @@ local function GetDialogData()
     if is_regex then hDlg:SetCheck(Pos.bWholeWords, 0); end
   end
 
-  Items.initaction = EnableControls
-  Elem.bRegExpr.action = EnableControls
-
-  Items.closeaction = function(hDlg, Par1, tOut)
+  local closeaction = function(hDlg, Par1, tOut)
     if tOut.sFileMask == "" then
       far.Message("File mask is empty",Title,nil,"w"); return 0
     end
@@ -124,6 +121,18 @@ local function GetDialogData()
       if not tOut.bRegExpr then sPat = EscapeSearchPattern(sPat); end
       local ok,msg = pcall(regex.new, sPat)
       if not ok then far.Message(msg,Title,nil,"w"); return 0; end
+    end
+  end
+
+  Items.proc = function(hDlg, Msg, Par1, Par2)
+    if Msg == F.DN_INITDIALOG then
+      EnableControls(hDlg)
+    elseif Msg == F.DN_BTNCLICK then
+      if Par1 == Pos.bRegExpr then
+        EnableControls(hDlg)
+      end
+    elseif Msg == F.DN_CLOSE then
+      return closeaction(hDlg, Par1, Par2)
     end
   end
 

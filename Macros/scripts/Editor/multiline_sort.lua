@@ -95,12 +95,12 @@ local function get_data_from_dialog()
 
   local PresetParams = { PresetName=nil; }
   local Dlg = sdialog.New(items)
-  local Pos, Elem = Dlg:Indexes()
+  local Pos = Dlg:Indexes()
   local Data = settings.mload(SETTINGS_KEY, SETTINGS_SUBKEY) or {}
   Dlg:LoadData(Data)
 
   ---- callback on dialog close (Data validity checking)
-  items.closeaction = function(hDlg, Par1, tOut)
+  local closeaction = function(hDlg, Par1, tOut)
     local _, msg
     if tOut.sBlockPat == ""                      then msg = "Empty Block regular expression"
     elseif not pcall(regex.new, tOut.sBlockPat)  then msg = "Invalid Block regular expression"
@@ -114,7 +114,7 @@ local function get_data_from_dialog()
     end
   end
 
-  function Elem.Presets.action (hDlg,Par1,Par2)
+  local function Presets_action (hDlg,Par1,Par2)
     local PrMenu = require "far2.presets"
     Data.presets = Data.presets or {}
     hDlg:ShowDialog(0)
@@ -132,6 +132,16 @@ local function get_data_from_dialog()
 
     hDlg:ShowDialog(1)
     hDlg:SetFocus(Pos.btnOK)
+  end
+
+  function items.proc(hDlg, Msg, Par1, Par2)
+    if Msg == F.DN_CLOSE then
+      return closeaction(hDlg, Par1, Par2)
+    elseif Msg == F.DN_BTNCLICK then
+      if Par1 == Pos.Presets then
+        Presets_action(hDlg, Par1, Par2)
+      end
+    end
   end
 
   for _,v in ipairs(items) do
