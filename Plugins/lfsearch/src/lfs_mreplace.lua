@@ -62,19 +62,19 @@ local function ReplaceDialog (Data)
   local Pos,Elem = dlg:Indexes()
 
   local function CheckRegexChange (hDlg)
-    local bRegex = hDlg:GetCheck(Pos.bRegExpr) == 1
-    hDlg:Enable(Pos.bWholeWords, not bRegex)
-    hDlg:Enable(Pos.bExtended,   bRegex)
-    hDlg:Enable(Pos.bFileAsLine, bRegex)
-    hDlg:Enable(Pos.bMultiLine,  bRegex)
+    local bRegex = hDlg:send("DM_GETCHECK", Pos.bRegExpr) == 1
+    hDlg:send("DM_ENABLE", Pos.bWholeWords, not bRegex)
+    hDlg:send("DM_ENABLE", Pos.bExtended,   bRegex)
+    hDlg:send("DM_ENABLE", Pos.bFileAsLine, bRegex)
+    hDlg:send("DM_ENABLE", Pos.bMultiLine,  bRegex)
   end
 
   local function CheckAdvancedEnab (hDlg)
-    local bEnab = hDlg:GetCheck(Pos.bAdvanced) == 1
-    hDlg:Enable(Pos.labInitFunc,  bEnab)
-    hDlg:Enable(Pos.sInitFunc,    bEnab)
-    hDlg:Enable(Pos.labFinalFunc, bEnab)
-    hDlg:Enable(Pos.sFinalFunc,   bEnab)
+    local bEnab = hDlg:send("DM_GETCHECK", Pos.bAdvanced) == 1
+    hDlg:send("DM_ENABLE", Pos.labInitFunc,  bEnab)
+    hDlg:send("DM_ENABLE", Pos.sInitFunc,    bEnab)
+    hDlg:send("DM_ENABLE", Pos.labFinalFunc, bEnab)
+    hDlg:send("DM_ENABLE", Pos.sFinalFunc,   bEnab)
   end
 
   local closeaction = function(hDlg, param1, tOut)
@@ -83,8 +83,8 @@ local function ReplaceDialog (Data)
     tmpData.sRegexLib = RegexLibs[tOut.cmbRegexLib]
     if Common.ProcessDialogData(tmpData, true, true) then
       Data.sRegexLib = tmpData.sRegexLib
-      hDlg:AddHistory(Pos.sSearchPat, tmpData.sSearchPat)
-      hDlg:AddHistory(Pos.sReplacePat, tmpData.sReplacePat)
+      hDlg:send("DM_ADDHISTORY", Pos.sSearchPat, tmpData.sSearchPat)
+      hDlg:send("DM_ADDHISTORY", Pos.sReplacePat, tmpData.sReplacePat)
     else
       return KEEP_DIALOG_OPEN
     end
@@ -101,9 +101,9 @@ local function ReplaceDialog (Data)
         CheckAdvancedEnab(hDlg)
       end
     elseif msg == "EVENT_KEY" and param2 == "F4" then
-      if param1 == Pos.sReplacePat and hDlg:GetCheck(Pos.bRepIsFunc) == 1 then
-        local txt = sd.OpenInEditor(hDlg:GetText(Pos.sReplacePat), "lua")
-        if txt then hDlg:SetText(Pos.sReplacePat, txt) end
+      if param1 == Pos.sReplacePat and hDlg:send("DM_GETCHECK", Pos.bRepIsFunc) == 1 then
+        local txt = sd.OpenInEditor(hDlg:send("DM_GETTEXT", Pos.sReplacePat), "lua")
+        if txt then hDlg:send("DM_SETTEXT", Pos.sReplacePat, txt) end
         return true
       end
     elseif msg == F.DN_CLOSE then

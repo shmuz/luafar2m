@@ -276,9 +276,9 @@ local function UserDialog (aData, aList, aDlgTitle)
   --   Far incorrectly calculates LeftPos and the new value may either not show at all
   --   or show only a few of its last characters.
   local function FixLeftPos (hDlg, Id)
-    local len = hDlg:GetText(Id):len()
-    local p = hDlg:GetItemPosition(Id)
-    hDlg:SetEditPosition(Id,
+    local len = hDlg:send("DM_GETTEXT", Id):len()
+    local p = hDlg:send("DM_GETITEMPOSITION", Id)
+    hDlg:send("DM_SETEDITPOSITION", Id,
       { LeftPos=math.max(1, len+1-(p.Right-p.Left)); CurPos=len+1; CurTabPos=len+1 })
   end
 
@@ -289,7 +289,7 @@ local function UserDialog (aData, aList, aDlgTitle)
       text = "<S> "..m_sErrSearch
     elseif m_sErrReplace then
       text = "<R> "..m_sErrReplace
-    elseif 0 == hDlg:GetCheck(Pos.bRepIsFunc) and m_tReplace.MaxGroupNumber >= m_uRegex:bracketscount() then
+    elseif 0 == hDlg:send("DM_GETCHECK", Pos.bRepIsFunc) and m_tReplace.MaxGroupNumber >= m_uRegex:bracketscount() then
       m_sErrMaxGroup = "inexistent group"
       text = "<R> "..m_sErrMaxGroup
     else
@@ -299,13 +299,13 @@ local function UserDialog (aData, aList, aDlgTitle)
       else text = "<R> "..res
       end
     end
-    hDlg:SetText(Pos.edtAfter, text)
+    hDlg:send("DM_SETTEXT", Pos.edtAfter, text)
     FixLeftPos(hDlg, Pos.edtBefore)
     FixLeftPos(hDlg, Pos.edtAfter)
   end
 
   local function UpdateSearchPat (hDlg)
-    local pat = hDlg:GetText(Pos.sSearchPat)
+    local pat = hDlg:send("DM_GETTEXT", Pos.sSearchPat)
     local ok, res = pcall(Rex.new, pat, "i")
     if ok then m_uRegex, m_sErrSearch = res, nil
     else m_uRegex, m_sErrSearch = nil, res
@@ -322,9 +322,9 @@ local function UserDialog (aData, aList, aDlgTitle)
   end
 
   local function UpdateReplacePat (hDlg)
-    local repl = hDlg:GetText(Pos.sReplacePat)
+    local repl = hDlg:send("DM_GETTEXT", Pos.sReplacePat)
     m_sErrReplace = nil
-    if hDlg:GetCheck(Pos.bRepIsFunc) == 1 then
+    if hDlg:send("DM_GETCHECK", Pos.bRepIsFunc) == 1 then
       local func, msg = loadstring("local T,M,R = ...\n" .. repl, M.MReplaceFunction)
       if func then m_tReplace = setfenv(func, NewEnvir())
       else m_sErrReplace = msg
@@ -339,21 +339,21 @@ local function UserDialog (aData, aList, aDlgTitle)
   end
 
   local function CheckAdvancedEnab (hDlg)
-    local bEnab = hDlg:GetCheck(Pos.bAdvanced) == 1
-    hDlg:Enable(Pos.labInitFunc,  bEnab)
-    hDlg:Enable(Pos.sInitFunc,    bEnab)
-    hDlg:Enable(Pos.labFinalFunc, bEnab)
-    hDlg:Enable(Pos.sFinalFunc,   bEnab)
+    local bEnab = hDlg:send("DM_GETCHECK", Pos.bAdvanced) == 1
+    hDlg:send("DM_ENABLE", Pos.labInitFunc,  bEnab)
+    hDlg:send("DM_ENABLE", Pos.sInitFunc,    bEnab)
+    hDlg:send("DM_ENABLE", Pos.labFinalFunc, bEnab)
+    hDlg:send("DM_ENABLE", Pos.sFinalFunc,   bEnab)
   end
 
   function Items.proc (hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
-      hDlg:SetText(Pos.edtBefore, aList[1])
+      hDlg:send("DM_SETTEXT", Pos.edtBefore, aList[1])
       UpdateSearchPat(hDlg)
       UpdateReplacePat(hDlg)
       UpdatePreviewLabel(hDlg)
-      if 0 == hDlg:GetCheck(Pos.bRenFolders) then
-        hDlg:SetCheck(Pos.bRenFiles, true)
+      if 0 == hDlg:send("DM_GETCHECK", Pos.bRenFolders) then
+        hDlg:send("DM_SETCHECK", Pos.bRenFiles, true)
       end
       CheckAdvancedEnab(hDlg)
 
@@ -368,15 +368,15 @@ local function UserDialog (aData, aList, aDlgTitle)
 
     elseif msg == F.DN_BTNCLICK then
       if param1 == Pos.bRenFiles then
-        if 0 == hDlg:GetCheck(Pos.bRenFiles) then hDlg:SetCheck(Pos.bRenFolders,true) end
+        if 0 == hDlg:send("DM_GETCHECK", Pos.bRenFiles) then hDlg:send("DM_SETCHECK", Pos.bRenFolders,true) end
       elseif param1 == Pos.bRenFolders then
-        if 0 == hDlg:GetCheck(Pos.bRenFolders) then hDlg:SetCheck(Pos.bRenFiles,true) end
+        if 0 == hDlg:send("DM_GETCHECK", Pos.bRenFolders) then hDlg:send("DM_SETCHECK", Pos.bRenFiles,true) end
       elseif param1 == Pos.bRepIsFunc then
         UpdateReplacePat(hDlg)
         UpdatePreviewLabel(hDlg)
       elseif param1 == Pos.btnBefore then
         m_index = (m_index < #aList) and m_index+1 or 1
-        hDlg:SetText(Pos.edtBefore, aList[m_index])
+        hDlg:send("DM_SETTEXT", Pos.edtBefore, aList[m_index])
         UpdatePreviewLabel(hDlg)
       elseif param1 == Pos.bAdvanced then
         CheckAdvancedEnab(hDlg)
@@ -384,7 +384,7 @@ local function UserDialog (aData, aList, aDlgTitle)
 
     elseif msg == F.DN_CLOSE then
       if param1 == Pos.btnOk then
-        local mask = hDlg:GetText(Pos.sFileMask)
+        local mask = hDlg:send("DM_GETTEXT", Pos.sFileMask)
         if not far.CheckMask(mask, "PN_SHOWERRORMESSAGE") then
           Common.GotoEditField(hDlg, Pos.sFileMask)
           return KEEP_DIALOG_OPEN
@@ -398,16 +398,16 @@ local function UserDialog (aData, aList, aDlgTitle)
           Common.GotoEditField(hDlg, Pos.sReplacePat)
           return KEEP_DIALOG_OPEN
         end
-        if hDlg:GetCheck(Pos.bAdvanced) == 1 then
+        if hDlg:send("DM_GETCHECK", Pos.bAdvanced) == 1 then
           local msg2
-          local sInitFunc = hDlg:GetText(Pos.sInitFunc)
+          local sInitFunc = hDlg:send("DM_GETTEXT", Pos.sInitFunc)
           m_InitFunc, msg2 = loadstring (sInitFunc or "", "Initial")
           if not m_InitFunc then
             ErrorMsg(msg2, "Initial Function: " .. M.MSyntaxError)
             Common.GotoEditField(hDlg, Pos.sInitFunc)
             return KEEP_DIALOG_OPEN
           end
-          local sFinalFunc = hDlg:GetText(Pos.sFinalFunc)
+          local sFinalFunc = hDlg:send("DM_GETTEXT", Pos.sFinalFunc)
           m_FinalFunc, msg2 = loadstring (sFinalFunc or "", "Final")
           if not m_FinalFunc then
             ErrorMsg(msg2, "Final Function: " .. M.MSyntaxError)
@@ -419,10 +419,10 @@ local function UserDialog (aData, aList, aDlgTitle)
           setfenv(m_FinalFunc, env)
         end
       elseif param1 == Pos.btnConfig then
-        hDlg:ShowDialog(0)
+        hDlg:send("DM_SHOWDIALOG", 0)
         Common.ConfigDialog()
-        hDlg:ShowDialog(1)
-        hDlg:SetFocus(Pos.btnOk)
+        hDlg:send("DM_SHOWDIALOG", 1)
+        hDlg:send("DM_SETFOCUS", Pos.btnOk)
         return KEEP_DIALOG_OPEN
       end
     end

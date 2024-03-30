@@ -262,12 +262,12 @@ end
 
 local function ShowAll_ChangeState (hDlg, item, force_dock)
   local EI = editor.GetInfo()
-  local rect = hDlg:GetDlgRect()
+  local rect = hDlg:send("DM_GETDLGRECT")
   local scrline = item.lineno - EI.TopScreenLine + 1
   if force_dock or (scrline >= rect.Top and scrline <= rect.Bottom) then
     local X = force_dock and (EI.WindowSizeX - (rect.Right - rect.Left + 1)) or rect.Left
     local Y = scrline <= EI.WindowSizeY/2 and EI.WindowSizeY - (rect.Bottom - rect.Top) or 1
-    hDlg:MoveDialog(1, {X=X, Y=Y})
+    hDlg:send("DM_MOVEDIALOG", 1, {X=X, Y=Y})
   end
 
   -- This additional editor.Redraw() is a workaround due to a bug in FAR
@@ -316,7 +316,7 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
     if regex.match(key, "^R?Ctrl(?:Up|Down|Home|End|Num[1278])$") then
       editor.ProcessKey(nil, far.NameToKey(key))
       actl.RedrawAll()
-      hDlg:Redraw()
+      hDlg:send("DM_REDRAW")
       return "done"
     elseif key=="CtrlNum0" or key=="RCtrlNum0" then
       self:onlistchange(hDlg, key, item)

@@ -24,10 +24,10 @@ local function FormatInt (num)
 end
 
 local function GotoEditField (hDlg, id)
-  local len = hDlg:GetText(id):len()
-  hDlg:SetFocus(id)
-  hDlg:SetCursorPos(id, {X=len+1, Y=1})
-  hDlg:SetSelection(id, {BlockType="BTYPE_STREAM", BlockStartPos=1, BlockWidth=len})
+  local len = hDlg:send("DM_GETTEXT", id):len()
+  hDlg:send("DM_SETFOCUS", id)
+  hDlg:send("DM_SETCURSORPOS", id, {X=len+1, Y=1})
+  hDlg:send("DM_SETSELECTION", id, {BlockType="BTYPE_STREAM", BlockStartPos=1, BlockWidth=len})
 end
 
 local function MakeGsub (mode)
@@ -92,15 +92,15 @@ end
 
 local function SaveCodePageCombo (hDlg, combo_pos, combo_list, aData, aSaveCurPos)
   if aSaveCurPos then
-    local pos = hDlg:ListGetCurPos(combo_pos).SelectPos
+    local pos = hDlg:send("DM_LISTGETCURPOS", combo_pos).SelectPos
     aData.iSelectedCodePage = combo_list[pos].CodePage
   end
   aData.tCheckedCodePages = {}
-  local info = hDlg:ListInfo(combo_pos)
+  local info = hDlg:send("DM_LISTINFO", combo_pos)
   for i=1,info.ItemsNumber do
-    local item = hDlg:ListGetItem(combo_pos, i)
+    local item = hDlg:send("DM_LISTGETITEM", combo_pos, i)
     if 0 ~= band(item.Flags, F.LIF_CHECKED) then
-      local t = hDlg:ListGetData(combo_pos, i)
+      local t = hDlg:send("DM_LISTGETDATA", combo_pos, i)
       if t then table.insert(aData.tCheckedCodePages, t) end
     end
   end
@@ -235,13 +235,13 @@ local function EditorConfigDialog()
     if msg == F.DN_BTNCLICK then
       if param1 == Pos.btnHighlight then
         local c = far.ColorDialog(hColor0)
-        if c then hColor0 = c.PaletteColor; hDlg:Redraw(); end
+        if c then hColor0 = c.PaletteColor; hDlg:send("DM_REDRAW"); end
       elseif param1 == Pos.btnGrepLNum1 then
         local c = far.ColorDialog(hColor1)
-        if c then hColor1 = c.PaletteColor; hDlg:Redraw(); end
+        if c then hColor1 = c.PaletteColor; hDlg:send("DM_REDRAW"); end
       elseif param1 == Pos.btnGrepLNum2 then
         local c = far.ColorDialog(hColor2)
-        if c then hColor2 = c.PaletteColor; hDlg:Redraw(); end
+        if c then hColor2 = c.PaletteColor; hDlg:send("DM_REDRAW"); end
       end
 
     elseif msg == F.DN_CTLCOLORDLGITEM then
@@ -683,50 +683,50 @@ end
 
 function SRFrame:CheckRegexInit (hDlg, Data)
   local Pos = self.Pos
-  hDlg:SetCheck (Pos.bWholeWords, Data.bWholeWords)
-  hDlg:SetCheck (Pos.bExtended,   Data.bExtended)
-  hDlg:SetCheck (Pos.bCaseSens,   Data.bCaseSens)
+  hDlg:send("DM_SETCHECK", Pos.bWholeWords, Data.bWholeWords)
+  hDlg:send("DM_SETCHECK", Pos.bExtended,   Data.bExtended)
+  hDlg:send("DM_SETCHECK", Pos.bCaseSens,   Data.bCaseSens)
   self:CheckRegexChange(hDlg)
 end
 
 function SRFrame:CheckRegexChange (hDlg)
   local Pos = self.Pos
-  local bRegex = hDlg:GetCheck(Pos.bRegExpr)==1
+  local bRegex = hDlg:send("DM_GETCHECK", Pos.bRegExpr)==1
 
-  if bRegex then hDlg:SetCheck(Pos.bWholeWords, false) end
-  hDlg:Enable(Pos.bWholeWords, not bRegex)
+  if bRegex then hDlg:send("DM_SETCHECK", Pos.bWholeWords, false) end
+  hDlg:send("DM_ENABLE", Pos.bWholeWords, not bRegex)
 
-  if not bRegex then hDlg:SetCheck(Pos.bExtended, false) end
-  hDlg:Enable(Pos.bExtended, bRegex)
+  if not bRegex then hDlg:send("DM_SETCHECK", Pos.bExtended, false) end
+  hDlg:send("DM_ENABLE", Pos.bExtended, bRegex)
 
   if Pos.bFileAsLine then
-    if not bRegex then hDlg:SetCheck(Pos.bFileAsLine, false) end
-    hDlg:Enable(Pos.bFileAsLine, bRegex)
+    if not bRegex then hDlg:send("DM_SETCHECK", Pos.bFileAsLine, false) end
+    hDlg:send("DM_ENABLE", Pos.bFileAsLine, bRegex)
   end
 end
 
 function SRFrame:CheckAdvancedEnab (hDlg)
   local Pos = self.Pos
   if Pos.bAdvanced then
-    hDlg:EnableRedraw(false)
-    local bEnab = hDlg:GetCheck(Pos.bAdvanced)==1
-    hDlg:Enable(Pos.labInitFunc,   bEnab)
-    hDlg:Enable(Pos.sInitFunc,     bEnab)
-    hDlg:Enable(Pos.labFinalFunc,  bEnab)
-    hDlg:Enable(Pos.sFinalFunc,    bEnab)
+    hDlg:send("DM_ENABLEREDRAW", false)
+    local bEnab = hDlg:send("DM_GETCHECK", Pos.bAdvanced)==1
+    hDlg:send("DM_ENABLE", Pos.labInitFunc,   bEnab)
+    hDlg:send("DM_ENABLE", Pos.sInitFunc,     bEnab)
+    hDlg:send("DM_ENABLE", Pos.labFinalFunc,  bEnab)
+    hDlg:send("DM_ENABLE", Pos.sFinalFunc,    bEnab)
     if Pos.sFilterFunc then
-      hDlg:Enable(Pos.labFilterFunc, bEnab)
-      hDlg:Enable(Pos.sFilterFunc,   bEnab)
+      hDlg:send("DM_ENABLE", Pos.labFilterFunc, bEnab)
+      hDlg:send("DM_ENABLE", Pos.sFilterFunc,   bEnab)
     end
-    hDlg:EnableRedraw(true)
+    hDlg:send("DM_ENABLEREDRAW", true)
   end
 end
 
 function SRFrame:CheckWrapAround (hDlg)
   local Pos = self.Pos
   if self.bInEditor and Pos.bWrapAround then
-    local bEnab = hDlg:GetCheck(Pos.rScopeGlobal)==1 and hDlg:GetCheck(Pos.rOriginCursor)==1
-    hDlg:Enable(Pos.bWrapAround, bEnab)
+    local bEnab = hDlg:send("DM_GETCHECK", Pos.rScopeGlobal)==1 and hDlg:send("DM_GETCHECK", Pos.rOriginCursor)==1
+    hDlg:send("DM_ENABLE", Pos.bWrapAround, bEnab)
   end
 end
 
@@ -770,8 +770,8 @@ function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
     -- Set scope
     local EI = editor.GetInfo()
     if EI.BlockType == F.BTYPE_NONE then
-      hDlg:SetCheck(Pos.rScopeGlobal, true)
-      hDlg:Enable(Pos.rScopeBlock, false)
+      hDlg:send("DM_SETCHECK", Pos.rScopeGlobal, true)
+      hDlg:send("DM_ENABLE", Pos.rScopeBlock, false)
     else
       local bScopeBlock
       local bForceBlock = _Plugin.History["config"].bForceScopeToBlock
@@ -781,15 +781,15 @@ function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
         local line = editor.GetString(nil,EI.BlockStartLine+1) -- test the 2-nd selected line
         bScopeBlock = line and line.SelStart>0
       end
-      hDlg:SetCheck(Pos[bScopeBlock and "rScopeBlock" or "rScopeGlobal"], true)
+      hDlg:send("DM_SETCHECK", Pos[bScopeBlock and "rScopeBlock" or "rScopeGlobal"], true)
     end
 
     -- Set origin
     local key = bScript and "sOrigin"
-                or hDlg:GetCheck(Pos.rScopeGlobal)==1 and "sOriginInGlobal"
+                or hDlg:send("DM_GETCHECK", Pos.rScopeGlobal)==1 and "sOriginInGlobal"
                 or "sOriginInBlock"
     local name = Data[key]=="scope" and "rOriginScope" or "rOriginCursor"
-    hDlg:SetCheck(Pos[name], true)
+    hDlg:send("DM_SETCHECK", Pos[name], true)
 
     self:CheckWrapAround(hDlg)
   end
@@ -819,7 +819,7 @@ function SRFrame:SaveDataDyn (hDlg, Data)
 end
 
 function SRFrame:GetLibName (hDlg)
-  local pos = hDlg:ListGetCurPos(self.Pos.cmbRegexLib)
+  local pos = hDlg:send("DM_LISTGETCURPOS", self.Pos.cmbRegexLib)
   return self.Libs[pos.SelectPos]
 end
 
@@ -833,9 +833,9 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
     self:CompleteLoadData(hDlg, Data, false)
     if _Plugin.sSearchWord and not self.bScriptCall then
       if _Plugin.History["config"].rPickHistory then
-        hDlg:SetText(Pos.sSearchPat, _Plugin.sSearchWord)
+        hDlg:send("DM_SETTEXT", Pos.sSearchPat, _Plugin.sSearchWord)
       end
-      hDlg:AddHistory(Pos.sSearchPat, _Plugin.sSearchWord)
+      hDlg:send("DM_ADDHISTORY", Pos.sSearchPat, _Plugin.sSearchWord)
       _Plugin.sSearchWord = nil
     end
   ----------------------------------------------------------------------------
@@ -852,9 +852,9 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
     end
   ----------------------------------------------------------------------------
   elseif msg == "EVENT_KEY" and param2 == "F4" then
-    if param1 == Pos.sReplacePat and hDlg:GetCheck(Pos.bRepIsFunc) == 1 then
-      local txt = sdialog.OpenInEditor(hDlg:GetText(Pos.sReplacePat), "lua")
-      if txt then hDlg:SetText(Pos.sReplacePat, txt) end
+    if param1 == Pos.sReplacePat and hDlg:send("DM_GETCHECK", Pos.bRepIsFunc) == 1 then
+      local txt = sdialog.OpenInEditor(hDlg:send("DM_GETTEXT", Pos.sReplacePat), "lua")
+      if txt then hDlg:send("DM_SETTEXT", Pos.sReplacePat, txt) end
       return true
     end
   ----------------------------------------------------------------------------
@@ -867,7 +867,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
        Pos.btnShowAll and param1 == Pos.btnShowAll
     then
       if bInEditor then
-        if hDlg:GetText(Pos.sSearchPat) == "" then
+        if hDlg:send("DM_GETTEXT", Pos.sSearchPat) == "" then
           ErrorMsg(M.MSearchFieldEmpty)
           GotoEditField(hDlg, Pos.sSearchPat)
           return KEEP_DIALOG_OPEN
@@ -880,9 +880,9 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
       self.close_params, key = ProcessDialogData(tmpdata, bReplace, bInEditor, Pos.bMultiPatterns, bSkip)
       if self.close_params then
         for k,v in pairs(tmpdata) do Data[k]=v end
-        hDlg:AddHistory(Pos.sSearchPat, Data.sSearchPat)
-        if Pos.sReplacePat then hDlg:AddHistory(Pos.sReplacePat, Data.sReplacePat) end
-        if Pos.sSkipPat    then hDlg:AddHistory(Pos.sSkipPat,    Data.sSkipPat)    end
+        hDlg:send("DM_ADDHISTORY", Pos.sSearchPat, Data.sSearchPat)
+        if Pos.sReplacePat then hDlg:send("DM_ADDHISTORY", Pos.sReplacePat, Data.sReplacePat) end
+        if Pos.sSkipPat    then hDlg:send("DM_ADDHISTORY", Pos.sSkipPat,    Data.sSkipPat)    end
       else
         if key and Pos[key] then GotoEditField(hDlg, Pos[key]) end
         return KEEP_DIALOG_OPEN
@@ -896,7 +896,7 @@ end
 function SRFrame:DoPresets (hDlg)
   local Pos = self.Pos
   local HistPresetNames = _Plugin.DialogHistoryPath .. "Presets"
-  hDlg:ShowDialog(0)
+  hDlg:send("DM_SHOWDIALOG", 0)
   local props = { Title=M.MTitlePresets, Bottom = "F1", HelpTopic="Presets", }
   local presets = _Plugin.History.presets
   local bkeys = {
@@ -928,31 +928,31 @@ function SRFrame:DoPresets (hDlg)
       self.Dlg:SetDialogState(hDlg, data)
 
       if Pos.cmbSearchArea and data.sSearchArea then
-        hDlg:ListSetCurPos(Pos.cmbSearchArea, {SelectPos=SearchAreaToIndex(data.sSearchArea)} )
+        hDlg:send("DM_LISTSETCURPOS", Pos.cmbSearchArea, {SelectPos=SearchAreaToIndex(data.sSearchArea)} )
       end
 
       if Pos.cmbCodePage then
-        local info = hDlg:ListInfo(Pos.cmbCodePage)
+        local info = hDlg:send("DM_LISTINFO", Pos.cmbCodePage)
         if data.tCheckedCodePages then
           local map = {}
           for i,v in ipairs(data.tCheckedCodePages) do map[v]=i end
           for i=3,info.ItemsNumber do -- skip "Default code pages" and "Checked code pages"
-            local cp = hDlg:ListGetData(Pos.cmbCodePage, i)
+            local cp = hDlg:send("DM_LISTGETDATA", Pos.cmbCodePage, i)
             if cp then
-              local listItem = hDlg:ListGetItem(Pos.cmbCodePage, i)
+              local listItem = hDlg:send("DM_LISTGETITEM", Pos.cmbCodePage, i)
               listItem.Index = i
               if map[cp] then listItem.Flags = bor(listItem.Flags, F.LIF_CHECKED)
               else listItem.Flags = band(listItem.Flags, bnot(F.LIF_CHECKED))
               end
-              hDlg:ListUpdate(Pos.cmbCodePage, listItem)
+              hDlg:send("DM_LISTUPDATE", Pos.cmbCodePage, listItem)
             end
           end
         end
         if data.iSelectedCodePage then
           local scp = data.iSelectedCodePage
           for i=1,info.ItemsNumber do
-            if scp == hDlg:ListGetData(Pos.cmbCodePage, i) then
-              hDlg:ListSetCurPos(Pos.cmbCodePage, {SelectPos=i})
+            if scp == hDlg:send("DM_LISTGETDATA", Pos.cmbCodePage, i) then
+              hDlg:send("DM_LISTSETCURPOS", Pos.cmbCodePage, {SelectPos=i})
               break
             end
           end
@@ -963,7 +963,7 @@ function SRFrame:DoPresets (hDlg)
       for i,v in ipairs(self.Libs) do
         if data.sRegexLib == v then index = i; break; end
       end
-      hDlg:ListSetCurPos(Pos.cmbRegexLib, {SelectPos=index or 1})
+      hDlg:send("DM_LISTSETCURPOS", Pos.cmbRegexLib, {SelectPos=index or 1})
 
       self:CompleteLoadData(hDlg, data, true)
       break
@@ -1071,7 +1071,7 @@ function SRFrame:DoPresets (hDlg)
     ----------------------------------------------------------------------------
     end
   end
-  hDlg:ShowDialog(1)
+  hDlg:send("DM_SHOWDIALOG", 1)
 end
 
 

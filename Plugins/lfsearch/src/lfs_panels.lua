@@ -321,8 +321,8 @@ local function ConfigDialog()
         if v.name then
           local val = TmpPanelDefaults[v.name]
           if val ~= nil then
-            if     v.tp == "edit"  then hDlg:SetText(i, val)
-            elseif v.tp == "chbox" then hDlg:SetCheck(i, val)
+            if     v.tp == "edit"  then hDlg:send("DM_SETTEXT", i, val)
+            elseif v.tp == "chbox" then hDlg:send("DM_SETCHECK", i, val)
             end
           end
         end
@@ -540,15 +540,15 @@ end
     local NeedCallFrame = true
     --------------------------------------------------------------------------------------
     if msg == F.DN_INITDIALOG then
-      hDlg:Enable(Pos.btnDirFilter,  hDlg:GetCheck(Pos.bUseDirFilter))
-      hDlg:Enable(Pos.btnFileFilter, hDlg:GetCheck(Pos.bUseFileFilter))
+      hDlg:send("DM_ENABLE", Pos.btnDirFilter,  hDlg:send("DM_GETCHECK", Pos.bUseDirFilter))
+      hDlg:send("DM_ENABLE", Pos.btnFileFilter, hDlg:send("DM_GETCHECK", Pos.bUseFileFilter))
       if Pos.cmbCodePage then
-        hDlg:SetComboboxEvent(Pos.cmbCodePage, F.CBET_KEY)
+        hDlg:send("DM_SETCOMBOBOXEVENT", Pos.cmbCodePage, F.CBET_KEY)
         local t = {}
         for i,v in ipairs(Elem.cmbCodePage.list) do
           if v.CodePage then
             t.Index, t.Data = i, v.CodePage
-            hDlg:ListSetData(Pos.cmbCodePage, t)
+            hDlg:send("DM_LISTSETDATA", Pos.cmbCodePage, t)
           end
         end
       end
@@ -556,40 +556,40 @@ end
     elseif msg == "EVENT_KEY" then
       if param1 == Pos.cmbCodePage then
         if param2=="Ins" or param2=="NumPad0" or param2=="Space" then
-          local pos = hDlg:ListGetCurPos(param1)
+          local pos = hDlg:send("DM_LISTGETCURPOS", param1)
           if pos.SelectPos > 2 then -- if not ("Default code pages" or "Checked code pages")
-            local item = hDlg:ListGetItem(param1, pos.SelectPos)
+            local item = hDlg:send("DM_LISTGETITEM", param1, pos.SelectPos)
             item.Flags = bxor(item.Flags, F.LIF_CHECKED)
             item.Index = pos.SelectPos
-            hDlg:ListUpdate(param1, item)
+            hDlg:send("DM_LISTUPDATE", param1, item)
           end
         end
       end
     --------------------------------------------------------------------------------------
     elseif msg == F.DN_CLOSE then
       if Pos.btnConfig and param1 == Pos.btnConfig then
-        hDlg:ShowDialog(0)
+        hDlg:send("DM_SHOWDIALOG", 0)
         ConfigDialog()
-        hDlg:ShowDialog(1)
-        hDlg:SetFocus(Pos.btnOk)
+        hDlg:send("DM_SHOWDIALOG", 1)
+        hDlg:send("DM_SETFOCUS", Pos.btnOk)
         return KEEP_DIALOG_OPEN
       end
 
       local ok_or_count = (Pos.btnOk and param1==Pos.btnOk) or
                           (Pos.btnCount and param1==Pos.btnCount)
       if ok_or_count then
-        if not CheckMask(hDlg:GetText(Pos.sFileMask)) then
+        if not CheckMask(hDlg:send("DM_GETTEXT", Pos.sFileMask)) then
           GotoEditField(hDlg, Pos.sFileMask)
           return KEEP_DIALOG_OPEN
         end
-        if (aOp=="replace" or aOp=="grep") and hDlg:GetText(Pos.sSearchPat) == "" then
+        if (aOp=="replace" or aOp=="grep") and hDlg:send("DM_GETTEXT", Pos.sSearchPat) == "" then
           ErrorMsg(M.MSearchFieldEmpty)
           GotoEditField(hDlg, Pos.sSearchPat)
           return KEEP_DIALOG_OPEN
         end
-        aData.sSearchArea = IndexToSearchArea(hDlg:ListGetCurPos(Pos.cmbSearchArea).SelectPos)
-        aData.bUseDirFilter = hDlg:GetCheck(Pos.bUseDirFilter)==1
-        aData.bUseFileFilter = hDlg:GetCheck(Pos.bUseFileFilter)==1
+        aData.sSearchArea = IndexToSearchArea(hDlg:send("DM_LISTGETCURPOS", Pos.cmbSearchArea).SelectPos)
+        aData.bUseDirFilter = hDlg:send("DM_GETCHECK", Pos.bUseDirFilter)==1
+        aData.bUseFileFilter = hDlg:send("DM_GETCHECK", Pos.bUseFileFilter)==1
       end
       -- store selected code pages no matter what user pressed: OK or Esc.
       if Pos.cmbCodePage then
@@ -600,29 +600,29 @@ end
       NeedCallFrame = false
       if param1 == Pos.btnPresets then
         Frame:DoPresets(hDlg)
-        hDlg:SetFocus(Pos.btnOk)
+        hDlg:send("DM_SETFOCUS", Pos.btnOk)
 
       elseif param1 == Pos.bUseDirFilter then
-        hDlg:Enable(Pos.btnDirFilter, hDlg:GetCheck(Pos.bUseDirFilter))
+        hDlg:send("DM_ENABLE", Pos.btnDirFilter, hDlg:send("DM_GETCHECK", Pos.bUseDirFilter))
 
       elseif param1 == Pos.btnDirFilter then
-        hDlg:ShowDialog(0)
+        hDlg:send("DM_SHOWDIALOG", 0)
         DirectoryFilterDialog(aData)
-        hDlg:ShowDialog(1)
-        hDlg:SetFocus(Pos.btnOk)
+        hDlg:send("DM_SHOWDIALOG", 1)
+        hDlg:send("DM_SETFOCUS", Pos.btnOk)
 
       elseif param1 == Pos.bUseFileFilter then
-        hDlg:Enable(Pos.btnFileFilter, hDlg:GetCheck(Pos.bUseFileFilter))
+        hDlg:send("DM_ENABLE", Pos.btnFileFilter, hDlg:send("DM_GETCHECK", Pos.bUseFileFilter))
 
       elseif param1 == Pos.btnFileFilter then
         local filter = far.CreateFileFilter(1, "FFT_FINDFILE")
         if filter and filter:OpenFiltersMenu() then aData.FileFilter = filter end
 
       elseif param1 == Pos.btnConfig then
-        hDlg:ShowDialog(0)
+        hDlg:send("DM_SHOWDIALOG", 0)
         ConfigDialog()
-        hDlg:ShowDialog(1)
-        hDlg:SetFocus(Pos.btnOk)
+        hDlg:send("DM_SHOWDIALOG", 1)
+        hDlg:send("DM_SETFOCUS", Pos.btnOk)
       else
         NeedCallFrame = true
       end

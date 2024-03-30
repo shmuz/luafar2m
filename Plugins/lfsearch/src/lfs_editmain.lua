@@ -90,12 +90,12 @@ local function EditorDialog (aData, aReplace, aScriptCall)
     if msg==F.DN_BTNCLICK then
       if param1==Pos.btnPresets then
         Frame:DoPresets(hDlg)
-        hDlg:SetFocus(Pos.btnOk)
+        hDlg:send("DM_SETFOCUS", Pos.btnOk)
         return true
       elseif param1==Pos.btnConfig then
-        hDlg:ShowDialog(0)
+        hDlg:send("DM_SHOWDIALOG", 0)
         Common.EditorConfigDialog()
-        hDlg:ShowDialog(1)
+        hDlg:send("DM_SHOWDIALOG", 1)
         return true
       end
     end
