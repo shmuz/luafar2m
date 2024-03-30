@@ -339,7 +339,7 @@ local function UserDialog (aData, aList, aDlgTitle)
   end
 
   local function CheckAdvancedEnab (hDlg)
-    local bEnab = hDlg:send("DM_GETCHECK", Pos.bAdvanced) == 1
+    local bEnab = hDlg:send("DM_GETCHECK", Pos.bAdvanced)
     hDlg:send("DM_ENABLE", Pos.labInitFunc,  bEnab)
     hDlg:send("DM_ENABLE", Pos.sInitFunc,    bEnab)
     hDlg:send("DM_ENABLE", Pos.labFinalFunc, bEnab)
@@ -353,7 +353,7 @@ local function UserDialog (aData, aList, aDlgTitle)
       UpdateReplacePat(hDlg)
       UpdatePreviewLabel(hDlg)
       if 0 == hDlg:send("DM_GETCHECK", Pos.bRenFolders) then
-        hDlg:send("DM_SETCHECK", Pos.bRenFiles, true)
+        hDlg:send("DM_SETCHECK", Pos.bRenFiles, 1)
       end
       CheckAdvancedEnab(hDlg)
 
@@ -368,9 +368,9 @@ local function UserDialog (aData, aList, aDlgTitle)
 
     elseif msg == F.DN_BTNCLICK then
       if param1 == Pos.bRenFiles then
-        if 0 == hDlg:send("DM_GETCHECK", Pos.bRenFiles) then hDlg:send("DM_SETCHECK", Pos.bRenFolders,true) end
+        if 0 == hDlg:send("DM_GETCHECK", Pos.bRenFiles) then hDlg:send("DM_SETCHECK", Pos.bRenFolders, 1) end
       elseif param1 == Pos.bRenFolders then
-        if 0 == hDlg:send("DM_GETCHECK", Pos.bRenFolders) then hDlg:send("DM_SETCHECK", Pos.bRenFiles,true) end
+        if 0 == hDlg:send("DM_GETCHECK", Pos.bRenFolders) then hDlg:send("DM_SETCHECK", Pos.bRenFiles, 1) end
       elseif param1 == Pos.bRepIsFunc then
         UpdateReplacePat(hDlg)
         UpdatePreviewLabel(hDlg)

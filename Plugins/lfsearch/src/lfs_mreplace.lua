@@ -62,15 +62,15 @@ local function ReplaceDialog (Data)
   local Pos,Elem = dlg:Indexes()
 
   local function CheckRegexChange (hDlg)
-    local bRegex = hDlg:send("DM_GETCHECK", Pos.bRegExpr) == 1
-    hDlg:send("DM_ENABLE", Pos.bWholeWords, not bRegex)
+    local bRegex = hDlg:send("DM_GETCHECK", Pos.bRegExpr)
+    hDlg:send("DM_ENABLE", Pos.bWholeWords, bRegex==0 and 1 or 0)
     hDlg:send("DM_ENABLE", Pos.bExtended,   bRegex)
     hDlg:send("DM_ENABLE", Pos.bFileAsLine, bRegex)
     hDlg:send("DM_ENABLE", Pos.bMultiLine,  bRegex)
   end
 
   local function CheckAdvancedEnab (hDlg)
-    local bEnab = hDlg:send("DM_GETCHECK", Pos.bAdvanced) == 1
+    local bEnab = hDlg:send("DM_GETCHECK", Pos.bAdvanced)
     hDlg:send("DM_ENABLE", Pos.labInitFunc,  bEnab)
     hDlg:send("DM_ENABLE", Pos.sInitFunc,    bEnab)
     hDlg:send("DM_ENABLE", Pos.labFinalFunc, bEnab)

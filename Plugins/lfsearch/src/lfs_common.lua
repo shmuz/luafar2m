@@ -683,24 +683,24 @@ end
 
 function SRFrame:CheckRegexInit (hDlg, Data)
   local Pos = self.Pos
-  hDlg:send("DM_SETCHECK", Pos.bWholeWords, Data.bWholeWords)
-  hDlg:send("DM_SETCHECK", Pos.bExtended,   Data.bExtended)
-  hDlg:send("DM_SETCHECK", Pos.bCaseSens,   Data.bCaseSens)
+  hDlg:send("DM_SETCHECK", Pos.bWholeWords, Data.bWholeWords and 1 or 0)
+  hDlg:send("DM_SETCHECK", Pos.bExtended,   Data.bExtended and 1 or 0)
+  hDlg:send("DM_SETCHECK", Pos.bCaseSens,   Data.bCaseSens and 1 or 0)
   self:CheckRegexChange(hDlg)
 end
 
 function SRFrame:CheckRegexChange (hDlg)
   local Pos = self.Pos
-  local bRegex = hDlg:send("DM_GETCHECK", Pos.bRegExpr)==1
+  local bRegex = hDlg:send("DM_GETCHECK", Pos.bRegExpr)
 
-  if bRegex then hDlg:send("DM_SETCHECK", Pos.bWholeWords, false) end
-  hDlg:send("DM_ENABLE", Pos.bWholeWords, not bRegex)
+  if bRegex then hDlg:send("DM_SETCHECK", Pos.bWholeWords, 0) end
+  hDlg:send("DM_ENABLE", Pos.bWholeWords, bRegex==0 and 1 or 0)
 
-  if not bRegex then hDlg:send("DM_SETCHECK", Pos.bExtended, false) end
+  if not bRegex then hDlg:send("DM_SETCHECK", Pos.bExtended, 0) end
   hDlg:send("DM_ENABLE", Pos.bExtended, bRegex)
 
   if Pos.bFileAsLine then
-    if not bRegex then hDlg:send("DM_SETCHECK", Pos.bFileAsLine, false) end
+    if not bRegex then hDlg:send("DM_SETCHECK", Pos.bFileAsLine, 0) end
     hDlg:send("DM_ENABLE", Pos.bFileAsLine, bRegex)
   end
 end
@@ -708,8 +708,8 @@ end
 function SRFrame:CheckAdvancedEnab (hDlg)
   local Pos = self.Pos
   if Pos.bAdvanced then
-    hDlg:send("DM_ENABLEREDRAW", false)
-    local bEnab = hDlg:send("DM_GETCHECK", Pos.bAdvanced)==1
+    hDlg:send("DM_ENABLEREDRAW", 0)
+    local bEnab = hDlg:send("DM_GETCHECK", Pos.bAdvanced)
     hDlg:send("DM_ENABLE", Pos.labInitFunc,   bEnab)
     hDlg:send("DM_ENABLE", Pos.sInitFunc,     bEnab)
     hDlg:send("DM_ENABLE", Pos.labFinalFunc,  bEnab)
@@ -718,7 +718,7 @@ function SRFrame:CheckAdvancedEnab (hDlg)
       hDlg:send("DM_ENABLE", Pos.labFilterFunc, bEnab)
       hDlg:send("DM_ENABLE", Pos.sFilterFunc,   bEnab)
     end
-    hDlg:send("DM_ENABLEREDRAW", true)
+    hDlg:send("DM_ENABLEREDRAW", 1)
   end
 end
 
@@ -726,7 +726,7 @@ function SRFrame:CheckWrapAround (hDlg)
   local Pos = self.Pos
   if self.bInEditor and Pos.bWrapAround then
     local bEnab = hDlg:send("DM_GETCHECK", Pos.rScopeGlobal)==1 and hDlg:send("DM_GETCHECK", Pos.rOriginCursor)==1
-    hDlg:send("DM_ENABLE", Pos.bWrapAround, bEnab)
+    hDlg:send("DM_ENABLE", Pos.bWrapAround, bEnab and 1 or 0)
   end
 end
 
@@ -770,8 +770,8 @@ function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
     -- Set scope
     local EI = editor.GetInfo()
     if EI.BlockType == F.BTYPE_NONE then
-      hDlg:send("DM_SETCHECK", Pos.rScopeGlobal, true)
-      hDlg:send("DM_ENABLE", Pos.rScopeBlock, false)
+      hDlg:send("DM_SETCHECK", Pos.rScopeGlobal, 1)
+      hDlg:send("DM_ENABLE", Pos.rScopeBlock, 0)
     else
       local bScopeBlock
       local bForceBlock = _Plugin.History["config"].bForceScopeToBlock
@@ -781,7 +781,7 @@ function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
         local line = editor.GetString(nil,EI.BlockStartLine+1) -- test the 2-nd selected line
         bScopeBlock = line and line.SelStart>0
       end
-      hDlg:send("DM_SETCHECK", Pos[bScopeBlock and "rScopeBlock" or "rScopeGlobal"], true)
+      hDlg:send("DM_SETCHECK", Pos[bScopeBlock and "rScopeBlock" or "rScopeGlobal"], 1)
     end
 
     -- Set origin
@@ -789,7 +789,7 @@ function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
                 or hDlg:send("DM_GETCHECK", Pos.rScopeGlobal)==1 and "sOriginInGlobal"
                 or "sOriginInBlock"
     local name = Data[key]=="scope" and "rOriginScope" or "rOriginCursor"
-    hDlg:send("DM_SETCHECK", Pos[name], true)
+    hDlg:send("DM_SETCHECK", Pos[name], 1)
 
     self:CheckWrapAround(hDlg)
   end

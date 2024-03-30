@@ -322,7 +322,7 @@ local function ConfigDialog()
           local val = TmpPanelDefaults[v.name]
           if val ~= nil then
             if     v.tp == "edit"  then hDlg:send("DM_SETTEXT", i, val)
-            elseif v.tp == "chbox" then hDlg:send("DM_SETCHECK", i, val)
+            elseif v.tp == "chbox" then hDlg:send("DM_SETCHECK", i, val and 1 or 0)
             end
           end
         end
