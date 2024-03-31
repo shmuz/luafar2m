@@ -26,7 +26,7 @@ end
 local function GotoEditField (hDlg, id)
   local len = hDlg:send("DM_GETTEXT", id):len()
   hDlg:send("DM_SETFOCUS", id)
-  hDlg:send("DM_SETCURSORPOS", id, {X=len+1, Y=1})
+  hDlg:send("DM_SETCURSORPOS", id, {X=len, Y=0})
   hDlg:send("DM_SETSELECTION", id, {BlockType="BTYPE_STREAM", BlockStartPos=1, BlockWidth=len})
 end
 
