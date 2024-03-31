@@ -77,7 +77,7 @@ local function ReplaceDialog (Data)
     hDlg:send("DM_ENABLE", Pos.sFinalFunc,   bEnab)
   end
 
-  local closeaction = function(hDlg, param1, tOut)
+  local closeaction = function(hDlg, _param1, tOut)
     local tmpData = {}
     dlg:SaveData(tOut, tmpData)
     tmpData.sRegexLib = RegexLibs[tOut.cmbRegexLib]
@@ -161,7 +161,7 @@ local function EditorAction (op, data)
   if data.bAdvanced then tParams.InitFunc() end
   local t = {}
   local lineno=bSelection and editorInfo.BlockStartLine or 1
-  local eol
+  local Eol
   local break_counter = 0
 
   -- without break_counter, it slows down the operation by 10...20 %
@@ -182,10 +182,10 @@ local function EditorAction (op, data)
     end
     local line = TT_EditorGetString(nil,lineno)
     if bSelection and (line.SelStart<=0 or line.SelEnd==0) then
-      if eol ~= TT_empty then t[#t+1] = TT_empty end
+      if Eol ~= TT_empty then t[#t+1] = TT_empty end
       break
     end
-    t[#t+1], eol = line.StringText, line.StringEOL
+    t[#t+1], Eol = line.StringText, line.StringEOL
     lineno = lineno + 1
   end
 
