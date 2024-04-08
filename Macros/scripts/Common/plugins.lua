@@ -21,6 +21,7 @@ local Data = {
   { BreakKey="CtrlIns";    command="forcedload_all";  help="Forced load all";       os="lw"; },
   { BreakKey="CtrlDel";    command="unload_all";      help="Unload all";            os="lw"; },
   { BreakKey="F1";         command="showhelp";        help="Show help";             os="lw"; },
+  { BreakKey="F24";        command=nil;               help=nil;                     os="lw"; },
 }
 
 local breakkeys = {}
@@ -29,7 +30,9 @@ local helpmessage = {}
 for _,v in ipairs(Data) do
   if v.os:find(OsWindows and "w" or "l") then
     if v.BreakKey then
-      table.insert(helpmessage, ("%-16s%s"):format(v.BreakKey, v.help))
+      if v.help then
+        table.insert(helpmessage, ("%-16s%s"):format(v.BreakKey, v.help))
+      end
       table.insert(breakkeys,v)
     else
       table.insert(helpmessage, "\1")
@@ -54,6 +57,13 @@ local last_module
 
 local function GetFileName(name)
   return name:match(OsWindows and "[^\\]+$" or "[^/]+$");
+end
+
+local function SpecialMessage(text, title, flags)
+  mf.postmacro(function()
+      far.Message(text, title, nil, flags)
+      Keys("F24") -- force rereading the plugins' data after the dialog was shown
+    end)
 end
 
 local function Main()
@@ -136,7 +146,7 @@ local function Main()
         if not IsThisPlugin(mItem.info) then
           far.UnloadPlugin(mItem.info.handle)
         else
-          mf.postmacro(far.Message, "I'm running this script and cannot unload myself !!!", mItem.text, nil, "w")
+          SpecialMessage("I'm running this script and cannot unload myself !!!", mItem.text, "w")
         end
       end
 
@@ -163,7 +173,7 @@ local function Main()
       end
 
     elseif command == "showhelp" then
-      far.Message(helpmessage, "Help", "OK", "l")
+      SpecialMessage(helpmessage, "Help", "l")
 
     end
   end
