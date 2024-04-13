@@ -693,14 +693,14 @@ function SRFrame:CheckRegexChange (hDlg)
   local Pos = self.Pos
   local bRegex = hDlg:send("DM_GETCHECK", Pos.bRegExpr)
 
-  if bRegex then hDlg:send("DM_SETCHECK", Pos.bWholeWords, 0) end
+  if bRegex==1 then hDlg:send("DM_SETCHECK", Pos.bWholeWords, 0) end
   hDlg:send("DM_ENABLE", Pos.bWholeWords, bRegex==0 and 1 or 0)
 
-  if not bRegex then hDlg:send("DM_SETCHECK", Pos.bExtended, 0) end
+  if bRegex==0 then hDlg:send("DM_SETCHECK", Pos.bExtended, 0) end
   hDlg:send("DM_ENABLE", Pos.bExtended, bRegex)
 
   if Pos.bFileAsLine then
-    if not bRegex then hDlg:send("DM_SETCHECK", Pos.bFileAsLine, 0) end
+    if bRegex==0 then hDlg:send("DM_SETCHECK", Pos.bFileAsLine, 0) end
     hDlg:send("DM_ENABLE", Pos.bFileAsLine, bRegex)
   end
 end
