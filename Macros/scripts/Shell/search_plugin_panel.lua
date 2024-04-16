@@ -10,6 +10,7 @@ local SETTINGS_NAME = "search_plugin_panel"
 
 local F = far.Flags
 local farhost = far.Host
+local join = win.JoinPath
 
 local function MySetDir(aHandle, aDir) -- that's what MultiArc understands
   if aDir:sub(1,1) == "/" then
@@ -149,10 +150,6 @@ local function GetDialogData()
   -- save data and return
   if data then Settings.msave(SETTINGS_KEY, SETTINGS_NAME, data); end
   return data
-end
-
-local function join(s1, s2)
-  return s1:find("/$") and s1..s2 or s1.."/"..s2
 end
 
 local function ConfirmEscape() -- 16...25 microsec
@@ -303,7 +300,7 @@ local function Find (aData)
   local curdir = panel.GetPanelDirectory(handle)
   if not curdir:find("^/") then curdir = "/"..curdir; end
   local startdir = (aData.iSearchArea==SA_FROM_ROOT) and "/" or curdir
-  local tmpdir = "/tmp/Far-" .. win.Uuid(win.Uuid()):sub(1,8)
+  local tmpdir = far.InMyTemp("Far-" .. win.Uuid("L"):sub(1,8))
   if aData.sSearchPat ~= "" then
     local patt = aData.sSearchPat
     if not aData.bRegExpr then

@@ -20,7 +20,7 @@ local function GetFileName (aTitle, aPrompt, aDefault)
     if not fname then
       return
     end
-    local fullname = fname:find("^[a-zA-Z]:") and fname or APanel.Path.."/"..fname
+    local fullname = fname:find("^/") and fname or win.JoinPath(APanel.Path, fname)
     if not win.GetFileAttr(fullname) or
        1==far.Message("File already exists, overwrite?", aTitle, "&Yes;&No", "w")
     then
@@ -35,7 +35,7 @@ local function DecodeFile(method)
   local fp_in, fp_out, message -- set inside the loop, handle outside
 
   while true do -- luacheck: only
-    local fname_in = APanel.Path.."/"..APanel.Current
+    local fname_in = win.JoinPath(APanel.Path, APanel.Current)
     fp_in, message = io.open(fname_in)
     if not fp_in then break end
 
@@ -103,7 +103,7 @@ local function EncodeFile(method, ext)
   local outname = GetFileName(Title, "Enter output file name", APanel.Current.."."..ext)
   if outname then
     local firstline = "begin 644 "..APanel.Current:match("[^\\/]+$")
-    assert( lib.encfile(APanel.Path.."/"..APanel.Current, outname, firstline,
+    assert( lib.encfile(win.JoinPath(APanel.Path, APanel.Current), outname, firstline,
                         function(size) return ShowProgress(Title,size) end) )
     panel.UpdatePanel(nil, 1)
     far.AdvControl("ACTL_REDRAWALL")

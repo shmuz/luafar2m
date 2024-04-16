@@ -131,7 +131,7 @@ local function GetHashes()
   python.execute(pyscript)
   local CalcHashes = python.eval("CalcHashes") -- returns a Lua function
   local fname = panel.GetCurrentPanelItem(nil,1).FileName
-  local fullname = fname:find("/") and fname or panel.GetPanelDirectory(nil,1).."/"..fname
+  local fullname = fname:find("/") and fname or win.JoinPath(panel.GetPanelDirectory(nil,1), fname)
   if not win.GetFileAttr(fullname) then return end
 
   -- Execution --

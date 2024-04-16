@@ -89,7 +89,7 @@ local function Work()
     local fname = item.FileName
     if not fname:find("[\\/]") then
       local dir = assert(panel.GetPanelDirectory(nil, 1))
-      fname = (dir:find("[\\/]$") and dir or dir.."/") .. fname
+      fname = win.JoinPath(dir, fname)
     end
     item.FullName = fname
     local set_progress = create_callback(i, count, item.FileName)

@@ -9,6 +9,7 @@ local Key_navigate = "Down Up PgDn PgUp Left Right Home End Enter"
 local Key_off      = "Tab"
 -------------------------------------------------------------------
 
+local JoinPath = win.JoinPath
 local Qmode = false -- Quick folder view mode
 
 local function is_active_dir()
@@ -22,12 +23,12 @@ local function set_passive_path()
     if path then                        ---- directory on TmpPanel
       Panel.SetPath(1, APanel.Current)
     elseif APanel.Path ~= "" then       ---- directory on a regular panel
-      Panel.SetPath(1, APanel.Path.."/"..APanel.Current)
+      Panel.SetPath(1, JoinPath(APanel.Path, APanel.Current))
     end
   elseif path then                      ---- file on TmpPanel
     Panel.SetPath(1, path, file)
   elseif APanel.Path ~= "" then         ---- file on a regular panel
-    Panel.SetPath(1, APanel.Path.."/"..APanel.Current)
+    Panel.SetPath(1, JoinPath(APanel.Path, APanel.Current))
   end
 end
 

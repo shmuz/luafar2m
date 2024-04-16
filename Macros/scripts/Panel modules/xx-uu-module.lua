@@ -1,6 +1,7 @@
 do return end
 
 local F = far.Flags
+local JoinPath = win.JoinPath
 local mod = {}
 
 mod.Info = {
@@ -47,7 +48,7 @@ end
 
 local function CreateArchive()
   local sd = require "far2.simpledialog"
-  local fname = far.GetCurrentDirectory().."/FileName1"
+  local fname = JoinPath(far.GetCurrentDirectory(), "FileName1")
   local Items = {
     {tp="dbox";  text="Create archive";                 },
     {tp="text";  text="&File name:";                    },
@@ -135,7 +136,9 @@ function mod.GetFiles(object, handle, PanelItems, Move, DestPath, OpMode)
   target = far.ConvertPath(target or DestPath, "CPM_FULL")
   local attr = win.GetFileAttr(target)
   if attr then
-    if attr:find("d") then target=target.."/"..fname; end
+    if attr:find("d") then
+      target = JoinPath(target, fname)
+    end
   else -- target does not exist
     local dir = target:match(".*/")
     win.CreateDir(dir)
@@ -205,7 +208,7 @@ function mod.PutFiles(object, handle, Items, Move, SrcPath, OpMode)
       local msg = ("%d MB copied"):format(size/0x100000)
       far.Message(msg, object.Title, "")
     end
-    if object.Lib.encfile(SrcPath.."/"..Items[1].FileName, object.HostFile, nil, callback) then
+    if object.Lib.encfile(JoinPath(SrcPath, Items[1].FileName), object.HostFile, nil, callback) then
       if not is_edit then
         object.FileName = Items[1].FileName
       end

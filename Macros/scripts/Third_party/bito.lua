@@ -73,14 +73,14 @@ end
 local function bito (prompt)
   prompt = prompt or GetQuestion()
   if prompt then
-    local root = osWindows and win.GetEnv("FARLOCALPROFILE").."\\" or far.InMyConfig().."/"
-    local ctxName = root.."ctx.bito"
-    local promptName = root.."prompt.bito"
+    local root = osWindows and win.GetEnv("FARLOCALPROFILE") or far.InMyConfig()
+    local ctxName = win.JoinPath(root, "ctx.bito")
+    local promptName = win.JoinPath(root, "prompt.bito")
     local fp = assert(io.open(promptName, "w"))
     fp:write(prompt)
     fp:close()
     local ctx = Editor.SelValue
-    local fileName = root.."file.bito"
+    local fileName = win.JoinPath(root, "file.bito")
     fp = assert(io.open(fileName, "w"))
     fp:write(ctx=="" and " " or ctx)
     fp:close()

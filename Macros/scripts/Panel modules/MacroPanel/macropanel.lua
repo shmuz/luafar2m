@@ -318,7 +318,7 @@ function mod.GetFiles (object, handle, PanelItems, Move, DestPath, OpMode)
     local item = PanelItems[1]
     local cdata = item.CustomColumnData
     if cdata and cdata[P_FILENAME] then
-      return win.CopyFile(cdata[P_FILENAME], DestPath.."/"..item.FileName) and 1 or 0
+      return win.CopyFile(cdata[P_FILENAME], win.JoinPath(DestPath,item.FileName)) and 1 or 0
     end
   end
 end
