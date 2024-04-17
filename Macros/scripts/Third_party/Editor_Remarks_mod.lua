@@ -111,7 +111,7 @@ local function Options()
     --[[06]]  {"DI_TEXT",      5, 6,38, 4, 0,nil,nil,0,M.description},
     --[[07]]  {"DI_EDIT",      5, 7,38, 5, 0,nil,nil,0,Data.Desc},
     --[[08]]  {"DI_TEXT",      3, 8,40, 8, 0,nil,nil,"DIF_SEPARATOR",""},
-    --[[09]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,nil,"DIF_CENTERGROUP+DIF_DEFAULTBUTTON",M.Yes},
+    --[[09]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,nil,F.DIF_CENTERGROUP+F.DIF_DEFAULTBUTTON,M.Yes},
     --[[10]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,nil,"DIF_CENTERGROUP",M.No},
     --[[11]]  {"DI_BUTTON",    0, 9, 0, 6, 0,nil,nil,"DIF_CENTERGROUP",M.Delete},
   }
