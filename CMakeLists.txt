@@ -84,6 +84,7 @@ function(AddPlugin Name Active)
   endif()
 endfunction()
 
+AddPlugin( filegen     0 )
 AddPlugin( highlight   0 )
 AddPlugin( lf4ed       1 )
 AddPlugin( lfhistory   1 )
