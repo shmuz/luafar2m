@@ -75,7 +75,7 @@ local pat_cmdline = regex.new ([[
   (?: \s+(\S+) (?: \s+(\S+) (?: \s+(\S+) )? )? )? (?: \s | $)
 ]], "ix")
 
-function mod.Open(OpenFrom, Item)
+function mod.Open(OpenFrom, _Id, Item)
   if OpenFrom == F.OPEN_PLUGINSMENU then
     return { type="macros" }
 
@@ -335,7 +335,7 @@ CommandLine {
   description = "Macro Panel";
   prefixes = "mp";
   action = function(prefix,text)
-    return mod, mod.Open(F.OPEN_COMMANDLINE, text)
+    return mod, mod.Open(F.OPEN_COMMANDLINE, nil, text)
   end;
 }
 
@@ -346,7 +346,7 @@ MenuItem {
   guid   = "788CFB39-783F-431B-9CB2-C277E867ECE2";
   text   = mod.Info.Title;
   action = function(OpenFrom, Item)
-    return mod, mod.Open(OpenFrom, Item)
+    return mod, mod.Open(OpenFrom, nil, Item)
   end;
 }
 
