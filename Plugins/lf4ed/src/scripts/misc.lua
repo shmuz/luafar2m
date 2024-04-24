@@ -24,7 +24,7 @@ local function SmartHome()
 end
 
 local function InsertNewGuid()
-  editor.InsertText('"'..win.Uuid(win.Uuid()):upper()..'"', true)
+  editor.InsertText(nil, '"'..win.Uuid(win.Uuid()):upper()..'"', true)
 end
 
 local function Calc() require("far2.calc")() end

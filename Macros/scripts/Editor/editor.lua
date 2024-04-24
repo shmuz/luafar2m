@@ -57,8 +57,44 @@ int main(int argc, const char* argv[])
 }
 
 Macro {
+  description="Insert a simple dialog template";
+  area="Editor"; key="CtrlF11";
+  action=function()
+    print[[
+local F = far.Flags
+local sd = require "far2.simpledialog"
+local Items = {
+  -- guid = xxx;
+  -- help = "Contents";
+  -- width = 76;
+  { tp="dbox"; text="Title";                           },
+  { tp="text"; text="Enter the text:";                 },
+  { tp="edit"; name="edit1";                           },
+  { tp="sep";                                          },
+  { tp="butt"; centergroup=1; default=1; text="OK";    },
+  { tp="butt"; centergroup=1; cancel=1; text="Cancel"; },
+}
+
+local Dlg = sd.New(Items)
+local Pos, Elem = Dlg:Indexes()
+
+Items.proc = function(hDlg, msg, param1, param2)
+  if msg == F.DN_INITDIALOG then
+  elseif msg == F.DN_BTNCLICK then
+  elseif msg == F.DN_EDITCHANGE then
+  elseif msg == F.DN_CLOSE then
+  end
+end
+
+local out = Dlg:Run()
+if out then
+end
+]]
+  end;
+}
+
+Macro {
   description="Goto in the editor";
   area="Editor"; key="CtrlG";
   action=function() Keys("AltF8") end;
 }
-
