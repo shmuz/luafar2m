@@ -1,6 +1,6 @@
 Macro {
-  description="Show dialog GUID";
-  area="Dialog Menu Disks";  key="CtrlG";
+  description="Show dialog/menu ID";
+  area="Dialog Menu Disks UserMenu";  key="CtrlG";
   action=function()
     local Id = Area.Dialog and Dlg.Id or Menu.Id
     local quotId = '"' .. Id .. '"'
