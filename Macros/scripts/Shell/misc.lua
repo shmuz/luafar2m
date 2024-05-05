@@ -74,3 +74,21 @@ Macro {
     end
   end;
 }
+
+-- Started: 2021-09-16
+Macro {
+  description="Scroll active panel";
+  area="Shell"; key="CtrlShiftDown CtrlShiftUp";
+  action=function()
+    local top, cur
+    local info = panel.GetPanelInfo(nil,1)
+    if mf.akey(1)=="CtrlShiftDown" then
+      top = info.TopPanelItem + 1
+      cur = info.CurrentItem + 1
+    else
+      top = info.TopPanelItem - 1
+      cur = info.CurrentItem - 1
+    end
+    panel.RedrawPanel(nil, 1, {TopPanelItem=top; CurrentItem=cur; })
+  end;
+}
