@@ -2444,11 +2444,11 @@ static int blob_reopen(lua_State *L) {
 /*
 ** =======================================================
 ** The Virtual Table Mechanism
-** (needs SQLite >= 3.22.0)
+** (needs SQLite >= 3.26.0)
 ** =======================================================
 */
 
-#if (SQLITE_VER >= 3220000)
+#if (SQLITE_VER >= 3260000)
 
 /* module client data */
 typedef struct {
@@ -3338,7 +3338,7 @@ static int db_create_module(lua_State *L) {
     lua_pushinteger(L, ret);
     return 1;
 }
-#endif /* #if (SQLITE_VER >= 3220000) */
+#endif /* #if (SQLITE_VER >= 3260000) */
 
 /*
 ** =======================================================
@@ -3441,7 +3441,7 @@ static const luaL_Reg dblib[] = {
     {"create_aggregate",    db_create_aggregate     },
     {"create_collation",    db_create_collation     },
     {"load_extension",      db_load_extension       },
-#if (SQLITE_VER >= 3220000)
+#if (SQLITE_VER >= 3260000)
     {"create_module",       db_create_module        },
 #endif
 
