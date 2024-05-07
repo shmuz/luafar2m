@@ -84,14 +84,6 @@
 
 #include "sqlite3.h"
 
-/*
- * The default value of 4000000 means "compile all functions".
- * If the library should work, e.g, with SQLite3 version 3.4.5 then specify 3040500.
-*/
-#if !defined(SQLITE_VER)
-#define SQLITE_VER 4000000
-#endif
-
 /* compile time features */
 #if !defined(SQLITE_OMIT_PROGRESS_CALLBACK)
     #define SQLITE_OMIT_PROGRESS_CALLBACK 0
@@ -1043,7 +1035,7 @@ static int db_interrupt(lua_State *L) {
     return 0;
 }
 
-#if (SQLITE_VER >= 3071000)
+#if (SQLITE_VERSION_NUMBER >= 3007010)
 static int db_db_filename(lua_State *L) {
     sdb *db = lsqlite_checkdb(L, 1);
     const char *db_name = luaL_checkstring(L, 2);
@@ -2293,7 +2285,7 @@ static int lsqlite_lversion(lua_State *L) {
     return 1;
 }
 
-#if (SQLITE_VER >= 3071700)
+#if (SQLITE_VERSION_NUMBER >= 3007017)
 /* sqlite3_strglob binding
 */
 static int lsqlite_strglob(lua_State *L) {
@@ -2304,7 +2296,7 @@ static int lsqlite_strglob(lua_State *L) {
 }
 #endif
 
-#if (SQLITE_VER >= 3100000)
+#if (SQLITE_VERSION_NUMBER >= 3010000)
 /* sqlite3_strlike binding
 */
 static int lsqlite_strlike(lua_State *L) {
@@ -2448,7 +2440,7 @@ static int blob_reopen(lua_State *L) {
 ** =======================================================
 */
 
-#if (SQLITE_VER >= 3260000)
+#if (SQLITE_VERSION_NUMBER >= 3026000)
 
 /* module client data */
 typedef struct {
@@ -3338,7 +3330,7 @@ static int db_create_module(lua_State *L) {
     lua_pushinteger(L, ret);
     return 1;
 }
-#endif /* #if (SQLITE_VER >= 3260000) */
+#endif /* #if (SQLITE_VERSION_NUMBER >= 3026000) */
 
 /*
 ** =======================================================
@@ -3433,7 +3425,7 @@ static const luaL_Reg dblib[] = {
     {"extended_result_codes", db_extended_result_codes },
     {"interrupt",           db_interrupt            },
     {"open_blob",           db_open_blob            },
-#if (SQLITE_VER >= 3071000)
+#if (SQLITE_VERSION_NUMBER >= 3007010)
     {"db_filename",         db_db_filename          },
 #endif
 
@@ -3441,7 +3433,7 @@ static const luaL_Reg dblib[] = {
     {"create_aggregate",    db_create_aggregate     },
     {"create_collation",    db_create_collation     },
     {"load_extension",      db_load_extension       },
-#if (SQLITE_VER >= 3260000)
+#if (SQLITE_VERSION_NUMBER >= 3026000)
     {"create_module",       db_create_module        },
 #endif
 
@@ -3581,10 +3573,10 @@ static const luaL_Reg sqlitelib[] = {
     {"open_ptr",        lsqlite_open_ptr        },
 
     {"backup_init",     lsqlite_backup_init     },
-#if (SQLITE_VER >= 3071700)
+#if (SQLITE_VERSION_NUMBER >= 3007017)
     {"strglob",         lsqlite_strglob         },
 #endif
-#if (SQLITE_VER >= 3100000)
+#if (SQLITE_VERSION_NUMBER >= 3010000)
     {"strlike",         lsqlite_strlike         },
 #endif
     {"__newindex",      lsqlite_newindex        },
