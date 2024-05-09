@@ -1,3 +1,4 @@
+-- See https://github.com/shmuz/luafar2m/blob/main/Macros/scripts/Editor/events/scite_like.lua
 -- Started 2014-12-01 by Shmuel Zeigerman
 -- http://forum.farmanager.com/viewtopic.php?f=15&t=9191
 -- http://forum.farmanager.com/viewtopic.php?p=126100#p126100
@@ -25,7 +26,8 @@ local F = far.Flags
 local band = bit64.band
 local CharMap = {Space=" ", ShiftSpace=" ", Tab="\t",     BackSlash="\\",
                  Add="+",   Subtract="-",   Multiply="*", Divide="/",     Decimal="."}
-local KeyMap = {Num2="Down", Num4="Left", Num6="Right", Num8="Up", NumDel="Del", ShiftIns="CtrlV", ShiftNum0="CtrlV"}
+local KeyMap = {Num1="End", Num2="Down", Num4="Left", Num6="Right", Num7="Home", Num8="Up",
+                NumDel="Del", ShiftIns="CtrlV", ShiftNum0="CtrlV"}
 
 local function scite_like(Rec)
   if Rec.EventType ~= F.KEY_EVENT then return false end
@@ -34,22 +36,23 @@ local function scite_like(Rec)
   if not (EI and EI.BlockType==F.BTYPE_COLUMN and band(EI.CurState,F.ECSTATE_LOCKED)==0) then return false end
 
   local uc = Rec.UnicodeChar
-  local altchar = OptUseAltCodes and not Rec.KeyDown and Rec.VirtualKeyCode==18 and uc~="" and uc~="\0" and uc
-  local key = not altchar and far.InputRecordToName(Rec)
+  local altChar = OptUseAltCodes and not Rec.KeyDown and Rec.VirtualKeyCode==18 and uc~="" and uc~="\0" and uc
+  local key = not altChar and far.InputRecordToName(Rec)
 
   if key=="CtrlS" then key="Left"; Rec.ControlKeyState=0; end
   key = KeyMap[key] or key
 
+  local moveOnly = key == 'Home' or key == 'End' or key == 'Left' or key == 'Right' or key == 'Up' or key == 'Down'
   if OptCursorMoveResetsBlock and band(EI.Options,F.EOPT_PERSISTENTBLOCKS)==0 then
-    if key=="Left" or key=="Right" or key=="Up" or key=="Down" then return false end
+    if moveOnly then return false end
   end
 
-  if not (altchar or key=="CtrlV" or (Rec.KeyDown and band(Rec.ControlKeyState,0x0F)==0)) then return false end
+  if not (altChar or key=="CtrlV" or (Rec.KeyDown and band(Rec.ControlKeyState,0x0F)==0)) then return false end
 
   local cur = editor.GetString()
-  local BlockWidth = cur and cur.SelStart>0 and cur.SelEnd-cur.SelStart+1
-  if BlockWidth then
-    if not (OptReplaceBlock or BlockWidth<=1) then return false end
+  local blockWidth = cur and cur.SelStart>0 and cur.SelEnd-cur.SelStart+1
+  if blockWidth then
+    if not (OptReplaceBlock or blockWidth<=1) then return false end
   else
     -- check entering inside the region
     if key=="Down" then
@@ -64,7 +67,7 @@ local function scite_like(Rec)
     end
   end
 
-  local char = altchar or key and (CharMap[key] or key:match("^.$"))
+  local char = altChar or key and (CharMap[key] or key:match'^.$')
   local text = char
   if key=="CtrlV" then
     local clip = far.PasteFromClipboard()
@@ -73,13 +76,14 @@ local function scite_like(Rec)
   end
   local textlen = text and text:len() or 0
 
-  local delblock = OptReplaceBlock and BlockWidth and BlockWidth>1
-  if delblock and not (text or key=="Del" or key=="BS") then return false end
+  local delBlock = OptReplaceBlock and blockWidth and blockWidth>1
+  local eraseChar = key == 'Del' or key == 'BS'
+  if delBlock and not (text or eraseChar) then return false end
 
-  if not (text or key=="Del" or key=="BS" or key=="Left" or key=="Right" or key=="Up" or key=="Down")
-  then return false end
+  if not (text or eraseChar or moveOnly) then return false end
 
-  if (key=="BS" or key=="Left") and EI.CurPos==1 then return true end
+  local oneCharLeft = key == 'Left' or key == 'BS'
+  if oneCharLeft and EI.CurPos == 1 then return true end
 
   -- check leaving the region
   if key=="Up" then
@@ -93,16 +97,16 @@ local function scite_like(Rec)
 
   local lnum = EI.BlockStartLine
   local clean = true
-  local BlockStartRealPos, BlockStartTabPos
+  local blockStartRealPos, blockStartTabPos
   while true do
     local line = editor.GetString(nil,lnum)
     if not line or line.SelStart <= 0 then break end
-    BlockStartRealPos = BlockStartRealPos or line.SelStart
-    BlockStartTabPos = BlockStartTabPos or editor.RealToTab(nil,lnum,BlockStartRealPos)
+    blockStartRealPos = blockStartRealPos or line.SelStart
+    blockStartTabPos = blockStartTabPos or editor.RealToTab(nil,lnum,blockStartRealPos)
     local pos = editor.TabToReal(nil,lnum,EI.CurTabPos)
     local s, len, newS = line.StringText, line.StringLength, nil
-    if delblock then
-      if key == "Del" or key == "BS" then
+    if delBlock then
+      if eraseChar then
         if line.SelStart <= len then newS = s:sub(1,line.SelStart-1)..s:sub(line.SelEnd+1) end
       elseif text then
         if line.SelStart > len+1 then newS = s..(" "):rep(line.SelStart-len-1)..text
@@ -129,12 +133,23 @@ local function scite_like(Rec)
   if not clean then editor.UndoRedo(nil,F.EUR_END) end
 
   local realX, tabX, newY
-  if delblock then
-    realX = BlockStartRealPos + textlen
-    tabX = BlockStartTabPos + textlen
-    newY = EI.CurLine
+  if delBlock then
+    realX = blockStartRealPos + textlen
+    tabX  = blockStartTabPos  + textlen
+    newY  = EI.CurLine
   else
-    realX = math.max(1, EI.CurPos + ((key=="Right") and 1 or (key=="BS" or key=="Left") and -1 or textlen))
+    local function prepareHomePos()
+      Editor.Pos(1,5,1) -- scroll to line beginning
+      local home = Editor.Value:find'%S' or 1
+      return Editor.RealPos == home and 1 or home
+    end
+    local function getEndPos()
+      local len, last = Editor.Value:len() + 1, Editor.Value:find'%s*$'
+      return Editor.RealPos > len and len or Editor.RealPos == last and len or last
+    end
+    realX = key == 'Home' and prepareHomePos() or
+            key == 'End'  and getEndPos()      or
+            math.max(1, EI.CurPos + (key == 'Right' and 1 or oneCharLeft and -1 or textlen))
     tabX = editor.RealToTab(nil, EI.CurLine, realX)
     newY = math.max(1, EI.CurLine + (key=="Up" and -1 or key=="Down" and 1 or 0))
   end
