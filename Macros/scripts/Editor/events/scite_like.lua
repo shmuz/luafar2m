@@ -49,8 +49,8 @@ local function scite_like(Rec)
 
   if not (altChar or key=="CtrlV" or (Rec.KeyDown and band(Rec.ControlKeyState,0x0F)==0)) then return false end
 
-  local cur = editor.GetString()
-  local blockWidth = cur and cur.SelStart>0 and cur.SelEnd-cur.SelStart+1
+  local curStr = editor.GetString()
+  local blockWidth = curStr and curStr.SelStart>0 and curStr.SelEnd-curStr.SelStart+1
   if blockWidth then
     if not (OptReplaceBlock or blockWidth<=1) then return false end
   else
@@ -139,13 +139,13 @@ local function scite_like(Rec)
     newY  = EI.CurLine
   else
     local function prepareHomePos()
-      Editor.Pos(1,5,1) -- scroll to line beginning
-      local home = Editor.Value:find'%S' or 1
-      return Editor.RealPos == home and 1 or home
+      editor.SetPosition(nil, { CurPos=1; CurTabPos=1; }) -- scroll to line beginning
+      local home = curStr.StringText:find'%S' or 1
+      return EI.CurPos == home and 1 or home
     end
     local function getEndPos()
-      local len, last = Editor.Value:len() + 1, Editor.Value:find'%s*$'
-      return Editor.RealPos > len and len or Editor.RealPos == last and len or last
+      local len, last = curStr.StringLength + 1, curStr.StringText:find'%s*$'
+      return (EI.CurPos > len or EI.CurPos == last) and len or last
     end
     realX = key == 'Home' and prepareHomePos() or
             key == 'End'  and getEndPos()      or
@@ -162,5 +162,6 @@ end
 Event {
   description="SciTE-like multiline input";
   group="EditorInput";
+  priority=80;
   action=scite_like;
 }
