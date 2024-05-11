@@ -115,5 +115,9 @@ if IsLuaMacro then
     action = OnEditorInput;
   }
 elseif IsLF4Ed then
-  ProcessEditorInput = OnEditorInput -- luacheck: globals ProcessEditorInput
+  if OsWindows then
+    ProcessEditorInput = OnEditorInput -- luacheck: globals ProcessEditorInput
+  else
+    AddEvent("EditorInput", OnEditorInput) -- luacheck: globals AddEvent
+  end
 end
