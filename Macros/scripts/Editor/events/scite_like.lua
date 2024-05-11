@@ -139,7 +139,7 @@ local function scite_like(Rec)
     newY  = EI.CurLine
   else
     local function prepareHomePos()
-      editor.SetPosition(nil, { CurPos=1; CurTabPos=1; }) -- scroll to line beginning
+      editor.SetPosition(nil, { CurPos=1; CurTabPos=1; LeftPos=1; }) -- scroll to line beginning
       local home = curStr.StringText:find'%S' or 1
       return EI.CurPos == home and 1 or home
     end
