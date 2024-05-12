@@ -165,3 +165,20 @@ Event {
   priority=80;
   action=scite_like;
 }
+
+-- This used to be a macro but made an event to cooperate nicely with "multiline smart home"
+Event {
+  description="Smart Home";
+  group="EditorInput";
+  priority=50; -- lower than "multiline input" event priority
+  action=function(Rec)
+    local key = Rec.KeyDown and far.InputRecordToName(Rec)
+    if key == "Home" then
+      local info, str = editor.GetInfo(), editor.GetString()
+      local pos = str.StringText:find("%S") or 1
+      editor.SetPosition(nil, nil, pos==info.CurPos and 1 or pos)
+      editor.Redraw()
+      return true
+    end
+  end;
+}
