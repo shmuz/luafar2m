@@ -48,7 +48,7 @@ Macro {
   action=function()
     local Pos = actl.GetWindowInfo().Pos - 1
     Pos = Pos==Screen1 and Screen2 or Screen1
-    if 1 ~= actl.SetCurrentWindow(Pos + 1, true) then
+    if 0 == actl.SetCurrentWindow(Pos + 1, true) then
       Settings()
     end
   end;
