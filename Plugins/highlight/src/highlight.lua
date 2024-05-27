@@ -2,7 +2,7 @@
 -- Started: 2014-10-06
 -- Author: Shmuel Zeigerman
 
--- luacheck: globals rex Editors MenuPos
+-- luacheck: globals rex Editors
 
 --local function LOG(fmt,...) win.OutputDebugString(fmt:format(...)) end
 local function ErrMsg (msg, title, flags)
@@ -10,11 +10,10 @@ local function ErrMsg (msg, title, flags)
 end
 
 -- Global variables
-rex = rex or {}
+rex = rex
 Editors = Editors or {}
-MenuPos = MenuPos or 1
 
-if not rex.new then
+if not rex then
   rex = require "rex_onig"
   local Utf8ToUtf32 = win.Utf8ToUtf32
   local orig_new = rex.new
@@ -26,11 +25,11 @@ if not rex.new then
   local sz = 4 -- sizeof(wchar_t)
   methods.findW = function(r, s, init) -- simplified method: only 1-st capture
     local from, to, cap = r:find(s, sz*(init-1)+1)
-    if from then from, to = (from-1)/sz+1, to/sz; return from, to, cap; end
+    if from then return (from-1)/sz+1, to/sz, cap; end
   end
   methods.tfindW = function(r, s, init)
     local from, to, t = r:tfind(s, sz*(init-1)+1)
-    if from then from, to = (from-1)/sz+1, to/sz; return from, to, t; end
+    if from then return (from-1)/sz+1, to/sz, t; end
   end
 end
 
@@ -156,19 +155,18 @@ element: #%d]]):format(msg, filename, classname, numelement)
   for i,v in ipairs(Syntax) do
     local T = {}
     Out[i] = T
-    if v.pattern==nil and v.pat_open==nil then
-      s_error("neither field 'pattern' nor 'pat_open' specified", i)
-    end
     if v.pattern then
       if type(v.pattern)~="string" then s_error("field 'pattern': string expected", i) end
       tPatterns[i] = "(".. v.pattern ..")"
-    else
+    elseif v.pat_open then
       if type(v.pat_open)~="string" then s_error("field 'pat_open': string expected", i) end
       if type(v.pat_close)~="string" then s_error("field 'pat_close': string expected", i) end
       tPatterns[i] = "(".. v.pat_open ..")"
       T.pat_close = v.pat_close
       T.pat_skip = type(v.pat_skip)=="string" and rex.new(v.pat_skip,"x")
       T.pat_continue = type(v.pat_continue)=="string" and rex.new(v.pat_continue,"x")
+    else
+      s_error("neither field 'pattern' nor 'pat_open' specified", i)
     end
     local pat = rex.new(v.pattern or v.pat_open) -- can throw error
     T.capstart = i==1 and 1 or (Out[i-1].capend + 1)
@@ -548,11 +546,6 @@ local function SetExtraPattern (EditorID, extrapattern)
   if state then state.extrapattern = extrapattern end
 end
 
--- local function GetExtraPattern (EditorID)
---   local state = Editors[EditorID]
---   return state and state.extrapattern
--- end
-
 local function EnumMenuItems(items) -- add hot keys
   local n = 1
   for _,v in ipairs(items) do
@@ -710,13 +703,12 @@ function export.Open (From, _Id, Item)
   if From == F.OPEN_FROMMACRO then
     return OpenFromMacro(Item)
   elseif From == F.OPEN_EDITOR then
-    local item, pos = far.Menu({Title=AppTitle, SelectIndex=MenuPos}, {
+    local item = far.Menu({Title=AppTitle}, {
       {text="&1. Select syntax";   act=MenuSelectSyntax; },
       {text="&2. Highlight extra"; act=HighlightExtra;   },
       {text="&3. Settings";        act=ShowSettings;     }
     })
     if item then
-      MenuPos = pos
       item.act()
     end
   end
