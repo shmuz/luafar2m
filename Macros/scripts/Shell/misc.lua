@@ -24,7 +24,7 @@ Macro {
 
 Macro {
   description="Folders shortcuts";
-  area="Shell"; key="RCtrl9";
+  area="Shell"; key="RCtrl-";
   action=function()
     if mf.mainmenu then mf.mainmenu("foldershortcuts")
     else Keys("F9 Home 2*Right Enter End 4*Up Enter")

@@ -243,7 +243,7 @@ end
 
 function mod.ProcessPanelEvent (object, handle, Event, Param)
   if Event == F.FE_IDLE then
-    panel.UpdatePanel(handle,true)
+    panel.UpdatePanel(handle, nil, true)
     panel.RedrawPanel(handle)
   end
 end
