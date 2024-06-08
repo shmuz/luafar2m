@@ -234,14 +234,14 @@ local function EditorConfigDialog()
   Items.proc = function(hDlg, msg, param1, param2)
     if msg == F.DN_BTNCLICK then
       if param1 == Pos.btnHighlight then
-        local c = far.ColorDialog(hColor0)
-        if c then hColor0 = c.PaletteColor; hDlg:send("DM_REDRAW"); end
+        local c = far.ColorDialog(hColor0, "FCD_RGB")
+        if c then hColor0 = c.Color; hDlg:send("DM_REDRAW"); end
       elseif param1 == Pos.btnGrepLNum1 then
-        local c = far.ColorDialog(hColor1)
-        if c then hColor1 = c.PaletteColor; hDlg:send("DM_REDRAW"); end
+        local c = far.ColorDialog(hColor1, "FCD_RGB")
+        if c then hColor1 = c.Color; hDlg:send("DM_REDRAW"); end
       elseif param1 == Pos.btnGrepLNum2 then
-        local c = far.ColorDialog(hColor2)
-        if c then hColor2 = c.PaletteColor; hDlg:send("DM_REDRAW"); end
+        local c = far.ColorDialog(hColor2, "FCD_RGB")
+        if c then hColor2 = c.Color; hDlg:send("DM_REDRAW"); end
       end
 
     elseif msg == F.DN_CTLCOLORDLGITEM then

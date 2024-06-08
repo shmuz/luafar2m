@@ -68,11 +68,11 @@ local function ConfigDialog ()
   Items.proc = function (hDlg, msg, param1, param2)
     if msg == F.DN_BTNCLICK then
       if param1 == Pos.btnHighTextColor then
-        local c = far.ColorDialog(hColor0)
-        if c then hColor0 = c.PaletteColor; hDlg:Redraw(); end
+        local c = far.ColorDialog(hColor0, "FCD_RGB")
+        if c then hColor0 = c.Color; hDlg:Redraw(); end
       elseif param1 == Pos.btnSelHighTextColor then
-        local c = far.ColorDialog(hColor1)
-        if c then hColor1 = c.PaletteColor; hDlg:Redraw(); end
+        local c = far.ColorDialog(hColor1, "FCD_RGB")
+        if c then hColor1 = c.Color; hDlg:Redraw(); end
       end
 
     elseif msg == F.DN_CTLCOLORDLGITEM then
