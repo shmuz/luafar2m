@@ -99,6 +99,12 @@ local function ClearSelection(item)
   item.Flags = band(item.Flags, bnot(F.PPIF_SELECTED))
 end
 
+local function SetFileTimes (TrgFileName, SrcItem)
+  return win.SetFileTimes(TrgFileName, {
+    CreationTime = bnew(SrcItem.t_create) * 10000; -- convert ms to ns
+    LastWriteTime = bnew(SrcItem.t_write) * 10000; })
+end
+
 local function FormatDataForDialog(element)
   local strsize = tostring(element.size):reverse():gsub("...","%0,"):reverse():gsub("^,","")
   local st = win.FileTimeToSystemTime(win.FileTimeToLocalFileTime(element.t_write))
@@ -549,7 +555,7 @@ local function ExtractFile(state, parent_id, file_name, DestPath, Move)
   Fp:close()
 
   if OK and not Esc then
-    win.SetFileTimes(fullname, { CreationTime=Item.t_create; LastWriteTime=Item.t_write })
+    SetFileTimes(fullname, Item)
     win.SetFileAttr(fullname, Item.attrib)
     state.nfiles = state.nfiles + 1
     if not state.silent_mode then
@@ -589,7 +595,7 @@ local function ExtractTree(state, parent_id, tree_name, DestPath, Move)
     end
     -- set directory times *after* extracting child subdirs and files
     -- to avoid write times modification.
-    win.SetFileTimes(path, {CreationTime=item.t_create; LastWriteTime=item.t_write})
+    SetFileTimes(path, item)
     if Move and result then
       local q = ("DELETE FROM sqlarc_files WHERE isdir=1 AND parent=%d AND name=%s"):
         format(parent_id, Norm(tree_name))
