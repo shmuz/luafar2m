@@ -3,7 +3,7 @@ project(polygon)
 set(SOURCES
   src/GlobalInfo.c
   src/polygon.c
-  src/lsqlite3.c
+  ../_common/lsqlite3.c
   ${FARSOURCE}/luafar/src/luaplug.c
 )
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFUNC_OPENLIBS=luaopen_polygon")

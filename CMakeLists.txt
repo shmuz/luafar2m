@@ -103,7 +103,7 @@ else()
     AddPlugin(polygon 0)
 endif()
 
-if (NOT DEFINED SQLARC OR SQLARC)
+if (SQLARC)
     find_package(Sqlite3)
     if (Sqlite3_FOUND)
         AddPlugin(sqlarc 1)
