@@ -2,8 +2,11 @@ project(sqlarc)
 
 set(SOURCES
   src/GlobalInfo.c
+  src/sqlarc.c
+  src/lsqlite3.c
   ${FARSOURCE}/luafar/src/luaplug.c
 )
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFUNC_OPENLIBS=luaopen_sqlarc")
 
 add_library (${PROJECT_NAME} MODULE ${SOURCES})
 set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)

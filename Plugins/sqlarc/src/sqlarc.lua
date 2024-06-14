@@ -13,7 +13,7 @@ local Opt = {
   PutChunkSize    = 0x100000;  -- (1 Mib) size of chunks to write into DB
   PrBarMessageWid = 60;
   PrBarHeaderWid  = 10;
-  PrBarUpdatePeriod = 100e3; -- (in microseconds)
+  PrBarUpdatePeriod = 0.1; -- (in seconds)
   FileExistsDialogGuid    = win.Uuid("E9C4F565-D4A1-4295-A87E-CC34A582D73A");
   ConfirmDeleteDialogGuid = win.Uuid("E9D1D88D-E8F7-4548-AD4B-4FA61DBD0AFF");
   ExtractDialogGuid       = win.Uuid("7804AF5A-0F67-467D-8879-670E2005B955");
@@ -27,8 +27,6 @@ Opt.PutPrBarFileSize = 2*Opt.PutChunkSize; -- minimal file size to show progress
 
 far.ReloadDefaultScript = true
 
-far.FileTimeResolution(2) -- set 100ns file resolution
-
 local F = far.Flags
 local band, bor, bnot, bnew = bit64.band, bit64.bor, bit64.bnot, bit64.new
 
@@ -36,7 +34,7 @@ local sql3 = require "lsqlite3"
 local SimpleDialog = require "far2.simpledialog"
 
 local PluginGuid, Title do
-  local info = export.GetGlobalInfo()
+  local info = far.GetPluginGlobalInfo()
   PluginGuid, Title = info.Guid, info.Title
 end
 
@@ -64,11 +62,11 @@ local CheckAppId, SetAppId do
 end
 
 local function join(s1, s2)
-  return s1=="" and s2 or s1:find("\\$") and s1..s2 or s1.."\\"..s2
+  return s1=="" and s2 or s1:find("/$") and s1..s2 or s1.."/"..s2
 end
 
 local function extract_name(fullpath)
-  return fullpath:match("[^\\]*$")
+  return fullpath:match("[^/]*$")
 end
 
 local function CommonErrMsg (msg)
@@ -171,7 +169,7 @@ local function GetFullDirPath(db, id)
     table.insert(t, 1, item.name)
     id = item.parent
   end
-  return table.concat(t, "\\")
+  return table.concat(t, "/")
 end
 
 local function GetPanelTitle(shorthostname, path)
@@ -298,7 +296,7 @@ local function CreateObject(filename)
   local obj = {
     db = db;
     curdir = 1;
-    shorthostname = filename:match("[^\\]+$");
+    shorthostname = filename:match("[^/]+$");
   }
   obj.openpanelinfo = {
     CurDir = fullpath;
@@ -306,7 +304,7 @@ local function CreateObject(filename)
     PanelTitle = GetPanelTitle(obj.shorthostname, fullpath);
     StartSortMode = nil;  -- F.SM_UNSORTED;
     StartSortOrder = nil; -- 0;
-    Flags = bor(F.OPIF_SHORTCUT, F.OPIF_ADDDOTS);
+    Flags = F.OPIF_ADDDOTS;
     IsCached = false; -- caching must be reset after any change on this table
   }
   return obj
@@ -331,8 +329,8 @@ function export.GetPluginInfo()
 end
 
 local function SetDir(obj, path)
-  local cur_id = (path=="" or path:find("^\\")) and 1 or obj.curdir
-  for dir in path:gmatch("[^\\]+") do
+  local cur_id = (path=="" or path:find("^/")) and 1 or obj.curdir
+  for dir in path:gmatch("[^/]+") do
     local query = ("SELECT id FROM sqlarc_files WHERE isdir=1 AND parent=%d AND name=%s"):
       format(cur_id, Norm(dir))
     local item = GetOneDbItem(obj.db, query)
@@ -390,8 +388,8 @@ function export.GetFindData(obj, handle, OpMode)
       FileName = item.name;
       FileAttributes = item.attrib;
       FileSize = item.size;
-      CreationTime = bnew(item.t_create);
-      LastWriteTime = bnew(item.t_write);
+      CreationTime = item.t_create;
+      LastWriteTime = item.t_write;
     })
   end
   stmt:finalize()
@@ -465,7 +463,7 @@ local DisplaySearchState do
   local lastclock = 0
   local wTail = Opt.PrBarMessageWid - Opt.PrBarHeaderWid - 3
   DisplaySearchState = function (fullname, cntFound, cntTotal, ratio, strOp, force)
-    local newclock = far.FarClock()
+    local newclock = win.Clock()
     if force or newclock >= lastclock then
       lastclock = newclock + Opt.PrBarUpdatePeriod
       local len = fullname:len()
@@ -486,7 +484,7 @@ local function ExtractFile(state, parent_id, file_name, DestPath, Move)
   local Item = GetOneDbItem(db, query)
   if not Item then return false; end
 
-  local fullname = DestPath.."\\"..file_name
+  local fullname = DestPath.."/"..file_name
   local attr = win.GetFileAttr(fullname)
   if attr then
     if attr:find("d") then
@@ -571,7 +569,7 @@ end
 
 local function ExtractTree(state, parent_id, tree_name, DestPath, Move)
   local db = state.db
-  local path = DestPath.."\\"..tree_name
+  local path = DestPath.."/"..tree_name
   local result = win.CreateDir(path, "t")
   if result then
     local t_query = ("SELECT * FROM sqlarc_files WHERE isdir=1 AND parent=%d AND name=%s"):
@@ -711,11 +709,11 @@ local function PutFile(state, SrcPath, Item, parent_id)
   local db, f_stmt = state.db, state.f_stmt
 
   local fullname, filename
-  if Item.FileName:find("^[a-zA-Z]:") then -- TmpPanel, etc.
+  if Item.FileName:find("^/") then -- TmpPanel, etc.
     fullname = Item.FileName
-    filename = fullname:gsub(".*[\\:]", "")
+    filename = fullname:gsub(".*/", "")
   else -- Far panel
-    fullname = SrcPath.."\\"..Item.FileName
+    fullname = SrcPath.."/"..Item.FileName
     filename = Item.FileName
   end
 
@@ -835,7 +833,7 @@ local function PutTree(state, SrcPath, dir_item, parent_id)
   if not curr_id then return false; end
 
   local result = true
-  local dir_path = SrcPath.."\\"..dir_item.FileName
+  local dir_path = SrcPath.."/"..dir_item.FileName
   far.RecursiveSearch(dir_path, "*",
     function(item, fullpath)
       if state:ConfirmEscape(false) then
