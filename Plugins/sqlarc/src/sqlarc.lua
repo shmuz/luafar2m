@@ -62,7 +62,7 @@ local CheckAppId, SetAppId do
 end
 
 local function join(s1, s2)
-  return s1=="" and s2 or s1:find("/$") and s1..s2 or s1.."/"..s2
+  return win.JoinPath(s1, s2)
 end
 
 local function extract_name(fullpath)
@@ -101,7 +101,7 @@ end
 
 local function SetFileTimes (TrgFileName, SrcItem)
   return win.SetFileTimes(TrgFileName, {
-    CreationTime = bnew(SrcItem.t_create) * 10000; -- convert ms to ns
+    CreationTime = bnew(SrcItem.t_create) * 10000; -- convert 1ms to 100ns
     LastWriteTime = bnew(SrcItem.t_write) * 10000; })
 end
 
@@ -213,7 +213,7 @@ local function GetArchiveFileName()
     if single then
       filename = single
     else
-      local dir = panel.GetPanelDirectory(nil,1).Name
+      local dir = panel.GetPanelDirectory(nil,1)
       local name = extract_name(dir)
       filename = join(dir, name=="" and "root" or name)
     end
@@ -321,6 +321,14 @@ function export.Analyse(Data)
     return true
   else
     return string.find(Data.Buffer,"^SQLite format 3") and CheckAppId(Data.Buffer)
+  end
+end
+
+function export.OpenFilePlugin(FileName, Data, OpMode)
+  if FileName == nil then -- ShiftF1
+    return CreateObject()
+  elseif string.find(Data,"^SQLite format 3") and CheckAppId(Data) then
+    return CreateObject(FileName)
   end
 end
 
@@ -490,7 +498,7 @@ local function ExtractFile(state, parent_id, file_name, DestPath, Move)
   local Item = GetOneDbItem(db, query)
   if not Item then return false; end
 
-  local fullname = DestPath.."/"..file_name
+  local fullname = join(DestPath, file_name)
   local attr = win.GetFileAttr(fullname)
   if attr then
     if attr:find("d") then
@@ -575,7 +583,7 @@ end
 
 local function ExtractTree(state, parent_id, tree_name, DestPath, Move)
   local db = state.db
-  local path = DestPath.."/"..tree_name
+  local path = join(DestPath, tree_name)
   local result = win.CreateDir(path, "t")
   if result then
     local t_query = ("SELECT * FROM sqlarc_files WHERE isdir=1 AND parent=%d AND name=%s"):
@@ -719,7 +727,7 @@ local function PutFile(state, SrcPath, Item, parent_id)
     fullname = Item.FileName
     filename = fullname:gsub(".*/", "")
   else -- Far panel
-    fullname = SrcPath.."/"..Item.FileName
+    fullname = join(SrcPath, Item.FileName)
     filename = Item.FileName
   end
 
@@ -839,7 +847,7 @@ local function PutTree(state, SrcPath, dir_item, parent_id)
   if not curr_id then return false; end
 
   local result = true
-  local dir_path = SrcPath.."/"..dir_item.FileName
+  local dir_path = join(SrcPath, dir_item.FileName)
   far.RecursiveSearch(dir_path, "*",
     function(item, fullpath)
       if state:ConfirmEscape(false) then
