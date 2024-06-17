@@ -19,6 +19,17 @@ local function test_polygon(verbose)
   if verbose then far.Message("PASS", "Polygon tests"); end
 end
 
+local function test_sqlarc(verbose)
+  local guid = 0xF309DDDB
+  local libname = "far2.test.test_sqlarc"
+  assert(Plugin.Exist(guid), "Plugin not found")
+  far.Message("Please wait...", "Test Sqlarc", "")
+  Far.DisableHistory(0x0F)
+  package.loaded[libname] = nil -- for debug
+  require(libname).test_all()
+  if verbose then far.Message("PASS", "Sqlarc tests"); end
+end
+
 local function test_lfsearch(verbose)
   Far.DisableHistory(0x0F)
   local guid = 0x8E11EA75
@@ -53,6 +64,13 @@ Macro {
 }
 
 Macro {
+  description="Test plugin Sqlarc";
+  area="Shell"; key="CtrlShiftF12";
+  sortpriority=50;
+  action = function() test_sqlarc(true) end;
+}
+
+Macro {
   description="Test ALL";
   area="Shell"; key="CtrlShiftF12";
   sortpriority=60;
@@ -60,6 +78,7 @@ Macro {
     test_macroengine()
     test_lfsearch()
     test_polygon()
+    --test_sqlarc()
     far.Message("PASS", "ALL tests")
   end;
 }

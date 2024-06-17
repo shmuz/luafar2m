@@ -180,7 +180,7 @@ end
 
 local function GetPanelTitle(shorthostname, path)
   local title = "sqlarc:"..shorthostname
-  if path ~= "" then title = title..":\\"..path end
+  if path ~= "" then title = title..":/"..path end
   return title
 end
 
