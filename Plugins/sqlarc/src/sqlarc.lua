@@ -938,8 +938,8 @@ function export.ProcessHostFile(obj, handle, PanelItems, OpMode)
   if res_item == item_vacuum then
     far.Message("Please wait...", Title, "")
     obj.db:exec("VACUUM")
-    panel.UpdatePanel(nil, 1)
-    far.AdvControl("ACTL_REDRAWALL")
+    panel.UpdatePanel(nil,1)
+    for k=0,1 do panel.RedrawPanel(nil,k) end
   end
 end
 

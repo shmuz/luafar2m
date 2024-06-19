@@ -78,7 +78,7 @@ Macro {
     test_macroengine()
     test_lfsearch()
     test_polygon()
-    --test_sqlarc()
+    test_sqlarc()
     far.Message("PASS", "ALL tests")
   end;
 }
