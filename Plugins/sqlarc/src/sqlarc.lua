@@ -521,7 +521,7 @@ local function ExtractFile(state, parent_id, file_name, DestPath, Move)
     end
   end
 
-  local Fp = io.open(fullname, "wb")
+  local Fp = win.OpenFile(fullname, "wb")
   if not Fp then
     -- CommonErrMsg("Cannot open file:\n\""..fullname.."\"")
     return false
@@ -757,7 +757,7 @@ local function PutFile(state, SrcPath, Item, parent_id)
   end
 
   if state.Fp then state.Fp:close(); end
-  state.Fp = io.open(fullname, "rb")
+  state.Fp = win.OpenFile(fullname, "rb")
   if not state.Fp then return false end
 
   local cur_parent_id = parent_id
