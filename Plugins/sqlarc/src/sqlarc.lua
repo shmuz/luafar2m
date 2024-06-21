@@ -324,14 +324,6 @@ function export.Analyse(Data)
   end
 end
 
-function export.OpenFilePlugin(FileName, Data, OpMode)
-  if FileName == nil then -- ShiftF1
-    return CreateObject()
-  elseif string.find(Data,"^SQLite format 3") and CheckAppId(Data) then
-    return CreateObject(FileName)
-  end
-end
-
 function export.GetPluginInfo()
   local info = { Flags=0 }
   info.CommandPrefix = "sqlarc"
@@ -359,7 +351,7 @@ end
 
 function export.Open(OpenFrom, Guid, Data)
   if OpenFrom == F.OPEN_ANALYSE then
-    return CreateObject(Data.FileName)
+    return CreateObject(Data) -- Data is FileName
 
   elseif OpenFrom == F.OPEN_SHORTCUT then
     local obj = CreateObject(Data.HostFile)
