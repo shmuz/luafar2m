@@ -2,9 +2,8 @@
 -- Published    : https://forum.farmanager.com/viewtopic.php?t=9445
 -- Modifications by : Shmuel Zeigerman
 
-local dbkey = "named folders lua edition"
+local dbkey = "named folders"
 local dbname = "entries"
-local dbconfig = dbkey .. " config"
 local dbshowdir = "showdir"
 
 local F = far.Flags
@@ -16,7 +15,7 @@ end
 
 local save_nf = function(ent) mf.msave(dbkey, dbname, ent); end
 
-local noshowdir = mf.mload(dbconfig, dbshowdir)
+local noshowdir = mf.mload(dbkey, dbshowdir)
 
 local menu = function(pattern)
   local entry = function(e, space)
@@ -151,15 +150,14 @@ local action = function(text)
     --far.Message("menu: " .. res .. " : " .. tostring(entry.alias))
     if not res then break
     elseif entry and tonumber(res) and tonumber(res) >= 0 then
-      local function ExpandEnv(str) return (str:gsub("%%(.-)%%", win.GetEnv)) end
-      if entry.path then panel.SetPanelDirectory(nil, 1, ExpandEnv(entry.path)); end
+      if entry.path then panel.SetPanelDirectory(nil, 1, win.ExpandEnv(entry.path)); end
       break
     elseif tostring(res) == "insert" then newentry()
     elseif tostring(res) == "delete" and entry then removeentry(entry)
     elseif tostring(res) == "edit" and entry then newentry(entry)
     elseif tostring(res) == "showdir" then
       noshowdir = not noshowdir
-      mf.msave(dbconfig, dbshowdir, noshowdir)
+      mf.msave(dbkey, dbshowdir, noshowdir)
     end
   end
 end
