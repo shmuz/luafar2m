@@ -217,7 +217,7 @@ end
 
 local function Analyse(FileName, Buffer, OpMode)
   return
-    band(OpMode,F.OPM_TOPLEVEL) == 0 -- not supposed to process ShiftF1/F2/F3
+    band(OpMode, F.OPM_TOPLEVEL+F.OPM_FIND) == 0 -- not supposed to process ShiftF1/F2/F3
     and FileName
     and FileName ~= ""
     and dbx.format_supported(Buffer, #Buffer)
@@ -226,10 +226,8 @@ local function Analyse(FileName, Buffer, OpMode)
 end
 
 
-function export.OpenFilePlugin(FileName, Buffer, OpMode)
-  if Analyse(FileName, Buffer, OpMode) then
-    return CreatePanel(FileName)
-  end
+function export.Analyse(info)
+  return Analyse(info.FileName, info.Buffer, info.OpMode)
 end
 
 
@@ -345,7 +343,10 @@ end
 
 
 function export.Open (OpenFrom, _Id, Item)
-  if OpenFrom == F.OPEN_COMMANDLINE then
+  if OpenFrom == F.OPEN_ANALYSE then
+    return CreatePanel(Item, nil, OpenFrom) -- Item is FileName
+
+  elseif OpenFrom == F.OPEN_COMMANDLINE then
     return OpenCommandLine(Item)
 
   elseif OpenFrom == F.OPEN_FROMMACRO then
