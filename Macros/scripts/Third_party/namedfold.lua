@@ -31,7 +31,7 @@ local menu = function(pattern)
       local space = 0
 
       for _, v in ipairs(load_nf()) do -- filter items by pattern & calculate max width alias
-        if (not pattern or v.alias:lower():match(pattern:lower())) then
+        if not pattern or v.alias:lower():match(pattern:lower()) then
           table.insert(ent, v)
           space = math.max(space, v.alias:len())
           if pattern and pattern:lower() == v.alias:lower() then
@@ -65,7 +65,7 @@ local menu = function(pattern)
   local brakes = {{BreakKey = "INSERT"}, {BreakKey = "DELETE"}, {BreakKey = "F4"}, {BreakKey = "C+l"}}
   local bottom = "Ins - Insert, Del - Delete, F4 - Edit, Ctrl+L - Show/Hide path"
 
-  if (pattern) then
+  if pattern then
     brakes = nil
     bottom = nil
   end
@@ -78,12 +78,12 @@ local menu = function(pattern)
     entries, brakes)
 
   if not item then return nil
-  elseif item.BreakKey == "INSERT" then return "insert"
-  elseif item.BreakKey == "DELETE" and position and position > 0 then return "delete", entries[position].entry
-  elseif item.BreakKey == "F4" and position and position > 0 then return "edit", entries[position].entry
-  elseif item.BreakKey == "C+l" then return "showdir"
-  elseif position > 0 then return position, entries[position].entry
-  else return nil
+  elseif item.BreakKey == "INSERT"                  then return "insert"
+  elseif item.BreakKey == "DELETE" and position > 0 then return "delete", entries[position].entry
+  elseif item.BreakKey == "F4" and position > 0     then return "edit",   entries[position].entry
+  elseif item.BreakKey == "C+l"                     then return "showdir"
+  elseif position > 0                               then return "setdir", entries[position].entry
+  else                                              return      "dontclose"
   end
 end
 
@@ -110,7 +110,7 @@ local newentry = function(entry)
   if far.Dialog(guid, -1, -1, 69, 10, nil, items, nil, nil) == 7 then
     local alias = items[3][10]
     local path = items[5][10]
-    if (alias ~= "" and path ~= "") then
+    if alias ~= "" and path ~= "" then
       local entries = load_nf()
       for i, v in ipairs(entries) do
         if v.alias == alias then
@@ -118,7 +118,7 @@ local newentry = function(entry)
           break
         end
       end
-      table.insert(entries, {alias = alias; path=path})
+      table.insert(entries, {alias=alias; path=path})
       save_nf(entries)
     end
   end
@@ -134,7 +134,6 @@ local removeentry = function(entry)
         if v.alias == entry.alias then
           table.remove(entries, i)
           save_nf(entries)
-          --far.Message("removed: " .. entry.alias)
           break
         end
       end
@@ -143,22 +142,20 @@ local removeentry = function(entry)
 end
 
 local action = function(text)
-  --far.Message("prefix: " .. prefix .. " text: " .. text)
   if not text or text == "" or text:match("%s") then text = nil; end
-  while true do
-    local res, entry = menu(text)
-    --far.Message("menu: " .. res .. " : " .. tostring(entry.alias))
-    if not res then break
-    elseif entry and tonumber(res) and tonumber(res) >= 0 then
+  local res, entry = menu(text)
+  while res do
+    if res == "setdir" then
       if entry.path then panel.SetPanelDirectory(nil, 1, win.ExpandEnv(entry.path)); end
       break
-    elseif tostring(res) == "insert" then newentry()
-    elseif tostring(res) == "delete" and entry then removeentry(entry)
-    elseif tostring(res) == "edit" and entry then newentry(entry)
-    elseif tostring(res) == "showdir" then
+    elseif res == "insert" then newentry()
+    elseif res == "delete" and entry then removeentry(entry)
+    elseif res == "edit" and entry then newentry(entry)
+    elseif res == "showdir" then
       noshowdir = not noshowdir
       mf.msave(dbkey, dbshowdir, noshowdir)
     end
+    res, entry = menu(text)
   end
 end
 
