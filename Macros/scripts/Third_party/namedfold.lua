@@ -77,13 +77,18 @@ local menu = function(pattern)
     },
     entries, brakes)
 
-  if not item then return nil
-  elseif item.BreakKey == "INSERT"                  then return "insert"
-  elseif item.BreakKey == "DELETE" and position > 0 then return "delete", entries[position].entry
-  elseif item.BreakKey == "F4" and position > 0     then return "edit",   entries[position].entry
-  elseif item.BreakKey == "C+l"                     then return "showdir"
-  elseif position > 0                               then return "setdir", entries[position].entry
-  else                                              return      "dontclose"
+  if not item then
+    return nil
+  elseif item.BreakKey == "INSERT" then
+    return "insert"
+  elseif position > 0 then
+    if     item.BreakKey == "C+l"    then return "showdir"
+    elseif item.BreakKey == "DELETE" then return "delete", entries[position].entry
+    elseif item.BreakKey == "F4"     then return "edit",   entries[position].entry
+    else                             return      "setdir", entries[position].entry
+    end
+  else
+    return "dontclose"
   end
 end
 
@@ -148,9 +153,9 @@ local action = function(text)
     if res == "setdir" then
       if entry.path then panel.SetPanelDirectory(nil, 1, win.ExpandEnv(entry.path)); end
       break
-    elseif res == "insert" then newentry()
-    elseif res == "delete" and entry then removeentry(entry)
-    elseif res == "edit" and entry then newentry(entry)
+    elseif res == "insert"  then newentry()
+    elseif res == "delete"  then removeentry(entry)
+    elseif res == "edit"    then newentry(entry)
     elseif res == "showdir" then
       noshowdir = not noshowdir
       mf.msave(dbkey, dbshowdir, noshowdir)
