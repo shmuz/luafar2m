@@ -15,12 +15,13 @@ end
 
 local save_nf = function(ent) mf.msave(dbkey, dbname, ent); end
 
-local noshowdir = mf.mload(dbkey, dbshowdir)
+local showdir = mf.mload(dbkey, dbshowdir)
+showdir = showdir == nil or showdir -- true by default
 
 local menu = function(pattern)
   local entry = function(e, space)
     return {
-      text = e.alias .. (" "):rep(space + 1 - e.alias:len()) .. (not noshowdir and e.path or "");
+      text = e.alias .. (" "):rep(space + 1 - e.alias:len()) .. (showdir and e.path or "");
       entry = e;
     }
   end
@@ -82,10 +83,10 @@ local menu = function(pattern)
   elseif item.BreakKey == "INSERT" then
     return "insert"
   elseif position > 0 then
-    if     item.BreakKey == "C+l"    then return "showdir"
+    if     item.BreakKey == nil      then return "setdir", entries[position].entry
     elseif item.BreakKey == "DELETE" then return "delete", entries[position].entry
     elseif item.BreakKey == "F4"     then return "edit",   entries[position].entry
-    else                             return      "setdir", entries[position].entry
+    elseif item.BreakKey == "C+l"    then return "showdir"
     end
   else
     return "dontclose"
@@ -112,9 +113,11 @@ local newentry = function(entry)
   --[[ 7]] {F.DI_BUTTON,  0,7,  0,0, 0, 0,0, F.DIF_DEFAULTBUTTON+F.DIF_CENTERGROUP,"Ok"},
   --[[ 8]] {F.DI_BUTTON,  0,7,  0,0, 0, 0,0, F.DIF_CENTERGROUP,"Cancel"}
   }
-  if far.Dialog(guid, -1, -1, 69, 10, nil, items, nil, nil) == 7 then
-    local alias = items[3][10]
-    local path = items[5][10]
+  local posAlias, posPath, posOK = 3, 5, 7
+
+  if posOK == far.Dialog(guid, -1, -1, 69, 10, nil, items) then
+    local alias = items[posAlias][10]
+    local path = items[posPath][10]
     if alias ~= "" and path ~= "" then
       local entries = load_nf()
       for i, v in ipairs(entries) do
@@ -157,8 +160,8 @@ local action = function(text)
     elseif res == "delete"  then removeentry(entry)
     elseif res == "edit"    then newentry(entry)
     elseif res == "showdir" then
-      noshowdir = not noshowdir
-      mf.msave(dbkey, dbshowdir, noshowdir)
+      showdir = not showdir
+      mf.msave(dbkey, dbshowdir, showdir)
     end
     res, entry = menu(text)
   end
@@ -170,11 +173,8 @@ CommandLine {
   action = function(prefix, text) action(text); end;
 }
 
--- MenuItem {
---   description = "Named Folders Lua Edition";
---   menu   = "Plugins";
---   area   = "Shell";
---   guid   = "B854578E-AEF7-4DA6-83A8-872FA9D13E8B";
---   text   = function(menu, area) return "Named Folders Lua Edition"; end;
---   action = function(OpenFrom, Item) action(); end;
--- }
+Macro {
+  description = "Named Folders Lua Edition";
+  area="Shell"; key="CtrlD";
+  action=function() action(); end;
+}
