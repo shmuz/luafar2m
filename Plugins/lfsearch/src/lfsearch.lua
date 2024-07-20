@@ -8,9 +8,20 @@ local MenuFlags = bit64.bor(F.FMENU_WRAPMODE, F.FMENU_AUTOHIGHLIGHT)
 _G.lfsearch = {}
 
 
+local function SetDefaultIfNil(tbl, field, dflt)
+  if tbl[field] == nil then tbl[field] = dflt end
+end
+
+
 -- Set the defaults: prioritize safety and "least surprise".
-local function NormDataOnFirstRun()
-  local data = _Plugin.History["main"]
+local function LoadDataOnFirstRun()
+  local Sett = require "far2.settings"
+  local history = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
+  for _,key in ipairs {"config","main","menu","panels.menu","presets","rename","tmppanel"} do
+    Sett.field(history, key)
+  end
+
+  local data = history["main"]
   data.bAdvanced          = false
   data.bConfirmReplace    = true
   data.bDelEmptyLine      = false
@@ -23,21 +34,21 @@ local function NormDataOnFirstRun()
   data.bUseDirFilter      = false
   data.bUseFileFilter     = false
   data.sSearchArea        = "FromCurrFolder"
+
+  data = history["config"]
+  SetDefaultIfNil (data, "EditorHighlightColor",    0xCF)
+  SetDefaultIfNil (data, "GrepLineNumMatchColor",   0xA0)
+  SetDefaultIfNil (data, "GrepLineNumContextColor", 0x80)
+  SetDefaultIfNil (data, "bForceScopeToBlock",      true)
+  SetDefaultIfNil (data, "bSelectFound",            true)
+  SetDefaultIfNil (data, "bShowSpentTime",          true)
+
+  return history
 end
 
 
 local function FirstRunActions()
-  local Sett = require "far2.settings"
-  local history = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
-  for _,key in ipairs {"config","main","menu","panels.menu","presets","rename","tmppanel"} do
-    Sett.field(history, key)
-  end
-
-  local cfg = history["config"]
-  local s
-  s = "EditorHighlightColor";    cfg[s] = cfg[s] or 0xCF
-  s = "GrepLineNumMatchColor";   cfg[s] = cfg[s] or 0xA0
-  s = "GrepLineNumContextColor"; cfg[s] = cfg[s] or 0x80
+  local history = LoadDataOnFirstRun()
 
   _Plugin = {
     DialogHistoryPath = "LuaFAR Search\\",
@@ -46,7 +57,6 @@ local function FirstRunActions()
     Repeat = {},
     FileList = nil,
   }
-  NormDataOnFirstRun()
 end
 
 
@@ -271,21 +281,17 @@ function export.Configure (Guid) -- luacheck: no unused args
     HelpTopic = "Contents",
   }
   local items = {
-    { text=M.MConfigTitleCommon },
-    { text=M.MConfigTitleEditor },
-    { text=M.MConfigTitleTmpPanel },
+    { text=M.MConfigTitleEditor;   action=Common.EditorConfigDialog; },
+    { text=M.MConfigTitleTmpPanel; action=Panels.ConfigDialog;       },
+    { text=M.MConfigTitleCommon;   action=Common.ConfigDialog;       },
   }
   local userItems = libUtils.LoadUserMenu("_usermenu.lua")
   libUtils.AddMenuItems(items, userItems.config, M)
   while true do
     local item, pos = far.Menu(properties, items)
     if not item then break end
-    if pos == 1 then
-      Common.ConfigDialog()
-    elseif pos == 2 then
-      Common.EditorConfigDialog()
-    elseif pos == 3 then
-      Panels.ConfigDialog()
+    if pos <= 3 then
+      item.action()
     else
       libUtils.RunUserItem(item, item.arg)
     end

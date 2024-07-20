@@ -1192,6 +1192,9 @@ local function test_dir_filter()
 end
 
 local function test_panel_encodings (lib)
+  assert(win.GetOEMCP() == 866, "this test requires OEM codepage to be 866")
+  assert(win.GetACP() == 1251, "this test requires ANSI codepage to be 1251")
+
   local dir = os.getenv("FARHOME").."/Plugins/luafar/lua_share/far2/test/codepage"
   PrAssert(panel.SetPanelDirectory(nil, 1, dir))
 
