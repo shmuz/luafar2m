@@ -1,7 +1,7 @@
 local function test_macroengine(verbose)
   far.Message("Please wait...", "Test macro engine", "")
   Far.DisableHistory(0x0F)
-  local fname = win.JoinPath(far.PluginStartupInfo().ShareDir, "macrotest.lua")
+  local fname = far.PluginStartupInfo().ShareDir .. "/macrotest.lua"
   local f = assert(loadfile(fname))
   local t = setfenv(f, getfenv())()
   if t and t.test_all then t.test_all(); end
