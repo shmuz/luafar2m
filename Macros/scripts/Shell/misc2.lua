@@ -40,7 +40,7 @@ Macro {
   description = "Generate luacheck_config.lua";
   area="Shell"; key=SharedKey; sortpriority=44;
   action=function()
-    local trg = win.JoinPath(os.getenv("FARHOME"), "Plugins/luafar/lua_share/luacheck_config.lua")
+    local trg = os.getenv("HOME").."/luacheck_config.lua"
     require("far2.luacheck_generate")(trg)
     far.Message("Done")
   end

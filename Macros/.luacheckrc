@@ -6,7 +6,7 @@ if (...)=="far" then -- running from Far environment
 
 else
 --local cfg = require "far2.luacheck_config"
-  local cfg = dofile(os.getenv("HOME").."/far2m/_build/install/Plugins/luafar/lua_share/luacheck_config.lua")
+  local cfg = dofile(os.getenv("HOME").."/luacheck_config.lua")
   stds.luafar = cfg.luafar
   stds.luamacro = cfg.luamacro
   std = "max+luafar+luamacro"
