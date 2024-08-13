@@ -13,12 +13,13 @@
 -- Url: https://forum.ru-board.com/topic.cgi?forum=5&topic=49572&start=2600#19
 -- Author's Github repository: https://github.com/z0hm/far-scripts
 
+local MacroKey = "AltG"
 local F = far.Flags
 local EFlags = bit64.bor(F.EF_NONMODAL,F.EF_IMMEDIATERETURN,F.EF_OPENMODE_USEEXISTING)
 
 local function GetFileName(l)
   -- [1] /home/shmuel/luafar2m/_build/install/lf4ed/plug/wrap.lua : 3
-  return regex.match(l,'^\\[\\d+?\\] (.+?)(?:\\s*:|$)')
+  return regex.match(l,'^\\[\\d+?\\] (.+?)(?: : \\d+)?$')
 end
 
 local function GInfo()
@@ -27,8 +28,9 @@ local function GInfo()
   local l,i,f = editor.GetString(nil,y).StringText,y
   local n,s = l:match('^(%d-)[-:](.+)$')
   repeat
-    i,f = i-1,GetFileName(editor.GetString(nil,i).StringText)
-  until f or i==-1
+    f = GetFileName(editor.GetString(nil,i).StringText)
+    i = i-1
+  until f or i==0
   return f,l,y,x,p,n,s,i
 end
 
@@ -46,9 +48,8 @@ local function FileSave(t)
 end
 
 Macro {
-  area="Editor"; key="AltG";
   description="Grep:  Goto this line in this file";
-  filemask="/\\w+\\.tmp$/i";
+  area="Editor"; key=MacroKey; filemask="*.tmp";
   action=function()
     local f,l,y,x,p,n,s = GInfo()
     if f then
@@ -64,13 +65,12 @@ Macro {
 }
 
 Macro {
-  area="Editor"; key="AltG";
   description="Grep:  Save this line in this file";
-  filemask="/\\w+\\.tmp$/i";
+  area="Editor"; key=MacroKey; filemask="*.tmp";
   action=function()
     local f,l,y,x,p,n,s = GInfo()
     if n then
-      editor.SetPosition(nil,y,x,_,_,p)
+      editor.SetPosition(nil,y,x,nil,nil,p)
       if f then
         editor.Editor(f,nil,nil,nil,nil,nil,EFlags,tonumber(n),x-#n-1)
         editor.SetString(nil,n,s)
@@ -85,20 +85,23 @@ Macro {
 }
 
 Macro {
-  area="Editor"; key="AltG";
   description="Grep:  Save all lines in this file";
-  filemask="/\\w+\\.tmp$/i";
+  area="Editor"; key=MacroKey; filemask="*.tmp";
   action=function()
     local t,i = {},select(8,GInfo())
     for j=i,editor.GetInfo().TotalLines do
       local l=editor.GetString(nil,j).StringText
       local y,s = l:match('^(%d-)[-:](.+)$')
-      if y and s and #t>=1
-      then table.insert(t,{y,s})
+      if y and s and #t>=1 then
+        table.insert(t,{y,s})
       else
         local f=GetFileName(l)
         if f then
-          if #t>1 then FileSave(t) t={} break end
+          if #t>1 then
+            FileSave(t)
+            t={}
+            break
+          end
           t[1]={f,nil}
         end
       end
@@ -108,16 +111,14 @@ Macro {
 }
 
 Macro {
-  area="Editor"; key="AltG";
   description="Grep:  Save all lines in all files";
-  filemask="/\\w+\\.tmp$/i";
+  area="Editor"; key=MacroKey; filemask="*.tmp";
   action=function()
     local t={}
     for j=1,editor.GetInfo().TotalLines do
       local l=editor.GetString(nil,j).StringText
       local y,s = l:match('^(%d-)[-:](.+)$')
-      if y and s and #t>=1
-      then
+      if y and s and #t>=1 then
         table.insert(t,{y,s})
       else
         local f=GetFileName(l)
