@@ -113,9 +113,7 @@ Macro {
   filemask="/\\w+\\.tmp$/i";
   action=function()
     local t={}
-    far.Show(editor.GetInfo().TotalLines)
     for j=1,editor.GetInfo().TotalLines do
-      far.Show(j, editor.GetString(nil,j).StringText)
       local l=editor.GetString(nil,j).StringText
       local y,s = l:match('^(%d-)[-:](.+)$')
       if y and s and #t>=1
