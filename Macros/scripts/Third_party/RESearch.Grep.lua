@@ -16,64 +16,68 @@
 local F = far.Flags
 local EFlags = bit64.bor(F.EF_NONMODAL,F.EF_IMMEDIATERETURN,F.EF_OPENMODE_USEEXISTING)
 
-local function GetFileName(l) return regex.match(l,'^(?:\\[\\d+?\\] )?([A-Z]:.+?)(?::|$)') end
+local function GetFileName(l)
+  -- [1] /home/shmuel/luafar2m/_build/install/lf4ed/plug/wrap.lua : 3
+  return regex.match(l,'^\\[\\d+?\\] (.+?)(?:\\s*:|$)')
+end
+
 local function GInfo()
-  local ei=editor.GetInfo(-1)
+  local ei=editor.GetInfo()
   local y,x,p = ei.CurLine,ei.CurPos,ei.LeftPos
-  local l,i,f = editor.GetString(-1,y).StringText,y
+  local l,i,f = editor.GetString(nil,y).StringText,y
   local n,s = l:match('^(%d-)[-:](.+)$')
   repeat
-    i,f = i-1,GetFileName(editor.GetString(-1,i).StringText)
+    i,f = i-1,GetFileName(editor.GetString(nil,i).StringText)
   until f or i==-1
   return f,l,y,x,p,n,s,i
 end
 
 local function FileSave(t)
-  editor.Editor(t[1][1],_,_,_,_,_,EFlags)
+  editor.Editor(t[1][1],nil,nil,nil,nil,nil,EFlags)
   for j=2,#t do
-    local StringEOL=editor.GetString(-1,t[j][1]).StringEOL
-    editor.SetString(-1,t[j][1],t[j][2],StringEOL)
+    local StringEOL=editor.GetString(nil,t[j][1]).StringEOL
+    editor.SetString(nil,t[j][1],t[j][2],StringEOL)
   end
-  if not editor.SaveFile(-1) then
+  if not editor.SaveFile() then
     far.Message(t[1][1],"Warning! File is not saved - blocked?")
   else
-    editor.Quit(-1)
+    editor.Quit()
   end
 end
 
 Macro {
-  area="editor.Editor"; key="AltG";
+  area="Editor"; key="AltG";
   description="Grep:  Goto this line in this file";
   filemask="/\\w+\\.tmp$/i";
   action=function()
     local f,l,y,x,p,n,s = GInfo()
     if f then
       if n then
-        editor.Editor(f,_,_,_,_,_,EFlags,tonumber(n),x-#n-1)
-        editor.SetPosition(-1,tonumber(n),x-#n-1,_,_,p-#n)
+        editor.Editor(f,nil,nil,nil,nil,nil,EFlags,tonumber(n),x-#n-1)
+        editor.SetPosition(nil,tonumber(n),x-#n-1,_,_,p-#n)
       else
-        editor.Editor(f,_,_,_,_,_,EFlags,1,1)
-        editor.SetPosition(-1,1,1)
+        editor.Editor(f,nil,nil,nil,nil,nil,EFlags,1,1)
+        editor.SetPosition(nil,1,1)
       end
     end
   end;
 }
 
 Macro {
-  area="editor.Editor"; key="AltG";
+  area="Editor"; key="AltG";
   description="Grep:  Save this line in this file";
   filemask="/\\w+\\.tmp$/i";
   action=function()
     local f,l,y,x,p,n,s = GInfo()
     if n then
-      editor.SetPosition(-1,y,x,_,_,p)
+      editor.SetPosition(nil,y,x,_,_,p)
       if f then
-        editor.Editor(f,_,_,_,_,_,EFlags,tonumber(n),x-#n-1)
-        editor.SetString(-1,n,s)
-        if not editor.SaveFile(-1) then
+        editor.Editor(f,nil,nil,nil,nil,nil,EFlags,tonumber(n),x-#n-1)
+        editor.SetString(nil,n,s)
+        if not editor.SaveFile() then
           far.Message(f,"Warning! File is not saved - blocked?")
         else
-          editor.Quit(-1)
+          editor.Quit()
         end
       end
     end
@@ -81,13 +85,13 @@ Macro {
 }
 
 Macro {
-  area="editor.Editor"; key="AltG";
+  area="Editor"; key="AltG";
   description="Grep:  Save all lines in this file";
   filemask="/\\w+\\.tmp$/i";
   action=function()
-    local t,_,_,_,_,_,_,_,i = {},GInfo()
-    for j=i,editor.GetInfo(-1).TotalLines do
-      local l=editor.GetString(-1,j).StringText
+    local t,i = {},select(8,GInfo())
+    for j=i,editor.GetInfo().TotalLines do
+      local l=editor.GetString(nil,j).StringText
       local y,s = l:match('^(%d-)[-:](.+)$')
       if y and s and #t>=1
       then table.insert(t,{y,s})
@@ -104,16 +108,19 @@ Macro {
 }
 
 Macro {
-  area="editor.Editor"; key="AltG";
+  area="Editor"; key="AltG";
   description="Grep:  Save all lines in all files";
   filemask="/\\w+\\.tmp$/i";
   action=function()
     local t={}
-    for j=1,editor.GetInfo(-1).TotalLines do
-      local l=editor.GetString(-1,j).StringText
+    far.Show(editor.GetInfo().TotalLines)
+    for j=1,editor.GetInfo().TotalLines do
+      far.Show(j, editor.GetString(nil,j).StringText)
+      local l=editor.GetString(nil,j).StringText
       local y,s = l:match('^(%d-)[-:](.+)$')
       if y and s and #t>=1
-      then table.insert(t,{y,s})
+      then
+        table.insert(t,{y,s})
       else
         local f=GetFileName(l)
         if f then
