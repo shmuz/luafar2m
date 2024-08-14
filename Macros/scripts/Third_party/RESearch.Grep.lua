@@ -15,7 +15,7 @@
 
 local MacroKey = "AltG"
 local F = far.Flags
-local EFlags = bit64.bor(F.EF_NONMODAL,F.EF_IMMEDIATERETURN,F.EF_OPENMODE_USEEXISTING)
+local EFlags = bit64.bor(F.EF_NONMODAL, F.EF_IMMEDIATERETURN, F.EF_OPENMODE_USEEXISTING, F.EF_DISABLEHISTORY)
 
 local function OpenEditor(fname, line, col)
   return editor.Editor(fname,nil,nil,nil,nil,nil,EFlags,line,col)
@@ -40,7 +40,7 @@ end
 
 local function FileSave(t)
   OpenEditor(t.filename)
-  for line in ipairs(t) do
+  for _, line in ipairs(t) do
     local StringEOL = editor.GetString(nil, line.y).StringEOL
     editor.SetString(nil, line.y, line.s, StringEOL)
   end
