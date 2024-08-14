@@ -17,6 +17,10 @@ local MacroKey = "AltG"
 local F = far.Flags
 local EFlags = bit64.bor(F.EF_NONMODAL,F.EF_IMMEDIATERETURN,F.EF_OPENMODE_USEEXISTING)
 
+local function OpenEditor(fname, line, col)
+  return editor.Editor(fname,nil,nil,nil,nil,nil,EFlags,line,col)
+end
+
 local function GetFileName(l)
   -- [1] /home/shmuel/luafar2m/_build/install/lf4ed/plug/wrap.lua : 3
   return regex.match(l,'^\\[\\d+?\\] (.+?)(?: : \\d+)?$')
@@ -24,24 +28,24 @@ end
 
 local function GInfo()
   local ei=editor.GetInfo()
-  local y,x,p = ei.CurLine,ei.CurPos,ei.LeftPos
-  local l,i,f = editor.GetString(nil,y).StringText,y
+  local y,x,p = ei.CurLine, ei.CurPos, ei.LeftPos
+  local l,i,f = editor.GetString(nil,y).StringText, y, nil
   local n,s = l:match('^(%d-)[-:](.+)$')
-  repeat
-    f = GetFileName(editor.GetString(nil,i).StringText)
-    i = i-1
-  until f or i==0
+  for j = ei.CurLine,1,-1 do
+    f = GetFileName(editor.GetString(nil,j).StringText)
+    if f then i = j; break; end
+  end
   return f,l,y,x,p,n,s,i
 end
 
 local function FileSave(t)
-  editor.Editor(t[1][1],nil,nil,nil,nil,nil,EFlags)
-  for j=2,#t do
-    local StringEOL=editor.GetString(nil,t[j][1]).StringEOL
-    editor.SetString(nil,t[j][1],t[j][2],StringEOL)
+  OpenEditor(t.filename)
+  for line in ipairs(t) do
+    local StringEOL = editor.GetString(nil, line.y).StringEOL
+    editor.SetString(nil, line.y, line.s, StringEOL)
   end
   if not editor.SaveFile() then
-    far.Message(t[1][1],"Warning! File is not saved - blocked?")
+    far.Message(t.filename, "Warning! File is not saved - blocked?")
   else
     editor.Quit()
   end
@@ -51,13 +55,13 @@ Macro {
   description="Grep:  Goto this line in this file";
   area="Editor"; key=MacroKey; filemask="*.tmp";
   action=function()
-    local f,l,y,x,p,n,s = GInfo()
+    local f,l,y,x,p,n = GInfo()
     if f then
       if n then
-        editor.Editor(f,nil,nil,nil,nil,nil,EFlags,tonumber(n),x-#n-1)
-        editor.SetPosition(nil,tonumber(n),x-#n-1,_,_,p-#n)
+        OpenEditor(f, tonumber(n), x-#n-1)
+        editor.SetPosition(nil, tonumber(n), x-#n-1, nil, nil, p-#n)
       else
-        editor.Editor(f,nil,nil,nil,nil,nil,EFlags,1,1)
+        OpenEditor(f,1,1)
         editor.SetPosition(nil,1,1)
       end
     end
@@ -72,7 +76,7 @@ Macro {
     if n then
       editor.SetPosition(nil,y,x,nil,nil,p)
       if f then
-        editor.Editor(f,nil,nil,nil,nil,nil,EFlags,tonumber(n),x-#n-1)
+        OpenEditor(f, tonumber(n), x-#n-1)
         editor.SetString(nil,n,s)
         if not editor.SaveFile() then
           far.Message(f,"Warning! File is not saved - blocked?")
@@ -92,21 +96,19 @@ Macro {
     for j=i,editor.GetInfo().TotalLines do
       local l=editor.GetString(nil,j).StringText
       local y,s = l:match('^(%d-)[-:](.+)$')
-      if y and s and #t>=1 then
-        table.insert(t,{y,s})
+      if y and s and t.filename then
+        table.insert(t, {y=y; s=s})
       else
-        local f=GetFileName(l)
+        local f = GetFileName(l)
         if f then
-          if #t>1 then
-            FileSave(t)
-            t={}
+          if t[1] then
             break
           end
-          t[1]={f,nil}
+          t.filename = f
         end
       end
     end
-    if #t>1 then FileSave(t) end
+    if t[1] then FileSave(t) end
   end;
 }
 
@@ -118,16 +120,16 @@ Macro {
     for j=1,editor.GetInfo().TotalLines do
       local l=editor.GetString(nil,j).StringText
       local y,s = l:match('^(%d-)[-:](.+)$')
-      if y and s and #t>=1 then
-        table.insert(t,{y,s})
+      if y and s and t.filename then
+        table.insert(t, {y=y; s=s})
       else
-        local f=GetFileName(l)
+        local f = GetFileName(l)
         if f then
-          if #t>1 then FileSave(t) t={} end
-          t[1]={f,nil}
+          if t[1] then FileSave(t); t={}; end
+          t.filename = f
         end
       end
     end
-    if #t>1 then FileSave(t) end
+    if t[1] then FileSave(t) end
   end;
 }
