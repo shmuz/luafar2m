@@ -35,7 +35,7 @@ local function GInfo()
     f = GetFileName(editor.GetString(nil,j).StringText)
     if f then i = j; break; end
   end
-  return f,l,y,x,p,n,s,i
+  return f,y,x,p,n,s,i
 end
 
 local function FileSave(t)
@@ -55,7 +55,7 @@ Macro {
   description="Grep:  Goto this line in this file";
   area="Editor"; key=MacroKey; filemask="*.tmp";
   action=function()
-    local f,l,y,x,p,n = GInfo()
+    local f,y,x,p,n = GInfo()
     if f then
       if n then
         OpenEditor(f, tonumber(n), x-#n-1)
@@ -72,7 +72,7 @@ Macro {
   description="Grep:  Save this line in this file";
   area="Editor"; key=MacroKey; filemask="*.tmp";
   action=function()
-    local f,l,y,x,p,n,s = GInfo()
+    local f,y,x,p,n,s = GInfo()
     if n then
       editor.SetPosition(nil,y,x,nil,nil,p)
       if f then
@@ -92,7 +92,7 @@ Macro {
   description="Grep:  Save all lines in this file";
   area="Editor"; key=MacroKey; filemask="*.tmp";
   action=function()
-    local t,i = {},select(8,GInfo())
+    local t,i = {},select(7,GInfo())
     for j=i,editor.GetInfo().TotalLines do
       local l=editor.GetString(nil,j).StringText
       local y,s = l:match('^(%d-)[-:](.+)$')
