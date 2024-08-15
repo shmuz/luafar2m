@@ -1,8 +1,6 @@
 -- RESearch.Grep.lua
 -- v1.4.2.1
 -- Comfortable Grep text from files by search pattern to editor
--- ![RESearch Grep](http://i.piccy.info/i9/23f14ef428e4f1d2f1fc1937da2a549c/1442294013/13901/950058/1.png)
--- Press AltG, MacroBrowserAlt.lua file will be opened in the editor and the cursor will be set to this position on hDlg.
 -- Actions:
 -- 1. Grep:  Goto this line in this file
 -- 2. Grep:  Save this line in this file
@@ -35,7 +33,15 @@ local function GInfo()
     f = GetFileName(editor.GetString(nil,j).StringText)
     if f then i = j; break; end
   end
-  return f,y,x,p,n,s,i
+  return {
+    CurLine     = y;
+    CurPos      = x;
+    FNameLNum   = i;
+    LeftPos     = p;
+    TargetFName = f;
+    TargetLNum  = n;
+    TargetLStr  = s;
+  }
 end
 
 local function FileSave(t)
@@ -55,14 +61,14 @@ Macro {
   description="Grep:  Goto this line in this file";
   area="Editor"; key=MacroKey; filemask="*.tmp";
   action=function()
-    local f,y,x,p,n = GInfo()
-    if f then
+    local inf = GInfo()
+    if inf.TargetFName then
+      local n,x,p = inf.TargetLNum, inf.CurPos, inf.LeftPos
       if n then
-        OpenEditor(f, tonumber(n), x-#n-1)
+        OpenEditor(inf.TargetFName, tonumber(n), x-#n-1)
         editor.SetPosition(nil, tonumber(n), x-#n-1, nil, nil, p-#n)
       else
-        OpenEditor(f,1,1)
-        editor.SetPosition(nil,1,1)
+        OpenEditor(inf.TargetFName,1,1)
       end
     end
   end;
@@ -72,17 +78,15 @@ Macro {
   description="Grep:  Save this line in this file";
   area="Editor"; key=MacroKey; filemask="*.tmp";
   action=function()
-    local f,y,x,p,n,s = GInfo()
-    if n then
-      editor.SetPosition(nil,y,x,nil,nil,p)
-      if f then
-        OpenEditor(f, tonumber(n), x-#n-1)
-        editor.SetString(nil,n,s)
-        if not editor.SaveFile() then
-          far.Message(f,"Warning! File is not saved - blocked?")
-        else
-          editor.Quit()
-        end
+    local inf = GInfo()
+    local n,s,x = inf.TargetLNum, inf.TargetLStr, inf.CurPos
+    if inf.TargetFName and n then
+      OpenEditor(inf.TargetFName, tonumber(n), x-#n-1)
+      editor.SetString(nil,n,s)
+      if not editor.SaveFile() then
+        far.Message(inf.TargetFName, "Warning! File is not saved - blocked?")
+      else
+        editor.Quit()
       end
     end
   end;
@@ -92,23 +96,20 @@ Macro {
   description="Grep:  Save all lines in this file";
   area="Editor"; key=MacroKey; filemask="*.tmp";
   action=function()
-    local t,i = {},select(7,GInfo())
-    for j=i,editor.GetInfo().TotalLines do
-      local l=editor.GetString(nil,j).StringText
-      local y,s = l:match('^(%d-)[-:](.+)$')
-      if y and s and t.filename then
-        table.insert(t, {y=y; s=s})
-      else
-        local f = GetFileName(l)
-        if f then
-          if t[1] then
-            break
-          end
-          t.filename = f
+    local inf = GInfo()
+    if inf.TargetFName then
+      local t = { filename=inf.TargetFName }
+      for j=inf.FNameLNum+1, editor.GetInfo().TotalLines do
+        local l=editor.GetString(nil,j).StringText
+        local y,s = l:match('^(%d-)[-:](.+)$')
+        if y then
+          table.insert(t, {y=y; s=s})
+        elseif GetFileName(l) then
+          break
         end
       end
+      if t[1] then FileSave(t) end
     end
-    if t[1] then FileSave(t) end
   end;
 }
 
@@ -119,14 +120,17 @@ Macro {
     local t={}
     for j=1,editor.GetInfo().TotalLines do
       local l=editor.GetString(nil,j).StringText
-      local y,s = l:match('^(%d-)[-:](.+)$')
-      if y and s and t.filename then
-        table.insert(t, {y=y; s=s})
-      else
-        local f = GetFileName(l)
-        if f then
-          if t[1] then FileSave(t); t={}; end
-          t.filename = f
+      local f = GetFileName(l)
+      if f then
+        if t[1] then
+          FileSave(t)
+          t={}
+        end
+        t.filename = f
+      elseif t.filename then
+        local y,s = l:match('^(%d-)[-:](.+)$')
+        if y then
+          table.insert(t, {y=y; s=s})
         end
       end
     end
