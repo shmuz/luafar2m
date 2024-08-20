@@ -65,7 +65,7 @@ local nfo = Info { _filename or ...,
   --disabled    = false;
   options     = {
     envdir = far.InMyConfig(".env"),
-    macrokey = "F3", --"none",
+    macrokey = "none",
   };
 }
 if not nfo or nfo.disabled then return end
