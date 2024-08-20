@@ -20,12 +20,12 @@ $ Import environment — загрузка *.env файлов
 
  #Пользовательская директория#
 
- По умолчанию - #%FARPROFILE%\.env#.
+ По умолчанию - #far.InMyConfig(".env")#.
 Может быть переопределена через опцию #envdir#
 (поддерживается cfgscript/~ScriptsBrowser~@https://forum.farmanager.com/viewtopic.php?f=15&t=10418@).
  Если эта директория отсутствует, то ищется директория #.env# рядом со скриптом.
 
- 
+
  #Командная строка#
 
  #env:file.env#
@@ -64,8 +64,8 @@ local nfo = Info { _filename or ...,
 
   --disabled    = false;
   options     = {
-    envdir = win.GetEnv("FARPROFILE").."\\.env",
-    macrokey = "none",
+    envdir = far.InMyConfig(".env"),
+    macrokey = "F3", --"none",
   };
 }
 if not nfo or nfo.disabled then return end
@@ -88,6 +88,7 @@ local function importEnv (pathname)
     end
   end
   fp:close()
+  return true
 end
 
 local F = far.Flags
@@ -117,8 +118,8 @@ local function chooseEnv (dir)
       elseif bk~="F1" then
         bk = ""
       end
-      if not bk then
-        if importEnv(item.pathname)~=false then
+      if bk==nil then
+        if importEnv(item.pathname) then
           return
         end
       elseif bk=="CtrlEnter" then
@@ -140,7 +141,7 @@ end
 local function getEnvDir ()
   for _,dir in ipairs {
     O.envdir,
-    selfpath:match"^(.*[\\/])"..".env",
+    selfpath:match"^(.*/)"..".env",
   } do
     local attr = win.GetFileAttr(dir)
     if attr and attr:match("d") then
@@ -157,7 +158,8 @@ local function processPath (pathname)
     if envdir then
       chooseEnv(envdir)
     else
-      far.Message(".env directory expected in %FARPROFILE% or near the script", nfo.name, nil, "w")
+      local msg = (".env directory expected in %s or near the script"):format(far.InMyConfig())
+      far.Message(msg, nfo.name, nil, "w")
     end
     return
   end
@@ -178,7 +180,7 @@ if Macro then
     prefixes="env:";
     description="Import environment variables from file";
     action=function(_,cmdline) -- expects no quote marks
-      importEnv(cmdline)
+      processPath(cmdline)
     end;
   }
   Macro { description="Choose env file to import";
@@ -190,8 +192,8 @@ if Macro then
   }
   -- autoload env from .env\autoload.env
   local envdir = getEnvDir()
-  local file = envdir and envdir.."\\autoload.env"
-  if envdir and win.GetFileAttr(file) then
+  local file = envdir and envdir.."/autoload.env"
+  if file and win.GetFileAttr(file) then
     importEnv(file)
   end
   -- Scripts browser-related routines
