@@ -1,26 +1,28 @@
+-- Original author: Sergey Oblomov (aka hoopoe)
+-- https://forum.farmanager.com/viewtopic.php?t=10204
+-- Ported to far2m: Shmuel Zeigerman
 
 local action = function(text)
-    local temp = win.GetEnv("TEMP");
-    local batpath = temp .. "\\___farcall.cmd";
-    local envpath = temp .. "\\___farenv.cmd";
+    local batpath = far.InMyTemp("__farcall")
+    local envpath = far.InMyTemp("__farenv")
     local bat = io.open(batpath, "w");
-    bat:write('@cd "' .. far.GetCurrentDirectory() .. '"\n');
-    bat:write("@call " .. text .. "\n");
-    bat:write('@set > "' .. envpath .. '"\n');
-    bat:close(bat);
-    panel.GetUserScreen();
-    win.system('"' .. batpath .. '"');
-    for line in io.lines(envpath) do
-        local name = line:match('[^=]+');
-        local value = line:match('=(.*)');
+    bat:write('cd "', far.GetCurrentDirectory(), '"\n')
+    bat:write(". ", text, '\n') -- 'source' didn't work while '.' did
+    bat:write('env > ', envpath, '\n')
+    bat:close()
+    win.system("chmod a+x " .. batpath)
 
-        if(name) then
+    panel.GetUserScreen()
+    win.system(batpath)
+    for line in io.lines(envpath) do
+        local name, value = line:match('^([^=]+)=(.*)')
+        if name then
             win.SetEnv(name, value)
-        end;
+        end
     end
-    win.DeleteFile(batpath);
-    win.DeleteFile(envpath);
-    panel.SetUserScreen();
+    win.DeleteFile(batpath)
+    win.DeleteFile(envpath)
+    panel.SetUserScreen()
 end;
 
 CommandLine {
