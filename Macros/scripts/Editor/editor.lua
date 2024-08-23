@@ -2,8 +2,12 @@ local F = far.Flags
 
 Macro {
   description="Use CtrlS for saving files instead of F2";
-  area="Editor"; key="CtrlS";
-  action = function() Keys("F2") end;
+  area="Editor"; key="CtrlS F2";
+  action = function()
+    if akey(1,1)=="CtrlS" then Keys("F2")
+    elseif akey(1,1)=="F2" then mf.usermenu()
+    end
+  end;
 }
 
 Macro {
