@@ -5,12 +5,12 @@
 local action = function(text)
     local batpath = far.InMyTemp("__farcall")
     local envpath = far.InMyTemp("__farenv")
-    local bat = io.open(batpath, "w");
+    local bat = io.open(batpath, "w")
     bat:write('cd "', far.GetCurrentDirectory(), '"\n')
     bat:write(". ", text, '\n') -- 'source' didn't work while '.' did
     bat:write('env > ', envpath, '\n')
     bat:close()
-    win.system("chmod a+x " .. batpath)
+    win.chmod(batpath, tonumber("0774", 8))
 
     panel.GetUserScreen()
     win.system(batpath)
@@ -23,12 +23,10 @@ local action = function(text)
     win.DeleteFile(batpath)
     win.DeleteFile(envpath)
     panel.SetUserScreen()
-end;
+end
 
 CommandLine {
     description = "Far Call Lua Edition";
     prefixes = "call";
     action = function(prefix, text) action(text); end;
 }
-
-
