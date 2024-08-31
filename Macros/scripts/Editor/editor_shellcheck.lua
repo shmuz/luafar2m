@@ -23,12 +23,15 @@ local function GetEditorText()
 end
 
 local function CheckEditor()
-  local tmpfile = far.InMyTemp("to-check.sh")
-  local fp = assert(io.open(tmpfile, "w"))
-  fp:write(GetEditorText())
-  fp:close()
+  local eInfo = editor.GetInfo()
+  if eInfo.CurState == F.ECSTATE_MODIFIED then
+    if not editor.SaveFile() then
+      far.Message("Could not save the file", Info.Title, nil, "w")
+      return
+    end
+  end
 
-  fp = io.popen("shellcheck -f gcc "..tmpfile)
+  local fp = io.popen("shellcheck -f gcc " .. eInfo.FileName)
 
   -- create menu items
   local maxlen = 0
@@ -41,14 +44,13 @@ local function CheckEditor()
       i = i + 1
       items[i] = {text=text; line=line; column=col}
       maxlen = math.max(maxlen, ln:len())
-      if     text:find("^error:")   then nErr = nErr + 1
+      if     text:find("^note:")    then nNote = nNote + 1
       elseif text:find("^warning:") then nWarn = nWarn + 1
-      elseif text:find("^note:")    then nNote = nNote + 1
+      elseif text:find("^error:")   then nErr = nErr + 1
       end
     end
   end
   fp:close()
-  win.DeleteFile(tmpfile)
 
   -- show either the menu or the success message
   if #items > 0 then
