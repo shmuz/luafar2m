@@ -11,15 +11,14 @@ local SelectLen = 4
 -- /Options
 
 local F = far.Flags
-local menuflags = bit64.bor(F.FMENU_SHOWAMPERSAND,F.FMENU_WRAPMODE)
+local MenuFlags = bit64.bor(F.FMENU_SHOWAMPERSAND,F.FMENU_WRAPMODE)
+local SC_Version
 
-local function GetEditorText()
-  local einfo = editor.GetInfo()
-  local arr = {}
-  for i=1,einfo.TotalLines do
-    arr[i] = editor.GetString(nil,i).StringText
-  end
-  return table.concat(arr,"\n")
+local function Get_SC_Version()
+  local fp = io.popen("shellcheck --version")
+  local txt = fp:read("*all")
+  fp.close()
+  return txt:match("version:%s*(%S+)") or ""
 end
 
 local function CheckEditor()
@@ -54,10 +53,11 @@ local function CheckEditor()
 
   -- show either the menu or the success message
   if #items > 0 then
+    SC_Version = SC_Version or Get_SC_Version()
     local props = {
-      Title = "ShellCheck"; -- ..luacheck._VERSION;
+      Title = "ShellCheck " .. SC_Version;
       Bottom = ("%d errors, %d warnings, %d notes"):format(nErr, nWarn, nNote);
-      Flags = menuflags;
+      Flags = MenuFlags;
       MaxHeight = math.min(#items, MenuMaxHeight);
       SelectIndex = 1;
     }
