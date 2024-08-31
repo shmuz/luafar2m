@@ -1,71 +1,17 @@
--------- Settings
-local Title    = "ShellCheck in editor"
 local Info = { --luacheck: no unused
   Author        = "Shmuel Zeigerman";
   Guid          = "E32B39F6-12F5-4F4E-B582-C7166812AA62";
-  MinFarVersion = "3.0.3300";
   Started       = "2024-08-30";
-  Title         = Title;
+  Title         = "ShellCheck in editor";
 }
--------- /Settings
 
-local OptFileName = ".luacheckrc"
+-- Options
 local MenuMaxHeight = 8
 local SelectLen = 4
+-- /Options
 
 local F = far.Flags
-
 local menuflags = bit64.bor(F.FMENU_SHOWAMPERSAND,F.FMENU_WRAPMODE)
---if FarBuild >= 5505 then
---  menuflags = bit64.bor(menuflags, F.FMENU_SHOWSHORTBOX, F.FMENU_NODRAWSHADOW)
---end
-
-local function traverse(path)
-  return function(_, curpath)
-    return curpath:match("^(.*/).-/")
-  end, nil, path.."/"
-end
-
--- @param field : "globals", "read_globals", etc., i.e. fields used in .luacheckrc files
--- @param ...   : tables - "libraries" read from .luacheckrc files
-local function merge_field(field, ...)
-  local trg = {}
-  for k=1,select("#", ...) do
-    local lib = select(k, ...)
-    local src = lib and lib[field]
-    if src then
-      for m,v in pairs(src) do trg[m]=v; end
-    end
-  end
-  return trg
-end
-
-local function GetOptions()
-  local options = {}
---  local edtname = editor.GetFileName()
---  if edtname then
---    for dir in traverse(edtname) do
---      local f = loadfile(dir..OptFileName)
---      if f then
---        local env = {}
---        setfenv(f, env)("far") -- the argument tells the config. file it is run from Far environment
---        if env.luafar or env.lf4ed or env.luamacro then
---          local cfg = dofile( os.getenv("HOME").."/luacheck_config.lua" )
---          local luafar = env.luafar and cfg.luafar
---          local lf4 = env.lf4ed and cfg.lf4ed
---          local luamacro = env.luamacro and cfg.luamacro
---          for _,field in ipairs {"globals","read_globals"} do
---            options[field] = merge_field(field, luafar, lf4, luamacro)
---          end
---          env.luafar, env.lf4ed, env.luamacro = nil, nil, nil
---        end
---        for k,v in pairs(env) do options[k]=v; end
---        break
---      end
---    end
---  end
-  return options
-end
 
 local function GetEditorText()
   local einfo = editor.GetInfo()
@@ -78,11 +24,7 @@ end
 
 local function CheckEditor()
   local tmpfile = far.InMyTemp("to-check.sh")
-  local fp, msg = io.open(tmpfile, "w")
-  if fp == nil then
-    far.Message(msg, "Error", nil, "w")
-    return
-  end
+  local fp = assert(io.open(tmpfile, "w"))
   fp:write(GetEditorText())
   fp:close()
 
@@ -91,13 +33,18 @@ local function CheckEditor()
   -- create menu items
   local maxlen = 0
   local items = {}
+  local nErr, nWarn, nNote = 0, 0, 0
   local i = 0
-  for line in fp:lines() do
-    local ln,pos,msg = line:match(".-:(%d+):(%d+):%s*(.+)")
-    if ln then
+  for ln in fp:lines() do
+    local line,col,text = ln:match(".-:(%d+):(%d+):%s*(.+)")
+    if line then
       i = i + 1
-      items[i] = {text=msg; line=ln; column=pos}
+      items[i] = {text=text; line=line; column=col}
       maxlen = math.max(maxlen, ln:len())
+      if     text:find("^error:")   then nErr = nErr + 1
+      elseif text:find("^warning:") then nWarn = nWarn + 1
+      elseif text:find("^note:")    then nNote = nNote + 1
+      end
     end
   end
   fp:close()
@@ -107,7 +54,7 @@ local function CheckEditor()
   if #items > 0 then
     local props = {
       Title = "ShellCheck"; -- ..luacheck._VERSION;
-      --Bottom = ("%d warnings, %d errors, %d fatals"):format(report.warnings,report.errors,report.fatals);
+      Bottom = ("%d errors, %d warnings, %d notes"):format(nErr, nWarn, nNote);
       Flags = menuflags;
       MaxHeight = math.min(#items, MenuMaxHeight);
       SelectIndex = 1;
@@ -159,7 +106,7 @@ local function CheckEditor()
 end
 
 Macro {
-  description=Title;
+  description=Info.Title;
   area="Editor"; key="CtrlShiftF7"; filemask="*.sh";
   action=function() CheckEditor() end;
 }
