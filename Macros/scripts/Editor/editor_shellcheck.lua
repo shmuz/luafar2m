@@ -1,4 +1,4 @@
-local Info = { --luacheck: no unused
+local Info = {
   Author        = "Shmuel Zeigerman";
   Guid          = "E32B39F6-12F5-4F4E-B582-C7166812AA62";
   Started       = "2024-08-30";
@@ -10,9 +10,40 @@ local MenuMaxHeight = 8
 local SelectLen = 4
 -- /Options
 
+local SETTINGS_KEY  = "shmuz"
+local SETTINGS_NAME = "ShellCheck"
+local Conf = mf.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
+
 local F = far.Flags
 local MenuFlags = bit64.bor(F.FMENU_SHOWAMPERSAND,F.FMENU_WRAPMODE)
 local SC_Version
+
+--{{Text="default"},{Text="error"},{Text="warning"},{Text="info"},{Text="style"}};
+
+-- t["outside"] = true
+-- t["norc"] = true
+-- t["sourced"] = true
+-- t["scriptdir"] = "foo bar"
+-- t["severity"] = 4
+local function MakeCommandLine()
+  local t = { [1] = "shellcheck -f gcc"; }
+
+  if Conf.norc    then table.insert(t, "--norc") end
+  if Conf.sourced then table.insert(t, "-a") end
+  if Conf.outside then table.insert(t, "-x") end
+
+  local b = Conf.scriptdir
+  if type(b)=="string" and b:find("%S") then table.insert(t, '-P "' .. b .. '"') end
+
+  b = ({nil,"sh","bash","dash","ksh"})[Conf.dialect] -- nil is default
+  if b then table.insert(t, "-s "..b) end
+
+  b = ({nil,"error","warning","info","style"})[Conf.severity] -- nil is default
+  if b then table.insert(t, "-S "..b) end
+
+  far.Show(table.concat(t, " "))
+  return table.concat(t, " ")
+end
 
 local function Get_SC_Version()
   local fp = io.popen("shellcheck --version")
@@ -30,7 +61,7 @@ local function CheckEditor()
     end
   end
 
-  local fp = io.popen("shellcheck -f gcc " .. eInfo.FileName)
+  local fp = io.popen(MakeCommandLine()..' "'..eInfo.FileName..'"')
 
   -- create menu items
   local maxlen = 0
@@ -107,8 +138,57 @@ local function CheckEditor()
   end
 end
 
+local function Configure()
+  local sd = require "far2.simpledialog"
+  local Items = {
+    guid="50E0F580-85CC-4244-A352-62EF01893EE6";
+    -- help = "Contents";
+    width=60;
+    { tp="dbox"; text=Info.Title; },
+    { tp="chbox"; name="norc";    text="&Don't look for .shellcheckrc files";  },
+    { tp="chbox"; name="sourced"; text="&Include warnings from sourced files"; },
+    { tp="chbox"; name="outside"; text="&Allow 'source' outside of FILES";     },
+
+    { tp="sep"; },
+    { tp="text"; text="&Sourced files' path:"; },
+    { tp="edit"; name="scriptdir"; hist="shellcheck_scriptdir"; },
+
+    { tp="sep"; },
+    {tp="text"; text="Shell &dialect:"; },
+    {tp="combobox"; dropdown=1; name="dialect"; width=16; val=1;
+      list = {{Text="default"},{Text="sh"},{Text="bash"},{Text="dash"},{Text="ksh"}};
+      },
+
+    { tp="sep"; },
+    {tp="text"; text="&Minimum severity of errors to consider:"; },
+    {tp="combobox"; dropdown=1; name="severity"; width=16; val=1;
+      list = {{Text="default"},{Text="error"},{Text="warning"},{Text="info"},{Text="style"}};
+      },
+
+    { tp="sep"; },
+    { tp="butt"; centergroup=1; default=1; text="OK";    },
+    { tp="butt"; centergroup=1; cancel=1; text="Cancel"; },
+  }
+
+  local Dlg = sd.New(Items)
+  Dlg:LoadData(Conf)
+  local out = Dlg:Run()
+  if out then
+    Dlg:SaveData(out, Conf)
+    mf.msave(SETTINGS_KEY, SETTINGS_NAME, Conf)
+  end
+end
+
 Macro {
   description=Info.Title;
   area="Editor"; key="CtrlShiftF7"; filemask="*.sh";
   action=function() CheckEditor() end;
+}
+
+MenuItem {
+  description=Info.Title;
+  menu="Config"; area="Shell";
+  guid="DBA6B751-9233-4078-8500-F358F7F4B671";
+  text=Info.Title;
+  action=Configure;
 }
