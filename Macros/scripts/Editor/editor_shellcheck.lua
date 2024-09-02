@@ -18,13 +18,6 @@ local F = far.Flags
 local MenuFlags = bit64.bor(F.FMENU_SHOWAMPERSAND,F.FMENU_WRAPMODE)
 local SC_Version
 
---{{Text="default"},{Text="error"},{Text="warning"},{Text="info"},{Text="style"}};
-
--- t["outside"] = true
--- t["norc"] = true
--- t["sourced"] = true
--- t["scriptdir"] = "foo bar"
--- t["severity"] = 4
 local function MakeCommandLine()
   local t = { [1] = "shellcheck -f gcc"; }
 
@@ -41,7 +34,7 @@ local function MakeCommandLine()
   b = ({nil,"error","warning","info","style"})[Conf.severity] -- nil is default
   if b then table.insert(t, "-S "..b) end
 
-  far.Show(table.concat(t, " "))
+  -- far.Show(table.concat(t, " "))
   return table.concat(t, " ")
 end
 
