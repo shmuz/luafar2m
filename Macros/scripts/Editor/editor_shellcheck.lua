@@ -60,13 +60,12 @@ local function CheckEditor()
   local maxlen = 0
   local items = {}
   local nErr, nWarn, nNote = 0, 0, 0
-  local i = 0
   for ln in fp:lines() do
-    local line,col,text = ln:match(".-:(%d+):(%d+):%s*(.+)")
-    if line then
-      i = i + 1
-      items[i] = {text=text; line=line; column=col}
-      maxlen = math.max(maxlen, ln:len())
+    local fname,line,col,text = ln:match("(.-):(%d+):(%d+):%s*(.+)")
+    if fname then
+      local item = { fname=fname; text=text; line=tonumber(line); column=tonumber(col); }
+      table.insert(items, item)
+      maxlen = math.max(maxlen, text:len())
       if     text:find("^note:")    then nNote = nNote + 1
       elseif text:find("^warning:") then nWarn = nWarn + 1
       elseif text:find("^error:")   then nErr = nErr + 1
