@@ -101,8 +101,9 @@ local newentry = function(entry)
   end
 
   local guid = win.Uuid("8B0EE808-C5E3-44D8-9429-AAFD8FA04067")
-  local alias_name = entry and entry.alias or table.remove(split(panel.GetPanelDirectory(nil, 1).Name, "[^\\/]+"))
-  local target_name = entry and entry.path or panel.GetPanelDirectory(nil, 1).Name
+  local panelDir = panel.GetPanelDirectory(nil, 1).Name
+  local alias_name = entry and entry.alias or table.remove(split(panelDir, "[^\\/]+"))
+  local target_name = entry and entry.path or panelDir
   local items = {
   --[[ 1]] {F.DI_DOUBLEBOX, 3,1, 65,8, 0, 0,0, 0, "Named Folder"},
   --[[ 2]] {F.DI_TEXT,    5,2, 16,2, 0, 0,0, 0, "&Alias name:"},
