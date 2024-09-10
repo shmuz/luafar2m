@@ -659,7 +659,7 @@ local function MakeItemList (panelInfo, searchArea)
   local itemList, flags = {}, {recurse=true}
   local bRealNames = (band(panelInfo.Flags, F.PFLAGS_REALNAMES) ~= 0)
   local bPlugin = (band(panelInfo.Flags, F.PFLAGS_PLUGIN) ~= 0)
-  local sPanelDir = panel.GetPanelDirectory(nil,1) or ""
+  local sPanelDir = (panel.GetPanelDirectory(nil,1) or {}).Name or ""
 
   if searchArea == "FromCurrFolder" or searchArea == "OnlyCurrFolder" then
     if bRealNames then

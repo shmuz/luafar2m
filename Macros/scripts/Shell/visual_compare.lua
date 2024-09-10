@@ -23,9 +23,7 @@ local F = far.Flags
 local FarCmdsId = FAR3 and "3A2AF458-43E2-4715-AFEA-93D33D56C0C2" or far.GetPluginId()
 
 local function GetPanelDirectory(pan)
-  if FAR3 then return panel.GetPanelDirectory(nil,pan).Name
-  else return panel.GetPanelDirectory(nil,pan)
-  end
+  return panel.GetPanelDirectory(nil,pan)
 end
 
 local function isfile(item)      return not item.FileAttributes:find("d") end

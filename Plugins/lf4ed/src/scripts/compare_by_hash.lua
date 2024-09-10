@@ -75,7 +75,7 @@ local function CompareByHash()
   for _,pan in ipairs {act,pas} do
     local other = pan==act and pas or act
     local pan_code = (pan==act and 1 or 0)
-    local dir = panel.GetPanelDirectory(nil,pan_code)
+    local dir = panel.GetPanelDirectory(nil,pan_code).Name
     for _,v in ipairs(pan.List) do
       if not is_dir(v) and other.Size[v.FileSize] then
         pan.Map[v]=true

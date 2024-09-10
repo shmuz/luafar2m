@@ -586,7 +586,7 @@ local function LocateFile()
   local info = panel.GetPanelInfo(nil, 1)
   if not (info and info.PanelType==F.PTYPE_FILEPANEL) then return end
 
-  local items = { PanelInfo=info; PanelDirectory=panel.GetPanelDirectory(nil,1); }
+  local items = { PanelInfo=info; PanelDirectory=panel.GetPanelDirectory(nil,1).Name; }
   for k=1,info.ItemsNumber do
     local v = panel.GetPanelItem(nil,1,k)
     local prefix = v.FileAttributes:find("d") and "/" or ""

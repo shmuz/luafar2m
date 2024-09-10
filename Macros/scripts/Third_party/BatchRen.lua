@@ -25,7 +25,7 @@ local function GetPanelItems()
   if cnt > 0 then
     local files = {}
     local idx = {}
-    local dir = FarVer==3 and panel.GetPanelDirectory(nil, 1).Name or nil
+    local dir = (panel.GetPanelDirectory(nil, 1) or {}).Name
     for i = 1, cnt do
       files[i] = panel.GetSelectedPanelItem(nil, 1, i).FileName
       idx[i] = i

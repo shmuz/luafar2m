@@ -88,7 +88,7 @@ local function Work()
   for i,item in ipairs(filelist) do
     local fname = item.FileName
     if not fname:find("[\\/]") then
-      local dir = assert(panel.GetPanelDirectory(nil.1))
+      local dir = assert(panel.GetPanelDirectory(nil,1)).Name
       fname = (dir:find("[\\/]$") and dir or dir.."/") .. fname
     end
     item.FullName = fname

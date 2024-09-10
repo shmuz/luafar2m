@@ -543,7 +543,7 @@ local function DoAction (Params, aDir, aLog)
   end
 
   local panelInfo = panel.GetPanelInfo(nil, 1)
-  local dir = panel.GetPanelDirectory(nil, 1)
+  local dir = panel.GetPanelDirectory(nil, 1).Name
   if dir ~= "" then dir = dir:gsub("/?$", "/", 1) end
   local ItemsNumber = Params.rSearchInAll and panelInfo.ItemsNumber or panelInfo.SelectedItemsNumber
   local GetItem = Params.rSearchInAll and panel.GetPanelItem or panel.GetSelectedPanelItem
@@ -627,7 +627,7 @@ local function main()
   local tParams = UserDialog(HistData, list, AppName)
   if not tParams then return end
 
-  local dir = panel.GetPanelDirectory(nil, 1)
+  local dir = panel.GetPanelDirectory(nil, 1).Name
   if not (dir == "" or dir:find("[\\/]$")) then dir = dir.."/" end
 
   local log = NewLog(HistData.bLogFile)

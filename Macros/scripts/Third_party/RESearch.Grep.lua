@@ -123,8 +123,9 @@ Macro {
   area="Editor"; key=MacroKey; filemask="*.tmp";
   action=function()
     local t = {}
-    for j=1,editor.GetInfo().TotalLines do
-      local l = editor.GetString(nil,j).StringText
+    local info = editor.GetInfo()
+    for j=1,info.TotalLines do
+      local l = editor.GetString(info.EditorID, j).StringText
       local f = GetFileName(l)
       if f then
         if t[1] then

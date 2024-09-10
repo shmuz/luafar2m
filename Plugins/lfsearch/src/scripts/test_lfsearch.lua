@@ -911,7 +911,7 @@ end
 do -- former selftest2.lua
 
 local TestDir = join(TMPDIR, "LFSearch_Test")
-local CurDir = assert(panel.GetPanelDirectory(nil, 1))
+local CurDir = assert(panel.GetPanelDirectory(nil, 1)).Name
 if CurDir == "" then CurDir = far.GetCurrentDirectory() end
 --------------------------------------------------------------------------------
 

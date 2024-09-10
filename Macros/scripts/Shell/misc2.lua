@@ -1,7 +1,7 @@
 local SharedKey = "CtrlAltE"
 
 local function ShowDiff (aName)
-  local dir = panel.GetPanelDirectory(nil, 1)
+  local dir = panel.GetPanelDirectory(nil, 1).Name
   panel.SetPanelDirectory(nil, 1, win.JoinPath(os.getenv("HOME"), aName))
   local file = far.InMyTemp(aName) .. ".diff"
   local fp = io.popen("git diff >"..file)

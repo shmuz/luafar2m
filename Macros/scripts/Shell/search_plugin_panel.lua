@@ -297,7 +297,7 @@ local function Find (aData)
   if not handle then return; end
 
   -- Preparations
-  local curdir = panel.GetPanelDirectory(handle)
+  local curdir = panel.GetPanelDirectory(handle).Name
   if not curdir:find("^/") then curdir = "/"..curdir; end
   local startdir = (aData.iSearchArea==SA_FROM_ROOT) and "/" or curdir
   local tmpdir = far.InMyTemp("Far-" .. win.Uuid("L"):sub(1,8))

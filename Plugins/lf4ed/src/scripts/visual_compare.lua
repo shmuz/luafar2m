@@ -25,8 +25,8 @@ local function Run()
   local ACT,PSV = 1,0 -- active and passive panels
   local aInfo = panel.GetPanelInfo(nil,ACT)
   local pInfo = panel.GetPanelInfo(nil,PSV)
-  local dirActive  = panel.GetPanelDirectory(nil,ACT)
-  local dirPassive = panel.GetPanelDirectory(nil,PSV)
+  local dirActive  = panel.GetPanelDirectory(nil,ACT).Name
+  local dirPassive = panel.GetPanelDirectory(nil,PSV).Name
   local trgActive, trgPassive
 
   if aInfo.SelectedItemsNumber == 1 or aInfo.SelectedItemsNumber > 2 then

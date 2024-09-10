@@ -45,7 +45,7 @@ Macro {
   area="Shell"; key="CtrlS";
   action=function()
     local home = os.getenv("HOME")
-    local dir = panel.GetPanelDirectory(nil, 1)
+    local dir = panel.GetPanelDirectory(nil, 1).Name
     if dir == "" then -- TmpPanel ?
       dir = APanel.Current:match("(.*)/") or ""
     end

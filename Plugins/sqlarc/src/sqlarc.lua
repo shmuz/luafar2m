@@ -213,7 +213,7 @@ local function GetArchiveFileName()
     if single then
       filename = single
     else
-      local dir = panel.GetPanelDirectory(nil,1)
+      local dir = panel.GetPanelDirectory(nil,1).Name
       local name = extract_name(dir)
       filename = join(dir, name=="" and "root" or name)
     end

@@ -57,7 +57,7 @@ end
 
 
 function exporter:get_destination_dir()
-  local dir = panel.GetPanelDirectory(nil, 0)
+  local dir = panel.GetPanelDirectory(nil, 0).Name
   if dir == "" then -- passive panel's directory is unknown, choose host file directory
     dir = self._filename:match(".*/") or ""
   end
