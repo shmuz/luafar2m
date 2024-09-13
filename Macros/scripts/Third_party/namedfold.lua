@@ -1,12 +1,18 @@
 -- Author       : Sergey Oblomov (hoopoe)
 -- Published    : https://forum.farmanager.com/viewtopic.php?t=9445
 -- Modifications by : Shmuel Zeigerman
+-- Portable     : Far3 and far2m
 
 local dbkey = "named folders"
 local dbname = "entries"
 local dbshowdir = "showdir"
 
 local F = far.Flags
+
+local ExpandEnv = win.ExpandEnv or -- luacheck: ignore
+  function(s) -- this is for Far3
+    return (s:gsub("%%(.-)%%", win.GetEnv))
+  end
 
 local function load_nf()
   local v = mf.mload(dbkey, dbname)
@@ -149,7 +155,7 @@ local function action(text)
   local res, entry = menu(text)
   while res do
     if res == "setdir" then
-      if entry.path then panel.SetPanelDirectory(nil, 1, win.ExpandEnv(entry.path)); end
+      if entry.path then panel.SetPanelDirectory(nil, 1, ExpandEnv(entry.path)); end
       break
     elseif res == "insert"  then newentry()
     elseif res == "delete"  then removeentry(entry)
