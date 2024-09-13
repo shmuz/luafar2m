@@ -8,51 +8,47 @@ local dbshowdir = "showdir"
 
 local F = far.Flags
 
-local load_nf = function()
+local function load_nf()
   local v = mf.mload(dbkey, dbname)
   return type(v) == "table" and v or {}
 end
 
-local save_nf = function(ent) mf.msave(dbkey, dbname, ent); end
+local function save_nf(ent)
+  mf.msave(dbkey, dbname, ent)
+end
 
 local showdir = mf.mload(dbkey, dbshowdir)
 showdir = showdir == nil or showdir -- true by default
 
-local menu = function(pattern)
-  local best = function(pattern)
-    local scan = function(pattern)
-      local ent = {}
-      local space = 0
+local function scan(pattern, data)
+  local ent = {}
+  local space = 0
 
-      for _, v in ipairs(load_nf()) do -- filter items by pattern & calculate max width alias
-        if not pattern or v.alias:lower():match(pattern:lower()) then
-          table.insert(ent, v)
-          space = math.max(space, v.alias:len())
-          -- if pattern and pattern:lower() == v.alias:lower() then
-          --   ent = { v }
-          --   break
-          -- end -- exact matching - return it
-        end
-      end
-      return ent, space
+  for _, v in ipairs(data) do -- filter items by pattern & calculate max width alias
+    if not pattern or v.alias:lower():match(pattern:lower()) then
+      table.insert(ent, v)
+      space = math.max(space, v.alias:len())
     end
-
-    if not pattern then return scan(); end
-
-    local ent, space = scan("^" .. pattern)
-    if space > 0 then return ent, space; end
-    ent, space = scan("%s+" .. pattern)
-    if space > 0 then return ent, space; end
-    return scan(pattern)
   end
+  return ent, space
+end
 
+local function best(pattern)
+  local data = load_nf()
+  if pattern then
+    local ent, space = scan("^" .. pattern, data)
+    if #ent > 0 then return ent, space; end
+  end
+  return scan(pattern, data)
+end
+
+local function menu(pattern)
   local ent, space = best(pattern)
   if pattern then
     if #ent == 1 then return "setdir", ent[1]; end
     if #ent == 0 then return nil; end
   end
 
-  -- Prepare to call far.Menu
   local entries = {}
   for _, v in ipairs(ent) do
     local item = {
@@ -77,7 +73,7 @@ local menu = function(pattern)
   local item, position = far.Menu(
     { Title = "Named Folders Lua Edition";
       Bottom = bottom,
-      Flags = bit.bor(F.FMENU_AUTOHIGHLIGHT, F.FMENU_WRAPMODE)
+      Flags = bit64.bor(F.FMENU_AUTOHIGHLIGHT, F.FMENU_WRAPMODE)
     },
     entries, brakes)
 
@@ -96,13 +92,13 @@ local menu = function(pattern)
   end
 end
 
-local newentry = function(entry)
-  local split = function(str, pattern)
-    local v = {}
-    for i in str:gmatch(pattern) do table.insert(v, i); end
-    return v
-  end
+local function split(str, pattern)
+  local v = {}
+  for i in str:gmatch(pattern) do table.insert(v, i); end
+  return v
+end
 
+local function newentry(entry)
   local guid = win.Uuid("8B0EE808-C5E3-44D8-9429-AAFD8FA04067")
   local panelDir = panel.GetPanelDirectory(nil, 1).Name
   local alias_name = entry and entry.alias or table.remove(split(panelDir, "[^\\/]+"))
@@ -136,7 +132,7 @@ local newentry = function(entry)
   end
 end
 
-local removeentry = function(entry)
+local function removeentry(entry)
   if entry and entry.alias and entry.path then
     local res = far.Message("Remove named folder " .. entry.alias .. " (" .. entry.path .. ")?",
           "Remove named folder", ";YesNo")
@@ -153,7 +149,7 @@ local removeentry = function(entry)
   end
 end
 
-local action = function(text)
+local function action(text)
   if not text or text == "" or text:match("%s") then text = nil; end
   local res, entry = menu(text)
   while res do
