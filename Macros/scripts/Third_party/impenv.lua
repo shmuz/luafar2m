@@ -1,4 +1,4 @@
-﻿--[[
+--[[
 .Language=Russian,Russian (Русский)
 .PluginContents=Import environment
 .Options CtrlStartPosChar=§¦

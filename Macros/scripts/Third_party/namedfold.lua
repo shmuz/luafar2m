@@ -58,7 +58,7 @@ local menu = function(pattern)
 
   for _, v in ipairs(ent) do table.insert(entries, entry(v, space)); end
 
-  if pattern and #entries == 1 then return 1, entries[1].entry; end
+  if pattern and #entries == 1 then return "setdir", entries[1].entry; end
   if pattern and #entries == 0 then return nil; end
 
   table.sort(entries, function(a, b) return a.entry.alias:lower() < b.entry.alias:lower(); end)
