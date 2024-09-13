@@ -19,13 +19,6 @@ local showdir = mf.mload(dbkey, dbshowdir)
 showdir = showdir == nil or showdir -- true by default
 
 local menu = function(pattern)
-  local entry = function(e, space)
-    return {
-      text = e.alias .. (" "):rep(space + 1 - e.alias:len()) .. (showdir and e.path or "");
-      entry = e;
-    }
-  end
-
   local best = function(pattern)
     local scan = function(pattern)
       local ent = {}
@@ -35,9 +28,10 @@ local menu = function(pattern)
         if not pattern or v.alias:lower():match(pattern:lower()) then
           table.insert(ent, v)
           space = math.max(space, v.alias:len())
-          if pattern and pattern:lower() == v.alias:lower() then
-            return 1, v
-          end -- exact matching - return it
+          -- if pattern and pattern:lower() == v.alias:lower() then
+          --   ent = { v }
+          --   break
+          -- end -- exact matching - return it
         end
       end
       return ent, space
@@ -52,23 +46,32 @@ local menu = function(pattern)
     return scan(pattern)
   end
 
-  local entries = {}
-
   local ent, space = best(pattern)
+  if pattern then
+    if #ent == 1 then return "setdir", ent[1]; end
+    if #ent == 0 then return nil; end
+  end
 
-  for _, v in ipairs(ent) do table.insert(entries, entry(v, space)); end
-
-  if pattern and #entries == 1 then return "setdir", entries[1].entry; end
-  if pattern and #entries == 0 then return nil; end
-
+  -- Prepare to call far.Menu
+  local entries = {}
+  for _, v in ipairs(ent) do
+    local item = {
+      text = v.alias .. (" "):rep(space + 1 - v.alias:len()) .. (showdir and v.path or "");
+      entry = v;
+    }
+    table.insert(entries, item)
+  end
   table.sort(entries, function(a, b) return a.entry.alias:lower() < b.entry.alias:lower(); end)
 
-  local brakes = {{BreakKey = "INSERT"}, {BreakKey = "DELETE"}, {BreakKey = "F4"}, {BreakKey = "C+l"}}
-  local bottom = "Ins - Insert, Del - Delete, F4 - Edit, Ctrl+L - Show/Hide path"
-
-  if pattern then
-    brakes = nil
-    bottom = nil
+  local brakes, bottom
+  if not pattern then
+    brakes = {
+      {BreakKey = "INSERT"},
+      {BreakKey = "DELETE"},
+      {BreakKey = "F4"},
+      {BreakKey = "C+l"},
+    }
+    bottom = "Ins - Insert, Del - Delete, F4 - Edit, Ctrl+L - Show/Hide path"
   end
 
   local item, position = far.Menu(
