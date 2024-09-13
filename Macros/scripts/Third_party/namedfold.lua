@@ -33,20 +33,15 @@ local function scan(pattern, data)
   return ent, space
 end
 
-local function best(pattern)
-  local data = load_nf()
-  if pattern then
-    local ent, space = scan("^" .. pattern, data)
-    if #ent > 0 then return ent, space; end
-  end
-  return scan(pattern, data)
-end
-
 local function menu(pattern)
-  local ent, space = best(pattern)
+  local data = load_nf()
+  local ent, space
   if pattern then
+    ent, space = scan("^" .. pattern, data)
     if #ent == 1 then return "setdir", ent[1]; end
     if #ent == 0 then return nil; end
+  else
+    ent, space = scan(nil, data)
   end
 
   local entries = {}
@@ -121,7 +116,7 @@ local function newentry(entry)
     if alias ~= "" and path ~= "" then
       local entries = load_nf()
       for i, v in ipairs(entries) do
-        if v.alias == alias then
+        if v.alias:lower() == alias:lower() then
           table.remove(entries, i)
           break
         end
@@ -134,8 +129,8 @@ end
 
 local function removeentry(entry)
   if entry and entry.alias and entry.path then
-    local res = far.Message("Remove named folder " .. entry.alias .. " (" .. entry.path .. ")?",
-          "Remove named folder", ";YesNo")
+    local msg = ("Remove named folder %s (%s)?"):format(entry.alias, entry.path)
+    local res = far.Message(msg, "Remove named folder", ";YesNo")
     if res == 1 then
       local entries = load_nf()
       for i, v in ipairs(entries) do
