@@ -7,10 +7,11 @@ local dbkey = "named folders"
 local dbname = "entries"
 local dbshowdir = "showdir"
 
+local Far3 = package.config:sub(1,1) == "\\"
 local F = far.Flags
 
-local ExpandEnv = win.ExpandEnv or -- luacheck: ignore
-  function(s) -- this is for Far3
+local ExpandEnv = not Far3 and win.ExpandEnv or -- luacheck: ignore
+  function(s)
     return (s:gsub("%%(.-)%%", win.GetEnv))
   end
 
@@ -93,26 +94,20 @@ local function menu(pattern)
   end
 end
 
-local function split(str, pattern)
-  local v = {}
-  for i in str:gmatch(pattern) do table.insert(v, i); end
-  return v
-end
-
 local function newentry(entry)
   local guid = win.Uuid("8B0EE808-C5E3-44D8-9429-AAFD8FA04067")
   local panelDir = panel.GetPanelDirectory(nil, 1).Name
-  local alias_name = entry and entry.alias or table.remove(split(panelDir, "[^\\/]+"))
+  local alias_name = entry and entry.alias or panelDir:match(Far3 and "[^\\/]+$" or "[^/]+$")
   local target_name = entry and entry.path or panelDir
   local items = {
   --[[ 1]] {F.DI_DOUBLEBOX, 3,1, 65,8, 0, 0,0, 0, "Named Folder"},
-  --[[ 2]] {F.DI_TEXT,    5,2, 16,2, 0, 0,0, 0, "&Alias name:"},
-  --[[ 3]] {F.DI_EDIT,    5,3, 63,3, 0, 0,0, 0, alias_name},
-  --[[ 4]] {F.DI_TEXT,    5,4, 11,4, 0, 0,0, 0, "&Target:"},
-  --[[ 5]] {F.DI_EDIT,    5,5, 63,5, 0, 0,0, 0, target_name},
-  --[[ 6]] {F.DI_TEXT,   -1,6,  0,0, 0, 0,0, F.DIF_SEPARATOR,""},
-  --[[ 7]] {F.DI_BUTTON,  0,7,  0,0, 0, 0,0, F.DIF_DEFAULTBUTTON+F.DIF_CENTERGROUP,"Ok"},
-  --[[ 8]] {F.DI_BUTTON,  0,7,  0,0, 0, 0,0, F.DIF_CENTERGROUP,"Cancel"}
+  --[[ 2]] {F.DI_TEXT,      5,2, 16,2, 0, 0,0, 0, "&Alias name:"},
+  --[[ 3]] {F.DI_EDIT,      5,3, 63,3, 0, 0,0, 0, alias_name},
+  --[[ 4]] {F.DI_TEXT,      5,4, 11,4, 0, 0,0, 0, "&Target:"},
+  --[[ 5]] {F.DI_EDIT,      5,5, 63,5, 0, 0,0, 0, target_name},
+  --[[ 6]] {F.DI_TEXT,   -  1,6,  0,0, 0, 0,0, F.DIF_SEPARATOR,""},
+  --[[ 7]] {F.DI_BUTTON,    0,7,  0,0, 0, 0,0, F.DIF_DEFAULTBUTTON+F.DIF_CENTERGROUP,"Ok"},
+  --[[ 8]] {F.DI_BUTTON,    0,7,  0,0, 0, 0,0, F.DIF_CENTERGROUP,"Cancel"}
   }
   local posAlias, posPath, posOK = 3, 5, 7
 
