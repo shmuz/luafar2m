@@ -97,7 +97,7 @@ end
 local function newentry(entry)
   local guid = win.Uuid("8B0EE808-C5E3-44D8-9429-AAFD8FA04067")
   local panelDir = panel.GetPanelDirectory(nil, 1).Name
-  local alias_name = entry and entry.alias or panelDir:match(Far3 and "[^\\/]+$" or "[^/]+$")
+  local alias_name = entry and entry.alias or panelDir:match(Far3 and "([^\\]+)\\?$" or "([^/]+)/?$")
   local target_name = entry and entry.path or panelDir
   local items = {
   --[[ 1]] {F.DI_DOUBLEBOX, 3,1, 65,8, 0, 0,0, 0, "Named Folder"},
