@@ -41,18 +41,31 @@ Macro {
 }
 
 Macro {
-  description="Sync far2m directory with far2l";
+  description="Sync far2m dir with far2l or vice versa";
   area="Shell"; key="CtrlS";
   action=function()
     local home = os.getenv("HOME")
     local dir = panel.GetPanelDirectory(nil, 1).Name
     if dir == "" then -- TmpPanel ?
-      dir = APanel.Current:match("(.*)/") or ""
+      dir = APanel.Current:match("(.+)/")
+      if dir == nil then return end
     end
-    local dir2 = dir:gsub("^("..home.."/far2)l", "%1m")
-    if dir2 == dir then return end
-    dir2 = dir2:gsub("^("..home.."/far2m/far)2l", "%1")
-    panel.SetPanelDirectory(nil, 0, dir2)
+    local dir2 = dir
+    if dir:find("far2l") then
+      if dir2 == dir then dir2 = dir:gsub(home.."/far2l/far2l/", home.."/far2m/far/") end
+      if dir2 == dir then dir2 = dir:gsub(home.."/far2l/far2l$", home.."/far2m/far") end
+      if dir2 == dir then dir2 = dir:gsub(home.."/far2l/",       home.."/far2m/") end
+      if dir2 == dir then dir2 = dir:gsub(home.."/far2l$",       home.."/far2m") end
+    elseif dir:find("far2m") then
+      if dir2 == dir then dir2 = dir:gsub(home.."/far2m/far/",   home.."/far2l/far2l/") end
+      if dir2 == dir then dir2 = dir:gsub(home.."/far2m/far$",   home.."/far2l/far2l") end
+      if dir2 == dir then dir2 = dir:gsub(home.."/far2m/",       home.."/far2l/") end
+      if dir2 == dir then dir2 = dir:gsub(home.."/far2m$",       home.."/far2l") end
+    end
+    if dir2 ~= dir and win.GetFileAttr(dir2) then
+      panel.SetPanelDirectory(nil, 0, dir2)
+      panel.RedrawPanel(nil, 0)
+    end
   end;
 }
 
