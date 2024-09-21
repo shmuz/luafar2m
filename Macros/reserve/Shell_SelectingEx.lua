@@ -21,14 +21,14 @@ return{
   KeyDay    = "CtrlAltD";     --PriorDay    = 50; --SortDay    = 50;
 
   FileName = "Files.bbs"; -- Имя Файла с именами Файлов.
-  EOL      = "\r\n"; -- Перевод строк при вставке списка в редактор.
+  EOL      = "\n"; -- Перевод строк при вставке списка в редактор.
   SEP      = "%,%;\r\""; -- Что считать разделителями имён файлов в буфере обмена.
 }
 -- Конец файла Profile\SimSU\Shell_SelectingEx.cfg
 end
 
 -- Локализация
-local function lang() return win.GetEnv("farlang") end
+local function lang() return win.GetEnv("FARLANG") end
 -- Встроенные языки / Built-in laguages
 local function Messages()
 if lang()=="Russian" then
@@ -121,8 +121,8 @@ return{
 -- End of file Profile\SimSU\Shell_SelectingExEnglish.lng
 end end
 
-local S=(loadfile(win.GetEnv("FARLOCALPROFILE").."\\SimSU\\Shell_SelectingEx.cfg") or loadfile(win.GetEnv("FARPROFILE").."\\SimSU\\Shell_SelectingEx.cfg") or Settings)()
-local L=(loadfile(win.GetEnv("FARPROFILE").."\\SimSU\\Shell_SelectingEx"..lang()..".lng") or Messages)
+local S=(loadfile(far.InMyConfig("SimSU/Shell_SelectingEx.cfg")) or Settings)()
+local L=(loadfile(far.InMyConfig("SimSU/Shell_SelectingEx")..lang()..".lng") or Messages)
 local M=L()
 -------------------------------------------------------------------------------
 local F=far.Flags
@@ -198,16 +198,16 @@ end
 
 local function DayMark()
   --local mSecInDay=24*60*60*1000
-  local TicksPerDay = 24*60*60*bit64.new(far.FileTimeResolution()==1 and 1000 or 10000000)
+  local TicksPerDay = 24*60*60*1000
   local PanelItem=panel.GetCurrentPanelItem(nil,1)
   local Sel=(band(PanelItem.Flags,F.PPIF_SELECTED)==0)
-  local DateMin= PanelItem.FileName == ".." and bit64.new(win.GetSystemTimeAsFileTime()) or bit64.new(PanelItem.LastWriteTime)
-  local Offset=bit64.new(win.FileTimeToLocalFileTime(DateMin))-DateMin
-  DateMin=bit64.new(math.floor((DateMin+Offset)/TicksPerDay))*TicksPerDay-Offset
+  local DateMin= PanelItem.FileName == ".." and win.GetSystemTimeAsFileTime() or PanelItem.LastWriteTime
+  local Offset=win.FileTimeToLocalFileTime(DateMin)-DateMin
+  DateMin=math.floor((DateMin+Offset)/TicksPerDay)*TicksPerDay-Offset
   local DateMax=DateMin+TicksPerDay
   for i=1,panel.GetPanelInfo(nil,1).ItemsNumber do
     PanelItem=panel.GetPanelItem(nil,1,i)
-    if PanelItem.LastWriteTime*bit64.new(1)>=DateMin and PanelItem.LastWriteTime*bit64.new(1)<DateMax then
+    if PanelItem.LastWriteTime>=DateMin and PanelItem.LastWriteTime<DateMax then
       panel.SetSelection(nil,1,i,Sel)
     end
   end
@@ -313,8 +313,8 @@ if _filename and (not sh or _cmdline) then --luacheck: ignore 113/_cmdline 113/s
 end
 -------------------------------------------------------------------------------
 --Для использования в виде модуля
-if not Macro then return Shell_SelectingEx end
-SimSU=_G.SimSU or {}; SimSU.Shell_SelectingEx=Shell_SelectingEx; _G.SimSU=SimSU
+---- if not Macro then return Shell_SelectingEx end
+---- SimSU=_G.SimSU or {}; SimSU.Shell_SelectingEx=Shell_SelectingEx; _G.SimSU=SimSU
 -------------------------------------------------------------------------------
 
 Macro {id="7ff37302-a606-4a17-972d-b51c006c4da7";
