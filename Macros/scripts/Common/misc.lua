@@ -52,9 +52,9 @@ Macro {
     local rus = win.GetEnv("farlang")=="Russian"
     far.Message(rus and " Нажмите клавишу... " or " Press key... ","","")
     local VK=mf.waitkey(0,1)
-    VK=prompt(rus and "Название клавиши" or "Key name",
+    VK = far.InputBox(nil, rus and "Название клавиши" or "Key name",
       (rus and "Код клавиши: %d (0x%X)" or "Key code: %d (0x%X)"):
-      format(VK,VK),0x01+0x10,mf.key(VK))
+      format(VK,VK), nil, mf.key(VK))
     if VK then print(VK) end
   end;
 }
