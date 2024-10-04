@@ -132,6 +132,39 @@ S.SEP      = S.SEP     ==nil and Settings().SEP      or S.SEP
 
 local LastItem=1
 
+local IsItemSelected
+
+if jit then
+  local ffi = require "ffi"
+  local C = ffi.C
+  local PSInfo = ffi.cast("struct PluginStartupInfo*", far.CPluginStartupInfo())
+  local PANEL_ACTIVE = ffi.cast("void*", F.PANEL_ACTIVE)
+  local RawBuf, Item, Ptr
+  local MaxSize = 0
+
+  IsItemSelected = function(Index)
+    Index = Index - 1 -- FFI: 0-based index
+    local Size = PSInfo.Control(PANEL_ACTIVE, C.FCTL_GETPANELITEM, Index, 0)
+    if Size > 0 then
+      if Size > MaxSize then
+        MaxSize = Size
+        RawBuf = ffi.new("char[?]", Size)
+        Item = ffi.cast("struct PluginPanelItem*", RawBuf)
+        Ptr = ffi.cast("LONG_PTR", Item)
+      end
+      if PSInfo.Control(PANEL_ACTIVE, C.FCTL_GETPANELITEM, Index, Ptr) ~= 0 then
+        return bit.band(Item.Flags, C.PPIF_SELECTED) ~= 0 -- use bit to avoid tonumber(Flags)
+      end
+    end
+  end
+
+else
+  IsItemSelected = function(Index)
+    local item = panel.GetPanelItem(nil,1,Index)
+    return item and band(item.Flags,F.PPIF_SELECTED) ~= 0
+  end
+end
+
 local function ToEditor()
   local Files={}
   for i=1, panel.GetPanelInfo(nil,1).SelectedItemsNumber do
@@ -223,7 +256,7 @@ local function GoPrevious()
   local PanelInfo=panel.GetPanelInfo(nil,1)
   local CI=PanelInfo.CurrentItem
   for i=CI-1,1,-1 do
-    if panel.GetPanelItem(nil,1,i).Flags==F.PPIF_SELECTED then CI=i; Panel.SetPosIdx(0,CI,0); break end
+    if IsItemSelected(i) then CI=i; Panel.SetPosIdx(0,CI,0); break end
   end
   if CI==PanelInfo.CurrentItem then Panel.SetPosIdx(0,APanel.SelCount,1) end
 end
@@ -233,7 +266,7 @@ local function GoNext()
   local PanelInfo=panel.GetPanelInfo(nil,1)
   local CI=PanelInfo.CurrentItem
   for i=CI+1,PanelInfo.ItemsNumber do
-    if band(panel.GetPanelItem(nil,1,i).Flags,F.PPIF_SELECTED)~=0 then CI=i; Panel.SetPosIdx(0,CI,0); break end
+    if IsItemSelected(i) then CI=i; Panel.SetPosIdx(0,CI,0); break end
   end
   if CI==PanelInfo.CurrentItem then Panel.SetPosIdx(0,1,1) end
 end
