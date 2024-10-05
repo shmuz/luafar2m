@@ -223,13 +223,13 @@ end
 local function TheSame()
   local Name = {}
   for i=1,panel.GetPanelInfo(nil,1).SelectedItemsNumber do
-    local barename = panel.GetSelectedPanelItem(nil,1,i).FileName:match("[^/]+$"):lower()
+    local barename = panel.GetSelectedPanelItem(nil,1,i).FileName:match("[^/]+$")
     Name[barename] = true
   end
   Panel.SetPos(1, APanel.Current)
   panel.BeginSelection(nil,0)
   for i=1,panel.GetPanelInfo(nil,0).ItemsNumber do
-    local barename = panel.GetPanelItem(nil,0,i).FileName:match("[^/]+$"):lower()
+    local barename = panel.GetPanelItem(nil,0,i).FileName:match("[^/]+$")
     if Name[barename] then
       panel.SetSelection(nil,0,i,true)
     end
