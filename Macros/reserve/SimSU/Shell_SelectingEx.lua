@@ -223,10 +223,18 @@ end
 local function TheSame()
   local Name = {}
   for i=1,panel.GetPanelInfo(nil,1).SelectedItemsNumber do
-    Name[i]=panel.GetSelectedPanelItem(nil,1,i).FileName
+    local barename = panel.GetSelectedPanelItem(nil,1,i).FileName:match("[^/]+$"):lower()
+    Name[barename] = true
   end
   Panel.SetPos(1, APanel.Current)
-  return Panel.Select(1,1,2,table.concat(Name,"\n"))
+  panel.BeginSelection(nil,0)
+  for i=1,panel.GetPanelInfo(nil,0).ItemsNumber do
+    local barename = panel.GetPanelItem(nil,0,i).FileName:match("[^/]+$"):lower()
+    if Name[barename] then
+      panel.SetSelection(nil,0,i,true)
+    end
+  end
+  panel.EndSelection(nil,0)
 end
 
 local function DayMark()
