@@ -207,17 +207,21 @@ local function ClipboardMark(Mark)
 end
 
 local function Synchronize()
+  Panel.Select(0,0)
+  Panel.Select(1,0)
   local AFiles = {}
   for i=1,panel.GetPanelInfo(nil,1).ItemsNumber do
-    AFiles[i]=panel.GetPanelItem(nil,1,i).FileName
+    local bare = panel.GetPanelItem(nil,1,i).FileName:match("[^/]*$")
+    AFiles[bare] = i
   end
-  local PFiles = {}
   for i=1,panel.GetPanelInfo(nil,0).ItemsNumber do
-    PFiles[i]=panel.GetPanelItem(nil,0,i).FileName
+    local bare = panel.GetPanelItem(nil,0,i).FileName:match("[^/]*$")
+    if AFiles[bare] then
+      panel.SetSelection(nil,1,AFiles[bare],true)
+      panel.SetSelection(nil,0,i,true)
+    end
   end
-  Panel.Select(0,0); Panel.Select(0,1,2,table.concat(PFiles,"\n"))
-  Panel.Select(1,0); Panel.Select(1,1,2,table.concat(AFiles,"\n"))
-  return AFiles, PFiles
+  panel.RedrawPanel(nil,1); panel.RedrawPanel(nil,0)
 end
 
 local function TheSame()
