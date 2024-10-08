@@ -1,6 +1,8 @@
 -------------------------------------------------------------------------------
 -- Расширенная работа с пометкой файлов. © SimSU
 -- + правки © BAX
+-- + правки © Shmuel Zeigerman
+-- luacheck: max line length 128
 -------------------------------------------------------------------------------
 
 ---- Настройки
@@ -207,18 +209,29 @@ local function ClipboardMark(Mark)
 end
 
 local function Synchronize()
+  local pMin, pMax = 1, 0 -- active, passive
+  local nMin = panel.GetPanelInfo(nil,pMin).ItemsNumber
+  local nMax = panel.GetPanelInfo(nil,pMax).ItemsNumber
+  if nMin > nMax then
+    nMin, nMax = nMax, nMin
+    pMin, pMax = pMax, pMin
+  end
+
+  -- Files from the panel containing less items will be placed
+  -- into 'Files' table to save memory and increase speed.
+  local Files = {}
+  for i=1,nMin do
+    local bare = panel.GetPanelItem(nil,pMin,i).FileName:match("[^/]*$")
+    Files[bare] = i
+  end
+
   Panel.Select(0,0)
   Panel.Select(1,0)
-  local AFiles = {}
-  for i=1,panel.GetPanelInfo(nil,1).ItemsNumber do
-    local bare = panel.GetPanelItem(nil,1,i).FileName:match("[^/]*$")
-    AFiles[bare] = i
-  end
-  for i=1,panel.GetPanelInfo(nil,0).ItemsNumber do
-    local bare = panel.GetPanelItem(nil,0,i).FileName:match("[^/]*$")
-    if AFiles[bare] then
-      panel.SetSelection(nil,1,AFiles[bare],true)
-      panel.SetSelection(nil,0,i,true)
+  for i=1,nMax do
+    local bare = panel.GetPanelItem(nil,pMax,i).FileName:match("[^/]*$")
+    if Files[bare] then
+      panel.SetSelection(nil,pMin,Files[bare],true)
+      panel.SetSelection(nil,pMax,i,true)
     end
   end
   panel.RedrawPanel(nil,1); panel.RedrawPanel(nil,0)
@@ -264,7 +277,6 @@ local function GoFirst()
 end
 
 local function GoPrevious()
---  return Panel.SetPosIdx(0,0,1)==1 and Panel.SetPosIdx(0,APanel.SelCount,1) or Panel.SetPosIdx(0,Panel.SetPosIdx(0,0,1)-1,1)
   local PanelInfo=panel.GetPanelInfo(nil,1)
   local CI=PanelInfo.CurrentItem
   for i=CI-1,1,-1 do
@@ -274,7 +286,6 @@ local function GoPrevious()
 end
 
 local function GoNext()
---  return Panel.SetPosIdx(0,0,1)==APanel.SelCount and Panel.SetPosIdx(0,1,1) or Panel.SetPosIdx(0,Panel.SetPosIdx(0,0,1)+1,1)
   local PanelInfo=panel.GetPanelInfo(nil,1)
   local CI=PanelInfo.CurrentItem
   for i=CI+1,PanelInfo.ItemsNumber do
