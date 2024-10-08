@@ -6,6 +6,14 @@
 if not jit then return -- LuaJIT required
 
 F=far.Flags
+
+-- Colors
+Col_Title     = actl.GetColor F.COL_VIEWERSTATUS
+Col_Dialog    = actl.GetColor F.COL_VIEWERSTATUS
+Col_Unchanged = actl.GetColor F.COL_VIEWERTEXT
+Col_Changed   = actl.GetColor F.COL_VIEWERARROWS
+Col_Selected  = actl.GetColor F.COL_VIEWERSELECTEDTEXT
+
 ffi=require'ffi'
 C=ffi.C
 dialogs={}
@@ -162,16 +170,15 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
       C.WINPORT_CloseHandle data.file
       dialogs[hDlg\rawhandle!]=nil
     elseif Msg==F.DN_CTLCOLORDIALOG
-      return far.AdvControl F.ACTL_GETCOLOR,F.COL_VIEWERSTATUS
+      return Col_Dialog
     elseif Msg==F.DN_CTLCOLORDLGITEM
-      DoColor=(index)->
-        color=far.AdvControl F.ACTL_GETCOLOR,index
+      DoColor=(color)->
         {color,color,color,color}
       return switch Param1
         when _title
-          DoColor F.COL_VIEWERSTATUS
+          DoColor Col_Title
         when _edit
-          DoColor data.editchanged and F.COL_VIEWERARROWS or F.COL_VIEWERTEXT
+          DoColor data.editchanged and Col_Changed or Col_Unchanged
     elseif Msg==F.DN_KILLFOCUS
       if Param1==_edit and data.edit then return _edit
     elseif Msg==F.DN_RESIZECONSOLE
@@ -347,9 +354,9 @@ DoHex=->
     if 0~=C.WINPORT_GetFileSizeEx file,filesize
       ww,hh=ConsoleSize!
       buffer=far.CreateUserControl ww,hh-1
-      textel=Char:0x20,Attributes:far.AdvControl F.ACTL_GETCOLOR,F.COL_VIEWERTEXT
-      textel_sel=Char:0x20,Attributes:far.AdvControl F.ACTL_GETCOLOR,F.COL_VIEWERSELECTEDTEXT
-      textel_changed=Char:0x20,Attributes:far.AdvControl F.ACTL_GETCOLOR,F.COL_VIEWERARROWS
+      textel=Char:0x20,Attributes:Col_Unchanged
+      textel_sel=Char:0x20,Attributes:Col_Selected
+      textel_changed=Char:0x20,Attributes:Col_Changed
       info=viewer.GetInfo!
       offset=info.FilePos
       offset-=offset%16

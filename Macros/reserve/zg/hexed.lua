@@ -2,6 +2,11 @@ if not jit then
   return 
 end
 local F = far.Flags
+local Col_Title = actl.GetColor(F.COL_VIEWERSTATUS)
+local Col_Dialog = actl.GetColor(F.COL_VIEWERSTATUS)
+local Col_Unchanged = actl.GetColor(F.COL_VIEWERTEXT)
+local Col_Changed = actl.GetColor(F.COL_VIEWERARROWS)
+local Col_Selected = actl.GetColor(F.COL_VIEWERSELECTEDTEXT)
 local ffi = require('ffi')
 local C = ffi.C
 local dialogs = { }
@@ -222,11 +227,10 @@ DlgProc = function(hDlg, Msg, Param1, Param2)
       C.WINPORT_CloseHandle(data.file)
       dialogs[hDlg:rawhandle()] = nil
     elseif Msg == F.DN_CTLCOLORDIALOG then
-      return far.AdvControl(F.ACTL_GETCOLOR, F.COL_VIEWERSTATUS)
+      return Col_Dialog
     elseif Msg == F.DN_CTLCOLORDLGITEM then
       local DoColor
-      DoColor = function(index)
-        local color = far.AdvControl(F.ACTL_GETCOLOR, index)
+      DoColor = function(color)
         return {
           color,
           color,
@@ -236,9 +240,9 @@ DlgProc = function(hDlg, Msg, Param1, Param2)
       end
       local _exp_0 = Param1
       if _title == _exp_0 then
-        return DoColor(F.COL_VIEWERSTATUS)
+        return DoColor(Col_Title)
       elseif _edit == _exp_0 then
-        return DoColor(data.editchanged and F.COL_VIEWERARROWS or F.COL_VIEWERTEXT)
+        return DoColor(data.editchanged and Col_Changed or Col_Unchanged)
       end
     elseif Msg == F.DN_KILLFOCUS then
       if Param1 == _edit and data.edit then
@@ -503,15 +507,15 @@ DoHex = function()
       local buffer = far.CreateUserControl(ww, hh - 1)
       local textel = {
         Char = 0x20,
-        Attributes = far.AdvControl(F.ACTL_GETCOLOR, F.COL_VIEWERTEXT)
+        Attributes = Col_Unchanged
       }
       local textel_sel = {
         Char = 0x20,
-        Attributes = far.AdvControl(F.ACTL_GETCOLOR, F.COL_VIEWERSELECTEDTEXT)
+        Attributes = Col_Selected
       }
       local textel_changed = {
         Char = 0x20,
-        Attributes = far.AdvControl(F.ACTL_GETCOLOR, F.COL_VIEWERARROWS)
+        Attributes = Col_Changed
       }
       local info = viewer.GetInfo()
       local offset = info.FilePos
