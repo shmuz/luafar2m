@@ -189,7 +189,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
         data.buffer=far.CreateUserControl data.width,data.height
         item[4]=data.width-1
         item[5]=data.height
-        item[7]=data.buffer
+        item[6]=data.buffer
         hDlg\SetDlgItem _view,item
         hDlg\ResizeDialog 0,{X:data.width,Y:data.height+1}
         UpdateDlg hDlg,data
