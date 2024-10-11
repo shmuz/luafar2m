@@ -6,6 +6,7 @@
 if not jit then return -- LuaJIT required
 
 F=far.Flags
+MinWidth=80 -- must fully cover the right (displaytext) part
 
 -- Colors
 Col_Title     = actl.GetColor F.COL_VIEWERSTATUS
@@ -185,6 +186,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
       item=hDlg\GetDlgItem _view
       if item
         data.width,data.height=ConsoleSize!
+        data.width=math.max MinWidth,data.width
         data.height-=1
         data.buffer=far.CreateUserControl data.width,data.height
         item[4]=data.width-1
@@ -353,6 +355,7 @@ DoHex=->
     filesize=ffi.new('int64_t[1]')
     if 0~=C.WINPORT_GetFileSizeEx file,filesize
       ww,hh=ConsoleSize!
+      ww=math.max MinWidth,ww
       buffer=far.CreateUserControl ww,hh-1
       textel=Char:0x20,Attributes:Col_Unchanged
       textel_sel=Char:0x20,Attributes:Col_Selected
@@ -387,6 +390,7 @@ DoHex=->
           editchanged:false,
           editascii:false
         UpdateDlg hDlg,dialogs[hDlg\rawhandle!]
+        actl.RedrawAll!
     else
       C.WINPORT_CloseHandle file
 
