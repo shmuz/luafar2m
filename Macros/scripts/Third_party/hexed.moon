@@ -6,17 +6,20 @@
 if not jit then return -- LuaJIT required
 
 F=far.Flags
-MinWidth=80 -- must fully cover the right (displaytext) part
+SETTINGS_KEY  = "hexed"
+SETTINGS_NAME = "settings"
+Sett = nil
 
--- Colors
-Col_Title     = actl.GetColor F.COL_VIEWERSTATUS
-Col_Dialog    = actl.GetColor F.COL_VIEWERSTATUS
-Col_Unchanged = actl.GetColor F.COL_VIEWERTEXT
-Col_Changed   = actl.GetColor F.COL_VIEWERARROWS
-Col_Selected  = actl.GetColor F.COL_VIEWERSELECTEDTEXT
+Colors =
+  Title:     actl.GetColor F.COL_VIEWERSTATUS,
+  Dialog:    actl.GetColor F.COL_VIEWERSTATUS,
+  Unchanged: actl.GetColor F.COL_VIEWERTEXT,
+  Changed:   actl.GetColor F.COL_VIEWERARROWS,
+  Selected:  actl.GetColor F.COL_VIEWERSELECTEDTEXT
 
 ffi=require'ffi'
 C=ffi.C
+MinWidth=80 -- must fully cover the right (displaytext) part
 dialogs={}
 id=win.Uuid'02FFA2B9-98F8-4A73-B311-B3431340E272'
 idPos=win.Uuid'4FEA7612-507B-453F-A83D-53837CAD86ED'
@@ -39,13 +42,43 @@ FILE_BEGIN=0
 WSIZE=ffi.sizeof("wchar_t")
 
 HelpText = [[
-F1        Help window
-F3        Toggle view/edit mode
-F9        Save
-BS        Restore the changed cell value
-Tab       Toggle Hex/Text editing area
-AltF8     "Go to" dialog
-Esc       Quit Hex Editor]]
+F1           Help window
+F3           Toggle view/edit mode
+F9           Save
+BS           Restore the changed cell value
+Tab          Toggle Hex/Text editing area
+AltF8        "Go to" dialog
+AltShiftF9   Edit colors
+Esc          Quit Hex Editor]]
+
+LoadSettings=->
+  Sett=mf.mload(SETTINGS_KEY,SETTINGS_NAME) or {}
+  if Sett.Colors then Colors=Sett.Colors
+
+SaveSettings=->
+  mf.msave SETTINGS_KEY,SETTINGS_NAME,Sett
+
+ChangeColor=(data)->
+  props = { Title:"Select a color to edit" }
+  items = {
+    --{ text:"Title"     , val:"Title"     , key:}
+    --{ text:"Dialog"    , val:"Dialog"    , key:}
+    { text:"Unchanged" , val:"Unchanged" , key:"textel"}
+    { text:"Changed"   , val:"Changed"   , key:"textel_changed"}
+    { text:"Selected"  , val:"Selected"  , key:"textel_sel" }
+  }
+  while true
+    sel,pos = far.Menu props,items
+    if not sel then return
+    props.SelectIndex=pos
+    clr = far.ColorDialog Colors[sel.val]
+    if clr
+      clr=clr.PaletteColor
+      data[sel.key].Attributes=clr
+      Colors[sel.val]=clr
+      Sett.Colors=Colors
+      SaveSettings!
+      return true
 
 ToWChar=(str)->
   str=win.Utf8ToUtf32 str
@@ -171,15 +204,15 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
       C.WINPORT_CloseHandle data.file
       dialogs[hDlg\rawhandle!]=nil
     elseif Msg==F.DN_CTLCOLORDIALOG
-      return Col_Dialog
+      return Colors.Dialog
     elseif Msg==F.DN_CTLCOLORDLGITEM
       DoColor=(color)->
         {color,color,color,color}
       return switch Param1
         when _title
-          DoColor Col_Title
+          DoColor Colors.Title
         when _edit
-          DoColor data.editchanged and Col_Changed or Col_Unchanged
+          DoColor data.editchanged and Colors.Changed or Colors.Unchanged
     elseif Msg==F.DN_KILLFOCUS
       if Param1==_edit and data.edit then return _edit
     elseif Msg==F.DN_RESIZECONSOLE
@@ -340,6 +373,9 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
                 viewer.SetPosition tonumber .offset
             when 'F1'
               far.Message HelpText,'Hex Editor',nil,'l'
+            when 'AltShiftF9'
+              if ChangeColor data
+                hDlg\Redraw!
             else processed=false
       if processed
         UpdateDlg hDlg,data
@@ -347,6 +383,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
   nil
 
 DoHex=->
+  LoadSettings!
   filename=viewer.GetFileName!
   filenameW=ToWChar LongPath filename
   file=C.WINPORT_CreateFile filenameW,GENERIC_READ,FILE_SHARE_READ+FILE_SHARE_WRITE+FILE_SHARE_DELETE,
@@ -357,9 +394,9 @@ DoHex=->
       ww,hh=ConsoleSize!
       ww=math.max MinWidth,ww
       buffer=far.CreateUserControl ww,hh-1
-      textel=Char:0x20,Attributes:Col_Unchanged
-      textel_sel=Char:0x20,Attributes:Col_Selected
-      textel_changed=Char:0x20,Attributes:Col_Changed
+      textel=Char:0x20,Attributes:Colors.Unchanged
+      textel_sel=Char:0x20,Attributes:Colors.Selected
+      textel_changed=Char:0x20,Attributes:Colors.Changed
       info=viewer.GetInfo!
       offset=info.FilePos
       offset-=offset%16
