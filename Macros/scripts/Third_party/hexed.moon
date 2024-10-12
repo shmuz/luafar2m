@@ -47,7 +47,6 @@ Esc          Quit Hex Editor]]
 
 GetDefaultColors=-> {
     Title:     actl.GetColor F.COL_VIEWERSTATUS,
-    Dialog:    actl.GetColor F.COL_VIEWERSTATUS,
     Unchanged: actl.GetColor F.COL_VIEWERTEXT,
     Changed:   actl.GetColor F.COL_VIEWERARROWS,
     Selected:  actl.GetColor F.COL_VIEWERSELECTEDTEXT
@@ -64,11 +63,10 @@ SaveSettings=->
 ChangeColor=(data)->
   props = { Title:"Select a color to edit" }
   items = {
-    --{ text:"Title"     , val:"Title"     , key:}
-    --{ text:"Dialog"    , val:"Dialog"    , key:}
     { text:"Unchanged" , val:"Unchanged" , key:"textel"}
     { text:"Changed"   , val:"Changed"   , key:"textel_changed"}
     { text:"Selected"  , val:"Selected"  , key:"textel_sel" }
+    { text:"Title"     , val:"Title" }
     { separator:true }
     { text:"Set default colors", reset:true }
   }
@@ -88,7 +86,8 @@ ChangeColor=(data)->
     clr = far.ColorDialog Colors[sel.val]
     if clr
       clr=clr.PaletteColor
-      data[sel.key].Attributes=clr
+      if sel.key
+        data[sel.key].Attributes=clr
       Colors[sel.val]=clr
       SaveSettings!
       return true
@@ -217,7 +216,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
       C.WINPORT_CloseHandle data.file
       dialogs[hDlg\rawhandle!]=nil
     elseif Msg==F.DN_CTLCOLORDIALOG
-      return Colors.Dialog
+      return Colors.Title
     elseif Msg==F.DN_CTLCOLORDLGITEM
       DoColor=(color)->
         {color,color,color,color}
