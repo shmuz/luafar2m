@@ -77,10 +77,8 @@ ChangeColor=(data)->
 
     if sel.reset
       Colors=GetDefaultColors!
-      data.textel.Attributes=Colors.Unchanged
-      data.textel_sel.Attributes=Colors.Selected
-      data.textel_changed.Attributes=Colors.Changed
-      SaveSettings!
+      for _,v in ipairs items
+        if v.key then data[v.key].Attributes = Colors[v.val]
       return true
 
     clr = far.ColorDialog Colors[sel.val]
@@ -89,7 +87,6 @@ ChangeColor=(data)->
       if sel.key
         data[sel.key].Attributes=clr
       Colors[sel.val]=clr
-      SaveSettings!
       return true
 
 ToWChar=(str)->
@@ -387,6 +384,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
               far.Message HelpText,'Hex Editor',nil,'l'
             when 'AltShiftF9'
               if ChangeColor data
+                SaveSettings!
                 hDlg\Redraw!
             else processed=false
       if processed
