@@ -9,13 +9,7 @@ F=far.Flags
 SETTINGS_KEY  = "hexed"
 SETTINGS_NAME = "settings"
 Sett = nil
-
-Colors =
-  Title:     actl.GetColor F.COL_VIEWERSTATUS,
-  Dialog:    actl.GetColor F.COL_VIEWERSTATUS,
-  Unchanged: actl.GetColor F.COL_VIEWERTEXT,
-  Changed:   actl.GetColor F.COL_VIEWERARROWS,
-  Selected:  actl.GetColor F.COL_VIEWERSELECTEDTEXT
+Colors = nil
 
 ffi=require'ffi'
 C=ffi.C
@@ -51,11 +45,20 @@ AltF8        "Go to" dialog
 AltShiftF9   Edit colors
 Esc          Quit Hex Editor]]
 
+GetDefaultColors=-> {
+    Title:     actl.GetColor F.COL_VIEWERSTATUS,
+    Dialog:    actl.GetColor F.COL_VIEWERSTATUS,
+    Unchanged: actl.GetColor F.COL_VIEWERTEXT,
+    Changed:   actl.GetColor F.COL_VIEWERARROWS,
+    Selected:  actl.GetColor F.COL_VIEWERSELECTEDTEXT
+  }
+
 LoadSettings=->
   Sett=mf.mload(SETTINGS_KEY,SETTINGS_NAME) or {}
-  if Sett.Colors then Colors=Sett.Colors
+  Colors=Sett.Colors or GetDefaultColors!
 
 SaveSettings=->
+  Sett.Colors=Colors
   mf.msave SETTINGS_KEY,SETTINGS_NAME,Sett
 
 ChangeColor=(data)->
@@ -66,17 +69,27 @@ ChangeColor=(data)->
     { text:"Unchanged" , val:"Unchanged" , key:"textel"}
     { text:"Changed"   , val:"Changed"   , key:"textel_changed"}
     { text:"Selected"  , val:"Selected"  , key:"textel_sel" }
+    { separator:true }
+    { text:"Set default colors", reset:true }
   }
   while true
     sel,pos = far.Menu props,items
     if not sel then return
     props.SelectIndex=pos
+
+    if sel.reset
+      Colors=GetDefaultColors!
+      data.textel.Attributes=Colors.Unchanged
+      data.textel_sel.Attributes=Colors.Selected
+      data.textel_changed.Attributes=Colors.Changed
+      SaveSettings!
+      return true
+
     clr = far.ColorDialog Colors[sel.val]
     if clr
       clr=clr.PaletteColor
       data[sel.key].Attributes=clr
       Colors[sel.val]=clr
-      Sett.Colors=Colors
       SaveSettings!
       return true
 
