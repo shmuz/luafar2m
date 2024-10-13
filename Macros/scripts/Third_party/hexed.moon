@@ -81,9 +81,9 @@ ChangeColor=(data)->
         if v.key then data[v.key].Attributes = Colors[v.val]
       return true
 
-    clr = far.ColorDialog Colors[sel.val]
+    clr = far.ColorDialog Colors[sel.val], 0x03
     if clr
-      clr=clr.PaletteColor
+      clr=clr.Color
       if sel.key
         data[sel.key].Attributes=clr
       Colors[sel.val]=clr
