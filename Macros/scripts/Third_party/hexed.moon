@@ -248,7 +248,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
               if (.filesize-old_offset-1)<=.height*16 then .offset=old_offset
               else .offset=.filesize-1
             if .offset<0 then .offset=0
-            .offset=.offset-.offset%16
+            .offset-=.offset%16
         DoRight=->
           if not .edit
             if .cursor+.offset<.filesize then .cursor+=1
@@ -390,6 +390,31 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
       if processed
         UpdateDlg hDlg,data
         return true
+    elseif Msg==F.DN_MOUSECLICK and Param2.ButtonState==F.FROM_LEFT_1ST_BUTTON_PRESSED
+      if Param1==_view and not data.edit
+        with data
+          X, Y = Param2.MousePositionX, Param2.MousePositionY
+          if X < 12
+            .cursor = 1 + 16*Y
+          elseif X < 36
+            X -= 12
+            .cursor = 1 + 16*Y + (X-X%3)/3
+          elseif X == 36
+            return
+          elseif X == 37
+            .cursor = 1 + 16*Y + 8
+          elseif X < 62
+            X -= 38
+            .cursor = 1 + 16*Y + 8 + (X-X%3)/3
+          elseif X == 62
+            .cursor = 1 + 16*Y
+          elseif X < 63+16
+            .cursor = 1 + 16*Y + (X-63)
+          else
+            .cursor = 1 + 16*Y + 15
+          if .cursor+.offset > .filesize
+            .cursor = .filesize-.offset
+        UpdateDlg hDlg,data
   nil
 
 DoHex=->
