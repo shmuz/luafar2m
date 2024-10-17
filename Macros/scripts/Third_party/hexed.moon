@@ -44,6 +44,7 @@ BS           Restore the changed cell value
 Tab          Toggle Hex/Text editing area
 AltF8        "Go to" dialog
 AltShiftF9   Edit colors
+CtrlF10      Synchronize viewer position
 Esc          Quit Hex Editor]]
 
 GetDefaultColors=-> {
@@ -207,7 +208,7 @@ UpdateDlg=(hDlg,data)->
   HexDraw hDlg,data
   hDlg\Redraw!
 
-GetTitle=(fname,codepage)->
+MakeTitle=(fname,codepage)->
   fname.." ["..codepage.."]"
 
 DlgProc=(hDlg,Msg,Param1,Param2)->
@@ -383,14 +384,14 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
                 if offset then .offset=offset-offset%16
             when 'CtrlF10','RCtrlF10'
               if not .edit
-                viewer.SetPosition tonumber .offset
+                viewer.SetPosition .ViewerID, tonumber .offset
             when 'F1'
               far.Message HelpText,'Hex Editor',nil,'l'
             when 'F8'
               if not .edit
                 cp=win.GetACP!
                 .codepage = .codepage==cp and win.GetOEMCP! or cp
-                hDlg\SetText _title, GetTitle .filenameU,.codepage
+                hDlg\SetText _title, MakeTitle .filenameU,.codepage
             when 'AltShiftF9'
               if ChangeColor data
                 SaveSettings!
@@ -446,7 +447,7 @@ DoHex=->
       offset-=offset%16
       codepage=win.GetACP!
       items={
-        {F.DI_TEXT,0,0,0,0,0,0,0,0,GetTitle filenameU,codepage}
+        {F.DI_TEXT,0,0,0,0,0,0,0,0,MakeTitle filenameU,codepage}
         {F.DI_USERCONTROL,0,1,ww-1,hh-1,buffer,0,0,0,''}
         {F.DI_FIXEDIT,0,0,0,0,0,0,0,F.DIF_HIDDEN+F.DIF_READONLY,''}
       }
