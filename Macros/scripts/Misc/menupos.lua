@@ -5,18 +5,14 @@ local F = far.Flags
 
 local data = mf.mload("shmuz", "FarMenuPositions") or {}
 
+local PlugMenuArea = "Shell"
+
 Macro {
   description="Plugin Menu Remember Pos";
   area="Menu"; key="Enter NumEnter";
   condition=function(key) return Menu.Id == far.Guids.PluginsMenuId end;
   action=function()
-    local winfo = actl.GetWindowInfo()
-    if winfo then
-      if     winfo.Type == F.WTYPE_PANELS then data.Shell  = Menu.Value
-      elseif winfo.Type == F.WTYPE_EDITOR then data.Editor = Menu.Value
-      elseif winfo.Type == F.WTYPE_VIEWER then data.Viewer = Menu.Value
-      end
-    end
+    data[PlugMenuArea] = Menu.Value
     Keys(akey(1))
   end;
 }
@@ -35,6 +31,7 @@ Macro {
   description="Plugin Menu Select Pos";
   area="Shell Editor Viewer"; key="F11";
   action=function()
+    PlugMenuArea = Area.Current
     local V = data[Area.Current]
     Keys("F11")
     if V then Menu.Select(V, 0) end
@@ -56,4 +53,3 @@ Event {
   group="ExitFAR";
   action=function() mf.msave("shmuz", "FarMenuPositions", data) end;
 }
-
