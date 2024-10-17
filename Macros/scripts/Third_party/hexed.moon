@@ -38,6 +38,7 @@ WSIZE=ffi.sizeof("wchar_t")
 HelpText = [[
 F1           Help window
 F3           Toggle view/edit mode
+F8           Toggle ANSI/OEM text area
 F9           Save
 BS           Restore the changed cell value
 Tab          Toggle Hex/Text editing area
@@ -205,6 +206,9 @@ UpdateDlg=(hDlg,data)->
   if not data.edit then Read data
   HexDraw hDlg,data
   hDlg\Redraw!
+
+GetTitle=(fname,codepage)->
+  fname.." ["..codepage.."]"
 
 DlgProc=(hDlg,Msg,Param1,Param2)->
   data=dialogs[hDlg\rawhandle!]
@@ -382,6 +386,11 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
                 viewer.SetPosition tonumber .offset
             when 'F1'
               far.Message HelpText,'Hex Editor',nil,'l'
+            when 'F8'
+              if not .edit
+                cp=win.GetACP!
+                .codepage = .codepage==cp and win.GetOEMCP! or cp
+                hDlg\SetText _title, GetTitle .filenameU,.codepage
             when 'AltShiftF9'
               if ChangeColor data
                 SaveSettings!
@@ -419,8 +428,8 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
 
 DoHex=->
   LoadSettings!
-  filename=viewer.GetFileName!
-  filenameW=ToWChar LongPath filename
+  filenameU=viewer.GetFileName!
+  filenameW=ToWChar LongPath filenameU
   file=C.WINPORT_CreateFile filenameW,GENERIC_READ,FILE_SHARE_READ+FILE_SHARE_WRITE+FILE_SHARE_DELETE,
                             ffi.NULL,OPEN_EXISTING,0,ffi.NULL
   if file~=INVALID_HANDLE_VALUE
@@ -435,8 +444,9 @@ DoHex=->
       info=viewer.GetInfo!
       offset=info.FilePos
       offset-=offset%16
+      codepage=win.GetACP!
       items={
-        {F.DI_TEXT,0,0,0,0,0,0,0,0,filename}
+        {F.DI_TEXT,0,0,0,0,0,0,0,0,GetTitle filenameU,codepage}
         {F.DI_USERCONTROL,0,1,ww-1,hh-1,buffer,0,0,0,''}
         {F.DI_FIXEDIT,0,0,0,0,0,0,0,F.DIF_HIDDEN+F.DIF_READONLY,''}
       }
@@ -448,8 +458,9 @@ DoHex=->
           height:hh-1,
           :file,
           :filenameW,
+          :filenameU,
           --codepage:info.CurMode.CodePage,
-          codepage:win.GetACP!,
+          :codepage,
           ViewerID:info.ViewerID,
           :offset,
           cursor:1,
