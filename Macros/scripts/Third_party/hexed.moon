@@ -332,12 +332,12 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
               .editpos=1
             when 'Up' then DoUp!
             when 'Down' then DoDown!
-            when 'CtrlPgUp','RCtrlPgUp','CtrlUp','RCtrlUp'
+            when 'CtrlPgUp','RCtrlPgUp','CtrlUp','RCtrlUp','MsWheelUp'
               if .edit then DoUp!
               else
                 if .offset==0 and .cursor>16 then .cursor-=16
                 else Update -16
-            when 'CtrlPgDn','RCtrlPgDn','CtrlDown','RCtrlDown'
+            when 'CtrlPgDn','RCtrlPgDn','CtrlDown','RCtrlDown','MsWheelDown'
               if .edit then DoDown!
               else
                 if .offset+.height*16<.filesize
