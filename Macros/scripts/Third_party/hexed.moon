@@ -370,7 +370,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
               Update .filesize-.offset-1-(.height-1)*16
               if not .edit then .cursor=tonumber .filesize-.offset
             when .edit and 'Esc' then DoEditMode!
-            when .edit and 'Ins' then nil
+            when .edit and 'Ins' then nil -- don't change cursor shape
             when 'BS'
               if .edit
                 idx=.cursor-(0==.editpos and 1 or 0)
@@ -380,8 +380,10 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
             when 'Tab' then .editascii=.edit and not .editascii
             when 'AltF8','RAltF8'
               if not .edit
-                offset=GetOffset!
-                if offset then .offset=offset-offset%16
+                offs=GetOffset!
+                if offs
+                  if offs>=.filesize then offs=.filesize-1
+                  .offset=offs-offs%16
             when 'CtrlF10','RCtrlF10'
               if not .edit
                 viewer.SetPosition .ViewerID, tonumber .offset
