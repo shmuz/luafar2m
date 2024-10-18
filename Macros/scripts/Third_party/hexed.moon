@@ -1,6 +1,13 @@
 -- Author: Vadim Yegorov (zg)
 -- URL: https://github.com/trexinc/evil-programmers/blob/master/LuaHexEd/Macros/scripts/hexed.moon
--- Adaptation to far2m: Shmuel Zeigerman
+-- Modifications by Shmuel Zeigerman:
+--   * Adaptation to far2m
+--   * Help message box
+--   * Customizable persistent colors
+--   * Setting position with a mouse click
+--   * Switching ANSI/OEM code page by F8
+--   * Fix: the editor withstands resizing
+--   * Fix: handling BS in editing mode in the text part
 
 --BACKUP YOUR FILES BEFORE USE
 if not jit then return -- LuaJIT required
@@ -8,7 +15,7 @@ if not jit then return -- LuaJIT required
 F=far.Flags
 SETTINGS_KEY  = "hexed"
 SETTINGS_NAME = "settings"
-Sett = nil
+Settings = nil
 Colors = nil
 
 ffi=require'ffi'
@@ -55,12 +62,12 @@ GetDefaultColors=-> {
   }
 
 LoadSettings=->
-  Sett=mf.mload(SETTINGS_KEY,SETTINGS_NAME) or {}
-  Colors=Sett.Colors or GetDefaultColors!
+  Settings=mf.mload(SETTINGS_KEY,SETTINGS_NAME) or {}
+  Colors=Settings.Colors or GetDefaultColors!
 
 SaveSettings=->
-  Sett.Colors=Colors
-  mf.msave SETTINGS_KEY,SETTINGS_NAME,Sett
+  Settings.Colors=Colors
+  mf.msave SETTINGS_KEY,SETTINGS_NAME,Settings
 
 ChangeColor=(data)->
   props = { Title:"Select a color to edit" }
