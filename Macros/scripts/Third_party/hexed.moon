@@ -242,9 +242,18 @@ MSClickEvalCursor=(X,Y)->
 
 DlgProc=(hDlg,Msg,Param1,Param2)->
   data=dialogs[hDlg\rawhandle!]
-  if data
+  return nil if not data
+
+  with data
+    DoEditMode=()->
+      .edit=not .edit
+      .editpos=0
+      .oldchunk=.edit and .chunk or nil
+      hDlg\ShowItem _edit, .edit and 1 or 0
+      hDlg\SetFocus .edit and _edit or _view
+
     if Msg==F.DN_CLOSE
-      C.WINPORT_CloseHandle data.file
+      C.WINPORT_CloseHandle .file
       dialogs[hDlg\rawhandle!]=nil
     elseif Msg==F.DN_CTLCOLORDIALOG
       return Colors.Title
@@ -255,189 +264,189 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
         when _title
           DoColor Colors.Title
         when _edit
-          DoColor data.editchanged and Colors.Changed or Colors.Unchanged
+          DoColor .editchanged and Colors.Changed or Colors.Unchanged
     elseif Msg==F.DN_KILLFOCUS
-      if Param1==_edit and data.edit then return _edit
+      if Param1==_edit and .edit then return _edit
     elseif Msg==F.DN_RESIZECONSOLE
       item=hDlg\GetDlgItem _view
       if item
-        data.width,data.height=ConsoleSize!
-        data.width=math.max MinWidth,data.width
-        data.height-=1
-        data.buffer=far.CreateUserControl data.width,data.height
-        item[4]=data.width-1
-        item[5]=data.height
-        item[6]=data.buffer
+        .width,.height=ConsoleSize!
+        .width=math.max MinWidth,.width
+        .height-=1
+        .buffer=far.CreateUserControl .width,.height
+        item[4]=.width-1
+        item[5]=.height
+        item[6]=.buffer
         hDlg\SetDlgItem _view,item
-        hDlg\ResizeDialog 0,{X:data.width,Y:data.height+1}
+        hDlg\ResizeDialog 0,{X:.width,Y:.height+1}
         UpdateDlg hDlg,data
     elseif Msg==F.DN_KEY
       processed=true
-      with data
-        Update=(inc)->
-          if not .edit
-            old_offset=.offset
-            .offset+=inc
-            if .offset>=.filesize
-              if (.filesize-old_offset-1)<=.height*16 then .offset=old_offset
-              else .offset=.filesize-1
-            if .offset<0 then .offset=0
-            .offset-=.offset%16
-        DoRight=->
-          if not .edit
-            if .cursor+.offset<.filesize then .cursor+=1
-            if .cursor>.height*16
-              .cursor-=16
-              Update 16
-          elseif .cursor<.height*16 and .cursor+.offset<.filesize and (.editpos==1 or .editascii)
-            .cursor+=1
-            .editpos=0
-          else .editpos=1
-        DoLeft=->
-          if not .edit
-            .cursor-=1
-            if .cursor<1
-              if .offset>0
-                .cursor=16
-                Update -16
-              else .cursor=1
-          elseif .cursor>1 and (.editpos==0 or .editascii)
-            .cursor-=1
-            .editpos=1
-          else .editpos=0
-        DoUp=->
-          .cursor-=16
-          if .cursor<1
-            .cursor+=16
-            if .offset>0 then Update -16
-        DoDown=->
-          .cursor+=16
-          if .cursor+.offset>.filesize
-            .cursor-=16
-            if .offset+.height*16<.filesize
-              .cursor-=16
-              Update 16
+      Update=(inc)->
+        if not .edit
+          old_offset=.offset
+          .offset+=inc
+          if .offset>=.filesize
+            if (.filesize-old_offset-1)<=.height*16 then .offset=old_offset
+            else .offset=.filesize-1
+          if .offset<0 then .offset=0
+          .offset-=.offset%16
+      DoRight=->
+        if not .edit
+          if .cursor+.offset<.filesize then .cursor+=1
           if .cursor>.height*16
             .cursor-=16
             Update 16
-        DoEditMode=->
-          .edit=not .edit
+        elseif .cursor<.height*16 and .cursor+.offset<.filesize and (.editpos==1 or .editascii)
+          .cursor+=1
           .editpos=0
-          .oldchunk=.edit and .chunk or nil
-          hDlg\ShowItem _edit,data.edit and 1 or 0
-          hDlg\SetFocus data.edit and _edit or _view
-        --uchar=(Param2.UnicodeChar\sub 1,1)\byte 1
-        uchar=Param2
-        if .edit and .editascii and uchar~=0 and uchar~=8 and uchar~=9 and uchar~=27 and uchar<0x10000
-          t={}
-          for k=1,WSIZE
-            t[k]=uchar%0x100
-            uchar=(uchar-t[k])/0x100
-          new=win.WideCharToMultiByte (string.char unpack t),.codepage
-          .chunk=(string.sub .chunk,1,.cursor-1)..new..(string.sub .chunk,.cursor+#new)
-          .oldchunk..=string.rep '\0',#.chunk-#.oldchunk
-          .displaytext=GenerateDisplayText .chunk,.codepage
-          for _=1,#new do DoRight!
-        else
-          key=far.KeyToName Param2
-          switch key
-            when '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','a','b','c','d','e','f'
-              if .edit
-                old=string.byte .chunk,.cursor
-                new=.editpos==0 and ((tonumber key,16)*16+old%16) or (16*(math.floor old/16)+tonumber key,16)
-                .chunk=(string.sub .chunk,1,.cursor-1)..(string.char new)..(string.sub .chunk,.cursor+1)
-                .displaytext=GenerateDisplayText .chunk,.codepage
-                DoRight!
-            when 'F3' then DoEditMode!
-            when 'F9'
-              if .edit
-                Write data
-                DoEditMode!
-            when 'Left' then DoLeft!
-            when 'Right' then DoRight!
-            when 'Home'
-              .cursor-=(.cursor-1)%16
-              .editpos=0
-            when 'End'
-              .cursor+=16
-              .cursor=.cursor-(.cursor-1)%16-1
-              if .cursor+.offset>.filesize
-                .cursor=tonumber .filesize-.offset
-              .editpos=1
-            when 'Up' then DoUp!
-            when 'Down' then DoDown!
-            when 'CtrlPgUp','RCtrlPgUp','CtrlUp','RCtrlUp','MsWheelUp'
-              if .edit then DoUp!
-              else
-                if .offset==0 and .cursor>16 then .cursor-=16
-                else Update -16
-            when 'CtrlPgDn','RCtrlPgDn','CtrlDown','RCtrlDown','MsWheelDown'
-              if .edit then DoDown!
-              else
-                if .offset+.height*16<.filesize
-                  Update 16
-                elseif .offset+.cursor+16<=.filesize
-                  .cursor+=16
-            when 'PgUp'
-              if .offset==0 or .edit then .cursor=(.cursor-1)%16+1
-              else Update -16*.height
-            when 'PgDn'
-              fixcursor=->
-                rest=.filesize-.offset
-                .cursor=tonumber rest-((15-(.cursor-1)%16)+rest%16)%16
+        else .editpos=1
+      DoLeft=->
+        if not .edit
+          .cursor-=1
+          if .cursor<1
+            if .offset>0
+              .cursor=16
+              Update -16
+            else .cursor=1
+        elseif .cursor>1 and (.editpos==0 or .editascii)
+          .cursor-=1
+          .editpos=1
+        else .editpos=0
+      DoUp=->
+        .cursor-=16
+        if .cursor<1
+          .cursor+=16
+          if .offset>0 then Update -16
+      DoDown=->
+        .cursor+=16
+        if .cursor+.offset>.filesize
+          .cursor-=16
+          if .offset+.height*16<.filesize
+            .cursor-=16
+            Update 16
+        if .cursor>.height*16
+          .cursor-=16
+          Update 16
+      --uchar=(Param2.UnicodeChar\sub 1,1)\byte 1
+      uchar=Param2
+      if .edit and .editascii and uchar~=0 and uchar~=8 and uchar~=9 and uchar~=27 and uchar<0x10000
+        t={}
+        for k=1,WSIZE
+          t[k]=uchar%0x100
+          uchar=(uchar-t[k])/0x100
+        new=win.WideCharToMultiByte (string.char unpack t),.codepage
+        .chunk=(string.sub .chunk,1,.cursor-1)..new..(string.sub .chunk,.cursor+#new)
+        .oldchunk..=string.rep '\0',#.chunk-#.oldchunk
+        .displaytext=GenerateDisplayText .chunk,.codepage
+        for _=1,#new do DoRight!
+      else
+        key=far.KeyToName Param2
+        switch key
+          when '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','a','b','c','d','e','f'
+            if .edit
+              old=string.byte .chunk,.cursor
+              new=.editpos==0 and ((tonumber key,16)*16+old%16) or (16*(math.floor old/16)+tonumber key,16)
+              .chunk=(string.sub .chunk,1,.cursor-1)..(string.char new)..(string.sub .chunk,.cursor+1)
+              .displaytext=GenerateDisplayText .chunk,.codepage
+              DoRight!
+          when 'F3' then DoEditMode!
+          when 'F9'
+            if .edit
+              Write data
+              DoEditMode!
+          when 'Left' then DoLeft!
+          when 'Right' then DoRight!
+          when 'Home'
+            .cursor-=(.cursor-1)%16
+            .editpos=0
+          when 'End'
+            .cursor+=16
+            .cursor=.cursor-(.cursor-1)%16-1
+            if .cursor+.offset>.filesize
+              .cursor=tonumber .filesize-.offset
+            .editpos=1
+          when 'Up' then DoUp!
+          when 'Down' then DoDown!
+          when 'CtrlPgUp','RCtrlPgUp','CtrlUp','RCtrlUp','MsWheelUp'
+            if .edit then DoUp!
+            else
+              if .offset==0 and .cursor>16 then .cursor-=16
+              else Update -16
+          when 'CtrlPgDn','RCtrlPgDn','CtrlDown','RCtrlDown','MsWheelDown'
+            if .edit then DoDown!
+            else
               if .offset+.height*16<.filesize
-                if .edit
-                  .cursor=(.height-1)*16+(.cursor-1)%16+1
-                else
-                  Update 16*.height
-                  if .cursor+.offset>.filesize then fixcursor!
-              else fixcursor!
-            when 'CtrlHome','RCtrlHome'
-              Update -.filesize
-              .cursor=1
-            when 'CtrlEnd','RCtrlEnd'
-              Update .filesize-.offset-1-(.height-1)*16
-              if not .edit then .cursor=tonumber .filesize-.offset
-            when .edit and 'Esc' then DoEditMode!
-            when .edit and 'Ins' then nil -- don't change cursor shape
-            when 'BS'
+                Update 16
+              elseif .offset+.cursor+16<=.filesize
+                .cursor+=16
+          when 'PgUp'
+            if .offset==0 or .edit then .cursor=(.cursor-1)%16+1
+            else Update -16*.height
+          when 'PgDn'
+            fixcursor=->
+              rest=.filesize-.offset
+              .cursor=tonumber rest-((15-(.cursor-1)%16)+rest%16)%16
+            if .offset+.height*16<.filesize
               if .edit
-                idx=.cursor-(0==.editpos and 1 or 0)
-                .chunk=(string.sub .chunk,1,idx-1)..(string.sub .oldchunk,idx,idx)..(string.sub .chunk,idx+1)
-                .displaytext=GenerateDisplayText .chunk,.codepage
-                DoLeft!
-            when 'Tab' then .editascii=.edit and not .editascii
-            when 'AltF8','RAltF8'
-              if not .edit
-                offs=GetOffset!
-                if offs
-                  if offs>=.filesize then offs=.filesize-1
-                  .offset=offs-offs%16
-            when 'CtrlF10','RCtrlF10'
-              if not .edit
-                viewer.SetPosition .ViewerID, tonumber .offset
-            when 'F1'
-              far.Message HelpText,'Hex Editor',nil,'l'
-            when 'F8'
-              if not .edit
-                cp=win.GetACP!
-                .codepage = .codepage==cp and win.GetOEMCP! or cp
-                hDlg\SetText _title, MakeTitle .filenameU,.codepage
-            when 'AltShiftF9'
-              if ChangeColor data
-                SaveSettings!
-                hDlg\Redraw!
-            else processed=false
+                .cursor=(.height-1)*16+(.cursor-1)%16+1
+              else
+                Update 16*.height
+                if .cursor+.offset>.filesize then fixcursor!
+            else fixcursor!
+          when 'CtrlHome','RCtrlHome'
+            Update -.filesize
+            .cursor=1
+          when 'CtrlEnd','RCtrlEnd'
+            Update .filesize-.offset-1-(.height-1)*16
+            if not .edit then .cursor=tonumber .filesize-.offset
+          when .edit and 'Esc' then DoEditMode!
+          when .edit and 'Ins' then nil -- don't change cursor shape
+          when 'BS'
+            if .edit
+              idx=.cursor-(0==.editpos and 1 or 0)
+              .chunk=(string.sub .chunk,1,idx-1)..(string.sub .oldchunk,idx,idx)..(string.sub .chunk,idx+1)
+              .displaytext=GenerateDisplayText .chunk,.codepage
+              DoLeft!
+          when 'Tab' then .editascii=.edit and not .editascii
+          when 'AltF8','RAltF8'
+            if not .edit
+              offs=GetOffset!
+              if offs
+                if offs>=.filesize then offs=.filesize-1
+                .offset=offs-offs%16
+          when 'CtrlF10','RCtrlF10'
+            if not .edit
+              viewer.SetPosition .ViewerID, tonumber .offset
+          when 'F1'
+            far.Message HelpText,'Hex Editor',nil,'l'
+          when 'F8'
+            if not .edit
+              cp=win.GetACP!
+              .codepage = .codepage==cp and win.GetOEMCP! or cp
+              hDlg\SetText _title, MakeTitle .filenameU,.codepage
+          when 'AltShiftF9'
+            if ChangeColor data
+              SaveSettings!
+              hDlg\Redraw!
+          else processed=false
       if processed
         UpdateDlg hDlg,data
         return true
-    elseif Msg==F.DN_MOUSECLICK and Param2.ButtonState==F.FROM_LEFT_1ST_BUTTON_PRESSED
-        if Param1 == _view
-          data.cursor = MSClickEvalCursor Param2.MousePositionX, Param2.MousePositionY
-          if data.cursor + data.offset > data.filesize
-            data.cursor = data.filesize - data.offset
-          if data.edit
-            data.editascii = Param2.MousePositionX>=62
+    elseif Msg==F.DN_MOUSECLICK
+      if Param2.ButtonState==F.FROM_LEFT_1ST_BUTTON_PRESSED
+        if Param1==_view
+          .cursor = MSClickEvalCursor Param2.MousePositionX, Param2.MousePositionY
+          if .cursor + .offset > .filesize
+            .cursor = .filesize - .offset
+          if Param2.EventFlags==F.DOUBLE_CLICK and not .edit
+            DoEditMode!
+          if .edit
+            .editascii = Param2.MousePositionX>=62
+          UpdateDlg hDlg,data
+      elseif Param2.ButtonState==F.RIGHTMOST_BUTTON_PRESSED
+        if .edit
+          DoEditMode!
           UpdateDlg hDlg,data
   nil
 
