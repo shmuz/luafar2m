@@ -74,12 +74,12 @@ ChangeColor=(data)->
   }
   while true
     sel,pos = far.Menu props,items
-    if not sel then return
+    return if not sel
     props.SelectIndex=pos
 
     if sel.reset
       Colors=GetDefaultColors!
-      for _,v in ipairs items
+      for v in *items
         if v.key then data[v.key].Attributes = Colors[v.val]
       return true
 
@@ -211,6 +211,24 @@ UpdateDlg=(hDlg,data)->
 MakeTitle=(fname,codepage)->
   fname.." ["..codepage.."]"
 
+MSClickEvalCursor=(X,Y)->
+  if X < 12
+    1 + 16*Y
+  elseif X < 36
+    X -= 12
+    1 + 16*Y + (X-X%3)/3
+  elseif X == 36 or X == 37
+    1 + 16*Y + 8
+  elseif X < 62
+    X -= 38
+    1 + 16*Y + 8 + (X-X%3)/3
+  elseif X == 62
+    1 + 16*Y
+  elseif X < 63+16
+    1 + 16*Y + (X-63)
+  else
+    1 + 16*Y + 15
+
 DlgProc=(hDlg,Msg,Param1,Param2)->
   data=dialogs[hDlg\rawhandle!]
   if data
@@ -299,7 +317,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
           hDlg\SetFocus data.edit and _edit or _view
         --uchar=(Param2.UnicodeChar\sub 1,1)\byte 1
         uchar=Param2
-        if .edit and .editascii and uchar~=0 and uchar~=9 and uchar~=27 and uchar<0x10000
+        if .edit and .editascii and uchar~=0 and uchar~=8 and uchar~=9 and uchar~=27 and uchar<0x10000
           t={}
           for k=1,WSIZE
             t[k]=uchar%0x100
@@ -403,30 +421,11 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
         UpdateDlg hDlg,data
         return true
     elseif Msg==F.DN_MOUSECLICK and Param2.ButtonState==F.FROM_LEFT_1ST_BUTTON_PRESSED
-      if Param1==_view and not data.edit
-        with data
-          X, Y = Param2.MousePositionX, Param2.MousePositionY
-          if X < 12
-            .cursor = 1 + 16*Y
-          elseif X < 36
-            X -= 12
-            .cursor = 1 + 16*Y + (X-X%3)/3
-          elseif X == 36
-            return
-          elseif X == 37
-            .cursor = 1 + 16*Y + 8
-          elseif X < 62
-            X -= 38
-            .cursor = 1 + 16*Y + 8 + (X-X%3)/3
-          elseif X == 62
-            .cursor = 1 + 16*Y
-          elseif X < 63+16
-            .cursor = 1 + 16*Y + (X-63)
-          else
-            .cursor = 1 + 16*Y + 15
-          if .cursor+.offset > .filesize
-            .cursor = .filesize-.offset
-        UpdateDlg hDlg,data
+        if Param1 == _view
+          data.cursor = MSClickEvalCursor Param2.MousePositionX, Param2.MousePositionY
+          if data.cursor + data.offset > data.filesize
+            data.cursor = data.filesize - data.offset
+          UpdateDlg hDlg,data
   nil
 
 DoHex=->
