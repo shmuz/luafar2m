@@ -170,38 +170,42 @@ HexDraw=(hDlg,data)->
     for ii=1,len
       textel.Char=str\byte ii
       data.buffer[pos+ii-1]=textel
+
   GetChar=(pos)->
     char=string.format '%02X',string.byte data.chunk,pos
     char,data.edit and (string.format '%02X',string.byte data.oldchunk,pos) or char
-  -- Fill buffer with spaces
-  data.textel.Char=0x20
-  for ii=1,#data.buffer do
-    data.buffer[ii]=data.textel
-  -- Draw all
-  len=#data.chunk
-  for row=0,data.height-1
-    -- Draw offsets and vertical line
-    if row*16<len
-      DrawStr row*data.width+1,string.format '%010X:',tonumber data.offset+row*16
-      data.textel.Char=0x2502
-      data.buffer[row*data.width+24+1+12]=data.textel
-    -- Draw hex data
-    for col=1,16
-      pos=col+row*16
-      if pos<=len
-        char,oldchar=GetChar pos
-        txtl=pos==data.cursor and not data.edit and data.textel_sel or
-          (char==oldchar and data.textel or data.textel_changed)
-        DrawStr row*data.width+(col-1)*3+1+12+(col>8 and 2 or 0),char,txtl
-        DrawStr row*data.width+16*3+2+1+12+col,(data.displaytext\sub pos,pos),txtl
-  if data.edit
-    xx,yy=data.editascii and 63+(data.cursor-1)%16 or (data.cursor-1)%16,1+math.floor (data.cursor-1)/16
-    xx=12+xx*3+(xx>7 and 2 or 0)+data.editpos if not data.editascii
-    hDlg\SetItemPosition _edit,{Left:xx,Top:yy,Right:xx,Bottom:yy}
-    char,oldchar=GetChar data.cursor
-    data.editchanged=char~=oldchar
-    hDlg\SetText _edit,data.editascii and (data.displaytext\sub data.cursor,data.cursor) or
-      string.sub char,data.editpos+1,data.editpos+1
+
+  with data
+    -- Fill buffer with spaces
+    .textel.Char=0x20
+    for ii=1,#.buffer do
+      .buffer[ii]=.textel
+    -- Draw all
+    len=#.chunk
+    for row=0,.height-1
+      -- Draw offsets and vertical line
+      if row*16<len
+        DrawStr row*.width+1,string.format '%010X:',tonumber .offset+row*16
+        .textel.Char=0x2502
+        .buffer[row*.width+24+1+12]=.textel
+      -- Draw hex data
+      for col=1,16
+        pos=col+row*16
+        if pos<=len
+          char,oldchar=GetChar pos
+          txtl=pos==.cursor and not .edit and .textel_sel or
+            (char==oldchar and .textel or .textel_changed)
+          DrawStr row*.width+(col-1)*3+1+12+(col>8 and 2 or 0),char,txtl
+          DrawStr row*.width+16*3+2+1+12+col,(.displaytext\sub pos,pos),txtl
+    if .edit
+      cursor=tonumber .cursor
+      xx,yy=.editascii and 63+(cursor-1)%16 or (cursor-1)%16,1+math.floor (cursor-1)/16
+      xx=12+xx*3+(xx>7 and 2 or 0)+.editpos if not .editascii
+      hDlg\SetItemPosition _edit,{Left:xx,Top:yy,Right:xx,Bottom:yy}
+      char,oldchar=GetChar cursor
+      .editchanged=char~=oldchar
+      hDlg\SetText _edit,.editascii and (.displaytext\sub cursor,cursor) or
+        string.sub char,.editpos+1,.editpos+1
 
 UpdateDlg=(hDlg,data)->
   if not data.edit then Read data
@@ -425,6 +429,8 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
           data.cursor = MSClickEvalCursor Param2.MousePositionX, Param2.MousePositionY
           if data.cursor + data.offset > data.filesize
             data.cursor = data.filesize - data.offset
+          if data.edit
+            data.editascii = Param2.MousePositionX>=62
           UpdateDlg hDlg,data
   nil
 
