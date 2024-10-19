@@ -12,6 +12,8 @@
 --BACKUP YOUR FILES BEFORE USE
 if not jit then return -- LuaJIT required
 
+import floor,max,min from math
+import byte,char,format,rep,sub from string
 F=far.Flags
 SETTINGS_KEY  = "hexed"
 SETTINGS_NAME = "settings"
@@ -118,9 +120,9 @@ UnicodeThunk=(fn,txt,codepage)->
       txt
     when 1201
       result=''
-      sub=(s,p)->string.sub s,p,p
+      at=(s,p)->sub s,p,p
       for ii=1,#txt/2
-        result..=(sub txt,ii*2)..(sub txt,ii*2-1)
+        result..=(at txt,ii*2)..(at txt,ii*2-1)
       result
     else
       fn txt,codepage
@@ -132,10 +134,10 @@ GenerateDisplayText=(txt,codepage)->
   wide=MB2WC txt,codepage
   out=''
   for ii=1,#wide,WSIZE
-    wchar=string.sub wide,ii,ii-1+WSIZE
+    wchar=sub wide,ii,ii-1+WSIZE
     if wchar=='\0\0\0\0' -- DI_USERCONTROL in far2l displays binary zeroes as white rectangles. Prevent that.
       wchar='.\0\0\0'
-    out..=(win.WideCharToMultiByte wchar,65001)..string.rep '.',#(WC2MB wchar,codepage)-1
+    out..=(win.WideCharToMultiByte wchar,65001)..rep '.',#(WC2MB wchar,codepage)-1
   out
 
 Read=(data)->
@@ -179,8 +181,8 @@ HexDraw=(hDlg,data)->
       data.buffer[pos+ii-1]=textel
 
   GetChar=(pos)->
-    char=string.format '%02X',string.byte data.chunk,pos
-    char,data.edit and (string.format '%02X',string.byte data.oldchunk,pos) or char
+    char=format '%02X',byte data.chunk,pos
+    char,data.edit and (format '%02X',byte data.oldchunk,pos) or char
 
   with data
     -- Fill buffer with spaces
@@ -192,7 +194,7 @@ HexDraw=(hDlg,data)->
     for row=0,.height-1
       -- Draw offsets and vertical line
       if row*16<len
-        DrawStr row*.width+1,string.format '%010X:',tonumber .offset+row*16
+        DrawStr row*.width+1,format '%010X:',tonumber .offset+row*16
         .textel.Char=0x2502
         .buffer[row*.width+24+1+12]=.textel
       -- Draw hex data
@@ -206,13 +208,13 @@ HexDraw=(hDlg,data)->
           DrawStr row*.width+16*3+2+1+12+col,(.displaytext\sub pos,pos),txtl
     if .edit
       cursor=tonumber .cursor
-      xx,yy=.editascii and 63+(cursor-1)%16 or (cursor-1)%16,1+math.floor (cursor-1)/16
+      xx,yy=.editascii and 63+(cursor-1)%16 or (cursor-1)%16,1+floor (cursor-1)/16
       xx=12+xx*3+(xx>7 and 2 or 0)+.editpos if not .editascii
       hDlg\SetItemPosition _edit,{Left:xx,Top:yy,Right:xx,Bottom:yy}
       char,oldchar=GetChar cursor
       .editchanged=char~=oldchar
       hDlg\SetText _edit,.editascii and (.displaytext\sub cursor,cursor) or
-        string.sub char,.editpos+1,.editpos+1
+        sub char,.editpos+1,.editpos+1
 
 UpdateDlg=(hDlg,data)->
   if not data.edit then Read data
@@ -271,7 +273,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
       item=hDlg\GetDlgItem _view
       if item
         .width,.height=ConsoleSize!
-        .width=math.max MinWidth,.width
+        .width=max MinWidth,.width
         .height-=1
         .buffer=far.CreateUserControl .width,.height
         item[4]=.width-1
@@ -335,9 +337,9 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
         for k=1,WSIZE
           t[k]=uchar%0x100
           uchar=(uchar-t[k])/0x100
-        new=win.WideCharToMultiByte (string.char unpack t),.codepage
-        .chunk=(string.sub .chunk,1,.cursor-1)..new..(string.sub .chunk,.cursor+#new)
-        .oldchunk..=string.rep '\0',#.chunk-#.oldchunk
+        new=win.WideCharToMultiByte (char unpack t),.codepage
+        .chunk=(sub .chunk,1,.cursor-1)..new..(sub .chunk,.cursor+#new)
+        .oldchunk..=rep '\0',#.chunk-#.oldchunk
         .displaytext=GenerateDisplayText .chunk,.codepage
         for _=1,#new do DoRight!
       else
@@ -345,9 +347,9 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
         switch key
           when '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','a','b','c','d','e','f'
             if .edit
-              old=string.byte .chunk,.cursor
-              new=.editpos==0 and ((tonumber key,16)*16+old%16) or (16*(math.floor old/16)+tonumber key,16)
-              .chunk=(string.sub .chunk,1,.cursor-1)..(string.char new)..(string.sub .chunk,.cursor+1)
+              old=byte .chunk,.cursor
+              new=.editpos==0 and ((tonumber key,16)*16+old%16) or (16*(floor old/16)+tonumber key,16)
+              .chunk=(sub .chunk,1,.cursor-1)..(char new)..(sub .chunk,.cursor+1)
               .displaytext=GenerateDisplayText .chunk,.codepage
               DoRight!
           when 'F3' then DoEditMode!
@@ -405,7 +407,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
           when 'BS'
             if .edit
               idx=.cursor-(0==.editpos and 1 or 0)
-              .chunk=(string.sub .chunk,1,idx-1)..(string.sub .oldchunk,idx,idx)..(string.sub .chunk,idx+1)
+              .chunk=(sub .chunk,1,idx-1)..(sub .oldchunk,idx,idx)..(sub .chunk,idx+1)
               .displaytext=GenerateDisplayText .chunk,.codepage
               DoLeft!
           when 'Tab' then .editascii=.edit and not .editascii
@@ -413,8 +415,9 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
             if not .edit
               offs=GetOffset!
               if offs
-                if offs>=.filesize then offs=.filesize-1
+                offs=min (max 0,offs),.filesize-1
                 .offset=offs-offs%16
+                .cursor=offs%16+1
           when 'CtrlF10','RCtrlF10'
             if not .edit
               viewer.SetPosition .ViewerID, tonumber .offset
@@ -460,7 +463,7 @@ DoHex=->
     filesize=ffi.new('int64_t[1]')
     if 0~=C.WINPORT_GetFileSizeEx file,filesize
       ww,hh=ConsoleSize!
-      ww=math.max MinWidth,ww
+      ww=max MinWidth,ww
       buffer=far.CreateUserControl ww,hh-1
       textel=Char:0x20,Attributes:Colors.Unchanged
       textel_sel=Char:0x20,Attributes:Colors.Selected
@@ -488,7 +491,7 @@ DoHex=->
           ViewerID:info.ViewerID,
           :offset,
           cursor:1,
-          filesize:filesize[0],
+          filesize:tonumber filesize[0],
           :textel,
           :textel_sel,
           :textel_changed,
