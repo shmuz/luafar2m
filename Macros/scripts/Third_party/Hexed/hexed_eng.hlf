@@ -1,0 +1,16 @@
+﻿.Language=English,English
+.PluginContents=Hex Editor
+.Options CtrlStartPosChar=¦
+
+@Contents
+$ #Hex Editor#
+^#Keyboard reference#
+
+  #F3#           Toggle view/edit mode
+  #F8#           Toggle ANSI/OEM text area
+  #F9#           Save
+  #BS#           Restore the changed cell value
+  #Tab#          Toggle Hex/Text editing area
+  #AltF8#        "Go to" dialog
+  #AltShiftF9#   Edit colors
+  #CtrlF10#      Synchronize viewer position

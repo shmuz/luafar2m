@@ -2,7 +2,7 @@
 -- URL: https://github.com/trexinc/evil-programmers/blob/master/LuaHexEd/Macros/scripts/hexed.moon
 -- Modifications by Shmuel Zeigerman:
 --   * Adaptation to far2m
---   * Help message box
+--   * Added help files
 --   * Customizable persistent colors
 --   * Setting position with a mouse click
 --   * Switching ANSI/OEM code page by F8
@@ -17,6 +17,7 @@ import byte,char,format,rep,sub from string
 F=far.Flags
 SETTINGS_KEY  = "hexed"
 SETTINGS_NAME = "settings"
+ScriptDir=(...)\match ".*/"
 Settings = nil
 Colors = nil
 
@@ -43,18 +44,6 @@ FILE_SHARE_DELETE=4
 OPEN_EXISTING=3
 FILE_BEGIN=0
 WSIZE=ffi.sizeof("wchar_t")
-
-HelpText = [[
-F1           Help window
-F3           Toggle view/edit mode
-F8           Toggle ANSI/OEM text area
-F9           Save
-BS           Restore the changed cell value
-Tab          Toggle Hex/Text editing area
-AltF8        "Go to" dialog
-AltShiftF9   Edit colors
-CtrlF10      Synchronize viewer position
-Esc          Quit Hex Editor]]
 
 GetDefaultColors=-> {
     Title:     actl.GetColor F.COL_VIEWERSTATUS,
@@ -422,7 +411,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
             if not .edit
               viewer.SetPosition .ViewerID, tonumber .offset
           when 'F1'
-            far.Message HelpText,'Hex Editor',nil,'l'
+            far.ShowHelp ScriptDir,nil,F.FHELP_CUSTOMPATH
           when 'F8'
             if not .edit
               cp=win.GetACP!
