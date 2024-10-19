@@ -170,8 +170,8 @@ HexDraw=(hDlg,data)->
       data.buffer[pos+ii-1]=textel
 
   GetChar=(pos)->
-    char=format '%02X',byte data.chunk,pos
-    char,data.edit and (format '%02X',byte data.oldchunk,pos) or char
+    chr=format '%02X',byte data.chunk,pos
+    chr,data.edit and (format '%02X',byte data.oldchunk,pos) or chr
 
   with data
     -- Fill buffer with spaces
@@ -190,20 +190,20 @@ HexDraw=(hDlg,data)->
       for col=1,16
         pos=col+row*16
         if pos<=len
-          char,oldchar=GetChar pos
+          chr,oldchar=GetChar pos
           txtl=pos==.cursor and not .edit and .textel_sel or
-            (char==oldchar and .textel or .textel_changed)
-          DrawStr row*.width+(col-1)*3+1+12+(col>8 and 2 or 0),char,txtl
+            (chr==oldchar and .textel or .textel_changed)
+          DrawStr row*.width+(col-1)*3+1+12+(col>8 and 2 or 0),chr,txtl
           DrawStr row*.width+16*3+2+1+12+col,(.displaytext\sub pos,pos),txtl
     if .edit
       cursor=tonumber .cursor
       xx,yy=.editascii and 63+(cursor-1)%16 or (cursor-1)%16,1+floor (cursor-1)/16
       xx=12+xx*3+(xx>7 and 2 or 0)+.editpos if not .editascii
       hDlg\SetItemPosition _edit,{Left:xx,Top:yy,Right:xx,Bottom:yy}
-      char,oldchar=GetChar cursor
-      .editchanged=char~=oldchar
+      chr,oldchar=GetChar cursor
+      .editchanged=chr~=oldchar
       hDlg\SetText _edit,.editascii and (.displaytext\sub cursor,cursor) or
-        sub char,.editpos+1,.editpos+1
+        sub chr,.editpos+1,.editpos+1
 
 UpdateDlg=(hDlg,data)->
   if not data.edit then Read data
