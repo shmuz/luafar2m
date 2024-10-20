@@ -75,6 +75,15 @@ local function test_lfsearch(verbose)
   end
 end
 
+local function test_hexed(verbose)
+  far.Message("Please wait...", "Test Hex Editor", "")
+  local test = require "far2.test.test_hexed"
+  test()
+  if verbose then
+    far.Message("PASS", "Hex Editor tests")
+  end
+end
+
 Macro {
   description="Test macro engine";
   area="Shell"; key="CtrlShiftF12";
@@ -85,7 +94,7 @@ Macro {
 Macro {
   description="Test macro engine (interactive)";
   area="Shell"; key="CtrlShiftF12";
-  sortpriority=49;
+  sortpriority=10;
   action = function() test_macroengine(2) end;
 }
 
@@ -111,6 +120,13 @@ Macro {
 }
 
 Macro {
+  description="Test Hex Editor";
+  area="Shell"; key="CtrlShiftF12";
+  sortpriority=40;
+  action = function() test_hexed(true) end;
+}
+
+Macro {
   description="Test ALL";
   area="Shell"; key="CtrlShiftF12";
   sortpriority=60;
@@ -119,6 +135,7 @@ Macro {
     test_lfsearch()
     test_polygon()
     test_sqlarc()
+    test_hexed()
     far.Message("PASS", "ALL tests")
   end;
 }
