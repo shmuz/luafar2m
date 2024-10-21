@@ -78,7 +78,7 @@ end
 local function test_hexed(verbose)
   far.Message("Please wait...", "Test Hex Editor", "")
   local test = require "far2.test.test_hexed"
-  test()
+  test("CtrlF4")
   if verbose then
     far.Message("PASS", "Hex Editor tests")
   end
