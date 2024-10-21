@@ -119,12 +119,14 @@ Macro {
   action = function() test_sqlarc(true) end;
 }
 
-Macro {
-  description="Test Hex Editor";
-  area="Shell"; key="CtrlShiftF12";
-  sortpriority=40;
-  action = function() test_hexed(true) end;
-}
+if jit then
+  Macro {
+    description="Test Hex Editor";
+    area="Shell"; key="CtrlShiftF12";
+    sortpriority=40;
+    action = function() test_hexed(true) end;
+  }
+end
 
 Macro {
   description="Test ALL";
@@ -135,7 +137,7 @@ Macro {
     test_lfsearch()
     test_polygon()
     test_sqlarc()
-    test_hexed()
+    if jit then test_hexed() end
     far.Message("PASS", "ALL tests")
   end;
 }
