@@ -243,8 +243,10 @@ end
 
 function mod.ProcessPanelEvent (object, handle, Event, Param)
   if Event == F.FE_IDLE then
-    panel.UpdatePanel(handle, nil, true)
-    panel.RedrawPanel(handle)
+    if far.MacroGetArea() ~= F.MACROAREA_MENU then -- menus in Far2 are overshadowed by panel redraw
+      panel.UpdatePanel(handle, nil, true)
+      panel.RedrawPanel(handle)
+    end
   end
 end
 
