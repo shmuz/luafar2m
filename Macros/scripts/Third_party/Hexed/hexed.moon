@@ -21,6 +21,7 @@ ScriptDir=(...)\match ".*/"
 Settings = nil
 Colors = nil
 
+require'winapi'
 ffi=require'ffi'
 C=ffi.C
 MinWidth=80 -- must fully cover the right (displaytext) part
