@@ -12,7 +12,7 @@ local Cfg = {
 }
 
 -- UPVALUES : keep them above all function definitions !!
-local SETTINGS_KEY  = ("%08X"):format(far.GetPluginId())
+local SETTINGS_KEY  = nil
 local SETTINGS_NAME = "settings"
 
 local Sett  = require "far2.settings"

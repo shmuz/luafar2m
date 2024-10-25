@@ -5,7 +5,7 @@ far.ReloadDefaultScript = true
 package.loaded["far2.custommenu"] = nil
 package.loaded["lfh_config"] = nil
 
-local SETTINGS_KEY  = ("%08X"):format(far.GetPluginId())
+local SETTINGS_KEY  = nil
 local SETTINGS_NAME = "settings"
 
 local IniFile    = require "inifile"

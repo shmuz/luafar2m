@@ -16,7 +16,7 @@ local KEEP_DIALOG_OPEN = 0
 local SM_USER = F.SM_USER or 100 -- SM_USER appeared in Far 3.0.5655
 
 local CMP_ALPHA, CMP_INT, CMP_FLOAT = 0,1,2 -- CRITICAL: must match the enum in polygon.c
-local SETTINGS_KEY    = ("%08X"):format(far.GetPluginId())
+local SETTINGS_KEY    = nil
 local SECTION_GENERAL = "general"
 local SECTION_FILES   = "files" -- keys in this section are lower-cased full file names
 local SECTION_QUERIES = "queries"

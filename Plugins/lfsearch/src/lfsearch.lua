@@ -1,7 +1,7 @@
 -- lfsearch.lua
 -- luacheck: globals lfsearch _Plugin
 
-local SETTINGS_KEY  = ("%08X"):format(far.GetPluginId())
+local SETTINGS_KEY  = nil
 local SETTINGS_NAME = "settings"
 local F = far.Flags
 local M -- forward declaration

@@ -5,7 +5,7 @@
 -- luacheck: globals _Plugin lf4ed
 
 local PluginVersion = "2.9.0"
-local SETTINGS_KEY  = ("%08X"):format(far.GetPluginId())
+local SETTINGS_KEY  = nil
 local SETTINGS_NAME = "settings"
 
 -- CONFIGURATION : keep it at the file top !!
