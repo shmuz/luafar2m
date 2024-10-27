@@ -136,10 +136,13 @@ Macro {
 Macro {
   description="Open selected files in Editor";
   area="Shell"; key="CtrlAltK";
-  --flags="NoPluginPanels";
   action=function()
-    local deselect = {}
     local inf = panel.GetPanelInfo(nil,1)
+    if 0 == bit64.band(inf.Flags, F.PFLAGS_REALNAMES) then
+      far.Message("Cannot do that: PFLAGS_REALNAMES bit not set")
+      return
+    end
+    local deselect = {}
     for i=1,inf.SelectedItemsNumber do
       local item = panel.GetSelectedPanelItem(nil,1,i)
       if not item.FileAttributes:find("d") then
