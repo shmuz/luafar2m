@@ -1,3 +1,5 @@
+local F = far.Flags
+
 -- assuming "Show directories first" option is set
 -- description="Find an upper non-directory item";
 -- area="Shell"; key="CtrlShiftHome";
@@ -131,4 +133,38 @@ Macro {
   end;
 }
 
+Macro {
+  description="Open selected files in Editor";
+  area="Shell"; key="CtrlAltK";
+  --flags="NoPluginPanels";
+  action=function()
+    local deselect = {}
+    local inf = panel.GetPanelInfo(nil,1)
+    for i=1,inf.SelectedItemsNumber do
+      local item = panel.GetSelectedPanelItem(nil,1,i)
+      if not item.FileAttributes:find("d") then
+        local n = nil
+        n = editor.Editor(item.FileName,n,n,n,n,n,"EF_NONMODAL EF_IMMEDIATERETURN")
+        if n == F.EEC_MODIFIED then
+          table.insert(deselect, item.FileName)
+        end
+      end
+    end
+    actl.SetCurrentWindow(1,true) -- started in Shell, finish in Shell
+    Panel.Select(0,0,2,table.concat(deselect,"\n"))
+  end;
+}
 
+Macro {
+  description="Close all open editors";
+  area="Shell"; key="CtrlAltK";
+  action=function()
+    local wcount = actl.GetWindowCount()
+    for k=wcount,1,-1 do -- reverse order
+      local inf = actl.GetWindowInfo(k)
+      if inf.Type == F.WTYPE_EDITOR then
+        editor.Quit(inf.Id)
+      end
+    end
+  end;
+}
