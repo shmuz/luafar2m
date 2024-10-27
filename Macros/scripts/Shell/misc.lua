@@ -105,3 +105,30 @@ Macro {
     panel.RedrawPanel(nil, 1, {TopPanelItem=top; CurrentItem=cur; })
   end;
 }
+
+Macro {
+  description="Python sub-plugins";
+  area="Shell Info QView Tree"; key="CtrlShiftP";
+  action=function()
+    local PluginId = 0x7E9585C2
+    if not Plugin.Exist(PluginId) then
+      far.Message("Plugin Python not loaded",nil,nil,"w")
+      return
+    end
+    local menuitems = {}
+    far.RecursiveSearch(far.InMyConfig("plugins/python"), "*.py",
+      function(item,path)
+        local name = item.FileName:sub(1,-4)
+        table.insert(menuitems, {text=name; Name=name;})
+      end)
+    table.sort(menuitems, function(a1,a2) return a1.text < a2.text; end)
+    local title = ("Python plugins (%d)"):format(#menuitems)
+    local bottom="Enter: load"
+    local  mi = far.Menu({ Title=title; Bottom=bottom; }, menuitems)
+    if mi then
+      Plugin.Command(PluginId, "load "..mi.Name)
+    end
+  end;
+}
+
+
