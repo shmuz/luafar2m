@@ -43,6 +43,7 @@ local function Settings()
     Screen1 = out.scr1
     Screen2 = out.scr2
     Enable = (pos == Pos.enable)
+    if Enable then actl.SetCurrentWindow(Screen1,true) end
   end
 end
 
