@@ -153,13 +153,13 @@ Macro {
         end
       end
     end
-    actl.SetCurrentWindow(1,true) -- started in Shell, finish in Shell
+    actl.SetCurrentWindow(1) -- started in Shell, finish in Shell
     Panel.Select(0,0,2,table.concat(deselect,"\n"))
   end;
 }
 
 Macro {
-  description="Close all open editors";
+  description="Close all open editors and viewers";
   area="Shell"; key="CtrlAltK";
   action=function()
     local wcount = actl.GetWindowCount()
@@ -167,6 +167,8 @@ Macro {
       local inf = actl.GetWindowInfo(k)
       if inf.Type == F.WTYPE_EDITOR then
         editor.Quit(inf.Id)
+      elseif inf.Type == F.WTYPE_VIEWER then
+        viewer.Quit(inf.Id)
       end
     end
   end;

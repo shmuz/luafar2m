@@ -43,7 +43,7 @@ local function Settings()
     Screen1 = out.scr1
     Screen2 = out.scr2
     Enable = (pos == Pos.enable)
-    if Enable then actl.SetCurrentWindow(Screen1,true) end
+    if Enable then actl.SetCurrentWindow(Screen1) end
   end
 end
 
@@ -62,7 +62,7 @@ Macro {
   action=function()
     local pos = actl.GetWindowInfo().Pos
     pos = pos==Screen1 and Screen2 or Screen1
-    if 0 == actl.SetCurrentWindow(pos, true) then
+    if 0 == actl.SetCurrentWindow(pos) then
       Settings()
     end
   end;
