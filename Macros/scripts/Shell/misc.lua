@@ -53,16 +53,18 @@ Macro {
       if dir == nil then return end
     end
     local dir2 = dir
+    local far2l = home.."/far2l"
+    local far2m = home.."/far2m"
     if dir:find("far2l") then
-      if dir2 == dir then dir2 = dir:gsub(home.."/far2l/far2l/", home.."/far2m/far/") end
-      if dir2 == dir then dir2 = dir:gsub(home.."/far2l/far2l$", home.."/far2m/far") end
-      if dir2 == dir then dir2 = dir:gsub(home.."/far2l/",       home.."/far2m/") end
-      if dir2 == dir then dir2 = dir:gsub(home.."/far2l$",       home.."/far2m") end
+      if dir2 == dir then dir2 = dir:gsub(far2l.."/far2l/", far2m.."/far/") end
+      if dir2 == dir then dir2 = dir:gsub(far2l.."/far2l$", far2m.."/far") end
+      if dir2 == dir then dir2 = dir:gsub(far2l.."/",       far2m.."/") end
+      if dir2 == dir then dir2 = dir:gsub(far2l.."$",       far2m) end
     elseif dir:find("far2m") then
-      if dir2 == dir then dir2 = dir:gsub(home.."/far2m/far/",   home.."/far2l/far2l/") end
-      if dir2 == dir then dir2 = dir:gsub(home.."/far2m/far$",   home.."/far2l/far2l") end
-      if dir2 == dir then dir2 = dir:gsub(home.."/far2m/",       home.."/far2l/") end
-      if dir2 == dir then dir2 = dir:gsub(home.."/far2m$",       home.."/far2l") end
+      if dir2 == dir then dir2 = dir:gsub(far2m.."/far/",   far2l.."/far2l/") end
+      if dir2 == dir then dir2 = dir:gsub(far2m.."/far$",   far2l.."/far2l") end
+      if dir2 == dir then dir2 = dir:gsub(far2m.."/",       far2l.."/") end
+      if dir2 == dir then dir2 = dir:gsub(far2m.."$",       far2l) end
     end
     if dir2 ~= dir and win.GetFileAttr(dir2) then
       panel.SetPanelDirectory(nil, 0, dir2)
