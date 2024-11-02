@@ -4,7 +4,7 @@ local State
 local function test_macroengine_interactive(mod)
   local sd = require "far2.simpledialog"
   local items = {
-    width=50;
+    width=45;
     {tp="dbox"; text="Macro tests"; },
   }
 
@@ -20,7 +20,6 @@ local function test_macroengine_interactive(mod)
 
   table.insert(items, {tp="sep"})
   table.insert(items, {tp="butt"; text="&Run"; centergroup=1; default=1; })
-  table.insert(items, {tp="butt"; text="&All"; centergroup=1;    btnnoclose=1;        name="all"  })
   table.insert(items, {tp="butt"; text="&Clear"; centergroup=1;  btnnoclose=1; y1=""; name="clear" })
   table.insert(items, {tp="butt"; text="&Invert"; centergroup=1; btnnoclose=1; y1=""; name="invert" })
 
@@ -31,8 +30,7 @@ local function test_macroengine_interactive(mod)
     if msg==F.DN_BTNCLICK then
       for i=1,#items do
         if items[i].tp=="chbox" then
-          if p1==Pos.all then hDlg:SetCheck(i, true)
-          elseif p1==Pos.clear then hDlg:SetCheck(i, false)
+          if p1==Pos.clear then hDlg:SetCheck(i, false)
           elseif p1==Pos.invert then hDlg:SetCheck(i, hDlg:GetCheck(i)==0)
           end
         end
