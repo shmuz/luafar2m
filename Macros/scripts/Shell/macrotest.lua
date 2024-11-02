@@ -1,18 +1,46 @@
+local F = far.Flags
 local State
 
 local function test_macroengine_interactive(mod)
   local sd = require "far2.simpledialog"
-  local items = { width=0; {tp="dbox"; text="Macro tests";} }
+  local items = {
+    width=50;
+    {tp="dbox"; text="Macro tests"; },
+  }
+
   local t = {}
   for nm in pairs(mod) do
     if nm ~= "test_all" then t[#t+1] = nm; end
   end
-  table.sort(t)
+  table.sort(t, function(a,b) return utf8.ncasecmp(a,b) < 0 end)
   for _, nm in ipairs(t) do
     local it = { tp="chbox"; text=nm; name=nm; val=State and State[nm]; }
     table.insert(items, it)
   end
-  local out = sd.New(items):Run()
+
+  table.insert(items, {tp="sep"})
+  table.insert(items, {tp="butt"; text="&Run"; centergroup=1; default=1; })
+  table.insert(items, {tp="butt"; text="&All"; centergroup=1;    btnnoclose=1;        name="all"  })
+  table.insert(items, {tp="butt"; text="&Clear"; centergroup=1;  btnnoclose=1; y1=""; name="clear" })
+  table.insert(items, {tp="butt"; text="&Invert"; centergroup=1; btnnoclose=1; y1=""; name="invert" })
+
+  local Dlg = sd.New(items)
+  local Pos = Dlg:Indexes()
+
+  items.proc = function(hDlg, msg, p1, p2)
+    if msg==F.DN_BTNCLICK then
+      for i=1,#items do
+        if items[i].tp=="chbox" then
+          if p1==Pos.all then hDlg:SetCheck(i, true)
+          elseif p1==Pos.clear then hDlg:SetCheck(i, false)
+          elseif p1==Pos.invert then hDlg:SetCheck(i, hDlg:GetCheck(i)==0)
+          end
+        end
+      end
+    end
+  end
+
+  local out = Dlg:Run()
   if out then
     State = out
     local t = {}
