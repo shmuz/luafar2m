@@ -1,7 +1,7 @@
 local F = far.Flags
 local State
 
-local function test_macroengine_interactive(mod)
+local function select_tests(mod)
   local sd = require "far2.simpledialog"
   local items = {
     width=45;
@@ -46,25 +46,34 @@ local function test_macroengine_interactive(mod)
       if out[nm] then t[#t+1] = nm; end
     end
     table.sort(t)
-    for _,nm in ipairs(t) do mod[nm]() end
-    return true
+    return t
   end
 end
 
-local function test_macroengine(verbose)
-  far.Message("Please wait...", "Test macro engine", "")
+local function test_macroengine(interactive, verbose)
+  local WaitMsg = function() far.Message("Please wait...", "Test macro engine", "") end
+  local PassMsg = function() far.Message("PASS", "Macro engine tests") end
+
   Far.DisableHistory(0x0F)
   local fname = far.PluginStartupInfo().ShareDir .. "/macrotest.lua"
   local f = assert(loadfile(fname))
   local mod = setfenv(f, getfenv())()
-  local show_msg = (verbose ~= 0)
-  if verbose==0 or verbose==1 then
-    if mod and mod.test_all then mod.test_all(); end
-  elseif verbose == 2 then
-    show_msg = test_macroengine_interactive(mod)
-    actl.RedrawAll()
+
+  if interactive then
+    local tests = select_tests(mod)
+    if tests then
+      WaitMsg()
+      for _,nm in ipairs(tests) do mod[nm]() end
+      actl.Commit() -- clear WaitMsg
+      if verbose then PassMsg() end
+    end
+  else
+    if mod and mod.test_all then
+      WaitMsg()
+      mod.test_all()
+      if verbose then PassMsg() end
+    end
   end
-  if show_msg then far.Message("PASS", "Macro engine tests"); end
 end
 
 local function test_polygon(verbose)
@@ -114,14 +123,14 @@ Macro {
   description="Test macro engine";
   area="Shell"; key="CtrlShiftF12";
   sortpriority=59;
-  action = function() test_macroengine(1) end;
+  action = function() test_macroengine(false,true) end;
 }
 
 Macro {
   description="Test macro engine (interactive)";
   area="Shell"; key="CtrlShiftF12";
   sortpriority=10;
-  action = function() test_macroengine(2) end;
+  action = function() test_macroengine(true,true) end;
 }
 
 Macro {
@@ -159,7 +168,7 @@ Macro {
   area="Shell"; key="CtrlShiftF12";
   sortpriority=60;
   action=function()
-    test_macroengine(0)
+    test_macroengine(false,false)
     test_lfsearch()
     test_polygon()
     test_sqlarc()
