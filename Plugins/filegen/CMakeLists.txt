@@ -41,6 +41,7 @@ set_target_properties(${PROJECT_NAME}
 
 set(MY_LIST
   filegen.lua
+  filegen_eng.hlf
 )
 
 foreach(elem ${MY_LIST})

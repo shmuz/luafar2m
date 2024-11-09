@@ -21,27 +21,43 @@ function export.GetPluginInfo()
   }
 end
 
-local pat_cmdline = regex.new ([[
-  ^ \s* (\d+) (?:\s+(\d+))? (?:\s|$)
-]], "ix")
-
-function export.Open(OpenFrom, Guid, Item)
+function export.Open(OpenFrom, Guid, text)
   if OpenFrom == F.OPEN_COMMANDLINE then
-    local n,d = pat_cmdline:match(Item)
-    if n then
-      return { numfiles=tonumber(n); numdirs=tonumber(d) or 0; }
-    end
+    local fnum  = regex.match(text, [[ \b FNUM  = (\d+) \b ]], nil, "xi")
+    local dnum  = regex.match(text, [[ \b DNUM  = (\d+) \b ]], nil, "xi")
+    local fname = regex.match(text, [[ \b FNAME = (\S+)    ]], nil, "xi")
+    local dname = regex.match(text, [[ \b DNAME = (\S+)    ]], nil, "xi")
+    local fext  = regex.match(text, [[ \b FEXT  = (\S+)    ]], nil, "xi")
+    local dext  = regex.match(text, [[ \b DEXT  = (\S+)    ]], nil, "xi")
+    return {
+      fnum = tonumber(fnum) or 0;
+      dnum = tonumber(dnum) or 0;
+      fname = fname;
+      dname = dname;
+      fext = fext;
+      dext = dext;
+    }
   end
 end
 
-function export.GetFindData (object, handle, OpMode)
+function export.GetFindData (obj, handle, OpMode)
   --if band(OpMode, F.OPM_FIND) ~= 0 then return end
+
+  local fname = obj.fname or "File"
+  local dname = obj.dname or "Dir"
+  local fext = obj.fext and "."..obj.fext or ""
+  local dext = obj.dext and "."..obj.dext or ""
   local data = {}
-  for k=1,object.numfiles do
-    data[k] = { FileName = "File"..k; }
+  for k=1,obj.fnum do
+    data[k] = {
+      FileName = fname..k..fext;
+    }
   end
-  for k=1,object.numdirs do
-    data[k+object.numfiles] = { FileName = "Dir"..k; FileAttributes="d"; }
+  for k=1,obj.dnum do
+    data[k+obj.fnum] = {
+      FileName = dname..k..dext;
+      FileAttributes="d";
+    }
   end
   return data
 end

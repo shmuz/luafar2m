@@ -1,0 +1,18 @@
+.Language=English,English
+.PluginContents=Pseudo File Generator
+.Options CtrlColorChar=\
+
+@Contents
+$ #Pseudo File Generator#
+  This plugin creates a panel with a given number of files and directories.
+  Those are just panel items rather than real files and directories.
+
+  #Command line#
+
+  #fgen:# <parameters>
+    #fnum#=num_files
+    #dnum#=num_dirs
+    #fname#=file_name
+    #dname#=dir_name
+    #fext#=file_extension
+    #dext#=dir_extension
