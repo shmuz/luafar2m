@@ -14,48 +14,37 @@ function export.GetPluginInfo()
   return {
     CommandPrefix = "fgen",
     Flags = 0,
-    -- PluginConfigGuids   = PluginConfigGuid1,
-    -- PluginConfigStrings = { Title },
-    -- PluginMenuGuids   = PluginMenuGuid1,
-    -- PluginMenuStrings = { Title },
   }
 end
 
 function export.Open(OpenFrom, Guid, text)
   if OpenFrom == F.OPEN_COMMANDLINE then
-    local fnum  = regex.match(text, [[ \b FNUM  = (\d+) \b ]], nil, "xi")
-    local dnum  = regex.match(text, [[ \b DNUM  = (\d+) \b ]], nil, "xi")
-    local fname = regex.match(text, [[ \b FNAME = (\S+)    ]], nil, "xi")
-    local dname = regex.match(text, [[ \b DNAME = (\S+)    ]], nil, "xi")
-    local fext  = regex.match(text, [[ \b FEXT  = (\S+)    ]], nil, "xi")
-    local dext  = regex.match(text, [[ \b DEXT  = (\S+)    ]], nil, "xi")
-    return {
-      fnum = tonumber(fnum) or 0;
-      dnum = tonumber(dnum) or 0;
-      fname = fname;
-      dname = dname;
-      fext = fext;
-      dext = dext;
-    }
+    local out = {}
+    local args =  { far.SplitCmdLine(text) }
+    for k,v in ipairs(args) do
+      local key, val = v:match("^%s*(%w+)%s*=(.+)$")
+      if key == "fnum" or key == "dnum" then out[key] = tonumber(val)
+      elseif key == "fname" or key == "dname" then out[key] = val
+      end
+    end
+    return out
   end
 end
 
 function export.GetFindData (obj, handle, OpMode)
   --if band(OpMode, F.OPM_FIND) ~= 0 then return end
 
-  local fname = obj.fname or "File"
-  local dname = obj.dname or "Dir"
-  local fext = obj.fext and "."..obj.fext or ""
-  local dext = obj.dext and "."..obj.dext or ""
+  local fname = obj.fname or "File-{1}"
+  local dname = obj.dname or "Dir-{1}"
   local data = {}
-  for k=1,obj.fnum do
+  for k=1,obj.fnum or 0 do
     data[k] = {
-      FileName = fname..k..fext;
+      FileName = fname:reformat(k);
     }
   end
-  for k=1,obj.dnum do
+  for k=1,obj.dnum or 0 do
     data[k+obj.fnum] = {
-      FileName = dname..k..dext;
+      FileName = dname:reformat(k);
       FileAttributes="d";
     }
   end
@@ -63,7 +52,6 @@ function export.GetFindData (obj, handle, OpMode)
 end
 
 function export.GetOpenPanelInfo (object, handle)
---far.MacroPost[[print"."]]
   return {
     Flags            = OpenPanelInfoFlags,
     PanelTitle       = Title,

@@ -10,9 +10,14 @@ $ #Pseudo File Generator#
   #Command line#
 
   #fgen:# <parameters>
-    #fnum#=num_files
-    #dnum#=num_dirs
-    #fname#=file_name
-    #dname#=dir_name
-    #fext#=file_extension
-    #dext#=dir_extension
+      #fnum=#num_files
+      #dnum=#num_dirs
+      #fname=#file_name
+      #dname=#dir_name
+
+      #fname# and #dname# may contain placeholders for a number part
+      in the form that utf8.reformat recognizes as a first argument,
+      e.g. {1} or {1:d} or {1:03d} or {1:04X} etc.
+
+  #Example#
+      fgen: fnum=10 dnum=5 fname=file-{1} dname=dir-{1}
