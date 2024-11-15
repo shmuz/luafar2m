@@ -36,14 +36,17 @@ function export.GetFindData (obj, handle, OpMode)
 
   local fname = obj.fname or "File-{1}"
   local dname = obj.dname or "Dir-{1}"
+  local fnum = obj.fnum or 0
+  local dnum = obj.dnum or 0
+
   local data = {}
-  for k=1,obj.fnum or 0 do
+  for k=1,fnum do
     data[k] = {
       FileName = fname:reformat(k);
     }
   end
-  for k=1,obj.dnum or 0 do
-    data[k+obj.fnum] = {
+  for k=1,dnum do
+    data[k+fnum] = {
       FileName = dname:reformat(k);
       FileAttributes="d";
     }
