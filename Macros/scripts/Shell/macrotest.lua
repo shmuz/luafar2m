@@ -55,10 +55,7 @@ local function test_macroengine(interactive, verbose)
   local PassMsg = function() far.Message("PASS", "Macro engine tests") end
 
   Far.DisableHistory(0x0F)
-  local fname = far.PluginStartupInfo().ShareDir .. "/macrotest.lua"
-  local f = assert(loadfile(fname))
-  local mod = setfenv(f, getfenv())()
-
+  local mod = require "far2.test.macrotest"
   if interactive then
     local tests = select_tests(mod)
     if tests then
@@ -68,11 +65,10 @@ local function test_macroengine(interactive, verbose)
       if verbose then PassMsg() end
     end
   else
-    if mod and mod.test_all then
-      WaitMsg()
-      mod.test_all()
-      if verbose then PassMsg() end
-    end
+    assert(mod.test_all, "function test_all not found")
+    WaitMsg()
+    mod.test_all()
+    if verbose then PassMsg() end
   end
 end
 
