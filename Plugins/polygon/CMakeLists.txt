@@ -34,7 +34,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
   ${FARSOURCE}/luafar/src)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Android")
-  target_link_libraries(${PROJECT_NAME} luajit)
   target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/luafar.so)
 endif()
 
