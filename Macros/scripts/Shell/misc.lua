@@ -38,7 +38,7 @@ Macro {
   description="Jump to home directory";
   area="Shell"; key="Ctrl`";
   action=function()
-    panel.SetPanelDirectory(nil, 1, os.getenv"HOME")
+    panel.SetPanelDirectory(nil, 1, far.GetMyHome())
   end;
 }
 
@@ -46,7 +46,7 @@ Macro {
   description="Sync far2m dir with far2l or vice versa";
   area="Shell"; key="CtrlS";
   action=function()
-    local home = os.getenv("HOME")
+    local home = far.GetMyHome()
     local dir = panel.GetPanelDirectory(nil, 1).Name
     if dir == "" then -- TmpPanel ?
       dir = APanel.Current:match("(.+)/")
