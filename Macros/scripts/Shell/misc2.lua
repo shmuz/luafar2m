@@ -2,7 +2,7 @@ local SharedKey = "CtrlAltE"
 
 local function ShowDiff (aName)
   local dir = panel.GetPanelDirectory(nil, 1).Name
-  panel.SetPanelDirectory(nil, 1, win.JoinPath(os.getenv("HOME"), aName))
+  panel.SetPanelDirectory(nil, 1, win.JoinPath(far.GetMyHome(), aName))
   local file = far.InMyTemp(aName) .. ".diff"
   local fp = io.popen("git diff >"..file)
   if fp then
@@ -40,7 +40,7 @@ Macro {
   description = "Generate luacheck_config.lua";
   area="Shell"; key=SharedKey; sortpriority=44;
   action=function()
-    local trg = os.getenv("HOME").."/luacheck_config.lua"
+    local trg = far.GetMyHome().."/luacheck_config.lua"
     require("far2.luacheck_generate")(trg)
     far.Message("Done")
   end

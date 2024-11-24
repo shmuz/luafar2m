@@ -1,7 +1,7 @@
 local run = select(2, ...)
 if run ~= 1 then return end
 
-local home = os.getenv("HOME")
+local home = far.GetMyHome()
 local plugins = home.."/luafar2m/_build/install"
 
 -- load plugins
