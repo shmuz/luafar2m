@@ -33,9 +33,12 @@ Macro {
   area="Editor"; key="Ctrl'";
   action=function()
     local EI = editor.GetInfo()
-    EI.CurTabPos = EI.CurTabPos==EI.LeftPos and EI.CurTabPos+1 or nil
-    EI.LeftPos, EI.CurPos = EI.LeftPos+1, nil
-    editor.SetPosition(nil,EI)
+    EI.LeftPos = EI.LeftPos + 1
+    if EI.CurTabPos < EI.LeftPos then
+      EI.CurPos = EI.CurPos + 1
+    end
+    EI.CurTabPos = nil
+    editor.SetPosition(nil, EI)
   end;
 }
 
