@@ -14,14 +14,13 @@ if OS_WIN then
 else
   GetHistory = function(s1,s2) return _Plugin.History[s1][s2] end
   SetHistory = function(s1,s2,val) _Plugin.History[s1][s2] = val end
-  TMPDIR = "/tmp"
+  TMPDIR = far.InMyTemp()
 end
-
-local function join(...) return table.concat({...}, DIRSEP) end
 
 local selftest = {} -- this module
 
 local F = far.Flags
+local join = win.JoinPath
 local russian_alphabet_utf8 = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя"
 
 local function OpenHelperEditor()
