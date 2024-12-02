@@ -1,0 +1,85 @@
+﻿https://forum.farmanager.com/viewtopic.php?f=15&t=8764
+
+Есть полезнейшая возможность в [MacroLib] — запуск макросов удержанием, двойным нажатием, и др.
+Хорошо бы подобное и в родные макросы (тикет на мантисе [есть](https://bugs.farmanager.com/view.php?id=2392)).
+
+А пока попробуем приблизится к решению задачи имеющимися средствами.
+
+Предлагаю скрипт **MacroEx**, расширяющий возможности запуска макросов следующим образом:
+
+1. В имени клавиши через двоеточие теперь можно указывать дополнительные модификаторы *Hold* и *Double*:
+   * **_key_:Double** — макрос будет выполнен при двукратном нажатии клавиши (в течении 300 мс, не отпуская клавиши-модификаторы)
+   * **_key_:Hold** — макрос будет выполнен при удержании (>300 мс)
+     **Пример:** [spoiler]
+
+```lua
+Macro {
+  description="test";
+  area="Editor"; key="CtrlF9";
+  action=function()
+    far.Message"plain macro"
+  end
+}
+ 
+Macro {
+  description="hold test";
+  area="Editor"; key="CtrlF9:Hold";
+  action=function()
+    far.Message"hold"
+  end;
+}
+ 
+Macro {
+  description="doubletap test";
+  area="Common"; key="CtrlF9:Double";-- priority=50;
+  action=function()
+    far.Message"doubletap 1"
+  end;
+}
+ 
+Macro {
+  description="doubletap test";
+  area="Editor"; key="CtrlF9:Double";
+  action=function()
+    far.Message"doubletap 2"
+  end;
+}
+```
+[/spoiler]
+
+2. Поддерживаются последовательности из двух нажатий, перечисленные через "`-`":
+   * **_key_-key2** — макрос будет выполнен при нажатии последовательности клавиш.
+     Последовательность следует нажимать так: [spoiler]— нажать первую клавишу (с модификатором)
+     — сразу отпустить саму клавишу, но продолжать удерживать модификатор
+     — нажать вторую клавишу и отпустить вместе с модификатором[/spoiler].
+     Если вторая клавиша последовательности в течении секунды не будет нажата, то появится подсказка: из описаний возможных макросов.
+     **Пример:** [spoiler]
+
+```lua
+Macro {
+  description="F8:  sequence test 1";
+  area="Editor"; key="ShiftF8-F8";
+  action=function()
+    far.Message"sequence 1"
+  end;
+}
+ 
+Macro {
+  description="F9:  sequence test 2";
+  area="Editor"; key="CtrlF8-F9";
+  action=function()
+    far.Message"sequence 2"
+  end;
+}
+```
+[/spoiler]
+
+   На один и тот же **_key_** можно назначить произвольное число макросов, конфликты разрешаются по правилам, принятым в LuaMacro.
+   Макросы с модификаторами не лишают указанную комбинацию исходного значения: короткое нажатие выполнит исходное действие (или макрос, если назначен).
+
+**Ограничения:**
+- В качестве `key` поддерживаются только комбинации клавиш с модификаторами **Ctrl**/**Alt**/**Shift**.
+
+**Установка:** достаточно расположить прилагаемый **macroEx.lua** где-либо в **scripts**.
+
+[MacroLib]: http://forum.farmanager.com/viewtopic.php?f=11&t=6041
