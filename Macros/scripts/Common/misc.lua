@@ -22,7 +22,6 @@ Macro {
   id="71A8298A-0237-429D-83F3-FC8EB5630979";
   description="Insert Timestamp";
   area="Shell Dialog Editor"; key="CtrlShiftT";
-  id="EDB86ABD-C0C8-4EE8-B320-339E295446F0";
   action=function()
     local items = {
         { Pat="%Y-%m-%d"            },

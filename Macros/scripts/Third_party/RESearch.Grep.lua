@@ -64,7 +64,6 @@ local function FileSave(t)
 end
 
 Macro {
-  id="AAA566FB-98E1-4D5D-A58A-3CF755F78B8E";
   id=MacroId; key=MacroKey;
   description="Grep:  Goto this line in this file";
   area="Editor"; filemask="*.tmp";
@@ -83,7 +82,6 @@ Macro {
 }
 
 Macro {
-  id="199387A2-D745-4C72-9EF3-1E9E9B53344B";
   id=MacroId; key=MacroKey;
   description="Grep:  Save this line in this file";
   area="Editor"; filemask="*.tmp";
@@ -103,7 +101,6 @@ Macro {
 }
 
 Macro {
-  id="7B578F8E-B9E1-46B5-A67D-287F721E5E23";
   id=MacroId; key=MacroKey;
   description="Grep:  Save all lines in this file";
   area="Editor"; filemask="*.tmp";
@@ -126,7 +123,6 @@ Macro {
 }
 
 Macro {
-  id="5F63F0FF-C4EC-4C39-91BB-C7F259590FE4";
   id=MacroId; key=MacroKey;
   description="Grep:  Save all lines in all files";
   area="Editor"; filemask="*.tmp";

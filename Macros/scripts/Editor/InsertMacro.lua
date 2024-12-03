@@ -99,11 +99,10 @@ local function InsertMacro()
 
   local tResult = ( [[
 Macro {
-  id="0D520680-9CD5-456C-8C79-49BB3719D269";
+  id=%q;
   description=%q;
   area=""; key="";
   flags=%q;
-  id=%q;
   -- priority=50; condition=function(key) end;
   action=function()
   end;
