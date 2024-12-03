@@ -197,6 +197,7 @@ if Macro then
     end;
   }
   Macro { description="Choose env file to import";
+    id="B342745E-3C38-4F18-8427-6FB03FBA5A62";
     area="Common"; key=O.macrokey; -- to be set in options
     id="0E285A94-5672-4191-A667-967A8B29ED59";
     action=function()

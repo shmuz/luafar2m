@@ -1,4 +1,6 @@
 Macro {
+  id="A4956445-6F20-48A0-956E-E6BAA86F6646";
+  id="5ADC179C-55C8-40AD-AE22-57FE8BE25116";
   description="Show dialog/menu ID";
   area="Dialog Menu Disks UserMenu";  key="CtrlG";
   action=function()

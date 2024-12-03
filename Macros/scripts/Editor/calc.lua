@@ -16,6 +16,8 @@ local function EvalExpression()
 end
 
 Macro {
+  id="895DDA20-A5AC-4FE5-A562-F4A130F3B385";
+  id="8B03A118-F6FB-44CE-9080-B3503F46E4BB";
   description="Calculate Sum and Average";
   area="Editor"; key="CtrlF9"; sortpriority=60;
   action=function()
@@ -69,6 +71,8 @@ Aver. abs. deviation: %s]]
 }
 
 Macro {
+  id="3D8D0D37-347B-4261-A826-C56FE02AAF5D";
+  id="4D41CD75-89EF-40E7-97B2-9BD35989CED2";
   description="Calculate Lua Expression";
   area="Editor"; key="CtrlF9";
   action=function()
@@ -83,6 +87,8 @@ Macro {
 }
 
 Macro {
+  id="2DEB1F1C-03DC-4D38-A2A7-9B4996F4E456";
+  id="A0F36350-7522-416B-98FD-5584B75C2FB9";
   description="Insert Lua Expression";
   area="Editor"; key="CtrlF9";
   action=function()

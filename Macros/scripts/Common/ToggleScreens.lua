@@ -48,12 +48,16 @@ local function Settings()
 end
 
 Macro {
+  id="D5F2D8C5-1B68-43ED-9376-A49ABB21E76F";
+  id="1A8551F9-9663-42F2-A809-15DA50CADEF8";
   description="Turn ON/OFF toggle 2 selected screens";
   area="Common"; key="CtrlAltJ";
   action=function() Settings() end;
 }
 
 Macro {
+  id="E04D0104-D54F-4804-AD13-B9EF2B5DD99E";
+  id="2A10B660-3B27-40F1-9EB6-9D3C116A06D3";
   description=Title;
   area="Common"; key="CtrlTab";
   condition=function(key)

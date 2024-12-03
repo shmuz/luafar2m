@@ -147,6 +147,8 @@ local function CanRun()
 end
 
 Macro {
+  id="06634D5E-64FC-489A-8CCE-626B63CD8A77";
+  id="DC8A6584-A5AD-4907-BBD2-ACEFEF4E06B6";
   description=Title;
   area="Shell"; key=MacroKey;
   condition=CanRun;

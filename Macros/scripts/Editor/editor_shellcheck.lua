@@ -172,6 +172,8 @@ local function Configure()
 end
 
 Macro {
+  id="9070169A-19C4-4A2C-849A-16563837BD3B";
+  id="614431A7-5DC8-4E52-A669-1A4D37B2BA2A";
   description=Info.Title;
   area="Editor"; key="CtrlShiftF7"; filemask="*.sh";
   action=function() CheckEditor() end;

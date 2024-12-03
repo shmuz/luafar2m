@@ -116,6 +116,8 @@ local function test_hexed(verbose)
 end
 
 Macro {
+  id="B7B0B120-A616-4CBF-AB83-34E2EC024083";
+  id="8E8048B3-CC62-4D73-80AD-46941BFD655C";
   description="Test macro engine";
   area="Shell"; key="CtrlShiftF12";
   sortpriority=59;
@@ -123,6 +125,8 @@ Macro {
 }
 
 Macro {
+  id="C003453B-A808-4BE3-B384-3E9BB732D4AC";
+  id="92189F85-1E54-4F59-A450-2CA6FF2B7D28";
   description="Test macro engine (interactive)";
   area="Shell"; key="CtrlShiftF12";
   sortpriority=10;
@@ -130,6 +134,8 @@ Macro {
 }
 
 Macro {
+  id="FBD67701-0158-4191-8C4F-A5C174680BEB";
+  id="4310629D-5422-4F95-AB80-52D3E071AD7B";
   description="Test plugin Polygon";
   area="Shell"; key="CtrlShiftF12";
   sortpriority=57;
@@ -137,6 +143,8 @@ Macro {
 }
 
 Macro {
+  id="38147368-BE34-4556-840C-D2837A91C129";
+  id="0A4FA7FF-7A30-461A-B7F5-4C764617C872";
   description="Test plugin LF Search";
   area="Shell"; key="CtrlShiftF12";
   sortpriority=58;
@@ -144,6 +152,8 @@ Macro {
 }
 
 Macro {
+  id="F5922F72-C7F8-4E53-A95F-AA86270B124D";
+  id="4F89DA2D-714E-4A7E-831E-8CDF19DA14CF";
   description="Test plugin Sqlarc";
   area="Shell"; key="CtrlShiftF12";
   sortpriority=50;
@@ -152,6 +162,8 @@ Macro {
 
 if jit then
   Macro {
+    id="FC08C387-41CE-47CC-9D43-05E775E6CC3C";
+    id="03520D97-0F40-493A-9253-401023F3A7BE";
     description="Test Hex Editor";
     area="Shell"; key="CtrlShiftF12";
     sortpriority=40;
@@ -160,6 +172,8 @@ if jit then
 end
 
 Macro {
+  id="5838EF38-4EB6-4104-BD41-EE80124827E6";
+  id="4A6BD1F8-7782-47ED-89CD-871D26D73135";
   description="Test ALL";
   area="Shell"; key="CtrlShiftF12";
   sortpriority=60;

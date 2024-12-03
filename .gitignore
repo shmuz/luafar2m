@@ -1,5 +1,4 @@
 ###
 _build
 misc
-Macros/scripts/cclike.lua
-Macros/scripts/1.lua
+Macros/scripts/_keyreplace.cfg

@@ -68,6 +68,8 @@ local function BookmarksMenu()
 end
 
 Macro {
+  id="DF2550D0-D97B-4209-ADCC-66545A65B4F9";
+  id="492A8998-B821-4592-8347-44FB9FECA3B1";
   description="Session Bookmarks: add or delete a bookmark";
   area="Editor"; key="ShiftF9";
   action=function()
@@ -81,21 +83,29 @@ Macro {
   end;
 }
 Macro {
+  id="028A8FB3-4566-4666-931B-793DB697A13D";
+  id="F15F77FD-AC49-49D9-B062-28074472A09B";
   description="Session Bookmarks: clear all bookmarks";
   area="Editor"; key="CtrlShiftF9";
   action=function() editor.ClearSessionBookmarks() end;
 }
 Macro {
+  id="AA75EA37-72A3-43E9-B7CE-DC3249789E61";
+  id="B2A6B96F-59DC-4AD8-A710-BB412C5EB688";
   description="Session Bookmarks: next bookmark";
   area="Editor"; key="ShiftF6";
   action=function() Goto(true) end;
 }
 Macro {
+  id="383239DE-C327-4477-A6FD-85761F422473";
+  id="98AD9393-0979-4681-95A4-72B7E3CB80DC";
   description="Session Bookmarks: previous bookmark";
   area="Editor"; key="CtrlF6";
   action=function() Goto(false) end;
 }
 Macro {
+  id="AD2F4DC2-F059-4462-80B0-090303429152";
+  id="1DC9AD41-BF41-44C1-A08E-2553B524D009";
   description="Session Bookmarks: menu";
   area="Editor"; key="F9";
   action=BookmarksMenu;

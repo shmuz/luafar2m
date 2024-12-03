@@ -12,6 +12,7 @@
 -- Author's Github repository: https://github.com/z0hm/far-scripts
 
 local MacroKey = "AltG"
+local MacroId = "5E4022E4-4D0E-4FD8-ACF7-2709EEE05667"
 
 local F = far.Flags
 local EFlags = bit64.bor(F.EF_NONMODAL, F.EF_IMMEDIATERETURN, F.EF_OPENMODE_USEEXISTING, F.EF_DISABLEHISTORY)
@@ -63,8 +64,10 @@ local function FileSave(t)
 end
 
 Macro {
+  id="AAA566FB-98E1-4D5D-A58A-3CF755F78B8E";
+  id=MacroId; key=MacroKey;
   description="Grep:  Goto this line in this file";
-  area="Editor"; key=MacroKey; filemask="*.tmp";
+  area="Editor"; filemask="*.tmp";
   action=function()
     local inf = GInfo()
     if inf.TargetFName then
@@ -80,8 +83,10 @@ Macro {
 }
 
 Macro {
+  id="199387A2-D745-4C72-9EF3-1E9E9B53344B";
+  id=MacroId; key=MacroKey;
   description="Grep:  Save this line in this file";
-  area="Editor"; key=MacroKey; filemask="*.tmp";
+  area="Editor"; filemask="*.tmp";
   action=function()
     local inf = GInfo()
     local n,s,x = inf.TargetLNum, inf.TargetLStr, inf.CurPos
@@ -98,8 +103,10 @@ Macro {
 }
 
 Macro {
+  id="7B578F8E-B9E1-46B5-A67D-287F721E5E23";
+  id=MacroId; key=MacroKey;
   description="Grep:  Save all lines in this file";
-  area="Editor"; key=MacroKey; filemask="*.tmp";
+  area="Editor"; filemask="*.tmp";
   action=function()
     local inf = GInfo()
     if inf.TargetFName then
@@ -119,8 +126,10 @@ Macro {
 }
 
 Macro {
+  id="5F63F0FF-C4EC-4C39-91BB-C7F259590FE4";
+  id=MacroId; key=MacroKey;
   description="Grep:  Save all lines in all files";
-  area="Editor"; key=MacroKey; filemask="*.tmp";
+  area="Editor"; filemask="*.tmp";
   action=function()
     local t = {}
     local info = editor.GetInfo()

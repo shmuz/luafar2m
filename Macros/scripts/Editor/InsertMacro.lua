@@ -99,6 +99,7 @@ local function InsertMacro()
 
   local tResult = ( [[
 Macro {
+  id="0D520680-9CD5-456C-8C79-49BB3719D269";
   description=%q;
   area=""; key="";
   flags=%q;
@@ -113,6 +114,8 @@ Macro {
 end
 
 Macro {
+  id="75FCE35B-FA42-44D9-811B-BA2A0FC02E94";
+  id="E7026742-D8B4-45CC-B8A7-B53C6F33A675";
   description="Insert Far Manager Macro";
   area="Editor"; key="CtrlF11";
   action=InsertMacro;

@@ -122,6 +122,8 @@ Panel.LoadCustomSortMode (SortMode, {
 })
 
 Macro {
+  id="093615BF-A400-4B5C-9C50-B59BAE2CB11F";
+  id="9A06393C-BD80-40F7-9579-58A3DDE99381";
   description="Sort by Regex with dialog";
   area="Shell"; key="CtrlShiftX";
   action=function()
@@ -130,6 +132,8 @@ Macro {
 }
 
 Macro {
+  id="40451048-CE7F-4FEC-A694-9EB065B8FBAB";
+  id="BF49CAAB-C0C1-4D44-AE73-F15E13BC088B";
   description="Sort by Last Regex";
   area="Shell"; key="CtrlX"; -- НУЖНО ЗАМЕНИТЬ ЭТОТ ШОРТКАТ, ИБО ПЕРЕКРЫВАЕТ ВЫЗОВ ИСТОРИИ КОМСТРОКИ
   action=function()

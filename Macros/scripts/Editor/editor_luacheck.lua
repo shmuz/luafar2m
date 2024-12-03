@@ -143,6 +143,8 @@ local function CheckEditor()
 end
 
 Macro {
+  id="80C371AF-8850-428A-A0AA-D8DD166796D8";
+  id="2F8A9E98-57B9-4679-B988-1DC2C0C09077";
   description=Title;
   area="Editor"; key="CtrlShiftF7"; filemask="*.lua";
   action=function() CheckEditor() end;

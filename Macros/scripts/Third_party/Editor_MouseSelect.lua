@@ -191,6 +191,7 @@ end;
 
 for i=1,#S do
 Macro {id=S[i].id;
+  id="5724D34A-6BCF-4870-B7E0-2D2CFD368A74";
   area="Editor"; key=S[i].Key; priority=S[i].Prior; sortpriority=S[i].Sort; description=M[i];
   condition=Condition;
   action=function() MouseSelect(S[i].Action,S[i].PostAct) end;

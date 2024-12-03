@@ -166,6 +166,8 @@ local function GetHashes()
 end
 
 Macro {
+  id="EEAA0BC3-3567-43D5-A0C7-64E41ED917C3";
+  id="1D7F9269-56BC-4402-9C0B-1B69F33B7D65";
   description="Lunatic Python - HASHES";
   area="Shell"; key=Config.key;
   flags="NoFolders";

@@ -126,8 +126,10 @@ end
 
 if Macro then
   Macro {
+    id="016D5D85-42AF-4C47-87E0-3A43EF634F64";
     description="Ask AI";
     area="Common"; key="CtrlAltB";
+    id="4AFE2367-4DAC-4A74-B1EE-9F14C42991CB";
     action=function()
       mf.acall(bito)
     end;

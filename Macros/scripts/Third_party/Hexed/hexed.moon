@@ -495,6 +495,7 @@ DoHex=->
       C.WINPORT_CloseHandle file
 
 Macro
+  id:"884E2F22-5076-4957-977A-945867B0B00D"
   description:'HEX Editor'
   area:'Viewer'
   key:'CtrlF4'

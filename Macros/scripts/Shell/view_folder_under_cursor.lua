@@ -33,6 +33,8 @@ local function set_passive_path()
 end
 
 Macro {
+  id="6C01D019-6C7E-4AB8-8F7D-E1D5ACC3CE9D";
+  id="889D4559-9EDC-48DD-BA78-BAFCB00CAA2E";
   description="Quick folder view: manual";
   area="Shell"; key=Key_manual;
   flags="NoPluginPanels NoFiles";
@@ -40,6 +42,8 @@ Macro {
 }
 
 Macro {
+  id="BB357E70-621E-410B-BA42-74228F70F1E6";
+  id="BFD1D820-D3F7-4060-BC6C-A9D0E628F784";
   description="Quick folder view: toggle ON/OFF";
   area="Shell"; key=Key_toggle;
   action=function()
@@ -55,6 +59,8 @@ Macro {
 }
 
 Macro {
+  id="5397310D-BB80-467C-9B0A-CF5D41455521";
+  id="14C1160E-AD68-43D4-9205-B6598DA9E097";
   description="Quick folder view: navigate";
   area="Shell"; key=Key_navigate;
   condition=function()
@@ -67,6 +73,8 @@ Macro {
 }
 
 Macro {
+  id="1D1EF06D-C58B-4705-9EB8-0C30C5F948A7";
+  id="CC22992C-0E7C-411B-9467-C44239AFD433";
   description="Quick folder view: turn off";
   area="Shell"; key=Key_off;
   condition=function() return Qmode end;

@@ -12,6 +12,7 @@ color = bor lshift(band(color,0xF),4), rshift(color,4)
 words={}
 
 Macro
+  id:"FE36E158-6B89-4CB2-AEEE-AC7329E41222"
   area:"Editor"
   key:"F5"
   description:"Highlight Word Under Cursor"

@@ -83,6 +83,8 @@ end
 
 if not Macro then DoTest() return end
 Macro {
+  id="8F55C426-C0B4-4974-8FC8-FF5A26F8A26E";
+  id="67BA6227-3F8E-4CFE-81D3-FD8CD7473848";
   description="Test regular expressions";
   area="Common"; key="AltShiftF2";
   flags="NoPluginPanels";
