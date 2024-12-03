@@ -171,7 +171,6 @@ CommandLine {
 
 Macro {
   id="D812F8E8-4CDC-48AD-8C52-9B905263BAEC";
-  id="0CC73917-C9E6-47FA-847B-54A85F4C6FBF";
   description = "Named Folders Lua Edition";
   area="Shell"; key="CtrlD";
   action=function() action(); end;

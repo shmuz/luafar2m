@@ -20,7 +20,6 @@ end
 
 Macro {
   id="9DD36C3B-D9DD-4F3F-BBA2-66BEF7B2960E";
-  id="BA4DB732-45C6-429B-8B8D-B469596CE15C";
   description="Find an upper non-directory item";
   area="Shell"; key="CtrlShiftHome";
   action=function() JumpToNonDir() end;
@@ -28,7 +27,6 @@ Macro {
 
 Macro {
   id="32B7A847-4026-46F2-A329-870F060BBE16";
-  id="B7FD30D8-DF30-421B-BFF2-9E390935AE7C";
   description="Folders shortcuts";
   area="Shell"; key="RCtrl-";
   action=function()
@@ -40,7 +38,6 @@ Macro {
 
 Macro {
   id="C187DDC2-37A3-4DEC-82DB-5744B38AFA0F";
-  id="DCDEF73F-F33A-444D-963E-D66C6A307A56";
   description="Jump to home directory";
   area="Shell"; key="Ctrl`";
   action=function()
@@ -50,7 +47,6 @@ Macro {
 
 Macro {
   id="9521C765-240B-460F-BF25-1124FB0F89F9";
-  id="86C7397B-3F5F-42E3-BB47-B9E791FD675D";
   description="Sync far2m dir with far2l or vice versa";
   area="Shell"; key="CtrlS";
   action=function()
@@ -83,7 +79,6 @@ Macro {
 
 Macro {
   id="2B18F035-9041-4CF3-A8B5-45DB42D2F187";
-  id="DF1F5C0C-2976-4E19-AA8E-3EEF008DA817";
   description="Edit files in SciTE";
   area="Shell"; key="AltShiftF4";
   action=function()
@@ -105,7 +100,6 @@ Macro {
 -- Started: 2021-09-16
 Macro {
   id="4864CDEA-5BD9-459E-9A2C-3DBF73B0E3FA";
-  id="43C7CB3D-D999-4ACD-9E4F-F848DCB9FD43";
   description="Scroll active panel";
   area="Shell"; key="CtrlShiftDown CtrlShiftUp";
   action=function()
@@ -124,7 +118,6 @@ Macro {
 
 Macro {
   id="21B1195D-9010-402D-9279-AF2DAECE0533";
-  id="507B3ABA-F8D3-436E-A163-E6797F6FD802";
   description="Python sub-plugins";
   area="Shell Info QView Tree"; key="CtrlShiftP";
   action=function()
@@ -151,7 +144,6 @@ Macro {
 
 Macro {
   id="07B83FAA-C357-4787-8862-6A86B70E4F79";
-  id="9564DD9E-9924-457A-951F-068C3A7D966C";
   description="Open selected files in Editor";
   area="Shell"; key="CtrlAltK";
   action=function()
@@ -178,7 +170,6 @@ Macro {
 
 Macro {
   id="7A456FA9-6C37-4A8F-9D9E-EC253DC172D3";
-  id="3A17C9F5-686D-4CC6-9F6F-E75D31C69B54";
   description="Close all open editors and viewers";
   area="Shell"; key="CtrlAltK";
   action=function()

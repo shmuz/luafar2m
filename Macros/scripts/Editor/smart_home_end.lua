@@ -1,6 +1,5 @@
 Macro {
   id="CAD5CC2C-2BE8-47C4-8308-6F4D6C03194F";
-  id="CB4AA5D4-0491-4264-942D-EA819CC21CAB";
   description="Smart ShiftHome/ShiftEnd";
   area="Editor"; key="ShiftHome ShiftEnd";
   action=function()

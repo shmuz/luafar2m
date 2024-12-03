@@ -378,7 +378,6 @@ if not Macro then return {Common_Calendar=Common_Calendar} end
 
 Macro {
   id="920ABC6E-7E48-4E9E-A084-350699127AF4";
-  id="9E4D1EDB-0ED6-46AC-B363-A5675692A2E5";
   area="Common"; key=S.Key; description=M.Descr;
   action=function() Calendar() end;
 }

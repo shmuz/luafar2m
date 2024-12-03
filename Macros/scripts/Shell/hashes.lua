@@ -156,7 +156,6 @@ end
 
 Macro {
   id="96FD6881-CC77-465C-8E0D-272908FC5C0C";
-  id="632D7647-DF1C-4F02-B35F-AF5D79C55A10";
   description="Calculate MD5 or SHA1 hash for selected files";
   area="Shell"; key="CtrlAltH"; action=Work;
 }

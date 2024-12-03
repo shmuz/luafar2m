@@ -183,7 +183,6 @@ end
 
 Macro {
   id="31D9A3DE-A578-4B4B-969C-6C938727191E";
-  id="BDB68749-AE63-4292-8DEF-E83C88F56CB9";
   description=Title; area="Common"; key=MacroKey;
   condition=function() return (not Area.Dialog) or (Dlg.Id~=DlgGuid and Dlg.Id~=HelpGuid) end;
   action=Execute;

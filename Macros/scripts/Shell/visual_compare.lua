@@ -148,7 +148,6 @@ end
 
 Macro {
   id="6419C126-45C0-4D13-8C36-C02022F95A74";
-  id="CB7FF805-913D-4D96-AED7-4378C3A77195";
   description="Visual compare";
   area="Shell"; key=CommonKey;
   action=function()

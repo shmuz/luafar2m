@@ -181,7 +181,6 @@ end
 
 Macro {
   id="B1C9D1B5-E4DE-4CEE-8766-CA8DA5FAE654";
-  id="2FA3EDCC-4C53-43C3-8474-2433BF29EF02";
   description="Plugins Control";
   area="Common"; key=macrokey;
   action=Main;

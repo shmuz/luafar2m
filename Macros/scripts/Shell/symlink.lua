@@ -14,7 +14,6 @@ end
 
 Macro {
   id="42E5CEE2-0A93-44B9-981C-C1C580558A32";
-  id="8BD14D95-695C-4C9B-B82E-CA881F16D481";
   description="Show symlink target";
   area="Shell"; key="CtrlShiftL";
   condition=CheckSymlink;
@@ -31,7 +30,6 @@ Macro {
 
 Macro {
   id="71FE4598-4B1C-41DD-A1A0-B02B6DFE6BF6";
-  id="0B450832-FD3F-404D-A281-0529823684B3";
   description="Go to symlink target";
   area="Shell"; key="CtrlPgDn";
   condition=CheckSymlink;

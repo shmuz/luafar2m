@@ -315,7 +315,6 @@ end
 if Macro then
   Macro {
     id="61C6F3EA-BFC5-4C5B-B601-1A0B3413D608";
-    id="CFEA4565-233D-48BE-9C8B-4ADC0ED15EF3";
     description=Title;
     area="Editor"; key=MacroKey;
     action=function()

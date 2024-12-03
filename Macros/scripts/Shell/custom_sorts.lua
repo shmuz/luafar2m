@@ -157,7 +157,6 @@ local function LoadAll (SortModesTable)
     Panel.LoadCustomSortMode(mode, v)
     Macro {
       id="CDFC2F6E-897D-49E8-9441-B8D8BE2B4CEC";
-      id="62281963-CB77-4116-BEFD-9A14AF331F81";
       area="Shell"; key=v.key; description=v.Description;
       action=function() Panel.SetCustomSortMode(mode) end;
     }

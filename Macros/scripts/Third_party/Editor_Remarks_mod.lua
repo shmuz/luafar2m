@@ -179,17 +179,14 @@ if not Macro then return {Editor_Remarks=Editor_Remarks} end
 -------------------------------------------------------------------------------
 
 Macro {id="25cce9ac-0dcf-44af-8a4b-bb286f05276e";
-  id="80AE47C7-ECDA-4BF3-8B4B-316C097A2D54";
   area="Editor"; key=S.KeyOptions;   priority=S.PriorOptions;   sortpriority=S.SortOptions;   description=M.DescrOptions;
   action=function() return Options() end;
 }
 Macro {id="05194455-816f-435b-9887-3ecd382fd699";
-  id="FA6F37BA-C4D1-4240-B56E-E152D7F6FCCA";
   area="Editor"; key=S.KeyComment;   priority=S.PriorComment;   sortpriority=S.SortComment;   description=M.DescrComment;
   action=function() return CommUnComm(true) end;
 }
 Macro {id="e2f89002-2a3d-48f6-ab29-59905b9446b5";
-  id="DCFD21F1-0F93-40CA-97A0-8956C555BB79";
   area="Editor"; key=S.KeyUnComment; priority=S.PriorUnComment; sortpriority=S.SortUnComment; description=M.DescrUnComment;
   action=function() return CommUnComm(false) end;
 }

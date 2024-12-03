@@ -112,7 +112,6 @@ end
 
 Macro {
   id="28AC0E2E-FBC4-4CDA-9364-FC7C4F09BDEE";
-  id="7D47A319-FC9D-4730-AC9E-5AF2C3634036";
   description="Create XX-Encoded file";
   area="Shell"; key=CommonKey;
   flags="NoPluginPanels NoFolders";
@@ -122,7 +121,6 @@ Macro {
 
 Macro {
   id="A01F0EFE-9C50-4EBE-9D7F-5801434C6967";
-  id="23080D9F-4FA1-4AD2-A20A-B4A841378AFC";
   description="Create UU-Encoded file";
   area="Shell"; key=CommonKey;
   flags="NoPluginPanels NoFolders";
@@ -132,7 +130,6 @@ Macro {
 
 Macro {
   id="A54E1BB9-2547-479F-A2AC-3ABBFDD168CA";
-  id="4A4EB80F-74B6-441D-8E1B-3C8F6859F695";
   description="Unpack XX-Encoded file";
   area="Shell"; key=CommonKey;
   flags="NoPluginPanels NoFolders";
@@ -142,7 +139,6 @@ Macro {
 
 Macro {
   id="2263CFC4-6A1A-4A4E-8D75-0A95CCA43683";
-  id="4CA377F6-43C4-42AA-AEC2-47984BA832F6";
   description="Unpack UU-Encoded file";
   area="Shell"; key=CommonKey;
   flags="NoPluginPanels NoFolders";

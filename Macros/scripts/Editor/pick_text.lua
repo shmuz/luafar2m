@@ -36,7 +36,6 @@ end
 
 Macro {
   id="BD8E52B8-D85A-4EE3-BE69-BCC0C72CCED3";
-  id="7F2321FF-3E7A-4F19-BE6E-7A95AC207366";
   description="Pick word under editor cursor";
   area="Dialog"; key="CtrlShiftW";
   action=function()

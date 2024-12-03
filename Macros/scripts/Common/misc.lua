@@ -1,6 +1,5 @@
 Macro {
   id="F44159F4-556B-4593-A28B-EF3FD0B34FBE";
-  id="D51070D3-3E54-4721-ACE8-8CBB061B3FFF";
   description="Reload macros";
   area="Common"; key="CtrlShiftR";
   action=function()
@@ -14,7 +13,6 @@ Macro {
 
 Macro {
   id="BFC9624A-51AA-475C-B30E-3ECB8A73D22B";
-  id="9BABCF7F-A748-484D-915F-5E17BD83E087";
   description="Macro Browser";
   area="Common"; key="AltShiftF1";
   action=function() Plugin.Call(0x4EBBEFC8, "browser") end;
@@ -47,7 +45,6 @@ Macro {
 
 Macro {
   id="D4CFCC5C-ABD3-4C25-8245-621990382224";
-  id="2A8F9E8C-9503-47EF-A7BD-E45D0DE6C82F";
   description="Lua Calculator";
   area="Common"; key="CtrlShiftF4";
   action=function() mf.acall(require("far2.calc")); end;
@@ -55,7 +52,6 @@ Macro {
 
 Macro {
   id="00B425EF-B832-426A-BC8C-04F22E5FA3AC";
-  id="32903C43-95FD-409B-AAF1-A05E20CA51FA";
   area="Common"; key="Ctrl/"; description="Получение названия клавиши. © SimSU";
   action = function()
     local rus = win.GetEnv("farlang")=="Russian"
@@ -70,7 +66,6 @@ Macro {
 
 Macro {
   id="4244A0FA-CFD6-4905-B266-D5235AD81990";
-  id="C2466A13-A65D-46A0-BA7C-408FD1C762D5";
   -- original: "Макросы для редактора Журко"
   key='ShiftBS'; area='Common';
   description='XLat: QWERTY-ЙЦУКЕН выделения или слова и смена языка ввода ОС';

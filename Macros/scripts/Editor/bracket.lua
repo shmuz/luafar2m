@@ -81,14 +81,12 @@ end
 
 Macro {
   id="9A1A2860-E6E7-4C6A-A98E-1417269740CE";
-  id="D492DDEC-73EC-47B0-AB14-5B473AFD64C5";
   description="Go to matching bracket";
   area="Editor"; key="CtrlE";
   action=function() FindBracket(false) end;
 }
 Macro {
   id="733D4957-610C-4E05-B742-7D8A9FC81AB5";
-  id="9ED6F8F1-7258-4885-A664-AF195D6CF8A0";
   description="Select to matching bracket";
   area="Editor"; key="CtrlShiftE";
   action=function() FindBracket(true) end;

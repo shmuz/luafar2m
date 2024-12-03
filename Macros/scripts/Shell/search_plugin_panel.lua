@@ -390,7 +390,6 @@ end
 
 Macro {
   id="DA3F6F92-19CB-4BCA-824F-8F32907D52E3";
-  id="2627A631-0B6A-4400-8952-8233B56D6157";
   description=Title;
   area="Shell"; key=MacroKey;
   flags="NoFilePanels";

@@ -238,7 +238,6 @@ if Macro then
   if OptUseMacro then
     Macro {
       id="7DDF4974-C0B4-4333-BEAE-B7C3A30AF7F2";
-      id="3779E216-6FD4-4FFD-B860-B6D38F63CC1C";
       description = M.TITLE;
       area="Editor"; key="CtrlShiftP"; action=Main;
     }
