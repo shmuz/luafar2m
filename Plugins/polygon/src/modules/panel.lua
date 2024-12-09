@@ -854,6 +854,11 @@ function mypanel:prepare_panel_info(handle)
     self:FillKeyBar(info.key_bar, "db")
   -------------------------------------------------------------------------------------------------
   else -- self._panel_mode == "table"/"view"/"query"
+    -- Re-read column info as it may have changed due to possible "ALTER TABLE..." execution
+    local col_info = dbx.read_columns_info(self._db, self._schema, self._objname)
+    if col_info then
+      self._col_info = col_info
+    end
     local pInfo = panel.GetPanelInfo(handle)
     local sort_reverse = bit64.band(pInfo.Flags, F.PFLAGS_REVERSESORTORDER) ~= 0
     local sort_char = sort_reverse and M.sort_descend or M.sort_ascend
