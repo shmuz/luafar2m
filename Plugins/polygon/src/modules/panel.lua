@@ -879,6 +879,14 @@ function mypanel:prepare_panel_info(handle)
         table.insert(col_titles, head..descr.name..tail)
       end
     end
+    if col_titles[1] == nil then
+      local descr = self._col_info[1]
+      col_types = "C0"
+      col_widths = "0"
+      local head = 1 == self._sort_col_index and sort_char or ""
+      local tail = show_affinity and affinity_map[descr.affinity] or ""
+      table.insert(col_titles, head..descr.name..tail)
+    end
     if self._panel_mode == "query" then
       info.title = ("%s [%s]"):format(info.title, self._objname)
       self:FillKeyBar(info.key_bar, "query")
