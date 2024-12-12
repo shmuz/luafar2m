@@ -7,7 +7,7 @@ local Pattern = regex.new([[^\s*\.Language\s*=\s*(\w+)(?:\s*,\s*(.+))?]], "i")
 Macro {
   id="8AF20887-F869-40DC-AF2D-5A649FABBCE5";
   description="Select Help language from Help window";
-  area="Help"; key=MacroKey	;
+  area="Help"; key=MacroKey;
   action=function()
     local Topic = Help.Topic
     local mItems = {}
