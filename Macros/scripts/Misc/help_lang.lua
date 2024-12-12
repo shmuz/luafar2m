@@ -17,7 +17,7 @@ Macro {
         local fp = io.open(path)
         if not fp then return end
         for i=1,3 do -- try up to 3 lines
-          local line = fp:read("l")
+          local line = fp:read("*l")
           if line then
             if i==1 and line:find("^\239\187\191") then
               line = string.sub(line, 4) -- remove UTF-8 BOM
