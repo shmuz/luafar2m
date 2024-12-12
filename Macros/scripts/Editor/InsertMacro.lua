@@ -107,7 +107,7 @@ Macro {
   action=function()
   end;
 }
-]] ) : format(out.sDescr, table.concat(tFlags," "), win.Uuid(win.Uuid()):upper())
+]] ) : format(win.Uuid("U"), out.sDescr, table.concat(tFlags," "))
 
   print(tResult)
 end
