@@ -91,6 +91,7 @@ AddPlugin( lfhistory   1 )
 AddPlugin( lfsearch    1 )
 AddPlugin( lftmp       1 )
 AddPlugin( luapanel    1 )
+AddPlugin( macro2lua   0 )
 
 if (NOT DEFINED POLYGON OR POLYGON)
     find_package(Sqlite3)

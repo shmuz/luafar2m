@@ -3,20 +3,11 @@
 --package.loaded.macrosyn = nil
 ---- End debug lines ----
 
-do
-  local marker = "B723A193-0A88-4A15-AA2E-F204B5C828EB"
-  if not package[marker] then
-    package.path = far.PluginStartupInfo().ModuleDir.."?.lua;"..package.path
-    package.cpath = far.PluginStartupInfo().ModuleDir.."?.dll;"..package.cpath
-    package[marker] = true
-  end
-end
-
 local F = far.Flags
 local macrosyn = require "macrosyn"
 
 local function ErrMsg (str, flags)
-  local info = export.GetGlobalInfo()
+  local info = far.GetPluginGlobalInfo()
   local ver = table.concat(info.Version, ".", 1, 2)
   local title = ("%s ver.%s"):format(info.Title, ver)
   far.Message(str, title, nil, flags or "w")
@@ -40,25 +31,12 @@ local function SplitCommandLine (str)
 end
 
 local function ExpandPath (path)
-  if not path:find("^[a-zA-Z]:") then
-    local panelDir = panel.GetPanelDirectory(nil, 1).Name
-    if path:find("^[\\/]") then
-      path = panelDir:sub(1,2) .. path
-    else
-      path = panelDir:gsub("[^\\/]$", "%1\\") .. path
-    end
-  end
   return path
 end
-
-local PluginMenuGuid1 = win.Uuid("06b31136-ccb9-42e5-b52f-67014b94954a")
 
 local PluginInfo = {
   CommandPrefix = "m2l",
   Flags = PF_DISABLEPANELS,
-  -- Flags = F.PF_EDITOR,
-  -- PluginMenuGuids = PluginMenuGuid1.."",
-  -- PluginMenuStrings = { export.GetGlobalInfo().Title },
 }
 
 function export.GetPluginInfo()
@@ -83,8 +61,8 @@ local function ConvertFile (srcfile, trgfile, syntax)
   local text = fp:read("*all")
   fp:close()
   local Bom = "\239\187\191" -- UTF-8 BOM
-  if string.sub(text,1,3)==Bom then text=string.sub(text,4)
-  else Bom = ""
+  if string.sub(text,1,3)==Bom then
+    text=string.sub(text,4)
   end
 
   local text,msg = macrosyn.Convert(syntax,text)
@@ -94,7 +72,7 @@ local function ConvertFile (srcfile, trgfile, syntax)
   if text then
     local fp, err = io.open(trgfile, "w")
     if not fp then ErrMsg(err) return end
-    fp:write(Bom, text)
+    fp:write(text)
     fp:close()
   end
 end
@@ -144,16 +122,3 @@ function export.Open (OpenFrom, Guid, Item)
     end
   end
 end
-
-function export.ConvertChunk (strInput)
-  local strOutput,msg = macrosyn.Convert("chunk", strInput or "")
-  return strOutput
-end
-
---local function Convert (op, subj)
---  local func = op:find("^xml_") and GetXMLPattern or GetMacroPattern
---  local converter = Cs(P(func(op)))
---  local t_log = {}
---  local ok, str = pcall(lpeg.match, converter, subj, 1, subj, t_log)
---  return ok and str, table.concat(t_log, "\n")
---end
