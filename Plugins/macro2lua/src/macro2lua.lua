@@ -36,14 +36,71 @@ end
 
 local PluginInfo = {
   CommandPrefix = "m2l",
-  Flags = PF_DISABLEPANELS,
 }
 
 function export.GetPluginInfo()
   return PluginInfo
 end
 
+local function ConvertIniFile(text)
+  local all = {}
+  local curr
+  for line in string.gmatch(text, "([^\r\n]*)[\r\n]*") do
+    local area,key = line:match("KeyMacros/(%w+)/(%S+)%]")
+    if area then
+      curr = {area=area; key=key; }
+      table.insert(all, curr)
+    elseif curr then
+      local k,v = line:match("(%w+)%s*=%s*(.*)")
+      if k then curr[k] = v end
+    end
+  end
+
+  local out = {}
+  local Add = function(s) out[#out+1] = s end
+  for _,m in ipairs(all) do
+    if m.DisableOutput then m.DisableOutput = nil
+    else m.EnableOutput = true
+    end
+
+    local flags = {}
+    for k in pairs(m) do
+      if k~="Description" and k~="Sequence" and k~="area" and k~="key" then
+        table.insert(flags, k)
+      end
+    end
+    flags = table.concat(flags, " ")
+
+    local seq = macrosyn.Convert("chunk", m.Sequence)
+    if not seq then
+      Add("-- CONVERSION FAILED")
+      Add("--[===[")
+    end
+    Add("Macro {")
+    if m.Description then
+      Add(("  description=%q;"):format(m.Description))
+    end
+    Add(("  area=%q; key=%q;"):format(m.area, m.key))
+    if flags ~= "" then
+      Add(("  flags=%q;"):format(flags))
+    end
+    Add( "  action=function()")
+    Add(("    %s"):format(seq or m.Sequence))
+    Add( "  end;")
+    Add( "}")
+    if not seq then
+      Add("]===]")
+    end
+    Add("")
+  end
+  Add("")
+
+  return table.concat(out,"\n"), ""
+end
+
 -- AVAILABLE OPERATIONS
+-- "ini-file"
+
 -- "xml_file"
 -- "xml_macros"
 -- "xml_keymacros"
@@ -55,7 +112,8 @@ end
 -- "chunk"
 -- "expression"
 local function ConvertFile (srcfile, trgfile, syntax)
-  local fp, err = io.open(srcfile)
+  local fp, err
+  fp, err = io.open(srcfile)
   if not fp then ErrMsg(err) return end
 
   local text = fp:read("*all")
@@ -65,12 +123,17 @@ local function ConvertFile (srcfile, trgfile, syntax)
     text=string.sub(text,4)
   end
 
-  local text,msg = macrosyn.Convert(syntax,text)
+  local msg
+  if syntax == "ini_file" then
+    text,msg = ConvertIniFile(text)
+  else
+    text,msg = macrosyn.Convert(syntax,text)
+  end
 
   if not text and msg == "" then msg = "conversion failed" end
   if msg ~= "" then ErrMsg(srcfile.."\n"..msg, text and "l" or "lw") end
   if text then
-    local fp, err = io.open(trgfile, "w")
+    fp, err = io.open(trgfile, "w")
     if not fp then ErrMsg(err) return end
     fp:write(text)
     fp:close()
@@ -97,7 +160,7 @@ local function ProcessArgs (args)
   if command == "convert" then
     if #args<3 then ShowSyntax() return end
     local srcfile, trgfile = ExpandPath(args[2]), ExpandPath(args[3])
-    local syntax = (args[4] or "xml_file"):lower()
+    local syntax = (args[4] or "ini_file"):lower()
     ConvertFile(srcfile, trgfile, syntax)
   elseif command == "run" then
     if #args<2 then ShowSyntax() return end
@@ -108,12 +171,9 @@ local function ProcessArgs (args)
 end
 
 function export.Open (OpenFrom, Guid, Item)
-  local area = bit64.band(0xFF, OpenFrom)
-  if area == F.OPEN_COMMANDLINE then
+  if OpenFrom == F.OPEN_COMMANDLINE then
     ProcessArgs(SplitCommandLine(Item))
-  elseif area == F.OPEN_PLUGINSMENU then
-  elseif area == F.OPEN_EDITOR then
-  elseif area == F.OPEN_FROMMACRO then
+  elseif OpenFrom == F.OPEN_FROMMACRO then
     if type(Item)=="table" then
       local syntax,input = Item[1],Item[2]
       if type(syntax)=="string" and type(input)=="string" then

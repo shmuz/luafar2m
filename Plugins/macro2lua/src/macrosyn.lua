@@ -297,8 +297,6 @@ end
 
 local function rep_prop (c) return kwords_properties[c:lower()] end
 
-local function far_NameToInputRecord(str) return true end
-
 local key1 = P(1) - S" \t\r\n"
 local key = Cmt(C(ident * key1^-1 + key1) * #(S" \t\r\n" + -P(1)),
               function(subj,i,str) return far.NameToInputRecord(str) and true end)
