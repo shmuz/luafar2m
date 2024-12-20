@@ -152,6 +152,8 @@ local function ConvertFile (srcfile, trgfile, syntax)
     if not fp then ErrMsg(err) return end
     fp:write(text)
     fp:close()
+    panel.UpdatePanel(nil,1)
+    panel.RedrawPanel(nil,1)
   end
 end
 
