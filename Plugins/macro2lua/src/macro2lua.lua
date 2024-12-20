@@ -44,15 +44,27 @@ end
 
 local function ConvertIniFile(text)
   local all = {}
-  local curr
+  local current
+  local comment -- only comments between macros
+
   for line in string.gmatch(text, "([^\r\n]*)[\r\n]*") do
     local area,key = line:match("^%s*%[KeyMacros/(%w+)/(%S+)%]")
     if area then
-      curr = {area=area; key=key; }
-      table.insert(all, curr)
-    elseif curr then
-      local k,v = line:match("^%s*(%w+)%s*=%s*(.*)")
-      if k then curr[k] = v end
+      current = { mArea=area; mKey=key; mComment=comment; }
+      table.insert(all, current)
+      comment = nil
+    else
+      local cmt = line:match("^%s*;(.*)")
+      if cmt then
+        comment = comment or {}
+        table.insert(comment, "--"..cmt)
+      elseif current then
+        local k,v = line:match("^%s*(%w+)%s*=%s*(.*)")
+        if k then
+          current[k] = v
+          comment = nil -- disregard comments inside a macro
+        end
+      end
     end
   end
 
@@ -65,7 +77,7 @@ local function ConvertIniFile(text)
 
     local flags = {}
     for k in pairs(m) do
-      if k~="Description" and k~="Sequence" and k~="area" and k~="key" then
+      if k~="Description" and k~="Sequence" and k~="mArea" and k~="mKey" and k~="mComment" then
         table.insert(flags, k)
       end
     end
@@ -76,11 +88,14 @@ local function ConvertIniFile(text)
       Add("-- CONVERSION FAILED")
       Add("--[===[")
     end
+    if m.mComment then
+      for _,v in ipairs(m.mComment) do Add(v) end
+    end
     Add("Macro {")
     if m.Description then
       Add(("  description=%q;"):format(m.Description))
     end
-    Add(("  area=%q; key=%q;"):format(m.area, m.key))
+    Add(("  area=%q; key=%q;"):format(m.mArea, m.mKey))
     if flags ~= "" then
       Add(("  flags=%q;"):format(flags))
     end
