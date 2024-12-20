@@ -3,15 +3,9 @@
 -- Macro Parser
 -- by Shmuel Zeigerman
 
--- Allow running this module without Far Manager
--- (any free hanging C-style identifier will be accepted as a key then).
-if not far then
-  far = { NameToInputRecord=function() return true end }
-end
-
 local lpeg = require "lpeg"
 
-local P, R, S, V = lpeg.P, lpeg.R, lpeg.S, lpeg.V
+local P, R, S, V, utfR = lpeg.P, lpeg.R, lpeg.S, lpeg.V, lpeg.utfR
 local C, Cc, Cs, Cmt, Cf, Cp, Carg =
   lpeg.C, lpeg.Cc, lpeg.Cs, lpeg.Cmt, lpeg.Cf, lpeg.Cp, lpeg.Carg
 
@@ -297,9 +291,12 @@ end
 
 local function rep_prop (c) return kwords_properties[c:lower()] end
 
-local key1 = P(1) - S" \t\r\n"
+-- currently: support Russian (the total Unicode support will wait)
+local rus_letter = utfR(("а"):byte(),("я"):byte()) + utfR(("А"):byte(),("Я"):byte()) + P("ё") + P("Ё")
+
+local key1 = rus_letter + P(1) - S" \t\r\n"
 local key = Cmt(C(ident * key1^-1 + key1) * #(S" \t\r\n" + -P(1)),
-              function(subj,i,str) return far.NameToInputRecord(str) and true end)
+              function(subj,i,str) return far.NameToKey(str) and true end)
 local keys = (key * (S(" \t")^1 * key)^0) / 'Keys("%0")'
 
 local reserved = {
@@ -571,6 +568,7 @@ local function GetMacroPattern (op)
             K "$AKEY"    / 'Keys("AKey")' +
             K "$SELWORD" / 'Keys("SelWord")' +
             K "$XLAT"    / 'Keys("XLat")' +
+            K "$TEXT" * rspace * Term / 'print(%1)' +
             (comment * space * "=" * space) / "-- " *
               (String / function(c) return c:sub(2,-2) end) *
               ((space * P ";" * S(" \t")^0)/"") * (S"\r\n" + -1) +
@@ -580,7 +578,7 @@ local function GetMacroPattern (op)
             var/f_var * space * "=" * space * Exp * space * P ";" +
             Functioncall +
             FmlIncludeInt +
-            String / 'print(%0)' + -- NOT DOCUMENTED
+            String / 'print(%0)' +
             keys;
 
     Stat = Stat0 +
@@ -593,7 +591,7 @@ local function GetMacroPattern (op)
             Carg(1) * Carg(2) * Cp() * C(K("$CONTINUE")) /
               function(subj, t_msg, pos, token)
                 local line,pos = ProcessPos(subj,pos)
-                msg = ("Warning:%d:%d: operator CONTINUE not supported"):format(line,pos)
+                local msg = ("Warning:%d:%d: operator CONTINUE not supported"):format(line,pos)
                 table.insert(t_msg, msg)
                 return token
               end;
@@ -680,7 +678,7 @@ local function GetMacroPattern (op)
             local outname = kwords_functions[funcname:lower()]
             if not outname then
               local line,pos = ProcessPos(subj,pos)
-              msg = ("Warning:%d:%d: function '%s' does not exist"):format(line,pos,funcname)
+              local msg = ("Warning:%d:%d: function '%s' does not exist"):format(line,pos,funcname)
               table.insert(t_msg, msg)
             end
             return outname or funcname

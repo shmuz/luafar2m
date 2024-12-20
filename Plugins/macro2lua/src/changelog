@@ -1,0 +1,15 @@
+2024-12-20
+  - Added support for Russian letters as keys
+  - Added support for $Text operator
+  - Key validation function: far.NameToKey is used (was: far.NameToInputRecord)
+  - Version bumped to 0.9
+
+2024-12-19
+  - Added processing of far2l's key_macros.ini files (syntax: "ini_file")
+  - The syntax "ini_file" became the default in command line
+
+2024-12-18
+  - Far3 plugin adapted to far2m
+  - Build system changed from make to cmake
+  - UTF-8 BOM is never added to output files
+  - Removed exported functions ConvertChunk and FreeChunk; removed file macro2lua.c

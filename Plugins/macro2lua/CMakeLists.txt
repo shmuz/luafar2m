@@ -40,6 +40,7 @@ set(MY_LIST
   macro2lua.lua
   macrosyn.lua
   readme.txt
+  changelog
 )
 
 foreach(elem ${MY_LIST})

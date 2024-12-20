@@ -46,12 +46,12 @@ local function ConvertIniFile(text)
   local all = {}
   local curr
   for line in string.gmatch(text, "([^\r\n]*)[\r\n]*") do
-    local area,key = line:match("KeyMacros/(%w+)/(%S+)%]")
+    local area,key = line:match("^%s*%[KeyMacros/(%w+)/(%S+)%]")
     if area then
       curr = {area=area; key=key; }
       table.insert(all, curr)
     elseif curr then
-      local k,v = line:match("(%w+)%s*=%s*(.*)")
+      local k,v = line:match("^%s*(%w+)%s*=%s*(.*)")
       if k then curr[k] = v end
     end
   end
