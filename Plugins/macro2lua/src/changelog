@@ -1,3 +1,8 @@
+2024-12-21
+  - Fix conversion of some keys such as: \, Ctrl\ and "
+  - Preserve comments preceding a macro in "ini_file" syntax
+  - Version 0.10
+
 2024-12-20
   - Added support for Russian letters as keys
   - Added support for $Text operator

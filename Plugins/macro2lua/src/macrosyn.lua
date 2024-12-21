@@ -297,7 +297,7 @@ local rus_letter = utfR(("а"):byte(),("я"):byte()) + utfR(("А"):byte(),("Я")
 local key1 = rus_letter + P(1) - S" \t\r\n"
 local key = Cmt(C(ident * key1^-1 + key1) * #(S" \t\r\n" + -P(1)),
               function(subj,i,str) return far.NameToKey(str) and true end)
-local keys = (key * (S(" \t")^1 * key)^0) / 'Keys("%0")'
+local keys = (key * (S(" \t")^1 * key)^0) / 'Keys[[ %0 ]]' -- long string syntax to handle \ and "
 
 local reserved = {
   -- 1. Lua keywords
