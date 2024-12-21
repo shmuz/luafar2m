@@ -100,7 +100,7 @@ local function ConvertIniFile(text)
       Add(("  flags=%q;"):format(flags))
     end
     Add( "  action=function()")
-    Add(("    %s"):format(seq or m.Sequence))
+    Add(("    %s"):format(seq or m.Sequence or "<no Sequence record found>"))
     Add( "  end;")
     Add( "}")
     if not seq then

@@ -1,4 +1,7 @@
 2024-12-21
+  - Prevent a runtime Lua error when no Sequence is found ("ini_file" syntax)
+
+2024-12-21
   - Fix conversion of some keys such as: \, Ctrl\ and "
   - Preserve comments preceding a macro in "ini_file" syntax
   - Version 0.10
