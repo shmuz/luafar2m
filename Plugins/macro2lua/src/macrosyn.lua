@@ -291,10 +291,18 @@ end
 
 local function rep_prop (c) return kwords_properties[c:lower()] end
 
--- currently: support Russian (the total Unicode support will wait)
-local rus_letter = utfR(("а"):byte(),("я"):byte()) + utfR(("А"):byte(),("Я"):byte()) + P("ё") + P("Ё")
+-- a single non-space UTF-8 character
+local key1 do
+  local cont = R("\128\191") -- continuation byte
+  local _utf8 = R("\0\127")
+              + R("\194\223") * cont
+              + R("\224\239") * cont * cont
+              + R("\240\244") * cont * cont * cont
+  key1 = Cmt(C(_utf8), function (s, i, c)
+    return c:match("^[%w%p]") and true
+  end)
+end
 
-local key1 = rus_letter + P(1) - S" \t\r\n"
 local key = Cmt(C(ident * key1^-1 + key1) * #(S" \t\r\n" + -P(1)),
               function(subj,i,str) return far.NameToKey(str) and true end)
 local keys = (key * (S(" \t")^1 * key)^0) / 'Keys[[ %0 ]]' -- long string syntax to handle \ and "

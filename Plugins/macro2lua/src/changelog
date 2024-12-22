@@ -1,3 +1,7 @@
+2024-12-22
+  - Added support for any UTF-8 non-space character as a key
+  - Version 0.11
+
 2024-12-21
   - Prevent a runtime Lua error when no Sequence is found ("ini_file" syntax)
 
