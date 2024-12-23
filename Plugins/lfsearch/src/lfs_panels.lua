@@ -31,9 +31,8 @@ local SetHighlightPattern = libEditors.SetHighlightPattern
 
 local F = far.Flags
 local KEEP_DIALOG_OPEN = 0
-local bor, band, bxor, lshift = bit64.bor, bit64.band, bit64.bxor, bit64.lshift
+local bor, band, bxor = bit64.bor, bit64.band, bit64.bxor
 local clock = os.clock
-local strbyte = string.byte
 local Utf32, Utf8 = win.Utf8ToUtf32, win.Utf32ToUtf8
 local MultiByteToWideChar = win.MultiByteToWideChar
 local WideCharToMultiByte = win.WideCharToMultiByte
@@ -71,34 +70,6 @@ local function MaskGenerator (mask, skippath)
   else
     return function(name) return far.ProcessName("PN_CMPNAMELIST", mask, name, 0) end
   end
-end
-
--- used code by Kein-Hong Man
--- //this function should move to some library//
-local function CheckUtf8 (str)
-  local pos, len = 1, 0
-  while pos <= #str do
-    local ext, c, min
-    local v = strbyte(str, pos)
-    if v <= 0x7F then ext, c, min = 0, v, 0
-    elseif v <= 0xC1 then return false -- bad sequence
-    elseif v <= 0xDF then ext, c, min = 1, band(v, 0x1F), 0x80
-    elseif v <= 0xEF then ext, c, min = 2, band(v, 0x0F), 0x800
-    elseif v <= 0xF4 then ext, c, min = 3, band(v, 0x07), 0x10000
-    else return false -- can't fit
-    end
-    if pos + ext > #str then return false end -- incomplete last character
-    pos, len = pos+1, len+1
-    -- verify extended sequence
-    for _ = 1, ext do
-      v = strbyte(str, pos)
-      if v < 0x80 or v > 0xBF then return false end -- bad sequence
-      c = bor(lshift(c, 6), band(v, 0x3F))
-      pos = pos + 1
-    end
-    if c < min then return false end -- bad sequence
-  end
-	return len
 end
 
 -- Lines iterator: returns a line at a time.
@@ -1041,7 +1012,7 @@ end
 
 -- Note: function MultiByteToWideChar, in Windows older than Vista, does not
 --       check UTF-8 characters reliably. That is the reason for using
---       function CheckUtf8.
+--       function utf8.isvalid().
 local function Replace_GetConvertors (bWideCharRegex, nCodePage)
   local Identical = function(str) return str end
   local Convert, Reconvert
@@ -1052,7 +1023,7 @@ local function Replace_GetConvertors (bWideCharRegex, nCodePage)
       Convert, Reconvert = Identical, SwapEndian
     else
       if nCodePage == 65001 then
-        Convert = function(str) return CheckUtf8(str) and MultiByteToWideChar(str, nCodePage, "e") end
+        Convert = function(str) return str:isvalid() and MultiByteToWideChar(str, nCodePage, "e") end
       else
         Convert = function(str) return MultiByteToWideChar(str, nCodePage, "e") end
       end
@@ -1060,7 +1031,7 @@ local function Replace_GetConvertors (bWideCharRegex, nCodePage)
     end
   else
     if nCodePage == 65001 then
-      Convert = function(str) return CheckUtf8(str) and str end
+      Convert = function(str) return str:isvalid() and str end
       Reconvert = Identical
     elseif nCodePage == 61200 then
       Convert, Reconvert = Utf8, Utf32
