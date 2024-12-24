@@ -636,8 +636,9 @@ function SRFrame:InsertInDialog (aPanelsDialog, aOp)
   local md = 40 -- "middle"
   ------------------------------------------------------------------------------
   if aPanelsDialog then
-    insert(Items, { tp="text"; text=M.MDlgFileMask; })
-    insert(Items, { tp="edit"; name="sFileMask"; hist="Masks"; uselasthistory=1; })
+    insert(Items, { tp="chbox"; name="bCaseSensFileMask"; x1=md; text=M.MDlgFileMaskCaseSens; nohilite=1; })
+    insert(Items, { tp="text"; text=M.MDlgFileMask; y1=""; width=md-5; })
+    insert(Items, { tp="edit"; name="sFileMask"; hist="Masks"; uselasthistory=1; focus=1; })
   end
   ------------------------------------------------------------------------------
   insert(Items, { tp="text"; text=M.MDlgSearchPat; })

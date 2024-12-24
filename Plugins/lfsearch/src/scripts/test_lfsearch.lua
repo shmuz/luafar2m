@@ -964,46 +964,54 @@ local function PrAssert(condition, ...) -- protected assert
 end
 --------------------------------------------------------------------------------
 
-local function test_one_mask (mask, files, num)
+local function test_one_mask (mask, files, num_cs, num_notcs)
   for _,f in ipairs(files) do AddFile(nil, f) end
   PrAssert(panel.SetPanelDirectory(nil, 1, TestDir))
   local dt = { sFileMask = mask, sSearchArea = "OnlyCurrFolder" }
-  local arr = lfsearch.SearchFromPanel(dt)
-  PrAssert(arr)
-  PrAssert(#arr == num)
+  for k=1,2 do
+    local cs = (k == 1)
+    dt.bCaseSensFileMask = cs
+    local arr = lfsearch.SearchFromPanel(dt)
+    PrAssert(arr)
+    if cs then PrAssert(#arr == num_cs)
+    else PrAssert(#arr == num_notcs)
+    end
+  end
 end
 
 local function test_masks()
   local files = {
-    "file-01.txt", "file-02.txt", "file-03.txt",
-    "file-01.bin", "file-02.bin", "file-03.bin",
-    "файл-01.бин", "файл-02.бин", "файл-03.бин",
+    "file-01.txt", "file-02.txt", "FILE-03.TXT",
+    "file-01.bin", "file-02.bin", "FILE-03.BIN",
+    "файл-01.бин", "файл-02.бин", "ФАЙЛ-03.БИН",
   }
-  test_one_mask("*",           {},    0)
-  test_one_mask("abc",         files, 0)
-  test_one_mask("*abc*",       files, 0)
-  test_one_mask("*",           files, 9)
-  test_one_mask("*.*",         files, 9)
-  test_one_mask("*.txt",       files, 3)
-  test_one_mask("*.bin",       files, 3)
-  test_one_mask("*.бин",       files, 3)
-  test_one_mask("file-01.txt", files, 1)
-  test_one_mask("file-01.*",   files, 2)
-  test_one_mask("*01.*",       files, 3)
+  test_one_mask("*",           {},    0, 0)
+  test_one_mask("abc",         files, 0, 0)
+  test_one_mask("*abc*",       files, 0, 0)
+  test_one_mask("*",           files, 9, 9)
+  test_one_mask("*.*",         files, 9, 9)
+  test_one_mask("*.txt",       files, 2, 3)
+  test_one_mask("*.bin",       files, 2, 3)
+  test_one_mask("*.бин",       files, 2, 3)
+  test_one_mask("file-01.txt", files, 1, 1)
+  test_one_mask("file-01.*",   files, 2, 2)
+  test_one_mask("*01.*",       files, 3, 3)
   ------------------------------------------------------------------------------
-  test_one_mask("file*,файл*", files, 9)
-  test_one_mask("*.txt,*.бин", files, 6)
-  test_one_mask("*|*.txt",     files, 6)
-  test_one_mask("*|*.txt,*.bin", files, 3)
-  test_one_mask("*|*.txt,*.bin,*.бин", files, 0)
+  test_one_mask("file*,файл*", files, 6, 9)
+  test_one_mask("*.txt,*.бин", files, 4, 6)
+  test_one_mask("*|*.txt",     files, 7, 6)
+  test_one_mask("*|*.txt,*.bin", files, 5, 3)
+  test_one_mask("*|*.txt,*.bin,*.бин", files, 3, 0)
   ------------------------------------------------------------------------------
-  test_one_mask("/.*/",        files, 9)
-  test_one_mask("/.+/",        files, 9)
-  test_one_mask("/^f/",        files, 6)
-  test_one_mask("/f/",         files, 6)
-  test_one_mask("/i/",         files, 6)
-  test_one_mask("/^i/",        files, 0)
-  test_one_mask("/n$/",        files, 3)
+  test_one_mask("/.*/",        files, 9, 9)
+  test_one_mask("/.+/",        files, 9, 9)
+  test_one_mask("/^f/",        files, 4, 4)
+  test_one_mask("/^f/i",       files, 6, 6)
+  test_one_mask("/f/",         files, 4, 4)
+  test_one_mask("/f/i",        files, 6, 6)
+  test_one_mask("/i/",         files, 4, 4)
+  test_one_mask("/^i/",        files, 0, 0)
+  test_one_mask("/n$/",        files, 2, 2)
   ------------------------------------------------------------------------------
   RemoveFiles(nil, files)
 end

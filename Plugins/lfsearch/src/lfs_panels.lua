@@ -62,14 +62,12 @@ local function IsDevice(FileData)
   return FileData.FileAttributes:find("[fgjk]") -- device_fifo| device_char| device_block| device_sock
 end
 
-local function MaskGenerator (mask, skippath)
-  if not CheckMask(mask) then
-    return false
-  elseif skippath then
-    return function(name) return far.ProcessName("PN_CMPNAMELIST", mask, name, "PN_SKIPPATH") end
-  else
-    return function(name) return far.ProcessName("PN_CMPNAMELIST", mask, name, 0) end
+local function MaskGenerator (mask, skippath, casesens)
+  if CheckMask(mask) then
+    local flags = bor(skippath and F.PN_SKIPPATH or 0, casesens and F.PN_CASESENSITIVE or 0)
+    return function(name) return far.ProcessName("PN_CMPNAMELIST", mask, name, flags) end
   end
+  return false
 end
 
 -- Lines iterator: returns a line at a time.
@@ -699,7 +697,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   end
   if not tParams then return end
   ----------------------------------------------------------------------------
-  local fFileMask = MaskGenerator(aData.sFileMask)
+  local fFileMask = MaskGenerator(aData.sFileMask, false, aData.bCaseSensFileMask)
   if not fFileMask then return end
   local fDirMask, fDirExMask = GetDirFilterFunctions(aData)
   if not (fDirMask and fDirExMask) then return end
@@ -1399,7 +1397,7 @@ local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
   ----------------------------------------------------------------------------
   if sOp=="replace" and aData.bAdvanced then tParams.InitFunc() end
   ----------------------------------------------------------------------------
-  local fFileMask = MaskGenerator(aData.sFileMask)
+  local fFileMask = MaskGenerator(aData.sFileMask, false, aData.bCaseSensFileMask)
   if not fFileMask then return end
   local fDirMask, fDirExMask = GetDirFilterFunctions(aData)
   if not (fDirMask and fDirExMask) then return end

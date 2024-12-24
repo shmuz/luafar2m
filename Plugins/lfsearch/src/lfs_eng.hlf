@@ -389,24 +389,25 @@ $ #lfsearch.SearchFromPanel
         deduced by from the 1-st letter of its name: b=boolean;
         f=function; n=number; s=string.
 
-       "sFileMask"       : file mask
-       "sSearchPat"      : search pattern
-       "sRegexLib"       : regular expression library, either of:
-                           "far" (default), "oniguruma" or "pcre"
+       "sFileMask"         : file mask
+       "sSearchPat"        : search pattern
+       "sRegexLib"         : regular expression library, either of:
+                            "far" (default), "oniguruma" or "pcre"
 
-       "bRegExpr"        : regular expression mode
-       "bCaseSens"       : case sensitive search
-       "bWholeWords"     : whole word search
-       "bMultiPatterns"  : multiple patterns mode
-       "bExtended"       : ignore whitespace in regexp
-       "bFileAsLine"     : file as a line
-       "bInverseSearch"  : inverse search
-       "bSearchFolders"  : search for folders
-       "bSearchSymLinks" : search in symbolic links
+       "bCaseSensFileMask" : case sensitive file mask
+       "bRegExpr"          : regular expression mode
+       "bCaseSens"         : case sensitive search
+       "bWholeWords"       : whole word search
+       "bMultiPatterns"    : multiple patterns mode
+       "bExtended"         : ignore whitespace in regexp
+       "bFileAsLine"       : file as a line
+       "bInverseSearch"    : inverse search
+       "bSearchFolders"    : search for folders
+       "bSearchSymLinks"   : search in symbolic links
 
-       "sSearchArea"     : either of: "FromCurrFolder", "OnlyCurrFolder",
-                           "SelectedItems", "RootFolder", "NonRemovDrives",
-                           "LocalDrives", "PathFolders"
+       "sSearchArea"       : either of: "FromCurrFolder", "OnlyCurrFolder",
+                             "SelectedItems", "RootFolder", "NonRemovDrives",
+                             "LocalDrives", "PathFolders"
 
  #bWithDialog# - whether the dialog should be invoked.
 
@@ -425,28 +426,29 @@ $ #lfsearch.ReplaceFromPanel
         deduced by from the 1-st letter of its name: b=boolean;
         f=function; n=number; s=string.
 
-       "sFileMask"       : file mask
-       "sSearchPat"      : search pattern
-       "sReplacePat"     : replace pattern
-       "sRegexLib"       : regular expression library, either of:
-                           "far" (default), "oniguruma" or "pcre"
+       "sFileMask"         : file mask
+       "sSearchPat"        : search pattern
+       "sReplacePat"       : replace pattern
+       "sRegexLib"         : regular expression library, either of:
+                             "far" (default), "oniguruma" or "pcre"
 
-       "bRepIsFunc"      : function mode
-       "bMakeBackupCopy" : make backup copy
-       "bConfirmReplace" : confirm replacement
-       "bRegExpr"        : regular expression mode
-       "bCaseSens"       : case sensitive search
-       "bWholeWords"     : whole word search
-       "bExtended"       : ignore whitespace in regexp
-       "bSearchSymLinks" : search in symbolic links
+       "bCaseSensFileMask" : case sensitive file mask
+       "bRepIsFunc"        : function mode
+       "bMakeBackupCopy"   : make backup copy
+       "bConfirmReplace"   : confirm replacement
+       "bRegExpr"          : regular expression mode
+       "bCaseSens"         : case sensitive search
+       "bWholeWords"       : whole word search
+       "bExtended"         : ignore whitespace in regexp
+       "bSearchSymLinks"   : search in symbolic links
 
-       "sSearchArea"     : either of: "FromCurrFolder", "OnlyCurrFolder",
-                           "SelectedItems", "RootFolder", "NonRemovDrives",
-                           "LocalDrives", "PathFolders"
+       "sSearchArea"       : either of: "FromCurrFolder", "OnlyCurrFolder",
+                             "SelectedItems", "RootFolder", "NonRemovDrives",
+                             "LocalDrives", "PathFolders"
 
-       "bAdvanced"       : Enable Initial function and Final function
-       "sInitFunc"       : Initial function
-       "sFinalFunc"      : Final function
+       "bAdvanced"         : Enable Initial function and Final function
+       "sInitFunc"         : Initial function
+       "sFinalFunc"        : Final function
 
  #bWithDialog# - whether the dialog should be invoked.
 
@@ -489,7 +491,9 @@ $ #Plugin's menu in Panels#
 $ #Search and Replace in Panels#
 ^#Dialog settings#
  #File mask#
- The syntax is identical to Far-style ~file masks~@:FileMasks@.
+   The syntax is identical to Far-style ~file masks~@:FileMasks@.
+ #Case sensitive file mask#
+   The file mask is case sensitive.
 
  #* Search for#
  #* Replace with#
