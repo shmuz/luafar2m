@@ -93,6 +93,8 @@ Items.proc = function(hDlg, msg, param1, param2)
   elseif msg == F.DN_BTNCLICK then
   elseif msg == F.DN_EDITCHANGE then
   elseif msg == F.DN_CLOSE then
+  elseif msg == "EVENT_KEY" then
+  elseif msg == "EVENT_MOUSE" then
   end
 end
 
