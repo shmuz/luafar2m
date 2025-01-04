@@ -24,7 +24,7 @@ return{
 
   FileName = "Files.bbs"; -- Имя Файла с именами Файлов.
   EOL      = "\n"; -- Перевод строк при вставке списка в редактор.
-  SEP      = "%,%;\r\""; -- Что считать разделителями имён файлов в буфере обмена.
+  SEP      = "\r"; -- Что считать разделителями имён файлов в буфере обмена.
 }
 -- Конец файла Profile\SimSU\Shell_SelectingEx.cfg
 end
@@ -195,14 +195,14 @@ local function ClipboardMark(Mark)
   -- panel.select(0,1,2,clip(0)) -- FAR не проверяет пути если они есть.
   -- Делаем работу за FAR.
   local FileList=mf.clip(0)
-  FileList=(FileList:gsub("["..S.SEP.."]","\n"):upper().."\n"):gsub("\\\n","\n")
-  local PanelPath=APanel.Path:upper()
+  if FileList==0 then return end
+  FileList=FileList:gsub("["..S.SEP.."]","\n")
+  local PanelPath=APanel.Path
   for FullFileName in FileList:gmatch("[^\n]+") do
-    local FilePath=mf.fsplit(FullFileName,0x1+0x2):gsub("\\$","")
+    local FilePath=mf.fsplit(FullFileName,0x1+0x2):gsub("/$","")
     local Name=mf.fsplit(FullFileName,0x4+0x8)
     if FilePath=="" or FilePath==PanelPath then
-      --Panel.Select(0,Mark,2,Name)
-      Panel.Select(0,Mark,3,Name)
+      Panel.Select(0,Mark,2,Name)
     end
   end
   return true
