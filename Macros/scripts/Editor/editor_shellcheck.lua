@@ -7,7 +7,7 @@ local Info = {
 
 -- Options
 local MenuMaxHeight = 8
-local SelectLen = 4
+local MinSelectLen = 4
 -- /Options
 
 local SETTINGS_KEY  = "shmuz"
@@ -96,8 +96,15 @@ local function CheckEditor()
       local info = items[props.SelectIndex]
       local topline = math.max(1, info.line - 10)
       editor.SetPosition(nil, info.line, info.column, nil, topline)
-      editor.Select(nil, "BTYPE_STREAM", info.line, info.column, SelectLen, 1)
-      editor.Redraw() -- required for Far < 3.0.4813 (and makes no change for newer builds)
+
+      -- ad hoc evaluation of selection length
+      local str = editor.GetString(nil, info.line, 3)
+      local from,to = str:find("[%w_}]+", info.column)
+      local selLen = from and (from-info.column <= MinSelectLen) and (to-info.column+1) or 1
+      selLen = math.max(selLen, MinSelectLen)
+
+      editor.Select(nil, "BTYPE_STREAM", info.line, info.column, selLen, 1)
+      editor.Redraw()
     end
 
     -- menu loop
