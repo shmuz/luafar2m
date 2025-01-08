@@ -42,10 +42,16 @@ local function Get_SC_Version()
   local fp = io.popen("shellcheck --version")
   local txt = fp:read("*all")
   fp.close()
-  return txt:match("version:%s*(%S+)") or ""
+  return txt:match("version:%s*(%S+)")
 end
 
 local function CheckEditor()
+  SC_Version = SC_Version or Get_SC_Version()
+  if not SC_Version then
+    far.Message("ShellCheck not found, is it installed?", "Error", nil, "w")
+    return
+  end
+
   local eInfo = editor.GetInfo()
   if eInfo.CurState == F.ECSTATE_MODIFIED then
     if not editor.SaveFile() then
@@ -76,7 +82,6 @@ local function CheckEditor()
 
   -- show either the menu or the success message
   if #items > 0 then
-    SC_Version = SC_Version or Get_SC_Version()
     local props = {
       Title = "ShellCheck " .. SC_Version;
       Bottom = ("%d errors, %d warnings, %d notes"):format(nErr, nWarn, nNote);
