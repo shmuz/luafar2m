@@ -50,15 +50,15 @@ Macro {
   description="Sync far2m dir with far2l or vice versa";
   area="Shell"; key="CtrlS";
   action=function()
-    local repos = far.GetMyHome().."/repos"
+    local common = far.GetMyHome().."/repos"
     local dir = panel.GetPanelDirectory(nil, 1).Name
     if dir == "" then -- TmpPanel ?
       dir = APanel.Current:match("(.+)/")
       if dir == nil then return end
     end
     local dir2 = dir
-    local far2l = repos.."/far2l"
-    local far2m = repos.."/far2m"
+    local far2l = common.."/far2l"
+    local far2m = common.."/far2m"
     if dir:find("far2l") then
       if dir2 == dir then dir2 = dir:gsub(far2l.."/far2l/", far2m.."/far/") end
       if dir2 == dir then dir2 = dir:gsub(far2l.."/far2l$", far2m.."/far") end
