@@ -3,7 +3,7 @@ local SharedId = "F2199E52-FE6D-45C0-B39B-8C06984EBBE1"
 
 local function ShowDiff (aName)
   local dir = panel.GetPanelDirectory(nil, 1).Name
-  panel.SetPanelDirectory(nil, 1, win.JoinPath(far.GetMyHome(), aName))
+  panel.SetPanelDirectory(nil, 1, win.JoinPath(far.GetMyHome(), "repos", aName))
   local file = far.InMyTemp(aName) .. ".diff"
   local fp = io.popen("git diff >"..file)
   if fp then
