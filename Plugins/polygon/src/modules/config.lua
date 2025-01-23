@@ -1,9 +1,12 @@
 -- coding: UTF-8
 
+local DIRSEP = string.sub(package.config, 1, 1)
+local OS_WIN = (DIRSEP == "\\")
+local SETTINGS_KEY = OS_WIN and "root" or nil
+
 local settings = require "far2.settings"
 local sdialog  = require "far2.simpledialog"
 local M        = require "modules.string_rc"
-local SETTINGS_KEY = nil
 
 local Data
 local mod = {} -- this module

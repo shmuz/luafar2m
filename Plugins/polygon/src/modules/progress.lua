@@ -1,9 +1,13 @@
 -- coding: UTF-8
 
+local DIRSEP = string.sub(package.config, 1, 1)
+local OS_WIN = (DIRSEP == "\\")
+local FarClock = OS_WIN and far.FarClock or win.Clock -- luacheck: ignore
+
 local M = require "modules.string_rc"
 
 -- settings --
-local DELAY = 0.15 -- 0.15 sec; to avoid flickering
+local DELAY = OS_WIN and 0.15e6 or 0.15 -- 0.15 sec; to avoid flickering
 local PROGRESS_WIDTH = 30
 -- /settings --
 
@@ -19,7 +23,7 @@ function progress.newprogress(msg, max_value)
   self._max_value = max_value or 0
   self._title = M.title_short
   self._message = msg
-  self._start = win.Clock()
+  self._start = FarClock()
   return self
 end
 
@@ -27,6 +31,9 @@ end
 function progress:show()
   if not self._visible then
     self._visible = true
+    if OS_WIN then
+      far.AdvControl("ACTL_SETPROGRESSSTATE", "TBPS_INDETERMINATE")
+    end
   end
 
   if self._bar == nil then
@@ -39,19 +46,28 @@ end
 
 function progress:hide()
   if self._visible then
-    panel.RedrawPanel(nil,1)
-    panel.RedrawPanel(nil,0)
+    if OS_WIN then
+      far.AdvControl("ACTL_PROGRESSNOTIFY")
+      far.AdvControl("ACTL_SETPROGRESSSTATE", "TBPS_NOPROGRESS")
+    end
+    panel.RedrawPanel(nil, 1)
+    panel.RedrawPanel(nil, 0)
     self._visible = false
   end
 end
 
 
 function progress:update(val)
-  if (win.Clock() - self._start) < DELAY then
+  if (FarClock() - self._start) < DELAY then
     return
   end
   if self._max_value > 0 then
     local percent = math.floor(val * 100 / self._max_value)
+
+    if OS_WIN then
+      far.AdvControl("ACTL_SETPROGRESSVALUE", 0, { Completed=percent; Total=100 })
+    end
+
     local len = math.floor(percent * PROGRESS_WIDTH / 100)
     self._bar = CHAR_SOLID:rep(len) .. CHAR_DOTTED:rep(PROGRESS_WIDTH - len)
   end

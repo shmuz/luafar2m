@@ -1,5 +1,8 @@
 -- coding: UTF-8
 
+local DIRSEP = string.sub(package.config, 1, 1)
+local OS_WIN = (DIRSEP == "\\")
+
 local sql3     = require "lsqlite3"
 local sdialog  = require "far2.simpledialog"
 local M        = require "modules.string_rc"
@@ -131,25 +134,25 @@ local function row_dialog(db, schema, table_name, rowid_name, db_data, row_id)
   end
 
   local keyaction = function (hDlg, Param1, key)
-    local pos = hDlg:GetFocus()
+    local pos = hDlg:send(F.DM_GETFOCUS)
     local item = Items[pos]
-    local txt = item.Colname and hDlg:GetText(pos)
+    local txt = item.Colname and hDlg:send(F.DM_GETTEXT, pos)
     if not txt then return end
     -- toggle original row text and NULLTEXT
     if key == "CtrlN" then
       if txt:upper() == NULLTEXT:upper() then
-        hDlg:SetText(pos, item.Orig or "")
+        hDlg:send(F.DM_SETTEXT, pos, item.Orig or "")
       else
-        hDlg:SetText(pos, NULLTEXT)
+        hDlg:send(F.DM_SETTEXT, pos, NULLTEXT)
       end
     -- toggle normalization (it's especially handy when typing a ' requires language switching)
     elseif key == "CtrlO" then
       local s = txt:match("^'(.*)'$")
       if s then -- already normalized -> denormalize
         s = s:gsub("''", "'")
-        hDlg:SetText(pos, s)
+        hDlg:send(F.DM_SETTEXT, pos, s)
       else -- normalize
-        hDlg:SetText(pos, Norm(txt))
+        hDlg:send(F.DM_SETTEXT, pos, Norm(txt))
       end
     -- view row in the viewer
     elseif key == "F3" then
@@ -158,8 +161,9 @@ local function row_dialog(db, schema, table_name, rowid_name, db_data, row_id)
       if fp then
         fp:write(txt)
         fp:close()
+        local DelFlag = OS_WIN and F.VF_DELETEONCLOSE or F.VF_DELETEONLYFILEONCLOSE
         viewer.Viewer(fname, item.Colname, nil,nil,nil,nil,
-                      bit64.bor(F.VF_DELETEONLYFILEONCLOSE,F.VF_DISABLEHISTORY), 65001)
+                      bit64.bor(DelFlag,F.VF_DISABLEHISTORY), 65001)
       end
     -- convert blob to text and show it
     elseif key == "AltF3" then
@@ -174,7 +178,7 @@ local function row_dialog(db, schema, table_name, rowid_name, db_data, row_id)
     local out = { quan = math.max(1, tonumber(tOut.quan) or 1) }
     for pos,item in ipairs(Items) do
       if item.Colname then
-        local txt = hDlg:GetText(pos)
+        local txt = hDlg:send(F.DM_GETTEXT, pos)
         if (not row_id) or (txt ~= item.Orig) then
           table.insert(out, { colname=item.Colname; value=txt; })
         end
@@ -306,7 +310,7 @@ local function remove(db, schema, table_name, rowid_name, items)
   end
   if table_name == "" then
     for _,item in ipairs(items) do
-      local typename = dbx.decode_object_type(item.NumberOfLinks)
+      local typename = dbx.decode_object_type(item[OS_WIN and "AllocationSize" or "NumberOfLinks"])
       if typename then
         local name_norm = Norm(item.FileName)
         local query = ("DROP %s %s.%s"):format(typename, Norm(schema), name_norm)
