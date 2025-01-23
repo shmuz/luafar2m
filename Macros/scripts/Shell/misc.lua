@@ -37,15 +37,6 @@ Macro {
 }
 
 Macro {
-  id="C187DDC2-37A3-4DEC-82DB-5744B38AFA0F";
-  description="Jump to home directory";
-  area="Shell"; key="Ctrl`";
-  action=function()
-    panel.SetPanelDirectory(nil, 1, far.GetMyHome())
-  end;
-}
-
-Macro {
   id="9521C765-240B-460F-BF25-1124FB0F89F9";
   description="Sync far2m dir with far2l or vice versa";
   area="Shell"; key="CtrlS";
