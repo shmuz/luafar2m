@@ -2,6 +2,9 @@
 -- Started: 2018-01-13
 -- luacheck: globals  AppIdToSkip  package  require  polygon_ResetSort
 
+local DIRSEP = string.sub(package.config, 1, 1)
+local OS_WIN = (DIRSEP == "\\")
+
 AppIdToSkip = AppIdToSkip or {} -- must be global to withstand script reloads
 local band, bor, rshift = bit64.band, bit64.bor, bit64.rshift
 local Guid_ConfirmClose = win.Uuid("27224BE2-EEF4-4240-808F-38095BCEF7B2")
@@ -47,9 +50,28 @@ end
 
 
 local function First_load_actions()
-  if not package.loaded.lsqlite3 then
+  if package.loaded.lsqlite3 then
+    return
+  end
+  if OS_WIN then
+    local pluginDir = far.PluginStartupInfo().ModuleDir
+    ReadIniFile(pluginDir.."polygon.ini")
+
+    -- Provide priority access to lsqlite3 DLL residing in the plugin's folder
+    -- (needed for deployment of the plugin)
+    package.cpath = pluginDir.."?.dll;"..package.cpath
+
+    -- Provide access to sqlite3.dll residing in the plugin's folder
+    local path = win.GetEnv("PATH") or ""
+    win.SetEnv("PATH", pluginDir..";"..path) -- modify PATH
+    local ok, msg = pcall(require, "lsqlite3")
+    win.SetEnv("PATH", path) -- restore PATH
+    if not ok then error(msg) end
+
+    package.path = pluginDir.."?.lua;"..package.path
+  else
     local info = far.PluginStartupInfo()
-    ReadIniFile(info.ShareDir.."/polygon.ini")
+    ReadIniFile(win.JoinPath(info.ShareDir, "polygon.ini"))
     require "lsqlite3"
   end
 end
@@ -66,7 +88,7 @@ local utils     = require "modules.utils"
 local plugdebug = require "far2.plugdebug"
 
 local F = far.Flags
-local PluginGuid = "D4BC5EA7-8229-4FFE-AAC1-5A4F51A0986A"
+local PluginGuid = win.Uuid("D4BC5EA7-8229-4FFE-AAC1-5A4F51A0986A")
 local ErrMsg, Norm = utils.ErrMsg, utils.Norm
 
 
@@ -110,13 +132,22 @@ local function LoadUserModules(object, aLoadCommon, aLoadIndividual)
 
   -- Load common modules (from %farprofile%\PluginsData\polygon)
   if aLoadCommon then
-    local dir = far.InMyConfig("plugins/luafar/polygon")
-    far.RecursiveSearch(dir, "*.lua", LoadOneUserFile, F.FRS_RECUR, AddModule)
+    if OS_WIN then
+      local dir = win.GetEnv("FARPROFILE")
+      if dir and dir~="" then
+        dir = dir .. "\\PluginsData\\polygon"
+        far.RecursiveSearch(dir, "*.lua", LoadOneUserFile, F.FRS_RECUR, AddModule)
+        -- Far build >= 3810 required for calling far.RecursiveSearch with extra parameters
+      end
+    else
+      local dir = far.InMyConfig("plugins/luafar/polygon")
+      far.RecursiveSearch(dir, "*.lua", LoadOneUserFile, F.FRS_RECUR, AddModule)
+    end
   end
 
   -- Load modules specified in the database itself in a special table
   if aLoadIndividual then
-    local tablename = Norm("modules-"..PluginGuid:lower())
+    local tablename = Norm("modules-"..win.Uuid(PluginGuid):lower())
     local table_exists = false
     local query = "SELECT name FROM sqlite_master WHERE type='table' AND LOWER(name)="..tablename
     object._db:exec(query, function() table_exists=true end)
@@ -132,9 +163,10 @@ local function LoadUserModules(object, aLoadCommon, aLoadIndividual)
         end
         stmt:finalize()
         if #collector > 0 then
-          local db_dir = object._filename:gsub("[^/]+$","")
+          local db_dir = object._filename:gsub("[^"..DIRSEP.."]+$","")
           for _,item in ipairs(collector) do
-            local fullname = item.script:match("^/") and item.script or db_dir..item.script
+            local fullname = item.script:match(OS_WIN and "^[a-zA-Z]:" or "^/")
+                             and item.script or db_dir..item.script
             local filedata = win.GetFileInfo(fullname)
             if filedata then
               LoadOneUserFile(filedata, fullname, AddModule)
@@ -176,9 +208,15 @@ function export.GetPluginInfo()
   local prefix = PluginData[config.PREFIX]
   if prefix ~= "" then info.CommandPrefix = prefix; end
 
+  if OS_WIN then
+    info.PluginConfigGuids = PluginGuid
+  end
   info.PluginConfigStrings = { M.title }
 
   if PluginData[config.ADD_TO_MENU] then
+    if OS_WIN then
+      info.PluginMenuGuids = PluginGuid;
+    end
     info.PluginMenuStrings = { M.title }
   else
     info.Flags = bor(info.Flags, F.PF_DISABLEPANELS)
@@ -192,7 +230,7 @@ local function MatchExcludeMasks(filename)
   local mask = get_plugin_data()[config.EXCL_MASKS]
   return type(mask) == "string"
     and mask:find("%S")
-    and far.ProcessName(F.PN_CMPNAMELIST, mask, filename, F.PN_SKIPPATH)
+    and far.ProcessName("PN_CMPNAMELIST", mask, filename, "PN_SKIPPATH")
 end
 
 
@@ -245,25 +283,38 @@ end
 local function OpenFromCommandLine(str)
   local File = ""
   local Opt = {}
-  local args = { far.SplitCmdLine(str) }
-  for _, arg in ipairs(args) do
-    if arg:sub(1,1) == "-" then
-      if     arg == "-startdebug" then plugdebug.Start() -- undocumented
-      elseif arg == "-stopdebug"  then plugdebug.Stop()  -- undocumented
-      else AddOptions(Opt, arg:sub(2))
+  for pos, word in str:gmatch("()(%S+)") do
+    if word:sub(1,1) == "-" then
+      if     word == "-startdebug" then plugdebug.Start() -- undocumented
+      elseif word == "-stopdebug"  then plugdebug.Stop()  -- undocumented
+      else AddOptions(Opt, word:sub(2))
       end
     else
-      File = arg
+      File = str:sub(pos)
       break
     end
   end
+  File = File:gsub("\"", "")
+  File = File:gsub("^%s*(.-)%s*$", "%1")
   if File == "" then
     File = ":memory:"
   else
-    File = win.ExpandEnv(File)
+    File = OS_WIN and File:gsub("%%(.-)%%", win.GetEnv) or win.ExpandEnv(File)
     File = far.ConvertPath(File, "CPM_FULL")
   end
   return File, Opt
+end
+
+
+local function OpenFromPluginsMenu()
+  -- Make sure that current panel item is a real existing file.
+  local info = panel.GetPanelInfo(nil, 1)
+  if info and info.PanelType == F.PTYPE_FILEPANEL and band(info.Flags,F.OPIF_REALNAMES) ~= 0 then
+    local item = panel.GetCurrentPanelItem(nil, 1)
+    if item and not item.FileAttributes:find("d") then
+      return far.ConvertPath(item.FileName, "CPM_FULL")
+    end
+  end
 end
 
 
@@ -272,7 +323,7 @@ local function ExecuteLuaCode(code, whatpanel)
   if chunk then
     local obj_info, handle
     if whatpanel==0 or whatpanel==1 then
-      local pi = panel.GetPanelInfo(nil,whatpanel)
+      local pi = panel.GetPanelInfo(nil, whatpanel)
       if pi and pi.PluginObject then
         obj_info = pi.PluginObject:get_info()
         handle = pi.PluginHandle
@@ -286,7 +337,7 @@ local function ExecuteLuaCode(code, whatpanel)
 end
 
 
-local function DoOpenFromMacro(params)
+local function OpenFromMacro(params)
   -- Plugin.Call(<guid>, "open", <filename>[, <flags>])
   if params[1] == "open" and type(params[2]) == "string" then
     local opt, filename, flags = {}, params[2], params[3]
@@ -315,58 +366,31 @@ local function DoOpenFromMacro(params)
 end
 
 
-local function OpenCommandLine(Item)
-  local FileName, Opt = OpenFromCommandLine(Item)
-  if FileName then
-    return CreatePanel(FileName, Opt)
-  end
-end
+function export.Open(OpenFrom, Guid, Item)
+  local FileName, Opt = nil, nil
 
-
-local function OpenFromMacro (Item)
-  if Item[1] == "open" then
-    local FileName, Opt = DoOpenFromMacro(Item)
-    if FileName then
-      return CreatePanel(FileName, Opt, F.OPEN_FROMMACRO)
-    end
-  else
-    return DoOpenFromMacro(Item)
-  end
-end
-
-
-local function OpenShortcut (Item)
-  if Item then
-    return CreatePanel(Item)
-  end
-end
-
-
-function export.Open (OpenFrom, _Id, Item)
   if OpenFrom == F.OPEN_ANALYSE then
-    return CreatePanel(Item, nil, OpenFrom) -- Item is FileName
-
-  elseif OpenFrom == F.OPEN_COMMANDLINE then
-    return OpenCommandLine(Item)
-
-  elseif OpenFrom == F.OPEN_FROMMACRO then
-    return OpenFromMacro(Item)
+    FileName = OS_WIN and Item.FileName or Item
 
   elseif OpenFrom == F.OPEN_SHORTCUT then
-    return OpenShortcut(Item)
+    FileName = OS_WIN and Item.HostFile or Item
 
   elseif OpenFrom == F.OPEN_PLUGINSMENU then
-    -- Make sure that the current panel item is a real existing file.
-    local info = panel.GetPanelInfo(nil,1)
-    if info and info.PanelType == F.PTYPE_FILEPANEL and band(info.Flags,F.OPIF_REALNAMES) ~= 0 then
-      local item = panel.GetCurrentPanelItem(nil,1)
-      if item and not item.FileAttributes:find("d") then
-        local FileName = far.ConvertPath(item.FileName, "CPM_FULL")
-        if FileName then
-          return CreatePanel(FileName, nil, OpenFrom)
-        end
-      end
+    FileName = OpenFromPluginsMenu()
+
+  elseif OpenFrom == F.OPEN_COMMANDLINE then
+    FileName, Opt = OpenFromCommandLine(Item)
+
+  elseif OpenFrom == F.OPEN_FROMMACRO then
+    if Item[1] == "open" then
+      FileName, Opt = OpenFromMacro(Item)
+    else
+      return OpenFromMacro(Item)
     end
+  end
+
+  if FileName then
+    return CreatePanel(FileName, Opt, OpenFrom)
   end
 end
 
@@ -376,19 +400,19 @@ function export.GetOpenPanelInfo(object, handle)
 end
 
 
-function export.GetFindData(object, handle, _OpMode)
+function export.GetFindData(object, handle, OpMode)
   return object:get_find_data(handle)
 end
 
 
-function export.SetDirectory(object, handle, Dir, OpMode)
+function export.SetDirectory(object, handle, Dir, OpMode, UserData)
   if band(OpMode, F.OPM_FIND) == 0 then
-    return object:set_directory(handle, Dir)
+    return object:set_directory(handle, Dir, UserData)
   end
 end
 
 
-function export.DeleteFiles(object, handle, PanelItems, _OpMode)
+function export.DeleteFiles(object, handle, PanelItems, OpMode)
   return object:delete_items(handle, PanelItems)
 end
 
@@ -406,7 +430,24 @@ function export.ClosePanel(object, handle)
 end
 
 
-function export.ProcessKey(object, handle, key, controlstate)
+local function ProcessPanelInput(object, handle, rec)
+  for _,mod in ipairs(object.LoadedModules) do
+    if type(mod.ProcessPanelInput) == "function" then
+      local func = function()
+        return mod.ProcessPanelInput(object:get_info(), handle, rec)
+      end
+      local ok, msg = xpcall(func, debug.traceback)
+      if ok and msg then
+        return true
+      end
+      if not ok then ErrMsg(msg) end
+    end
+  end
+  return rec.EventType == F.KEY_EVENT and object:handle_keyboard(handle, rec)
+end
+
+
+local function ProcessKey(object, handle, key, controlstate)
   if 0 ~= band(key, F.PKF_PREPROCESS) then
     return
   end
@@ -420,17 +461,12 @@ function export.ProcessKey(object, handle, key, controlstate)
     VirtualKeyCode = key;
     ControlKeyState = cs;
   }
-  for _,mod in ipairs(object.LoadedModules) do
-    if type(mod.ProcessPanelInput) == "function" then
-      local ok, msg = xpcall(
-        function() return mod.ProcessPanelInput(object:get_info(), handle, rec) end,
-        debug.traceback)
-      if ok and msg then return true end
-      if not ok then ErrMsg(msg) end
-    end
-  end
-  return object:handle_keyboard(handle, rec)
+  return ProcessPanelInput(object, handle, rec)
 end
+
+
+export.ProcessPanelInput = OS_WIN and ProcessPanelInput or nil
+export.ProcessKey = (not OS_WIN) and ProcessKey or nil
 
 
 function export.ProcessPanelEvent (object, handle, Event, Param)
@@ -479,7 +515,7 @@ function export.ProcessPanelEvent (object, handle, Event, Param)
     end
   end
   if ret and Event==F.FE_COMMAND then
-    panel.SetCmdLine(nil, "")
+    panel.SetCmdLine(handle, "")
   end
   return ret
 end
@@ -491,6 +527,11 @@ end
 
 
 if plugdebug.Running() then
+  local msg = "On_Default_Script_Loaded"
   plugdebug.Start()
-  far.Log("On_Default_Script_Loaded")
+  if OS_WIN then
+    win.OutputDebugString(msg)
+  else
+    far.Log(msg)
+  end
 end
