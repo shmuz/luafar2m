@@ -19,10 +19,13 @@ local KEEP_DIALOG_OPEN = 0
 local SM_USER = F.SM_USER or 100 -- SM_USER appeared in Far 3.0.5655
 
 local CMP_ALPHA, CMP_INT, CMP_FLOAT = 0,1,2 -- CRITICAL: must match the enum in polygon.c
-local SECTION_FILES = "files" -- keys in this section are lower-cased full file names
+
+local SECTION_FILES   = "files" -- keys in this section are lower-cased full file names
 local SECTION_GENERAL = "general"
 local SECTION_QUERIES = "queries"
-local SETTINGS_KEY = nil
+local SETTINGS_KEY    = nil
+local KEY_TIME        = "time"
+local KEY_LASTCHECK   = "last_check"
 
 
 -- Clean up "files" history
@@ -32,63 +35,56 @@ local function RemoveOldHistoryRecords()
   local RETAIN_TIME = DAY * 365
 
   if OS_WIN then
-    local pSection, pKey, pLocation = "general", "last_check", "local"
-    ------------------------------------------------------------------------
+    local pLocation = "local"
     local now = win.GetSystemTimeAsFileTime()
-    local last = settings.mload(pSection, pKey, pLocation)
+    local last = settings.mload(SECTION_GENERAL, KEY_LASTCHECK, pLocation)
     if last and (now - last) < CHECK_PERIOD then
       return
     end
-    settings.msave(pSection, pKey, now, pLocation)
-
-    ------------------------------------------------------------------------
-    pSection, pKey, pLocation = SECTION_FILES, nil, "local" -- luacheck: no unused
+    settings.msave(SECTION_GENERAL, KEY_LASTCHECK, now, pLocation)
     ------------------------------------------------------------------------
     local obj = far.CreateSettings(nil, F.PSL_LOCAL)
-    local subkey = obj:OpenSubkey(0, pSection)
+    local subkey = obj:OpenSubkey(0, SECTION_FILES)
     if subkey then
-      local items = obj:Enum(subkey)
-      obj:Free()
-      for _, v in ipairs(items) do
-        pKey = v.Name
-        local pData = settings.mload(pSection, pKey, pLocation)
-        if pData then
-          local last = pData["time"]
+      for _, v in ipairs(obj:Enum(subkey)) do
+        local fname = v.Name
+        local fdata = settings.mload(SECTION_FILES, fname, pLocation)
+        if fdata then
+          local last = fdata[KEY_TIME]
           if last then
             if now - last > RETAIN_TIME then
-              settings.mdelete(pSection, pKey, pLocation) -- delete expired data
+              settings.mdelete(SECTION_FILES, fname, pLocation) -- delete expired fdata
             end
           else
-            pData["time"] = now
-            settings.msave(pSection, pKey, pData, pLocation) -- set current time and save
+            fdata[KEY_TIME] = now
+            settings.msave(SECTION_FILES, fname, fdata, pLocation) -- set current time and save
           end
         else
-          settings.mdelete(pSection, pKey, pLocation) -- delete corrupted data
+          settings.mdelete(SECTION_FILES, fname, pLocation) -- delete corrupted fdata
         end
       end
-    else
-      obj:Free()
     end
+    obj:Free()
   else
     local now = win.GetSystemTimeAsFileTime()
     local sect = settings.mload(SETTINGS_KEY, SECTION_GENERAL) or {}
-    local last = sect["last_check"]
+    local last = sect[KEY_LASTCHECK]
     if last and (now - last) < CHECK_PERIOD then
       return
     end
-    sect["last_check"] = now
+    sect[KEY_LASTCHECK] = now
     settings.msave(SETTINGS_KEY, SECTION_GENERAL, sect)
     ------------------------------------------------------------------------
     local items = settings.mload(SETTINGS_KEY, SECTION_FILES)
     if items then
-      for fname, data in pairs(items) do
-        local last = data["time"]
+      for fname, fdata in pairs(items) do
+        local last = fdata[KEY_TIME]
         if last then
           if now - last > RETAIN_TIME then
-            items[fname] = nil -- delete expired data
+            items[fname] = nil -- delete expired fdata
           end
         else
-          data["time"] = now
+          fdata[KEY_TIME] = now
         end
       end
       settings.msave(SETTINGS_KEY, SECTION_FILES, items)
@@ -359,7 +355,7 @@ local meta_q_history = { __index=q_history; }
 function q_history.new()
   local self = setmetatable({}, meta_q_history)
   if OS_WIN then
-    self._array = settings.mload("queries", "queries", "local") or {}
+    self._array = settings.mload(SECTION_QUERIES, SECTION_QUERIES, "local") or {}
   else
     self._array = settings.mload(SETTINGS_KEY, SECTION_QUERIES) or {}
   end
@@ -369,7 +365,7 @@ end
 
 function q_history:save()
   if OS_WIN then
-    settings.msave("queries", "queries", self._array, "local")
+    settings.msave(SECTION_QUERIES, SECTION_QUERIES, self._array, "local")
   else
     settings.msave(SETTINGS_KEY, SECTION_QUERIES, self._array)
   end
@@ -796,7 +792,7 @@ function mypanel:set_column_mask(handle)
       masks[self._col_info[1].name] = "0"
     end
     self._col_masks_used[self._objname] = true
-    self._histfile["time"] = win.GetSystemTimeAsFileTime()
+    self._histfile[KEY_TIME] = win.GetSystemTimeAsFileTime()
     if OS_WIN then
       settings.msave(SECTION_FILES, self._filename:lower(), self._histfile, "local")
     else
