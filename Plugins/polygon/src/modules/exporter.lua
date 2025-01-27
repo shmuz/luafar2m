@@ -500,7 +500,6 @@ function exporter:export_data_as_dump(Args)
       -- use win.system because win.ShellExecute wouldn't reuse Far console.
       if 0 == win.system('""'..exec..'" '..cmd..'"') then break; end
     else
-      -- use os.execute because win.ShellExecute wouldn't reuse Far console.
       if 0 == os.execute(exec..' '..cmd) then break; end
     end
   end

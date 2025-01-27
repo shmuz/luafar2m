@@ -1,7 +1,8 @@
 -- coding: UTF-8
 
-local DIRSEP = string.sub(package.config, 1, 1)
-local OS_WIN = (DIRSEP == "\\")
+local DIRSEP  = string.sub(package.config, 1, 1)
+local OS_WIN  = (DIRSEP == "\\")
+local TYPE_ID = OS_WIN and "AllocationSize" or "NumberOfLinks" -- IMPORTANT: this field is used as type id
 
 local sql3     = require "lsqlite3"
 local sdialog  = require "far2.simpledialog"
@@ -310,7 +311,7 @@ local function remove(db, schema, table_name, rowid_name, items)
   end
   if table_name == "" then
     for _,item in ipairs(items) do
-      local typename = dbx.decode_object_type(item[OS_WIN and "AllocationSize" or "NumberOfLinks"])
+      local typename = dbx.decode_object_type(item[TYPE_ID])
       if typename then
         local name_norm = Norm(item.FileName)
         local query = ("DROP %s %s.%s"):format(typename, Norm(schema), name_norm)

@@ -1,7 +1,8 @@
 -- coding: UTF-8
 
-local DIRSEP = string.sub(package.config, 1, 1)
-local OS_WIN = (DIRSEP == "\\")
+local DIRSEP  = string.sub(package.config, 1, 1)
+local OS_WIN  = (DIRSEP == "\\")
+local TYPE_ID = OS_WIN and "AllocationSize" or "NumberOfLinks" -- IMPORTANT: this field is used as type id
 
 local sql3     = require "lsqlite3"
 local settings = require "far2.settings"
@@ -527,10 +528,9 @@ function mypanel:get_panel_list_db()
   end
 
   local items = { { FileName=".."; FileAttributes="d"; } }
-  local type_id = OS_WIN and "AllocationSize" or "NumberOfLinks"
   for i,obj in ipairs(db_objects) do
     local item = {
-      [type_id] = obj.type;  -- IMPORTANT: this field is used as type id
+      [TYPE_ID] = obj.type;
       CustomColumnData = {};
       FileAttributes = "";
       FileName = obj.name;
