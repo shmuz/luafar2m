@@ -47,7 +47,9 @@ local function RemoveOldHistoryRecords()
     local obj = far.CreateSettings(nil, F.PSL_LOCAL)
     local subkey = obj:OpenSubkey(0, SECTION_FILES)
     if subkey then
-      for _, v in ipairs(obj:Enum(subkey)) do
+      local items = obj:Enum(subkey)
+      obj:Free()
+      for _, v in ipairs(items) do
         local fname = v.Name
         local fdata = settings.mload(SECTION_FILES, fname, pLocation)
         if fdata then
@@ -64,8 +66,9 @@ local function RemoveOldHistoryRecords()
           settings.mdelete(SECTION_FILES, fname, pLocation) -- delete corrupted fdata
         end
       end
+    else
+      obj:Free()
     end
-    obj:Free()
   else
     local now = win.GetSystemTimeAsFileTime()
     local sect = settings.mload(SETTINGS_KEY, SECTION_GENERAL) or {}

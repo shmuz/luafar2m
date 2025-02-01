@@ -370,10 +370,14 @@ function export.Open(OpenFrom, Guid, Item)
   local FileName, Opt = nil, nil
 
   if OpenFrom == F.OPEN_ANALYSE then
-    FileName = OS_WIN and Item.FileName or Item
+    if OS_WIN then FileName = Item.FileName
+    else FileName = Item
+    end
 
   elseif OpenFrom == F.OPEN_SHORTCUT then
-    FileName = OS_WIN and Item.HostFile or Item
+    if OS_WIN then FileName = Item.HostFile
+    else FileName = Item
+    end
 
   elseif OpenFrom == F.OPEN_PLUGINSMENU then
     FileName = OpenFromPluginsMenu()
