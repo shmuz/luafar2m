@@ -500,3 +500,11 @@ Macro
   area:'Viewer'
   key:'CtrlF4'
   action:DoHex
+
+MenuItem
+  guid:"4AAD2FBB-5A07-4F1A-88C4-E0976EC3F6D2"
+  description:'HEX Editor'
+  area:'Viewer'
+  menu:'Plugins'
+  text:'HEX Editor'
+  action:DoHex

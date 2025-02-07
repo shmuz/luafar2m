@@ -248,7 +248,7 @@ local function GetListKeyFunction (aConfig, aData)
         SortListItems(self, not _Plugin.Cfg.bDirectSort, hDlg)
       end
       return "done"
-    elseif key=="F3" or key=="F4" or key=="AltF3" or key=="AltF4" then
+    elseif key=="F3" or key=="F4" or key=="AltF3" or key=="AltF4" or key=="ShiftF3" or key=="ShiftF4" then
       if not Item then
         return "done"
       end
@@ -269,10 +269,10 @@ local function GetListKeyFunction (aConfig, aData)
         elseif attr:find("d") then
           TellFileIsDirectory(fname)
           return "done"
-        elseif key == "AltF3" then
+        elseif key == "AltF3" or key == "ShiftF3" then
           viewer.Viewer(fname)
           return "done"
-        elseif key == "AltF4" then
+        elseif key == "AltF4" or key == "ShiftF4" then
           editor.Editor(fname)
           return "done"
         end

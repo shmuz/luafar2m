@@ -45,8 +45,8 @@ title. There are 4 switchable filtering methods available:
  \3BView/Edit history\-
    #F3#                 View.
    #F4#                 Edit.
-   #Alt-F3#             View modally, return to the menu.
-   #Alt-F4#             Edit modally, return to the menu.
+   #Shift-F3#           View modally, return to the menu.
+   #Shift-F4#           Edit modally, return to the menu.
    #Enter#              View or edit.
    #Shift-Enter#        View or edit (item position is not changed).
    #Ctrl-PgUp#          Go to the file (in active panel).
@@ -62,8 +62,8 @@ title. There are 4 switchable filtering methods available:
    #Enter#              Locate file in the active panel.
    #F3#                 View.
    #F4#                 Edit.
-   #Alt-F3#             View modally, return to the menu.
-   #Alt-F4#             Edit modally, return to the menu.
+   #Shift-F3#           View modally, return to the menu.
+   #Shift-F4#           Edit modally, return to the menu.
 
  See also:
      ~Plugin's Configuration Dialog~@PluginConfig@
