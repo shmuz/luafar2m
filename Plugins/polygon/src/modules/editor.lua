@@ -32,7 +32,7 @@ local function get_default_value(affinity)
   local val = 0
   if     affinity == "NUMERIC" then val = 0
   elseif affinity == "INTEGER" then val = 0
-  elseif affinity == "TEXT"    then val = "'text'" -- make it visible
+  elseif affinity == "TEXT"    then val = "text" -- make it visible
   elseif affinity == "BLOB"    then val = "x'00'"
   elseif affinity == "REAL"    then val = 0.0
   end
@@ -223,7 +223,7 @@ local function get_row_data(db, schema, table_name, rowid_name, handle)
         elseif coltype == sql3.INTEGER or coltype == sql3.FLOAT then
           value = stmt:get_column_text(i)
         elseif coltype == sql3.TEXT then
-          value = Norm(stmt:get_column_text(i))
+          value = stmt:get_column_text(i)
         elseif coltype == sql3.BLOB then
           local s = string.gsub(stmt:get_value(i), ".",
             function(c) return string.format("%02x", string.byte(c)); end)
