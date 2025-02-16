@@ -133,7 +133,7 @@ Macro {
 Macro {
   id="40451048-CE7F-4FEC-A694-9EB065B8FBAB";
   description="Sort by Last Regex";
-  area="Shell"; key="CtrlX"; -- НУЖНО ЗАМЕНИТЬ ЭТОТ ШОРТКАТ, ИБО ПЕРЕКРЫВАЕТ ВЫЗОВ ИСТОРИИ КОМСТРОКИ
+  area="Shell"; key="CtrlAltX";
   action=function()
     Panel.SetCustomSortMode(SortMode,0,"auto")
   end;

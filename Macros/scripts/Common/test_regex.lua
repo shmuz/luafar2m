@@ -20,7 +20,8 @@ local function DoTest()
     {tp="text"; text="Result:";  width=W1;                            },
     {tp="edit"; name="result";   width=W1;  readonly=1;               },
 
-    {tp="listbox"; name="groups"; x1=W1+6; y1=2; width=24; height=10; text="Matches"; list={}; },
+    {tp="listbox"; name="groups"; x1=W1+6; y1=2; width=24; height=10; text="Matches"; list={};
+                   listnoclose=1; },
 
     {tp="text"; text="Status:"; width=W1; y1=11;                      },
     {tp="edit"; name="status";  readonly=1;                           },

@@ -1432,7 +1432,8 @@ function mypanel:view_pragma_statements()
       guid = "FF769EE0-2643-48F1-A8A2-239CD3C6691F";
       width = W;
       { tp="dbox"; text=("%s [%s]"):format(M.title_pragma, self._schema);              },
-      { tp="listbox"; x1=4; x2=W-5; y2=15; list=items; listnobox=1; listnoampersand=1; },
+      { tp="listbox"; x1=4; x2=W-5; y2=15; list=items; listnobox=1; listnoampersand=1;
+                      listnoclose=1; },
       { tp="sep";                                                                      },
       { tp="butt"; text=M.ok; centergroup=1; default=1;                                },
     }
