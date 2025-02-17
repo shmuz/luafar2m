@@ -30,7 +30,7 @@ local function GetSelectionInfo (EditorId)
   }
   if Info.BlockType == F.BTYPE_COLUMN then
     out.TabStartPos = editor.RealToTab(nil, Info.BlockStartLine, egs.SelStart)
-    out.TabEndPos = editor.RealToTab(nil, Info.BlockStartLine, egs.SelEnd)
+    out.TabEndPos = editor.RealToTab(nil, Info.BlockStartLine, egs.SelEnd+1) - 1
   end
 
   -- binary search for a non-block line

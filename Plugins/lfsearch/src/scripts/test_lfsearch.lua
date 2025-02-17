@@ -372,6 +372,16 @@ local function test_Replace (lib)
   RunEditorAction(lib, "test:replace", dt, 2, 2)
   AssertEditorText("line1\nl###e2\nl###e3\nline4\n")
 
+  -------- replace in mixed tab/spaces vertical selection
+  -------- (testing for a bug fixed on 2025-02-17)
+  dt = { sSearchPat="^\\s+", sReplacePat="\t\t", sScope="block", bRegExpr=true,
+         bConfirmReplace=true, fUserChoiceFunc = function() return "yes" end }
+  editor.SetParam(nil, F.ESPT_TABSIZE, 4)
+  SetEditorText("\t\t\tABC\n            DEF\n") -- 3 tabs + 12 spaces
+  editor.Select(nil,"BTYPE_COLUMN",1,1,12,2)
+  RunEditorAction(lib, "test:replace", dt, 2, 2)
+  AssertEditorText("\t\tABC\n\t\tDEF\n")
+
   -- test "function mode"
   dt = { sSearchPat="\\w+", bRepIsFunc=true, bRegExpr=true,
          sReplacePat=[[return M~=2 and ("%d.%d.%d. %s;"):format(LN, M, R, T[0])]]
