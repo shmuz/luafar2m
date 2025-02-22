@@ -88,7 +88,7 @@ local function PersistentDialog()
   local out = dlg:Run()
   if out then
     dlg:SaveData(out, pers)
-    _Plugin.History:save()
+    _Plugin.SaveSettings()
   end
 end
 
