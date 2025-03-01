@@ -81,6 +81,8 @@ local function test_polygon(verbose)
   package.loaded[libname] = nil -- for debug
   require(libname).test_all()
   if verbose then far.Message("PASS", "Polygon tests"); end
+  panel.RedrawPanel(nil,0)
+  panel.RedrawPanel(nil,1)
 end
 
 local function test_sqlarc(verbose)
