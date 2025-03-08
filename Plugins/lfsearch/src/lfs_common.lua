@@ -442,6 +442,43 @@ local function GetWordUnderCursor (select)
 end
 
 
+local function GetReplaceFunction (aReplacePat, is_wide)
+  local tp = type(aReplacePat)
+  if tp == "function" then
+    return is_wide and
+      function(collect,nMatch,nReps,nLine,sFName) -- this implementation is inefficient as it works in UTF-8 !
+        local ccopy = {}
+        for k,v in pairs(collect) do
+          local key = type(k)=="number" and k or Utf8(k)
+          ccopy[key] = v and Utf8(v)
+        end
+        local R1,R2 = aReplacePat(ccopy,nMatch,nReps+1,nLine,sFName)
+        local tp1 = type(R1)
+        if     tp1 == "string" then R1 = Utf32(R1)
+        elseif tp1 == "number" then R1 = Utf32(tostring(R1))
+        end
+        return R1, R2
+      end
+    or
+      function(collect,nMatch,nReps,nLine,sFName)
+        local R1,R2 = aReplacePat(collect,nMatch,nReps+1,nLine,sFName)
+        if type(R1)=="number" then R1=tostring(R1) end
+        return R1, R2
+      end
+
+  elseif tp == "string" then
+    local val = is_wide and Utf32(aReplacePat) or aReplacePat
+    return function() return val end
+
+  elseif tp == "table" then
+    return RepLib.GetReplaceFunction(aReplacePat, is_wide)
+
+  else
+    error("invalid type of replace pattern", 2)
+  end
+end
+
+
 local function EscapeSearchPattern(pat)
   pat = string.gsub(pat, "[~!@#$%%^&*()%-+[%]{}\\|:;'\",<.>/?]", "\\%1")
   return pat
@@ -575,7 +612,7 @@ local function ProcessDialogData (aData, bReplace, bInEditor, bUseMultiPatterns,
   ---------------------------------------------------------------------------
   if bReplace then
     if aData.bRepIsFunc then
-      local func, msg = loadstring("local T,M,R,LN = ...\n" .. aData.sReplacePat, M.MReplaceFunction)
+      local func, msg = loadstring("local T,M,R,LN,FN = ...\n"..aData.sReplacePat, M.MReplaceFunction)
       if func then params.ReplacePat = setfenv(func, params.Envir)
       else ErrorMsg(msg, M.MReplaceFunction..": "..M.MSyntaxError); return nil,"sReplacePat"
       end
@@ -1146,44 +1183,6 @@ local function ConfigDialog()
     Dlg:SaveData(state, Data)
     _Plugin.SaveSettings()
     return true
-  end
-end
-
-
-local function GetReplaceFunction (aReplacePat, is_wide)
-  local fSame = function(s) return s end
-  local U8 = is_wide and Utf8 or fSame
-  local U32 = is_wide and Utf32 or fSame
-
-  if type(aReplacePat) == "function" then
-    return is_wide and
-      function(collect,nMatch,nReps,nLine) -- this implementation is inefficient as it works in UTF-8 !
-        local ccopy = {}
-        for k,v in pairs(collect) do
-          local key = type(k)=="number" and k or U8(k)
-          ccopy[key] = v and U8(v)
-        end
-        local R1,R2 = aReplacePat(ccopy,nMatch,nReps+1,nLine)
-        local tp1 = type(R1)
-        if     tp1 == "string" then R1 = U32(R1)
-        elseif tp1 == "number" then R1 = U32(tostring(R1))
-        end
-        return R1, R2
-      end or
-      function(collect,nMatch,nReps,nLine)
-        local R1,R2 = aReplacePat(collect,nMatch,nReps+1,nLine)
-        if type(R1)=="number" then R1=tostring(R1) end
-        return R1, R2
-      end
-
-  elseif type(aReplacePat) == "string" then
-    return function() return U32(aReplacePat) end
-
-  elseif type(aReplacePat) == "table" then
-    return RepLib.GetReplaceFunction(aReplacePat, is_wide)
-
-  else
-    error("invalid type of replace pattern", 2)
   end
 end
 

@@ -673,6 +673,7 @@ local function DoReplace (
   local nFound, nReps, nLine = 0, 0, 0
   local tInfo, tStartPos = editor.GetInfo(), editor.GetInfo()
   local acc, acc_started
+  local sFileName = editor.GetFileName()
   local Eur_Begin_Done
 
   local function BeginUndoRedo()
@@ -1023,7 +1024,7 @@ local function DoReplace (
           tRepeat.from, tRepeat.to = fr, to
           -----------------------------------------------------------------------
           collect[0] = TT.sub(sLine, fr, to)
-          local sRepFinal, ret2 = fReplace(collect, nFound, nReps, y)
+          local sRepFinal, ret2 = fReplace(collect, nFound, nReps, y, sFileName)
           if ret2 and sChoice == "all" then bFinish = true end
           if sRepFinal then
             if sChoice ~= "all" then
