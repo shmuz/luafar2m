@@ -135,8 +135,9 @@ end
 
 local function GetSearchAreas(aData)
   local Info = panel.GetPanelInfo(nil,1)
+  local bPlugin = band(Info.Flags, F.PFLAGS_PLUGIN) ~= 0
   local RootFolderItem = {}
-  if Info.PanelType==F.PTYPE_FILEPANEL and 0==band(Info.Flags, F.PFLAGS_PLUGIN) then
+  if Info.PanelType==F.PTYPE_FILEPANEL and not bPlugin then
     RootFolderItem.Text = M.MSaRootFolder .. panel.GetPanelDirectory(nil,1).Name:match("/[^/]*")
   else
     RootFolderItem.Text = M.MSaRootFolder
@@ -188,164 +189,6 @@ local function GetDialogHistory (name)
     fp:close()
   end
   return value
-end
-
-
-local function EditorConfigDialog()
-  local offset = 5 + math.max(M.MBtnHighlightColor:len(),
-                              M.MBtnGrepLineNumMatchedColor:len(),
-                              M.MBtnGrepLineNumContextColor:len()) + 5
-  ----------------------------------------------------------------------------
-  local Items = {
-    guid = "69E53E0A-D63E-40CC-B153-602E9633956E";
-    width = 76;
-    help = "Contents";
-    {tp="dbox";  text=M.MConfigTitleEditor; },
-    {tp="chbox"; name="bForceScopeToBlock";  text=M.MOptForceScopeToBlock; },
-    {tp="chbox"; name="bSelectFound";        text=M.MOptSelectFound; },
-    {tp="chbox"; name="bShowSpentTime";      text=M.MOptShowSpentTime; },
-    {tp="text";  text=M.MOptPickFrom; ystep=2; },
-    {tp="rbutt"; x1=7;  name="rPickEditor";  text=M.MOptPickEditor; group=1; val=1; },
-    {tp="rbutt"; x1=27; name="rPickHistory"; text=M.MOptPickHistory; y1=""; },
-    {tp="rbutt"; x1=47; name="rPickNowhere"; text=M.MOptPickNowhere; y1=""; },
-
-    {tp="sep"; ystep=2; text=M.MSepHighlightColors; },
-    {tp="butt"; name="btnHighlight"; text=M.MBtnHighlightColor; btnnoclose=1; },
-    {tp="text"; name="labHighlight"; text=M.MTextSample; x1=offset; y1=""; width=M.MTextSample:len(); },
-    {tp="butt"; name="btnGrepLNum1"; text=M.MBtnGrepLineNumMatchedColor; btnnoclose=1; },
-    {tp="text"; name="labGrepLNum1"; text=M.MTextSample; x1=offset; y1=""; width=M.MTextSample:len(); },
-    {tp="butt"; name="btnGrepLNum2"; text=M.MBtnGrepLineNumContextColor; btnnoclose=1; },
-    {tp="text"; name="labGrepLNum2"; text=M.MTextSample; x1=offset; y1=""; width=M.MTextSample:len(); },
-
-    {tp="sep"; },
-    {tp="butt"; centergroup=1; text=M.MOk;    default=1; },
-    {tp="butt"; centergroup=1; text=M.MCancel; cancel=1; },
-  }
-  ----------------------------------------------------------------------------
-  local dlg = sdialog.New(Items)
-  local Pos = dlg:Indexes()
-  local Data = _Plugin.History["config"]
-  dlg:LoadData(Data)
-
-  local hColor0 = Data.EditorHighlightColor
-  local hColor1 = Data.GrepLineNumMatchColor
-  local hColor2 = Data.GrepLineNumContextColor
-
-  Items.proc = function(hDlg, msg, param1, param2)
-    if msg == F.DN_BTNCLICK then
-      if param1 == Pos.btnHighlight then
-        local c = far.ColorDialog(hColor0, "FCD_RGB")
-        if c then hColor0 = c.Color; hDlg:send("DM_REDRAW"); end
-      elseif param1 == Pos.btnGrepLNum1 then
-        local c = far.ColorDialog(hColor1, "FCD_RGB")
-        if c then hColor1 = c.Color; hDlg:send("DM_REDRAW"); end
-      elseif param1 == Pos.btnGrepLNum2 then
-        local c = far.ColorDialog(hColor2, "FCD_RGB")
-        if c then hColor2 = c.Color; hDlg:send("DM_REDRAW"); end
-      end
-
-    elseif msg == F.DN_CTLCOLORDLGITEM then
-      if param1 == Pos.labHighlight then param2[1] = hColor0; return param2; end
-      if param1 == Pos.labGrepLNum1 then param2[1] = hColor1; return param2; end
-      if param1 == Pos.labGrepLNum2 then param2[1] = hColor2; return param2; end
-    end
-  end
-
-  local out = dlg:Run()
-  if out then
-    dlg:SaveData(out, Data)
-    Data.EditorHighlightColor = hColor0
-    Data.GrepLineNumMatchColor = hColor1
-    Data.GrepLineNumContextColor = hColor2
-    _Plugin.SaveSettings()
-    return true
-  end
-end
-
-
-local TUserBreak = {
-  time       = nil;
-  cancel     = nil;
-  fullcancel = nil;
-}
-local UserBreakMeta = { __index=TUserBreak }
-
-local function NewUserBreak()
-  return setmetatable({ time=0 }, UserBreakMeta)
-end
-
-function TUserBreak:ConfirmEscape (in_file)
-  local ret
-  if win.ExtractKey() == "ESCAPE" then
-    local hScreen = far.SaveScreen()
-    local msg = M.MInterrupted.."\n"..M.MConfirmCancel
-    local t1 = os.clock()
-    if in_file then
-      -- [Cancel current file] [Cancel all files] [Continue]
-      local r = far.Message(msg, M.MMenuTitle, M.MButtonsCancelOnFile, "w")
-      if r == 2 then
-        self.fullcancel = true
-      end
-      ret = r==1 or r==2
-    else
-      -- [Yes] [No]
-      local r = far.Message(msg, M.MMenuTitle, M.MBtnYesNo, "w")
-      if r == 1 then
-        self.fullcancel = true
-        ret = true
-      end
-    end
-    self.time = self.time + os.clock() - t1
-    far.RestoreScreen(hScreen); far.Text();
-  end
-  return ret
-end
-
-function TUserBreak:fInterrupt()
-  local c = self:ConfirmEscape("in_file")
-  self.cancel = c
-  return c
-end
-
-
-local function set_progress (LEN, ratio, space)
-  space = space or ""
-  local uchar1, uchar2 = uchar(9608), uchar(9617)
-  local len = math.floor(ratio*LEN + 0.5)
-  local text = uchar1:rep(len) .. uchar2:rep(LEN-len) .. space .. ("%3d%%"):format(ratio*100)
-  return text
-end
-
-
-local DisplaySearchState do
-  local lastclock = 0
-  local wMsg, wHead = 60, 10
-  local wTail = wMsg - wHead - 3
-  DisplaySearchState = function (fullname, cntFound, cntTotal, ratio, userbreak)
-    local newclock = win.Clock()
-    if newclock >= lastclock then
-      lastclock = newclock + 0.2 -- period = 0.2 sec
-      local len = fullname:len()
-      local s = len<=wMsg and fullname..(" "):rep(wMsg-len) or
-                fullname:sub(1,wHead).. "..." .. fullname:sub(-wTail)
-      far.Message(
-        (s.."\n") .. (set_progress(wMsg-4, ratio).."\n") .. (M.MFilesFound..cntFound.."/"..cntTotal),
-        M.MTitleSearching, "")
-      return userbreak and userbreak:ConfirmEscape()
-    end
-  end
-end
-
-
-local function DisplayReplaceState (fullname, cnt, ratio)
-  local WID, W1 = 60, 3
-  local W2 = WID - W1 - 3
-  local len = fullname:len()
-  local s = len<=WID and fullname..(" "):rep(WID-len) or
-            fullname:sub(1,W1).. "..." .. fullname:sub(-W2)
-  far.Message(
-    (s.."\n") .. (set_progress(W2, ratio, " ").."\n") .. (M.MPanelFin_FilesProcessed.." "..cnt),
-    M.MTitleProcessing, "")
 end
 
 
@@ -800,6 +643,7 @@ function SRFrame:OnDataLoaded (aData)
   end
 end
 
+
 function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
   local Pos = self.Pos
   local bScript = self.bScriptCall or LoadFromPreset
@@ -835,6 +679,7 @@ function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
   self:CheckAdvancedEnab(hDlg)
   self:CheckRegexInit(hDlg, Data)
 end
+
 
 function SRFrame:SaveDataDyn (hDlg, Data)
   local state = self.Dlg:GetDialogState(hDlg)
@@ -1162,17 +1007,14 @@ local function ConfigDialog()
   ----------------------------------------------------------------------------
   local Dlg = sdialog.New(Items)
 
-  local function closeaction (hDlg, param1, state)
-    local ok, errmsg = TransformLogFilePat(state.sLogFileName)
-    if not ok then
-      ErrorMsg(errmsg, "Log file name")
-      return KEEP_DIALOG_OPEN
-    end
-  end
-
   function Items.proc (hDlg, Msg, Par1, Par2)
     if Msg == F.DN_CLOSE then
-      return closeaction(hDlg, Par1, Par2)
+      local state = Par2
+      local ok, errmsg = TransformLogFilePat(state.sLogFileName)
+      if not ok then
+        ErrorMsg(errmsg, "Log file name")
+        return KEEP_DIALOG_OPEN
+      end
     end
   end
 
@@ -1187,35 +1029,193 @@ local function ConfigDialog()
 end
 
 
+local function EditorConfigDialog()
+  local offset = 5 + math.max(M.MBtnHighlightColor:len(),
+                              M.MBtnGrepLineNumMatchedColor:len(),
+                              M.MBtnGrepLineNumContextColor:len()) + 5
+  ----------------------------------------------------------------------------
+  local Items = {
+    guid = "69E53E0A-D63E-40CC-B153-602E9633956E";
+    width = 76;
+    help = "Contents";
+    {tp="dbox";  text=M.MConfigTitleEditor; },
+    {tp="chbox"; name="bForceScopeToBlock";  text=M.MOptForceScopeToBlock; },
+    {tp="chbox"; name="bSelectFound";        text=M.MOptSelectFound; },
+    {tp="chbox"; name="bShowSpentTime";      text=M.MOptShowSpentTime; },
+    {tp="text";  text=M.MOptPickFrom; ystep=2; },
+    {tp="rbutt"; x1=7;  name="rPickEditor";  text=M.MOptPickEditor; group=1; val=1; },
+    {tp="rbutt"; x1=27; name="rPickHistory"; text=M.MOptPickHistory; y1=""; },
+    {tp="rbutt"; x1=47; name="rPickNowhere"; text=M.MOptPickNowhere; y1=""; },
+
+    {tp="sep"; ystep=2; text=M.MSepHighlightColors; },
+    {tp="butt"; name="btnHighlight"; text=M.MBtnHighlightColor; btnnoclose=1; },
+    {tp="text"; name="labHighlight"; text=M.MTextSample; x1=offset; y1=""; width=M.MTextSample:len(); },
+    {tp="butt"; name="btnGrepLNum1"; text=M.MBtnGrepLineNumMatchedColor; btnnoclose=1; },
+    {tp="text"; name="labGrepLNum1"; text=M.MTextSample; x1=offset; y1=""; width=M.MTextSample:len(); },
+    {tp="butt"; name="btnGrepLNum2"; text=M.MBtnGrepLineNumContextColor; btnnoclose=1; },
+    {tp="text"; name="labGrepLNum2"; text=M.MTextSample; x1=offset; y1=""; width=M.MTextSample:len(); },
+
+    {tp="sep"; },
+    {tp="butt"; centergroup=1; text=M.MOk;    default=1; },
+    {tp="butt"; centergroup=1; text=M.MCancel; cancel=1; },
+  }
+  ----------------------------------------------------------------------------
+  local dlg = sdialog.New(Items)
+  local Pos = dlg:Indexes()
+  local Data = _Plugin.History["config"]
+  dlg:LoadData(Data)
+
+  local hColor0 = Data.EditorHighlightColor
+  local hColor1 = Data.GrepLineNumMatchColor
+  local hColor2 = Data.GrepLineNumContextColor
+
+  Items.proc = function(hDlg, msg, param1, param2)
+    if msg == F.DN_BTNCLICK then
+      if param1 == Pos.btnHighlight then
+        local c = far.ColorDialog(hColor0, "FCD_RGB")
+        if c then hColor0 = c.Color; hDlg:send("DM_REDRAW"); end
+      elseif param1 == Pos.btnGrepLNum1 then
+        local c = far.ColorDialog(hColor1, "FCD_RGB")
+        if c then hColor1 = c.Color; hDlg:send("DM_REDRAW"); end
+      elseif param1 == Pos.btnGrepLNum2 then
+        local c = far.ColorDialog(hColor2, "FCD_RGB")
+        if c then hColor2 = c.Color; hDlg:send("DM_REDRAW"); end
+      end
+
+    elseif msg == F.DN_CTLCOLORDLGITEM then
+      if param1 == Pos.labHighlight then param2[1] = hColor0; return param2; end
+      if param1 == Pos.labGrepLNum1 then param2[1] = hColor1; return param2; end
+      if param1 == Pos.labGrepLNum2 then param2[1] = hColor2; return param2; end
+    end
+  end
+
+  local out = dlg:Run()
+  if out then
+    dlg:SaveData(out, Data)
+    Data.EditorHighlightColor = hColor0
+    Data.GrepLineNumMatchColor = hColor1
+    Data.GrepLineNumContextColor = hColor2
+    _Plugin.SaveSettings()
+    return true
+  end
+end
+
+
+local TUserBreak = {
+  time       = nil;
+  cancel     = nil;
+  fullcancel = nil;
+}
+local UserBreakMeta = { __index=TUserBreak }
+
+local function NewUserBreak()
+  return setmetatable({ time=0 }, UserBreakMeta)
+end
+
+function TUserBreak:ConfirmEscape (in_file)
+  local ret
+  if win.ExtractKey() == "ESCAPE" then
+    local hScreen = far.SaveScreen()
+    local msg = M.MInterrupted.."\n"..M.MConfirmCancel
+    local t1 = os.clock()
+    if in_file then
+      -- [Cancel current file] [Cancel all files] [Continue]
+      local r = far.Message(msg, M.MMenuTitle, M.MButtonsCancelOnFile, "w")
+      if r == 2 then
+        self.fullcancel = true
+      end
+      ret = r==1 or r==2
+    else
+      -- [Yes] [No]
+      local r = far.Message(msg, M.MMenuTitle, M.MBtnYesNo, "w")
+      if r == 1 then
+        self.fullcancel = true
+        ret = true
+      end
+    end
+    self.time = self.time + os.clock() - t1
+    far.RestoreScreen(hScreen); far.Text();
+  end
+  return ret
+end
+
+function TUserBreak:fInterrupt()
+  local c = self:ConfirmEscape("in_file")
+  self.cancel = c
+  return c
+end
+
+
+local function set_progress (LEN, ratio, space)
+  space = space or ""
+  local uchar1, uchar2 = uchar(9608), uchar(9617)
+  local len = math.floor(ratio*LEN + 0.5)
+  local text = uchar1:rep(len) .. uchar2:rep(LEN-len) .. space .. ("%3d%%"):format(ratio*100)
+  return text
+end
+
+
+local DisplaySearchState do
+  local lastclock = 0
+  local wMsg, wHead = 60, 10
+  local wTail = wMsg - wHead - 3
+  DisplaySearchState = function (fullname, cntFound, cntTotal, ratio, userbreak)
+    local newclock = win.Clock()
+    if newclock >= lastclock then
+      lastclock = newclock + 0.2 -- period = 0.2 sec
+      local len = fullname:len()
+      local s = len<=wMsg and fullname..(" "):rep(wMsg-len) or
+                fullname:sub(1,wHead).. "..." .. fullname:sub(-wTail)
+      far.Message(
+        (s.."\n") .. (set_progress(wMsg-4, ratio).."\n") .. (M.MFilesFound..cntFound.."/"..cntTotal),
+        M.MTitleSearching, "")
+      return userbreak and userbreak:ConfirmEscape()
+    end
+  end
+end
+
+
+local function DisplayReplaceState (fullname, cnt, ratio)
+  local WID, W1 = 60, 3
+  local W2 = WID - W1 - 3
+  local len = fullname:len()
+  local s = len<=WID and fullname..(" "):rep(WID-len) or
+            fullname:sub(1,W1).. "..." .. fullname:sub(-W2)
+  far.Message(
+    (s.."\n") .. (set_progress(W2, ratio, " ").."\n") .. (M.MPanelFin_FilesProcessed.." "..cnt),
+    M.MTitleProcessing, "")
+end
+
+
 local function CheckMask (mask)
   return far.ProcessName("PN_CHECKMASK", mask, nil, "PN_SHOWERRORMESSAGE")
 end
 
 
 return {
-  EditorConfigDialog  = EditorConfigDialog;
-  CheckMask           = CheckMask;
-  CheckSearchArea     = CheckSearchArea;
-  ConfigDialog        = ConfigDialog;
-  CreateSRFrame       = CreateSRFrame;
-  DefaultLogFileName  = DefaultLogFileName;
-  DisplaySearchState  = DisplaySearchState;
-  DisplayReplaceState = DisplayReplaceState;
-  ErrorMsg            = ErrorMsg;
-  FormatInt           = FormatInt;
-  FormatTime          = FormatTime;
-  GetDialogHistory    = GetDialogHistory;
-  GetRegexLib         = GetRegexLib;
-  GetReplaceFunction  = GetReplaceFunction;
-  GetSearchAreas      = GetSearchAreas;
-  GetWordUnderCursor  = GetWordUnderCursor;
-  GotoEditField       = GotoEditField;
-  Gsub                = MakeGsub("byte");
-  GsubMB              = MakeGsub("multibyte");
-  GsubW               = MakeGsub("widechar");
-  IndexToSearchArea   = IndexToSearchArea;
-  NewUserBreak        = NewUserBreak;
-  ProcessDialogData   = ProcessDialogData;
-  SaveCodePageCombo   = SaveCodePageCombo;
-  TransformLogFilePat = TransformLogFilePat;
+  CheckMask             = CheckMask;
+  CheckSearchArea       = CheckSearchArea;
+  ConfigDialog          = ConfigDialog;
+  CreateSRFrame         = CreateSRFrame;
+  DefaultLogFileName    = DefaultLogFileName;
+  DisplayReplaceState   = DisplayReplaceState;
+  DisplaySearchState    = DisplaySearchState;
+  EditorConfigDialog    = EditorConfigDialog;
+  ErrorMsg              = ErrorMsg;
+  FormatInt             = FormatInt;
+  FormatTime            = FormatTime;
+  GetDialogHistory      = GetDialogHistory;
+  GetRegexLib           = GetRegexLib;
+  GetReplaceFunction    = GetReplaceFunction;
+  GetSearchAreas        = GetSearchAreas;
+  GetWordUnderCursor    = GetWordUnderCursor;
+  GotoEditField         = GotoEditField;
+  Gsub                  = MakeGsub("byte");
+  GsubMB                = MakeGsub("multibyte");
+  GsubW                 = MakeGsub("widechar");
+  IndexToSearchArea     = IndexToSearchArea;
+  NewUserBreak          = NewUserBreak;
+  ProcessDialogData     = ProcessDialogData;
+  SaveCodePageCombo     = SaveCodePageCombo;
+  TransformLogFilePat   = TransformLogFilePat;
 }
