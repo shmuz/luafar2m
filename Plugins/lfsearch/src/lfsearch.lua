@@ -1,54 +1,60 @@
 -- lfsearch.lua
 -- luacheck: globals lfsearch _Plugin
 
-local SETTINGS_KEY  = nil
-local SETTINGS_NAME = "settings"
 local F = far.Flags
-local M -- forward declaration
+local M, History, HField -- forward declarations
 local MenuFlags = bit64.bor(F.FMENU_WRAPMODE, F.FMENU_AUTOHIGHLIGHT)
 _G.lfsearch = {}
 
+local SETTINGS_KEY = nil
+local SETTINGS_NAME = "settings"
+local Sett = require "far2.settings"
 
-local function SetDefaultIfNil(tbl, field, dflt)
-  if tbl[field] == nil then tbl[field] = dflt end
+
+local function LoadSettings()
+  local data = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
+  for _,key in ipairs {"config","main","menu","panels.menu","persistent","presets","rename","tmppanel"} do
+    Sett.field(data, key)
+  end
+  return data
+end
+
+
+local function SaveSettings()
+  Sett.msave(SETTINGS_KEY, SETTINGS_NAME, History)
 end
 
 
 -- Set the defaults: prioritize safety and "least surprise".
-local function LoadDataOnFirstRun()
-  local Sett = require "far2.settings"
-  local history = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
-  for _,key in ipairs {"config","main","menu","panels.menu","persistent","presets","rename","tmppanel"} do
-    Sett.field(history, key)
+local function NormDataOnFirstRun()
+  local main = History["main"]
+  local pers = History["persistent"]
+  local SetVal = function(name, dflt)
+    if main[name]==nil or not pers[name] then main[name]=dflt; end
   end
+  SetVal("bAdvanced"          , false)
+  SetVal("bConfirmReplace"    , true)
+  SetVal("bDelEmptyLine"      , false)
+  SetVal("bDelNonMatchLine"   , false)
+  SetVal("bGrepInverseSearch" , false)
+  SetVal("bInverseSearch"     , false)
+  SetVal("bMultiPatterns"     , false)
+  SetVal("bRepIsFunc"         , false)
+  SetVal("bSearchBack"        , false)
+  SetVal("bUseDirFilter"      , false)
+  SetVal("bUseFileFilter"     , false)
+  SetVal("sSearchArea"        , "FromCurrFolder")
 
-  local data = history["main"]
-  local pers = history["persistent"]
-  local setval = function(name, dflt)
-    if data[name]==nil or not pers[name] then data[name]=dflt; end
+  local conf = History["config"]
+  local SetDefaultIfNil = function(name, dflt)
+    if conf[name] == nil then conf[name] = dflt end
   end
-  setval("bAdvanced"          , false)
-  setval("bConfirmReplace"    , true)
-  setval("bDelEmptyLine"      , false)
-  setval("bDelNonMatchLine"   , false)
-  setval("bGrepInverseSearch" , false)
-  setval("bInverseSearch"     , false)
-  setval("bMultiPatterns"     , false)
-  setval("bRepIsFunc"         , false)
-  setval("bSearchBack"        , false)
-  setval("bUseDirFilter"      , false)
-  setval("bUseFileFilter"     , false)
-  setval("sSearchArea"        , "FromCurrFolder")
-
-  data = history["config"]
-  SetDefaultIfNil (data, "EditorHighlightColor",    0xCF)
-  SetDefaultIfNil (data, "GrepLineNumMatchColor",   0xA0)
-  SetDefaultIfNil (data, "GrepLineNumContextColor", 0x80)
-  SetDefaultIfNil (data, "bForceScopeToBlock",      true)
-  SetDefaultIfNil (data, "bSelectFound",            true)
-  SetDefaultIfNil (data, "bShowSpentTime",          true)
-
-  return history
+  SetDefaultIfNil ("EditorHighlightColor",    0xCF)
+  SetDefaultIfNil ("GrepLineNumMatchColor",   0xA0)
+  SetDefaultIfNil ("GrepLineNumContextColor", 0x80)
+  SetDefaultIfNil ("bForceScopeToBlock",      true)
+  SetDefaultIfNil ("bSelectFound",            true)
+  SetDefaultIfNil ("bShowSpentTime",          true)
 end
 
 
@@ -82,33 +88,36 @@ local function PersistentDialog()
     end
   end
 
-  local pers = _Plugin.History["persistent"]
+  local pers = History["persistent"]
   local dlg = sd.New(items)
   dlg:LoadData(pers)
   local out = dlg:Run()
   if out then
     dlg:SaveData(out, pers)
-    _Plugin.SaveSettings()
+    SaveSettings()
   end
 end
 
 
 local function FirstRunActions()
-  local history = LoadDataOnFirstRun()
+  History = LoadSettings()
+  HField = function(key) return Sett.field(History, key) end
+  NormDataOnFirstRun()
 
   _Plugin = {
-    DialogHistoryPath = "LuaFAR Search\\",
-    OriginalRequire = require,
-    History = history,
-    Repeat = {},
-    FileList = nil,
+    DialogHistoryPath = "LuaFAR Search\\";
+    FileList          = nil;
+    HField            = HField;
+    History           = History;
+    OriginalRequire   = require;
+    Repeat            = {};
+    SaveSettings      = SaveSettings;
   }
 end
 
 
 local FirstRun = not _Plugin
 if FirstRun then FirstRunActions() end
-local History = _Plugin.History
 
 
 local libUtils   = require "far2.utils"
@@ -119,13 +128,6 @@ M                = require "lfs_message"
 local MReplace   = require "lfs_mreplace"
 local Panels     = require "lfs_panels"
 local Rename     = require "lfs_rename"
-local Sett       = require "far2.settings"
-
-
-local function SaveSettings()
-  Sett.msave(SETTINGS_KEY, SETTINGS_NAME, History)
-end
-_Plugin.SaveSettings = SaveSettings
 
 
 local function ForcedRequire (name)
