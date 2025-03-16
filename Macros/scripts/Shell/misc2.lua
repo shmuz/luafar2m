@@ -1,6 +1,14 @@
 local SharedKey = "CtrlAltE"
 local SharedId = "F2199E52-FE6D-45C0-B39B-8C06984EBBE1"
 
+local Repos = {
+  { dir="far2m";        sortpriority=49; },
+  { dir="luafar2m";     sortpriority=48; },
+  { dir="luafar-far2l"; sortpriority=47; },
+  { dir="scite-config"; sortpriority=46; },
+  { dir="mactest";      sortpriority=45; },
+}
+
 local function ShowDiff (aName)
   local dir = panel.GetPanelDirectory(nil, 1).Name
   panel.SetPanelDirectory(nil, 1, win.JoinPath(far.GetMyHome(), "repos", aName))
@@ -13,33 +21,14 @@ local function ShowDiff (aName)
   panel.SetPanelDirectory(nil, 1, dir);
 end
 
-Macro {
-  id=SharedId; key=SharedKey; sortpriority=48;
-  description = "git diff: far2m";
-  area="Shell";
-  action=function() ShowDiff("far2m") end;
-}
-
-Macro {
-  id=SharedId; key=SharedKey; sortpriority=47;
-  description = "git diff: luafar2m";
-  area="Shell";
-  action=function() ShowDiff("luafar2m") end;
-}
-
-Macro {
-  id=SharedId; key=SharedKey; sortpriority=46.5;
-  description = "git diff: luafar-far2l";
-  area="Shell";
-  action=function() ShowDiff("luafar-far2l") end;
-}
-
-Macro {
-  id=SharedId; key=SharedKey; sortpriority=46;
-  description = "git diff: scite-config";
-  area="Shell";
-  action=function() ShowDiff("scite-config") end;
-}
+for _,repo in ipairs(Repos) do
+  Macro {
+    id=SharedId; key=SharedKey; sortpriority=repo.sortpriority;
+    description = "git diff: " .. repo.dir;
+    area="Shell";
+    action=function() ShowDiff(repo.dir) end;
+  }
+end
 
 Macro {
   id=SharedId;  key=SharedKey; sortpriority=44;
