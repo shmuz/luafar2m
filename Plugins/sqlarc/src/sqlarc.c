@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
 #include <farplug-wide.h>
-#include <luafar.h>
+#include <lf_luafar.h>
 
 extern int luaopen_lsqlite3(lua_State *L);
 
