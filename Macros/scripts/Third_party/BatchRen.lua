@@ -148,11 +148,11 @@ local function Main()
     if errorCount > 0 then
       ShowError(errorsText)
     end
+    ClearPanelSelection(items.Idx)
+    panel.UpdatePanel(nil, 1)
+    panel.RedrawPanel(nil, 1)
   end
   os.remove(tmpFileName)
-  ClearPanelSelection(items.Idx)
-  panel.UpdatePanel(nil, 1)
-  panel.RedrawPanel(nil, 1)
 end
 
 if MenuItem then
