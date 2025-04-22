@@ -3,7 +3,7 @@
 .Options CtrlStartPosChar=¦
 
 @Contents
-$ #LuaFAR Search (version 3.45.3)#
+$ #LuaFAR Search (version 3.48.1)#
 ^#FEATURES#
  * Search and replace in the editor.
  * Search and replace from the panels.
@@ -179,14 +179,15 @@ $ #"Show All" operation#
  Do search and show the list with all lines containing the found text.
 Each line in the list contains an editor line where the search succeeded.
 
-    #Enter#            Go to the selected line in the editor.
-    #F6#               Show different parts of long lines.
-    #F7#               Show the selected line in a message box.
-    #F8#               Close the list and reopen the Search Dialog.
-    #Ctrl-C#           Copy the selected line to the clipboard.
+    #Enter#            Go to the selected line in the editor
+    #F6#               Show different parts of long lines
+    #F7#               Show the selected line in a message box
+    #F8#               Close the list and reopen the Search Dialog
+    #Ctrl-Ins#         Copy the selected line to the clipboard
+    #Ctrl-Shift-Ins#   Copy all list lines to the clipboard
     #Ctrl-Up#, #Ctrl-Down#, #Ctrl-Home#, #Ctrl-End#
-                     Scroll the editor not closing the list.
-    #Ctrl-Num0#        Restore editor position after scrolling.
+                     Scroll the editor not closing the list
+    #Ctrl-Num0#        Restore editor position after scrolling
 
  ~Contents~@Contents@
 
@@ -247,9 +248,9 @@ $ #User Scripts#
   #LIBRARIES:#
     *  The standard Lua libraries
     *  LuaFAR libraries
-    *  #dialog#  (require "far2.dialog" , same as in LuaFAR for Editor)
-    *  #history# (require "far2.history", same as in LuaFAR for Editor)
-    *  #message# (require "far2.message", same as in LuaFAR for Editor)
+         #simpledialog#  (require "far2.simpledialog")
+         #history#       (require "far2.history")
+         #message#       (require "far2.message")
 
   #FUNCTIONS:#
    ~lfsearch.EditorAction~@FuncEditorAction@
