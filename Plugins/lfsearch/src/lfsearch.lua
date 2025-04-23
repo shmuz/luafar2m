@@ -2,7 +2,9 @@
 -- luacheck: globals lfsearch _Plugin
 
 local F = far.Flags
-local M, History, HField -- forward declarations
+local M -- forward declaration
+local History = _Plugin and _Plugin.History -- forward declaration
+local HField = _Plugin and _Plugin.HField -- forward declaration
 local MenuFlags = bit64.bor(F.FMENU_WRAPMODE, F.FMENU_AUTOHIGHLIGHT)
 _G.lfsearch = {}
 
