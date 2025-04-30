@@ -12,23 +12,35 @@
 --BACKUP YOUR FILES BEFORE USE
 if not jit then return -- LuaJIT required
 
+dirsep = package.config\sub 1, 1
+osWindows = dirsep == "\\"
+
 import floor,max,min from math
 import byte,char,format,rep,sub from string
 F=far.Flags
 SETTINGS_KEY  = "hexed"
 SETTINGS_NAME = "settings"
-ScriptDir=(...)\match ".*/"
+ScriptDir=(...)\match (".*" .. dirsep)
 Settings = nil
 Colors = nil
 
-require'winapi'
+if not osWindows
+  require'winapi'
 ffi=require'ffi'
 C=ffi.C
 MinWidth=80 -- must fully cover the right (displaytext) part
 dialogs={}
 id=win.Uuid'02FFA2B9-98F8-4A73-B311-B3431340E272'
 idPos=win.Uuid'4FEA7612-507B-453F-A83D-53837CAD86ED'
+
 ffi.cdef[[
+HANDLE CreateFileW (LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, void* lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
+WINBOOL GetFileSizeEx (HANDLE hFile, int64_t* lpFileSize);
+WINBOOL SetFilePointerEx (HANDLE hFile, int64_t liDistanceToMove, void* lpNewFilePointer, DWORD dwMoveMethod);
+WINBOOL ReadFile (HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, void* lpOverlapped);
+WINBOOL WriteFile (HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, void* lpOverlapped);
+WINBOOL CloseHandle (HANDLE hObject);
+
 HANDLE WINPORT_CreateFile (LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, void* lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
 WINBOOL WINPORT_GetFileSizeEx (HANDLE hFile, int64_t* lpFileSize);
 WINBOOL WINPORT_SetFilePointerEx (HANDLE hFile, int64_t liDistanceToMove, void* lpNewFilePointer, DWORD dwMoveMethod);
@@ -36,6 +48,14 @@ WINBOOL WINPORT_ReadFile (HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToR
 WINBOOL WINPORT_WriteFile (HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, void* lpOverlapped);
 WINBOOL WINPORT_CloseHandle (HANDLE hObject);
 ]]
+
+WINPORT_CreateFile       = osWindows and C.CreateFileW      or C.WINPORT_CreateFile
+WINPORT_GetFileSizeEx    = osWindows and C.GetFileSizeEx    or C.WINPORT_GetFileSizeEx
+WINPORT_SetFilePointerEx = osWindows and C.SetFilePointerEx or C.WINPORT_SetFilePointerEx
+WINPORT_ReadFile         = osWindows and C.ReadFile         or C.WINPORT_ReadFile
+WINPORT_WriteFile        = osWindows and C.WriteFile        or C.WINPORT_WriteFile
+WINPORT_CloseHandle      = osWindows and C.CloseHandle      or C.WINPORT_CloseHandle
+
 INVALID_HANDLE_VALUE=ffi.cast 'void*',-1
 GENERIC_READ=0x80000000
 GENERIC_WRITE=0x40000000
@@ -46,11 +66,13 @@ OPEN_EXISTING=3
 FILE_BEGIN=0
 WSIZE=ffi.sizeof("wchar_t")
 
-GetDefaultColors=-> {
-    Title:     actl.GetColor F.COL_VIEWERSTATUS,
-    Unchanged: actl.GetColor F.COL_VIEWERTEXT,
-    Changed:   actl.GetColor F.COL_VIEWERARROWS,
-    Selected:  actl.GetColor F.COL_VIEWERSELECTEDTEXT
+GetDefaultColors=->
+  C = far.Colors
+  {
+    Title:     actl.GetColor C.COL_VIEWERSTATUS,
+    Unchanged: actl.GetColor C.COL_VIEWERTEXT,
+    Changed:   actl.GetColor C.COL_VIEWERARROWS,
+    Selected:  actl.GetColor C.COL_VIEWERSELECTEDTEXT
   }
 
 LoadSettings=->
@@ -91,7 +113,7 @@ ChangeColor=(data)->
       return true
 
 ToWChar=(str)->
-  str=win.Utf8ToUtf32 str
+  str=(osWindows and win.Utf8ToUtf16 or win.Utf8ToUtf32) str
   result=ffi.new 'wchar_t[?]',#str/WSIZE+1
   ffi.copy result,str
   result
@@ -132,21 +154,21 @@ GenerateDisplayText=(txt,codepage)->
 
 Read=(data)->
   with data
-    C.WINPORT_SetFilePointerEx .file,.offset,ffi.NULL,FILE_BEGIN
+    WINPORT_SetFilePointerEx .file,.offset,ffi.NULL,FILE_BEGIN
     readed=ffi.new'DWORD[1]'
     buff=ffi.new 'uint8_t[?]',16*.height
-    C.WINPORT_ReadFile .file,buff,16*.height,readed,ffi.NULL
+    WINPORT_ReadFile .file,buff,16*.height,readed,ffi.NULL
     .chunk=ffi.string buff,readed[0]
     .displaytext=GenerateDisplayText .chunk,.codepage
 
 Write=(data)->
   with data
-    fileW=C.WINPORT_CreateFile .filenameW,GENERIC_WRITE,FILE_SHARE_READ,ffi.NULL,OPEN_EXISTING,0,ffi.NULL
+    fileW=WINPORT_CreateFile .filenameW,GENERIC_WRITE,FILE_SHARE_READ,ffi.NULL,OPEN_EXISTING,0,ffi.NULL
     if fileW~=INVALID_HANDLE_VALUE
-      C.WINPORT_SetFilePointerEx fileW,.offset,ffi.NULL,FILE_BEGIN
+      WINPORT_SetFilePointerEx fileW,.offset,ffi.NULL,FILE_BEGIN
       written=ffi.new'DWORD[1]'
-      C.WINPORT_WriteFile fileW,.chunk,#.chunk,written,ffi.NULL
-      C.WINPORT_CloseHandle fileW
+      WINPORT_WriteFile fileW,.chunk,#.chunk,written,ffi.NULL
+      WINPORT_CloseHandle fileW
 
 GetOffset=->
   _pos=2
@@ -245,7 +267,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
       hDlg\SetFocus .edit and _edit or _view
 
     if Msg==F.DN_CLOSE
-      C.WINPORT_CloseHandle .file
+      WINPORT_CloseHandle .file
       dialogs[hDlg\rawhandle!]=nil
     elseif Msg==F.DN_CTLCOLORDIALOG
       return Colors.Title
@@ -272,7 +294,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
         hDlg\SetDlgItem _view,item
         hDlg\ResizeDialog 0,{X:.width,Y:.height+1}
         UpdateDlg hDlg,data
-    elseif Msg==F.DN_KEY
+    elseif (osWindows and Msg==F.DN_CONTROLINPUT and Param2.EventType==F.KEY_EVENT) or (not osWindows and Msg==F.DN_KEY)
       processed=true
       Update=(inc)->
         if not .edit
@@ -321,7 +343,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
           .cursor-=16
           Update 16
       --uchar=(Param2.UnicodeChar\sub 1,1)\byte 1
-      uchar=Param2
+      uchar = osWindows and ((Param2.UnicodeChar\sub 1,1)\byte 1) or Param2
       if .edit and .editascii and uchar~=0 and uchar~=8 and uchar~=9 and uchar~=27 and uchar<0x10000
         t={}
         for k=1,WSIZE
@@ -333,7 +355,7 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
         .displaytext=GenerateDisplayText .chunk,.codepage
         for _=1,#new do DoRight!
       else
-        key=far.KeyToName Param2
+        key = (osWindows and far.InputRecordToName or far.KeyToName) Param2
         switch key
           when '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','a','b','c','d','e','f'
             if .edit
@@ -447,11 +469,11 @@ DoHex=->
   LoadSettings!
   filenameU=viewer.GetFileName!
   filenameW=ToWChar LongPath filenameU
-  file=C.WINPORT_CreateFile filenameW,GENERIC_READ,FILE_SHARE_READ+FILE_SHARE_WRITE+FILE_SHARE_DELETE,
+  file=WINPORT_CreateFile filenameW,GENERIC_READ,FILE_SHARE_READ+FILE_SHARE_WRITE+FILE_SHARE_DELETE,
                             ffi.NULL,OPEN_EXISTING,0,ffi.NULL
   if file~=INVALID_HANDLE_VALUE
     filesize=ffi.new('int64_t[1]')
-    if 0~=C.WINPORT_GetFileSizeEx file,filesize
+    if 0~=WINPORT_GetFileSizeEx file,filesize
       ww,hh=ConsoleSize!
       ww=max MinWidth,ww
       buffer=far.CreateUserControl ww,hh-1
@@ -492,7 +514,7 @@ DoHex=->
         UpdateDlg hDlg,dialogs[hDlg\rawhandle!]
         actl.RedrawAll!
     else
-      C.WINPORT_CloseHandle file
+      WINPORT_CloseHandle file
 
 Macro
   id:"884E2F22-5076-4957-977A-945867B0B00D"
