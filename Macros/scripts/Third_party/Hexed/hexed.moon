@@ -268,11 +268,78 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
       hDlg\ShowItem _edit, .edit and 1 or 0
       hDlg\SetFocus .edit and _edit or _view
 
+    Update=(inc)->
+      if not .edit
+        old_offset=.offset
+        .offset+=inc
+        if .offset>=.filesize
+          if (.filesize-old_offset-1)<=.height*16 then .offset=old_offset
+          else .offset=.filesize-1
+        if .offset<0 then .offset=0
+        .offset-=.offset%16
+
+    DoRight=->
+      if not .edit
+        if .cursor+.offset<.filesize then .cursor+=1
+        if .cursor>.height*16
+          .cursor-=16
+          Update 16
+      elseif .cursor<.height*16 and .cursor+.offset<.filesize and (.editpos==1 or .editascii)
+        .cursor+=1
+        .editpos=0
+      else .editpos=1
+
+    DoLeft=->
+      if not .edit
+        .cursor-=1
+        if .cursor<1
+          if .offset>0
+            .cursor=16
+            Update -16
+          else .cursor=1
+      elseif .cursor>1 and (.editpos==0 or .editascii)
+        .cursor-=1
+        .editpos=1
+      else .editpos=0
+
+    DoUp=->
+      .cursor-=16
+      if .cursor<1
+        .cursor+=16
+        if .offset>0 then Update -16
+
+    DoDown=->
+      .cursor+=16
+      if .cursor+.offset>.filesize
+        .cursor-=16
+        if .offset+.height*16<.filesize
+          .cursor-=16
+          Update 16
+      if .cursor>.height*16
+        .cursor-=16
+        Update 16
+
+    ScrollUp=->
+      if .edit then DoUp!
+      else
+        if .offset==0 and .cursor>16 then .cursor-=16
+        else Update -16
+
+    ScrollDown=->
+      if .edit then DoDown!
+      else
+        if .offset+.height*16<.filesize
+          Update 16
+        elseif .offset+.cursor+16<=.filesize
+          .cursor+=16
+
     if Msg==F.DN_CLOSE
       WINPORT_CloseHandle .file
       dialogs[hDlg\rawhandle!]=nil
+
     elseif Msg==F.DN_CTLCOLORDIALOG
       return Colors.Title
+
     elseif Msg==F.DN_CTLCOLORDLGITEM
       DoColor=(color)->
         {color,color,color,color}
@@ -281,8 +348,10 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
           DoColor Colors.Title
         when _edit
           DoColor .editchanged and Colors.Changed or Colors.Unchanged
+
     elseif Msg==F.DN_KILLFOCUS
       if Param1==_edit and .edit then return _edit
+
     elseif Msg==F.DN_RESIZECONSOLE
       item=hDlg\GetDlgItem _view
       if item
@@ -296,54 +365,10 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
         hDlg\SetDlgItem _view,item
         hDlg\ResizeDialog 0,{X:.width,Y:.height+1}
         UpdateDlg hDlg,data
-    elseif (osWindows and Msg==F.DN_CONTROLINPUT and Param2.EventType==F.KEY_EVENT) or (not osWindows and Msg==F.DN_KEY)
+
+    elseif (osWindows and Msg==F.DN_CONTROLINPUT and Param2.EventType==F.KEY_EVENT) or
+           (not osWindows and Msg==F.DN_KEY)
       processed=true
-      Update=(inc)->
-        if not .edit
-          old_offset=.offset
-          .offset+=inc
-          if .offset>=.filesize
-            if (.filesize-old_offset-1)<=.height*16 then .offset=old_offset
-            else .offset=.filesize-1
-          if .offset<0 then .offset=0
-          .offset-=.offset%16
-      DoRight=->
-        if not .edit
-          if .cursor+.offset<.filesize then .cursor+=1
-          if .cursor>.height*16
-            .cursor-=16
-            Update 16
-        elseif .cursor<.height*16 and .cursor+.offset<.filesize and (.editpos==1 or .editascii)
-          .cursor+=1
-          .editpos=0
-        else .editpos=1
-      DoLeft=->
-        if not .edit
-          .cursor-=1
-          if .cursor<1
-            if .offset>0
-              .cursor=16
-              Update -16
-            else .cursor=1
-        elseif .cursor>1 and (.editpos==0 or .editascii)
-          .cursor-=1
-          .editpos=1
-        else .editpos=0
-      DoUp=->
-        .cursor-=16
-        if .cursor<1
-          .cursor+=16
-          if .offset>0 then Update -16
-      DoDown=->
-        .cursor+=16
-        if .cursor+.offset>.filesize
-          .cursor-=16
-          if .offset+.height*16<.filesize
-            .cursor-=16
-            Update 16
-        if .cursor>.height*16
-          .cursor-=16
-          Update 16
       --uchar=(Param2.UnicodeChar\sub 1,1)\byte 1
       uchar = osWindows and ((Param2.UnicodeChar\sub 1,1)\byte 1) or Param2
       if .edit and .editascii and uchar~=0 and uchar~=8 and uchar~=9 and uchar~=27 and uchar<0x10000
@@ -385,17 +410,9 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
           when 'Up' then DoUp!
           when 'Down' then DoDown!
           when 'CtrlPgUp','RCtrlPgUp','CtrlUp','RCtrlUp','MsWheelUp'
-            if .edit then DoUp!
-            else
-              if .offset==0 and .cursor>16 then .cursor-=16
-              else Update -16
+            ScrollUp!
           when 'CtrlPgDn','RCtrlPgDn','CtrlDown','RCtrlDown','MsWheelDown'
-            if .edit then DoDown!
-            else
-              if .offset+.height*16<.filesize
-                Update 16
-              elseif .offset+.cursor+16<=.filesize
-                .cursor+=16
+            ScrollDown!
           when 'PgUp'
             if .offset==0 or .edit then .cursor=(.cursor-1)%16+1
             else Update -16*.height
@@ -450,22 +467,27 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
       if processed
         UpdateDlg hDlg,data
         return true
+
     elseif osWindows and Msg==F.DN_CONTROLINPUT and Param2.EventType==F.MOUSE_EVENT or
            not osWindows and Msg==F.DN_MOUSECLICK
-      if Param2.ButtonState==F.FROM_LEFT_1ST_BUTTON_PRESSED
-        if Param1==_view
-          .cursor = MSClickEvalCursor Param2.MousePositionX, Param2.MousePositionY
-          if .cursor + .offset > .filesize
-            .cursor = .filesize - .offset
-          if Param2.EventFlags==F.DOUBLE_CLICK and not .edit
-            DoEditMode!
+      if osWindows and Param2.EventFlags==F.MOUSE_WHEELED
+        ScrollUp! if Param2.ButtonState < 0x80000000 else ScrollDown!
+        UpdateDlg hDlg,data
+      else
+        if Param2.ButtonState==F.FROM_LEFT_1ST_BUTTON_PRESSED
+          if Param1==_view
+            .cursor = MSClickEvalCursor Param2.MousePositionX, Param2.MousePositionY
+            if .cursor + .offset > .filesize
+              .cursor = .filesize - .offset
+            if Param2.EventFlags==F.DOUBLE_CLICK and not .edit
+              DoEditMode!
+            if .edit
+              .editascii = Param2.MousePositionX>=62
+            UpdateDlg hDlg,data
+        elseif Param2.ButtonState==F.RIGHTMOST_BUTTON_PRESSED
           if .edit
-            .editascii = Param2.MousePositionX>=62
-          UpdateDlg hDlg,data
-      elseif Param2.ButtonState==F.RIGHTMOST_BUTTON_PRESSED
-        if .edit
-          DoEditMode!
-          UpdateDlg hDlg,data
+            DoEditMode!
+            UpdateDlg hDlg,data
   nil
 
 DoHex=->
