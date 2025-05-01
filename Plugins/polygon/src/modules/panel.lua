@@ -942,7 +942,7 @@ function mypanel:prepare_panel_info(handle)
   else -- self._panel_mode == "table"/"view"/"query"
     -- Re-read column info as it may have changed due to possible "ALTER TABLE..." execution
     local col_info = dbx.read_columns_info(self._db, self._schema, self._objname)
-    if col_info then
+    if col_info and col_info[1] then
       self._col_info = col_info
     end
     local pInfo = panel.GetPanelInfo(handle)
@@ -1118,6 +1118,7 @@ local SuppressedKeys = {
   AltF3   = true;
   CtrlA   = true;
   CtrlN   = true;
+  F3      = true;
   F5      = true;
   F7      = true;
   ShiftF4 = true;
