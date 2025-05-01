@@ -104,9 +104,11 @@ ChangeColor=(data)->
         if v.key then data[v.key].Attributes = Colors[v.val]
       return true
 
-    clr = far.ColorDialog Colors[sel.val], 0x03
+    clr = osWindows and far.ColorDialog Colors[sel.val] or
+          (not osWindows) and far.ColorDialog Colors[sel.val], 0x03
     if clr
-      clr=clr.Color
+      if not osWindows then
+        clr=clr.Color
       if sel.key
         data[sel.key].Attributes=clr
       Colors[sel.val]=clr
@@ -441,14 +443,15 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
               .codepage = .codepage==cp and win.GetOEMCP! or cp
               hDlg\SetText _title, MakeTitle .filenameU,.codepage
           when 'AltShiftF9'
-            if (not osWindows) and ChangeColor data -- TODO for osWindows
+            if ChangeColor data
               SaveSettings!
               hDlg\Redraw!
           else processed=false
       if processed
         UpdateDlg hDlg,data
         return true
-    elseif (osWindows and (Msg==F.DN_CONTROLINPUT and Param2.EventType==F.MOUSE_EVENT)) or (not osWindows and Msg==F.DN_MOUSECLICK)
+    elseif osWindows and Msg==F.DN_CONTROLINPUT and Param2.EventType==F.MOUSE_EVENT or
+           not osWindows and Msg==F.DN_MOUSECLICK
       if Param2.ButtonState==F.FROM_LEFT_1ST_BUTTON_PRESSED
         if Param1==_view
           .cursor = MSClickEvalCursor Param2.MousePositionX, Param2.MousePositionY
