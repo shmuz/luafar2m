@@ -441,14 +441,14 @@ DlgProc=(hDlg,Msg,Param1,Param2)->
               .codepage = .codepage==cp and win.GetOEMCP! or cp
               hDlg\SetText _title, MakeTitle .filenameU,.codepage
           when 'AltShiftF9'
-            if ChangeColor data
+            if (not osWindows) and ChangeColor data -- TODO for osWindows
               SaveSettings!
               hDlg\Redraw!
           else processed=false
       if processed
         UpdateDlg hDlg,data
         return true
-    elseif Msg==F.DN_MOUSECLICK
+    elseif (osWindows and (Msg==F.DN_CONTROLINPUT and Param2.EventType==F.MOUSE_EVENT)) or (not osWindows and Msg==F.DN_MOUSECLICK)
       if Param2.ButtonState==F.FROM_LEFT_1ST_BUTTON_PRESSED
         if Param1==_view
           .cursor = MSClickEvalCursor Param2.MousePositionX, Param2.MousePositionY
