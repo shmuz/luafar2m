@@ -7,7 +7,7 @@ local macrokey     = "AltShiftF11"
 local lua_explorer = "far2.lua_explorer"
 -- /Settings
 
-local OsWindows = package.config:sub(1,1)=="\\"
+local osWindows = package.config:sub(1,1)=="\\"
 local F=far.Flags
 
 local Data = {
@@ -28,7 +28,7 @@ local breakkeys = {}
 local helpmessage = {}
 
 for _,v in ipairs(Data) do
-  if v.os:find(OsWindows and "w" or "l") then
+  if v.os:find(osWindows and "w" or "l") then
     if v.BreakKey then
       if v.help then
         table.insert(helpmessage, ("%-16s%s"):format(v.BreakKey, v.help))
@@ -42,7 +42,7 @@ end
 helpmessage = table.concat(helpmessage, "\n")
 
 local function IsThisPlugin(pluginfo)
-  if OsWindows then
+  if osWindows then
     return export.GetGlobalInfo().Guid == pluginfo.GInfo.Guid --luacheck: no global
   else
     return far.GetPluginId() == pluginfo.GInfo.SysID --luacheck: no global
@@ -56,7 +56,7 @@ local properties = {
 local last_module
 
 local function GetFileName(name)
-  return name:match(OsWindows and "[^\\]+$" or "[^/]+$");
+  return name:match(osWindows and "[^\\]+$" or "[^/]+$");
 end
 
 local function SpecialMessage(text, title, flags)

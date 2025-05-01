@@ -7,8 +7,8 @@
 --                        (2) dedent on Backspace press
 
 local F = far.Flags
-local OsWindows = package.config:sub(1,1) == "\\"
-local FarBuild = OsWindows and select(4, far.AdvControl("ACTL_GETFARMANAGERVERSION",true))
+local osWindows = package.config:sub(1,1) == "\\"
+local FarBuild = osWindows and select(4, far.AdvControl("ACTL_GETFARMANAGERVERSION",true))
 
 --------------------------------------------------------------------------------
 -- IMPORTANT: all keys (file extensions) in Config table must be in lower case
@@ -27,13 +27,13 @@ Config.pyw = Config.py
 --------------------------------------------------------------------------------
 
 local function GetConfig()
-  local patt = OsWindows and "%.([^.\\]+)$" or "%.([^./]+)$"
+  local patt = osWindows and "%.([^.\\]+)$" or "%.([^./]+)$"
   local ext = editor.GetFileName():match(patt)
   return ext and Config[ext:lower()]
 end
 
 -- 3.0.3425 (LuaFAR: API extension of editor.GetString)
-local WrapGetString = OsWindows and FarBuild < 3425 and
+local WrapGetString = osWindows and FarBuild < 3425 and
   function(Id, LineNum)
     local data = editor.GetString(Id, LineNum)
     return data and data.StringText
@@ -98,7 +98,7 @@ local function OnEditorInput(Rec)
 end
 
 local IsLuaMacro, IsLF4Ed
-if OsWindows then
+if osWindows then
   local Id = far.PluginStartupInfo().PluginGuid
   IsLuaMacro = Id == win.Uuid("4EBBEFC8-2084-4B7F-94C0-692CE136894D")
   IsLF4Ed    = Id == win.Uuid("6F332978-08B8-4919-847A-EFBB6154C99A")
@@ -115,7 +115,7 @@ if IsLuaMacro then
     action = OnEditorInput;
   }
 elseif IsLF4Ed then
-  if OsWindows then
+  if osWindows then
     ProcessEditorInput = OnEditorInput -- luacheck: globals ProcessEditorInput
   else
     AddEvent("EditorInput", OnEditorInput) -- luacheck: globals AddEvent

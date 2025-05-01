@@ -15,9 +15,8 @@ local OptUseMacro = true
 -- END OF OPTIONS --
 
 local dirsep = package.config:sub(1,1)
-local FarVer = dirsep == "\\" and 3 or 2
+local osWindows = dirsep == "\\"
 local F = far.Flags
-local SendMsg = far.SendDlgMessage
 
 local thisDir do
   -- handle the script argument to ensure correct work in both LuaMacro and LF4Ed plugins
@@ -26,8 +25,8 @@ local thisDir do
   if type(arg)=="string" then thisDir = mf and arg:match(".+"..dirsep) or arg end -- LuaMacro or LF4Ed
 end
 
-local SETTINGS_KEY  = FarVer==3 and "Duplicate Fighter" or "shmuz"
-local SETTINGS_NAME = FarVer==3 and "settings"          or "Duplicate Fighter"
+local SETTINGS_KEY  = osWindows and "Duplicate Fighter" or "shmuz"
+local SETTINGS_NAME = osWindows and "settings"          or "Duplicate Fighter"
 
 local mEng = {
   OK          = "OK";
@@ -181,7 +180,7 @@ local function Main()
   local Pos = dlg:Indexes()
 
   local initaction = function(hDlg)
-    local val = FarVer==3 and (ST.useexpr and 1 or 0) or ST.useexpr
+    local val = osWindows and (ST.useexpr and 1 or 0) or ST.useexpr
     hDlg:Enable(Pos.toboolean, val)
     hDlg:Enable(Pos.lbExpr, val)
     hDlg:Enable(Pos.edExpr, val)

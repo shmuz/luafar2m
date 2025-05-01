@@ -11,7 +11,7 @@ local Opt_RemoveTrailingSpaces = true
 ---- /OPTIONS ------------------------------------------------------------------
 
 local dirsep = package.config:sub(1,1)
-local FarVer = dirsep == "\\" and 3 or 2
+local osWindows = dirsep == "\\"
 local F = far.Flags
 
 -- Check if a file or directory exists in this path
@@ -96,7 +96,7 @@ local function RenameFiles(SrcList, TrgList, panelDir)
       skipFlag = true
     end
     if not skipFlag and file1 ~= file2 then
-      if FarVer == 3 then -- Windows
+      if osWindows then
         if panelDir == "" then panelDir = win.GetEnv("TEMP") end
         if win.SetCurrentDir(panelDir) then
           renResult, renError = win.MoveFile(file1, file2)

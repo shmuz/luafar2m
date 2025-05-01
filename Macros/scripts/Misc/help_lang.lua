@@ -1,7 +1,7 @@
 -- started: 2024-12-12
 
 local MacroKey = "CtrlL"
-local Slash = string.sub(package.config, 1, 1)
+local dirsep = string.sub(package.config, 1, 1)
 local Pattern = regex.new([[^\s*\.Language\s*=\s*(\w+)(?:\s*,\s*(.+))?]], "i")
 
 Macro {
@@ -11,7 +11,7 @@ Macro {
   action=function()
     local Topic = Help.Topic
     local mItems = {}
-    local dir = Help.FileName:match(".+"..Slash)
+    local dir = Help.FileName:match(".+"..dirsep)
     far.RecursiveSearch(dir, "*.hlf", function(item,path)
         if item.FileAttributes:find("d") then return end
         local fp = io.open(path)

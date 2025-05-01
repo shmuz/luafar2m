@@ -7,20 +7,20 @@
 --     3. Active panel: 1 selected;  passive panel: the same name
 --     4. Active panel: has current; passive panel: the same name
 
-local SLASH = string.sub(package.config,1,1)
-local FAR3 = SLASH=="\\"
+local dirsep = string.sub(package.config,1,1)
+local osWindows = dirsep=="\\"
 
-local CommonKey = FAR3 and "CtrlAltF2" or "CtrlShiftF2"
+local CommonKey = osWindows and "CtrlAltF2" or "CtrlShiftF2"
 local Modes = { -- uncomment those modes you will actually use
-    meld = not FAR3;
-    winmerge = FAR3;
+    meld = not osWindows;
+    winmerge = osWindows;
 --  diff_console = true;
 --  diff_edit = true;
 --  diff_view = true;
 }
 
 local F = far.Flags
-local FarCmdsId = FAR3 and "3A2AF458-43E2-4715-AFEA-93D33D56C0C2" or far.GetPluginId()
+local FarCmdsId = osWindows and "3A2AF458-43E2-4715-AFEA-93D33D56C0C2" or far.GetPluginId()
 
 local function GetPanelDirectory(pan)
   return panel.GetPanelDirectory(nil,pan).Name
@@ -30,7 +30,7 @@ local function isfile(item)      return not item.FileAttributes:find("d") end
 local function isselected(item)  return bit64.band(item.Flags,F.PPIF_SELECTED) ~= 0 end
 
 local function extract_name(s)
-  if FAR3 then return s:match("[^\\]+$")
+  if osWindows then return s:match("[^\\]+$")
   else return s:match("[^/]+$")
   end
 end
@@ -42,12 +42,12 @@ end
 
 local function join(dir, file)
   return dir=="" and file
-    or dir:find(SLASH.."$") and dir..file
-    or dir..SLASH..file
+    or dir:find(dirsep.."$") and dir..file
+    or dir..dirsep..file
 end
 
 local function fullname(dir, file)
-  return file:find(SLASH) and file or join(dir, file)
+  return file:find(dirsep) and file or join(dir, file)
 end
 
 -- collect items, skip directories
@@ -127,7 +127,7 @@ local function Run(trgActive, trgPassive)
 
   elseif mode == "diff_console" then
     local command = ("diff -u %q %q"):format(trgActive,trgPassive)
-    if FAR3 then
+    if osWindows then
       panel.GetUserScreen(); win.system(command); panel.SetUserScreen()
     else
       far.Execute(command)
