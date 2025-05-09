@@ -14,24 +14,38 @@ URL: https://forum.farmanager.com/viewtopic.php?f=15&t=9990#p134643
 
     После любого изменения строки фильтра скрипт закрывает свой диалог и вызывает список фильтров,
     создает/изменяет фильтр _luafilter_ и вызывает свой диалог снова.
+
+    Фильтроваться могут либо файлы и папки, либо только файлы.
+    Переключение между этими двумя режимами производится клавишей F5 при редактировании фильтра.
 --]]
 
-if not mf.postmacro then return end
+-- Parameters of Filter configuration dialog: update them whenever the dialog is redesigned
+local FC_PosName, FC_PosMask, FC_PosAttrDir, FC_ItemCount = 3, 6, 34, 71
+
+-- Settings
+local MacroKey = "CtrlShiftS"
+local ToggleFoldersKey = "F5"
+local bFilterFolders = true
+---------------------------------------------------------------------------------------------
 
 local FilterName = "_luafilter_"
-local MacroKey = "CtrlShiftS"
-
 local F = far.Flags
-local OffsMask, OffsAttrDir = 2, 11
 local redirect_keys = { Ins=1, Up=1, Down=1, PgUp=1, PgDn=1, Home=1, End=1 }
-local Mask, Coord = "", nil
 local Filter -- forward declaration
 local EditPos = 1
+local Mask, Coord = "", nil
 
 local function FiltersConfig(key)
   Keys(key)
   assert(Dlg.Id == far.Guids.FiltersConfigId, "Wrong Dialog Id")
-  assert(Dlg.ItemCount == 71, "The FiltersConfig dialog was redesigned, this macro must be corrected")
+  assert(Dlg.ItemCount == FC_ItemCount,
+    "The FiltersConfig dialog was redesigned, this macro must be corrected")
+end
+
+local function SetText(pos, text)
+  Dlg.SetFocus(pos)
+  Keys("CtrlY")
+  print(text)
 end
 
 local function DelFilter()
@@ -48,9 +62,8 @@ local function GetFilter()
   Keys("CtrlI")
   if Menu.Select(FilterName,1) > 0 then
     FiltersConfig("F4")
-    for _=1,OffsMask do Keys("Tab") end
-    local v = Dlg.GetValue(-1)
-    if type(v)=="string" then mask=v:match("^%*?(.-)%*?$") end
+    local v = Dlg.GetValue(FC_PosMask,0)
+    mask = v:match("^%*?(.-)%*?$")
     Keys("Esc")
   end
   Keys("Esc")
@@ -66,16 +79,13 @@ local function UpdateFilter()
     local pos = Menu.Select(FilterName,1)
     if pos == 0 then
       FiltersConfig("Ins")
-      Keys("CtrlY")
-      print(FilterName)
-      for _=1,OffsAttrDir do Keys("Tab") end
-      Keys("Space Space Home")
+      SetText(FC_PosName, FilterName)
     else
       FiltersConfig("F4")
     end
-    for _=1,OffsMask do Keys("Tab") end
-    Keys("CtrlY")
-    print("*"..Mask.."*")
+    Dlg.SetFocus(FC_PosAttrDir)
+    Keys(bFilterFolders and "Multiply" or "Subtract")
+    SetText(FC_PosMask, "*"..Mask.."*")
     Keys("Enter BS Up + Enter")
   end
   return Filter()
@@ -98,8 +108,11 @@ local function dlg_handler(hDlg, msg, p1, p2)
     mf.postmacro(UpdateFilter)
   elseif msg == F.DN_KEY then
     local keyname = far.KeyToName(p2)
-    if keyname=="Esc" then
+    if keyname == "Esc" then
       mf.postmacro(DelFilter)
+    elseif keyname == ToggleFoldersKey then
+      bFilterFolders = not bFilterFolders
+      mf.postmacro(UpdateFilter)
     elseif redirect_keys[keyname] then
       Coord = hDlg:GetCursorPos(EditPos)
       mf.postmacro(ProcessKey, keyname)
