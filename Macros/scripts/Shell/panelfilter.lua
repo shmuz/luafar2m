@@ -30,8 +30,8 @@ local function ShowHelp()
 After starting the filter, an area appears above the panel
 (above the .. item) displaying the current state of the filter.
 Filtering of panel elements is performed after adding any symbol
-to the filter. Esc exits the filtering mode, turns off and
-deletes the filter. Enter closes the dialog, but leaves the
+to the filter. [Esc] exits the filtering mode, turns off and
+deletes the filter. [Enter] closes the dialog, but leaves the
 filter on.
 
 Either files and folders or just files can be filtered.
