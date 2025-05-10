@@ -5,15 +5,6 @@ Modifications: Shmuel Zeigerman
 URL: https://forum.farmanager.com/viewtopic.php?f=15&t=9990#p134643
 
 Скрипт реализует фильтр панели. Действие скрипта аналогично действию плагина panelfilter от jbak.
-
-Как это работает:
-    После запуска фильтра над панелью (над пунктом ..) появляется область, отображающая текущее состояние фильтра.
-    Фильтрация элементов панели осуществляется после добавления к фильтру любого символа.
-    Esc выходит из режима фильтрации, выключает и удаляет фильтр.
-    Enter закрывает диалог, но оставляет фильтр включенным.
-
-    После любого изменения строки фильтра скрипт закрывает свой диалог и вызывает список фильтров,
-    создает/изменяет фильтр _luafilter_ и вызывает свой диалог снова.
 --]]
 
 -- Parameters of Filter configuration dialog: update them whenever the dialog is redesigned
@@ -36,13 +27,21 @@ local Mask, Coord = "", nil
 
 local function ShowHelp()
   local txt = [[
-1. Either files and folders or just files can be filtered.
-   Mode switching is done with [{FoldersKey}] when editing a filter.
-   Indicator: 'F' = "files and folders"; 'f' = "files only".
+After starting the filter, an area appears above the panel
+(above the .. item) displaying the current state of the filter.
+Filtering of panel elements is performed after adding any symbol
+to the filter. Esc exits the filtering mode, turns off and
+deletes the filter. Enter closes the dialog, but leaves the
+filter on.
 
-2. The filter string may be treated either as a substring in file name or as a file mask.
-   Mode switching is done with [{SubstringKey}] when editing a filter.
-   Indicator: 'S' = "substring"; 's' = "file mask".]]
+Either files and folders or just files can be filtered.
+Mode switching is done with [{FoldersKey}] when editing a filter.
+Indicator: 'F' = "files and folders"; 'f' = "files only".
+
+The filter string may be treated either as a substring in file
+name or as a file mask. Mode switching is done with [{SubstringKey}]
+when editing a filter.
+Indicator: 'S' = "substring"; 's' = "file mask".]]
 
   txt = txt:gsub("{FoldersKey}", ToggleFoldersKey):gsub("{SubstringKey}", ToggleSubstringKey)
   far.Message(txt, "Panel filter help", ";OK", "l")
