@@ -3,35 +3,37 @@
 -- Modifications by : Shmuel Zeigerman
 -- Portable         : far3 and far2m
 
-local dbkey = "named folders"
-local dbname = "entries"
-local dbshowdir = "showdir"
+local dbKey = "named folders"
+local dbEntries = "entries"
+local dbShowDir = "showdir"
+local Title = "Named Folders Lua Edition"
+local MacroKey = "CtrlD"
 
 local osWindows = package.config:sub(1,1) == "\\"
 local F = far.Flags
+local OpSetDir, OpInsert, OpDelete, OpEdit, OpShowDir, OpDontClose = 1,2,3,4,5,6
 
 local ExpandEnv = not osWindows and win.ExpandEnv or -- luacheck: ignore
   function(s)
     return (s:gsub("%%(.-)%%", win.GetEnv))
   end
 
-local function load_nf()
-  local v = mf.mload(dbkey, dbname)
+local function LoadEntries()
+  local v = mf.mload(dbKey, dbEntries)
   return type(v) == "table" and v or {}
 end
 
-local function save_nf(ent)
-  mf.msave(dbkey, dbname, ent)
+local function SaveEntries(ent)
+  mf.msave(dbKey, dbEntries, ent)
 end
 
-local showdir = mf.mload(dbkey, dbshowdir)
-showdir = showdir == nil or showdir -- true by default
+local bShowDir = mf.mload(dbKey, dbShowDir)
+bShowDir = bShowDir == nil or bShowDir -- true by default
 
-local function scan(pattern, data)
+local function Filter(items, pattern)
   local ent = {}
   local space = 0
-
-  for _, v in ipairs(data) do -- filter items by pattern & calculate max width alias
+  for _, v in ipairs(items) do -- filter items by pattern & calculate max width alias
     if not pattern or v.alias:lower():match(pattern:lower()) then
       table.insert(ent, v)
       space = math.max(space, v.alias:len())
@@ -40,61 +42,64 @@ local function scan(pattern, data)
   return ent, space
 end
 
-local function menu(pattern)
-  local data = load_nf()
-  local ent, space
-  if pattern then
-    ent, space = scan("^" .. pattern, data)
-    if #ent == 1 then return "setdir", ent[1]; end
-    if #ent == 0 then return nil; end
+local function DoMenu(pattern)
+  local use_filter = pattern and pattern ~= "" and not pattern:match("%s")
+  local all_entries = LoadEntries()
+
+  local entries, space
+  if use_filter then
+    entries, space = Filter(all_entries, "^" .. pattern)
+    if #entries == 0 then return nil; end
+    if #entries == 1 then return OpSetDir, entries[1]; end
   else
-    ent, space = scan(nil, data)
+    entries, space = Filter(all_entries, nil)
   end
 
-  local entries = {}
-  for _, v in ipairs(ent) do
+  local menuitems = {}
+  for _, v in ipairs(entries) do
     local item = {
-      text = v.alias .. (" "):rep(space + 1 - v.alias:len()) .. (showdir and v.path or "");
+      text = v.alias .. (" "):rep(space + 1 - v.alias:len()) .. (bShowDir and v.path or "");
       entry = v;
     }
-    table.insert(entries, item)
+    table.insert(menuitems, item)
   end
-  table.sort(entries, function(a, b) return a.entry.alias:lower() < b.entry.alias:lower(); end)
+  table.sort(menuitems, function(a,b) return a.entry.alias:lower() < b.entry.alias:lower(); end)
 
-  local brakes, bottom
-  if not pattern then
-    brakes = {
-      {BreakKey = "INSERT"},
-      {BreakKey = "DELETE"},
-      {BreakKey = "F4"},
-      {BreakKey = "C+l"},
+  local brkeys, bottom
+  if not use_filter then
+    brkeys = {
+      { BreakKey = "INSERT";  Op = OpInsert;  },
+      { BreakKey = "DELETE";  Op = OpDelete;  },
+      { BreakKey = "F4";      Op = OpEdit;    },
+      { BreakKey = "C+L";     Op = OpShowDir; },
     }
-    bottom = "Ins - Insert, Del - Delete, F4 - Edit, Ctrl+L - Show/Hide path"
+    bottom = "Ins:Insert, Del:Delete, F4:Edit, Ctrl+L:Show/Hide path"
   end
 
   local item, position = far.Menu(
-    { Title = "Named Folders Lua Edition";
-      Bottom = bottom,
+    { Title = Title;
+      Bottom = bottom;
       Flags = bit64.bor(F.FMENU_AUTOHIGHLIGHT, F.FMENU_WRAPMODE)
     },
-    entries, brakes)
+    menuitems, brkeys)
 
   if not item then
     return nil
-  elseif item.BreakKey == "INSERT" then
-    return "insert"
+  elseif item.Op == OpInsert then
+    return OpInsert
   elseif position > 0 then
-    if     item.BreakKey == nil      then return "setdir", entries[position].entry
-    elseif item.BreakKey == "DELETE" then return "delete", entries[position].entry
-    elseif item.BreakKey == "F4"     then return "edit",   entries[position].entry
-    elseif item.BreakKey == "C+l"    then return "showdir"
+    local entry = menuitems[position].entry
+    if     item.Op == nil       then return OpSetDir, entry
+    elseif item.Op == OpDelete  then return OpDelete, entry
+    elseif item.Op == OpEdit    then return OpEdit, entry
+    elseif item.Op == OpShowDir then return OpShowDir
     end
   else
-    return "dontclose"
+    return OpDontClose
   end
 end
 
-local function newentry(entry)
+local function NewEntry(entry)
   local guid = win.Uuid("8B0EE808-C5E3-44D8-9429-AAFD8FA04067")
   local panelDir = panel.GetPanelDirectory(nil, 1).Name
   local alias_name = entry and entry.alias or panelDir:match(osWindows and "([^\\]+)\\?$" or "([^/]+)/?$")
@@ -115,7 +120,7 @@ local function newentry(entry)
     local alias = items[posAlias][10]
     local path = items[posPath][10]
     if alias ~= "" and path ~= "" then
-      local entries = load_nf()
+      local entries = LoadEntries()
       for i, v in ipairs(entries) do
         if v.alias:lower() == alias:lower() then
           table.remove(entries, i)
@@ -123,21 +128,21 @@ local function newentry(entry)
         end
       end
       table.insert(entries, {alias=alias; path=path})
-      save_nf(entries)
+      SaveEntries(entries)
     end
   end
 end
 
-local function removeentry(entry)
+local function RemoveEntry(entry)
   if entry and entry.alias and entry.path then
     local msg = ("Remove named folder %s (%s)?"):format(entry.alias, entry.path)
     local res = far.Message(msg, "Remove named folder", ";YesNo")
     if res == 1 then
-      local entries = load_nf()
+      local entries = LoadEntries()
       for i, v in ipairs(entries) do
         if v.alias == entry.alias then
           table.remove(entries, i)
-          save_nf(entries)
+          SaveEntries(entries)
           break
         end
       end
@@ -145,33 +150,34 @@ local function removeentry(entry)
   end
 end
 
-local function action(text)
-  if not text or text == "" or text:match("%s") then text = nil; end
-  local res, entry = menu(text)
-  while res do
-    if res == "setdir" then
-      if entry.path then panel.SetPanelDirectory(nil, 1, ExpandEnv(entry.path)); end
+local function Main(text)
+  local op, entry = DoMenu(text)
+  while op do
+    if op == OpSetDir then
+      if entry.path then
+        panel.SetPanelDirectory(nil, 1, ExpandEnv(entry.path))
+      end
       break
-    elseif res == "insert"  then newentry()
-    elseif res == "delete"  then removeentry(entry)
-    elseif res == "edit"    then newentry(entry)
-    elseif res == "showdir" then
-      showdir = not showdir
-      mf.msave(dbkey, dbshowdir, showdir)
+    elseif op == OpInsert  then NewEntry()
+    elseif op == OpDelete  then RemoveEntry(entry)
+    elseif op == OpEdit    then NewEntry(entry)
+    elseif op == OpShowDir then
+      bShowDir = not bShowDir
+      mf.msave(dbKey, dbShowDir, bShowDir)
     end
-    res, entry = menu(text)
+    op, entry = DoMenu(text)
   end
 end
 
 CommandLine {
   description = "Named Folders Lua Edition";
   prefixes = "cd";
-  action = function(prefix, text) action(text); end;
+  action = function(prefix, text) Main(text); end;
 }
 
 Macro {
   id="D812F8E8-4CDC-48AD-8C52-9B905263BAEC";
-  description = "Named Folders Lua Edition";
-  area="Shell"; key="CtrlD";
-  action=function() action(); end;
+  description = Title;
+  area="Shell"; key=MacroKey;
+  action=function() Main(); end;
 }
