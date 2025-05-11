@@ -123,6 +123,10 @@ local function NewEntry(entry)
       local entries = LoadEntries()
       for i, v in ipairs(entries) do
         if v.alias:lower() == alias:lower() then
+          local msg = ("Replace named folder '%s'\n%s ?"):format(v.alias, v.path)
+          if 1 ~= far.Message(msg, "Confirm", ";YesNo", "w") then
+            return
+          end
           table.remove(entries, i)
           break
         end
@@ -135,8 +139,8 @@ end
 
 local function RemoveEntry(entry)
   if entry and entry.alias and entry.path then
-    local msg = ("Remove named folder %s (%s)?"):format(entry.alias, entry.path)
-    local res = far.Message(msg, "Remove named folder", ";YesNo")
+    local msg = ("Remove named folder '%s'\n%s ?"):format(entry.alias, entry.path)
+    local res = far.Message(msg, "Confirm", ";YesNo", "w")
     if res == 1 then
       local entries = LoadEntries()
       for i, v in ipairs(entries) do
