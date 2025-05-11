@@ -99,42 +99,67 @@ local function DoMenu(pattern)
   end
 end
 
-local function NewEntry(entry)
-  local guid = win.Uuid("8B0EE808-C5E3-44D8-9429-AAFD8FA04067")
-  local panelDir = panel.GetPanelDirectory(nil, 1).Name
-  local alias_name = entry and entry.alias or panelDir:match(osWindows and "([^\\]+)\\?$" or "([^/]+)/?$")
-  local target_name = entry and entry.path or panelDir
-  local items = {
-  --[[ 1]] {F.DI_DOUBLEBOX, 3,1, 65,8, 0, 0,0, 0, "Named Folder"},
-  --[[ 2]] {F.DI_TEXT,      5,2, 16,2, 0, 0,0, 0, "&Alias name:"},
-  --[[ 3]] {F.DI_EDIT,      5,3, 63,3, 0, 0,0, 0, alias_name},
-  --[[ 4]] {F.DI_TEXT,      5,4, 11,4, 0, 0,0, 0, "&Target:"},
-  --[[ 5]] {F.DI_EDIT,      5,5, 63,5, 0, 0,0, 0, target_name},
-  --[[ 6]] {F.DI_TEXT,   -  1,6,  0,0, 0, 0,0, F.DIF_SEPARATOR,""},
-  --[[ 7]] {F.DI_BUTTON,    0,7,  0,0, 0, 0,0, F.DIF_DEFAULTBUTTON+F.DIF_CENTERGROUP,"Ok"},
-  --[[ 8]] {F.DI_BUTTON,    0,7,  0,0, 0, 0,0, F.DIF_CENTERGROUP,"Cancel"}
-  }
-  local posAlias, posPath, posOK = 3, 5, 7
+local function NewEntry(aEntry)
+  local sd = require "far2.simpledialog"
 
-  if posOK == far.Dialog(guid, -1, -1, 69, 10, nil, items) then
-    local alias = items[posAlias][10]
-    local path = items[posPath][10]
-    if alias ~= "" and path ~= "" then
-      local entries = LoadEntries()
-      for i, v in ipairs(entries) do
-        if v.alias:lower() == alias:lower() then
-          local msg = ("Replace named folder '%s'\n%s ?"):format(v.alias, v.path)
-          if 1 ~= far.Message(msg, "Confirm", ";YesNo", "w") then
-            return
-          end
-          table.remove(entries, i)
-          break
-        end
+  local alias_name, target_name
+  if aEntry then
+    alias_name = aEntry.alias
+    target_name = aEntry.path
+  else
+    local panelDir = panel.GetPanelDirectory(nil, 1).Name
+    alias_name = panelDir:match(osWindows and "([^\\]+)\\?$" or "([^/]+)/?$")
+    target_name = panelDir
+  end
+
+  local items = {
+    guid="8B0EE808-C5E3-44D8-9429-AAFD8FA04067";
+    {tp="dbox", text="Named Folder"},
+    {tp="text", text="&Alias name:"},
+    {tp="edit", text=alias_name, name="alias"},
+    {tp="text", text="&Target:"},
+    {tp="edit", text=target_name, name="path"},
+    {tp="sep"},
+    {tp="butt", centergroup=1, default=1; text="Ok"},
+    {tp="butt", centergroup=1, cancel=1; text="Cancel"}
+  }
+  items.proc = function(hDlg, msg, par1, par2)
+    if msg == F.DN_CLOSE then
+      if par2.alias == "" or par2.path == "" then
+        far.Message("Empty fields are not allowed", nil, ";Ok", "w")
+        return 0
       end
-      table.insert(entries, {alias=alias; path=path})
-      SaveEntries(entries)
     end
   end
+
+  local out = sd.New(items):Run()
+  if not out then return end
+
+  local entries = LoadEntries()
+  -- remove an existing entry if any
+  if aEntry then
+    local alias = aEntry.alias:lower()
+    for i, v in ipairs(entries) do
+      if alias == v.alias:lower() then
+        table.remove(entries, i)
+        break
+      end
+    end
+  end
+  -- add an entry
+  for i, v in ipairs(entries) do
+    if out.alias:lower() == v.alias:lower() then
+      local msg = ("Replace named folder '%s'\n%s ?"):format(v.alias, v.path)
+      if 1 ~= far.Message(msg, "Confirm", ";YesNo", "w") then
+        return
+      else
+        table.remove(entries, i)
+        break
+      end
+    end
+  end
+  table.insert(entries, {alias=out.alias; path=out.path})
+  SaveEntries(entries)
 end
 
 local function RemoveEntry(entry)
