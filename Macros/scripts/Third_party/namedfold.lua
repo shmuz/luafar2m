@@ -57,11 +57,10 @@ local function DoMenu(pattern)
 
   local menuitems = {}
   for _, v in ipairs(entries) do
-    local item = {
-      text = v.alias .. (" "):rep(space + 1 - v.alias:len()) .. (bShowDir and v.path or "");
-      entry = v;
-    }
-    table.insert(menuitems, item)
+    local text = bShowDir and
+      v.alias .. (" "):rep(space - v.alias:len()) ..
+      " │ " .. v.path or v.alias
+    table.insert(menuitems, {text=text; entry=v})
   end
   table.sort(menuitems, function(a,b) return a.entry.alias:lower() < b.entry.alias:lower(); end)
 
@@ -132,34 +131,13 @@ local function NewEntry(aEntry)
     end
   end
 
+  -- Not checking if the alias already exists as multiple entries having the same alias is a feature
   local out = sd.New(items):Run()
-  if not out then return end
-
-  local entries = LoadEntries()
-  -- remove an existing entry if any
-  if aEntry then
-    local alias = aEntry.alias:lower()
-    for i, v in ipairs(entries) do
-      if alias == v.alias:lower() then
-        table.remove(entries, i)
-        break
-      end
-    end
+  if out then
+    local entries = LoadEntries()
+    table.insert(entries, {alias=out.alias; path=out.path})
+    SaveEntries(entries)
   end
-  -- add an entry
-  for i, v in ipairs(entries) do
-    if out.alias:lower() == v.alias:lower() then
-      local msg = ("Replace named folder '%s'\n%s ?"):format(v.alias, v.path)
-      if 1 ~= far.Message(msg, "Confirm", ";YesNo", "w") then
-        return
-      else
-        table.remove(entries, i)
-        break
-      end
-    end
-  end
-  table.insert(entries, {alias=out.alias; path=out.path})
-  SaveEntries(entries)
 end
 
 local function RemoveEntry(entry)
