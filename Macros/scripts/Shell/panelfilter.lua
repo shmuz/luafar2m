@@ -26,7 +26,7 @@ local EditPos = 2
 local Mask, Coord = "", nil
 
 local function ShowHelp()
-  local txt = [[
+  local Eng = [[
 After starting the filter, an area appears above the panel
 (above the .. item) displaying the current state of the filter.
 Filtering of panel elements is performed after adding any symbol
@@ -43,8 +43,27 @@ name or as a file mask. Mode switching is done with [{SubstringKey}]
 when editing a filter.
 Indicator: 'S' = "substring"; 's' = "file mask".]]
 
+  local Rus = [[
+После запуска фильтра над панелью (над пунктом ..) появляется
+область, отображающая текущее состояние фильтра. Фильтрация
+элементов панели осуществляется после добавления к фильтру любого
+символа. [Esc] выходит из режима фильтрации, выключает и удаляет
+фильтр. [Enter] закрывает диалог, но оставляет фильтр включенным.
+
+Фильтроваться могут либо файлы и папки, либо только папки. Переключение
+осуществляется ключом [{FoldersKey}] при редактировании фильтра.
+Индикатор: 'F' = "файлы и папки"; 'f' = "только файлы".
+
+Введенный текст интерпретируется либо как подстрока в имени файла,
+либо как маска файла. Переключение осуществляется ключом [{SubstringKey}]
+при редактировании фильтра.
+Индикатор: 'S' = "подстрока"; 's' = "маска файла".]]
+
+  local lang = Far.GetConfig("Language.Help")
+  local txt = lang == "Russian" and Rus or Eng
   txt = txt:gsub("{FoldersKey}", ToggleFoldersKey):gsub("{SubstringKey}", ToggleSubstringKey)
-  far.Message(txt, "Panel filter help", ";OK", "l")
+  local title = lang=="Russian" and "Фильтр панели, справка" or "Panel filter help"
+  far.Message(txt, title, ";OK", "l")
 end
 
 local function FiltersConfig(key)
