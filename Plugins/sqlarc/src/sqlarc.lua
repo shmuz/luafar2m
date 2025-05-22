@@ -28,14 +28,21 @@ Opt.PutPrBarFileSize = 2*Opt.PutChunkSize; -- minimal file size to show progress
 far.ReloadDefaultScript = true
 
 local DIRSEP = package.config:sub(1, 1)
+local osWin = (DIRSEP == "\\")
 local F = far.Flags
 local band, bor, bnot, bnew = bit64.band, bit64.bor, bit64.bnot, bit64.new
+local OpenFile = osWin and io.open or win.OpenFile
+
+if osWin then
+  -- set 100ns file resolution
+  far.FileTimeResolution(2) -- luacheck: ignore
+end
 
 local sql3 = require "lsqlite3"
 local SimpleDialog = require "far2.simpledialog"
 
 local PluginGuid, Title do
-  local info = far.GetPluginGlobalInfo()
+  local info = osWin and export.GetGlobalInfo() or far.GetPluginGlobalInfo() -- luacheck: ignore
   PluginGuid, Title = info.Guid, info.Title
 end
 
@@ -62,12 +69,28 @@ local CheckAppId, SetAppId do
   SetAppId   = function(db) db:exec(r2); end
 end
 
-local function join(s1, s2)
-  return win.JoinPath(s1, s2)
+local function Clock()
+  return osWin and far.FarClock() / 1e6 or win.Clock() -- luacheck: ignore
+end
+
+local JoinPath = win.JoinPath or function(s1, s2)
+  return s1=="" and s2 or s1:find("\\$") and s1..s2 or s1.."\\"..s2
 end
 
 local function extract_name(fullpath)
-  return fullpath:match("[^/]*$")
+  return fullpath:match(osWin and "[^\\:]*$" or "[^/]*$")
+end
+
+local function extract_name_not_empty(fullpath)
+  return fullpath:match(osWin and "[^\\:]+$" or "[^/]+$")
+end
+
+local function is_abs_path(filename)
+  local found
+  if osWin then found = filename:find("^[a-zA-Z]:")
+  else found = filename:find("^/")
+  end
+  return found and true
 end
 
 local function CommonErrMsg (msg)
@@ -101,9 +124,14 @@ local function ClearSelection(item)
 end
 
 local function SetFileTimes (TrgFileName, SrcItem)
-  return win.SetFileTimes(TrgFileName, {
-    CreationTime = bnew(SrcItem.t_create) * 10000; -- convert 1ms to 100ns
-    LastWriteTime = bnew(SrcItem.t_write) * 10000; })
+  local times = osWin and {
+      CreationTime = SrcItem.t_create;
+      LastWriteTime = SrcItem.t_write;
+    } or {
+      CreationTime = bnew(SrcItem.t_create) * 10000; -- convert 1ms to 100ns
+      LastWriteTime = bnew(SrcItem.t_write) * 10000;
+    }
+  return win.SetFileTimes(TrgFileName, times)
 end
 
 local function FormatDataForDialog(element)
@@ -176,12 +204,12 @@ local function GetFullDirPath(db, id)
     table.insert(t, 1, item.name)
     id = item.parent
   end
-  return table.concat(t, "/")
+  return table.concat(t, DIRSEP)
 end
 
 local function GetPanelTitle(shorthostname, path)
   local title = "sqlarc:"..shorthostname
-  if path ~= "" then title = title..":/"..path end
+  if path ~= "" then title = title..":"..DIRSEP..path end
   return title
 end
 
@@ -209,14 +237,14 @@ local function GetArchiveFileName()
     local isPPanelPlugin = band(panel.GetPanelInfo(nil,0).Flags, F.PFLAGS_PLUGIN) ~= 0
     local dir = isPPanelPlugin and (win.GetEnv("USERPROFILE") or "") or
                 panel.GetPanelDirectory(nil,0).Name
-    filename = join(dir, single or "archive")
+    filename = JoinPath(dir, single or "archive")
   else -- use active panel as the target directory
     if single then
       filename = single
     else
       local dir = panel.GetPanelDirectory(nil,1).Name
       local name = extract_name(dir)
-      filename = join(dir, name=="" and "root" or name)
+      filename = JoinPath(dir, name=="" and "root" or name)
     end
   end
 
@@ -303,7 +331,7 @@ local function CreateObject(filename)
   local obj = {
     db = db;
     curdir = 1;
-    shorthostname = filename:match("[^/]+$");
+    shorthostname = extract_name_not_empty(filename);
   }
   obj.openpanelinfo = {
     CurDir = fullpath;
@@ -311,7 +339,7 @@ local function CreateObject(filename)
     PanelTitle = GetPanelTitle(obj.shorthostname, fullpath);
     StartSortMode = nil;  -- F.SM_UNSORTED;
     StartSortOrder = nil; -- 0;
-    Flags = F.OPIF_ADDDOTS;
+    Flags = bor(F.OPIF_ADDDOTS, osWin and F.OPIF_SHORTCUT or 0);
     IsCached = false; -- caching must be reset after any change on this table
   }
   return obj
@@ -384,7 +412,8 @@ end
 
 function export.Open(OpenFrom, Guid, Data)
   if OpenFrom == F.OPEN_ANALYSE then
-    return CreateObject(Data) -- Data is FileName
+    if osWin then Data = Data.FileName end
+    return CreateObject(Data)
 
   elseif OpenFrom == F.OPEN_SHORTCUT then
     local obj = CreateObject(Data.HostFile)
@@ -427,8 +456,8 @@ function export.GetFindData(obj, handle, OpMode)
       FileName = item.name;
       FileAttributes = item.attrib;
       FileSize = item.size;
-      CreationTime = item.t_create;
-      LastWriteTime = item.t_write;
+      CreationTime = osWin and bnew(item.t_create) or item.t_create;
+      LastWriteTime = osWin and bnew(item.t_write) or item.t_write;
     })
   end
   stmt:finalize()
@@ -502,7 +531,7 @@ local DisplaySearchState do
   local lastclock = 0
   local wTail = Opt.PrBarMessageWid - Opt.PrBarHeaderWid - 3
   DisplaySearchState = function (fullname, cntFound, cntTotal, ratio, strOp, force)
-    local newclock = win.Clock()
+    local newclock = Clock()
     if force or newclock >= lastclock then
       lastclock = newclock + Opt.PrBarUpdatePeriod
       local len = fullname:len()
@@ -523,7 +552,7 @@ local function ExtractFile(state, parent_id, file_name, DestPath, Move)
   local Item = GetOneDbItem(db, query)
   if not Item then return false; end
 
-  local fullname = join(DestPath, file_name)
+  local fullname = JoinPath(DestPath, file_name)
   local attr = win.GetFileAttr(fullname)
   if attr then
     if attr:find("d") then
@@ -546,7 +575,7 @@ local function ExtractFile(state, parent_id, file_name, DestPath, Move)
     end
   end
 
-  local Fp = win.OpenFile(fullname, "wb")
+  local Fp = OpenFile(fullname, "wb")
   if not Fp then
     -- CommonErrMsg("Cannot open file:\n\""..fullname.."\"")
     return false
@@ -595,9 +624,9 @@ local function ExtractFile(state, parent_id, file_name, DestPath, Move)
       DisplaySearchState(file_name, state.nfiles, state.nfiles, 0, "extracted")
     end
     if Move then
-      local query = ("DELETE FROM sqlarc_files WHERE isdir=0 AND parent=%d AND name=%s"):
+      local q = ("DELETE FROM sqlarc_files WHERE isdir=0 AND parent=%d AND name=%s"):
         format(parent_id, Norm(file_name))
-      db:exec(query)
+      db:exec(q)
     end
     return true
   else
@@ -608,7 +637,7 @@ end
 
 local function ExtractTree(state, parent_id, tree_name, DestPath, Move)
   local db = state.db
-  local path = join(DestPath, tree_name)
+  local path = JoinPath(DestPath, tree_name)
   local result = win.CreateDir(path, "t")
   if result then
     local t_query = ("SELECT * FROM sqlarc_files WHERE isdir=1 AND parent=%d AND name=%s"):
@@ -630,9 +659,9 @@ local function ExtractTree(state, parent_id, tree_name, DestPath, Move)
     -- to avoid write times modification.
     SetFileTimes(path, item)
     if Move and result then
-      local q = ("DELETE FROM sqlarc_files WHERE isdir=1 AND parent=%d AND name=%s"):
+      local qq = ("DELETE FROM sqlarc_files WHERE isdir=1 AND parent=%d AND name=%s"):
         format(parent_id, Norm(tree_name))
-      db:exec(q)
+      db:exec(qq)
     end
   end
   return result
@@ -736,11 +765,11 @@ local function PutFile(state, SrcPath, Item, parent_id)
   local db, f_stmt = state.db, state.f_stmt
 
   local fullname, filename
-  if Item.FileName:find("^/") then -- TmpPanel, etc.
+  if is_abs_path(Item.FileName) then -- TmpPanel, etc.
     fullname = Item.FileName
-    filename = fullname:gsub(".*/", "")
+    filename = extract_name(fullname)
   else -- Far panel
-    fullname = join(SrcPath, Item.FileName)
+    fullname = JoinPath(SrcPath, Item.FileName)
     filename = Item.FileName
   end
 
@@ -770,7 +799,7 @@ local function PutFile(state, SrcPath, Item, parent_id)
   end
 
   if state.Fp then state.Fp:close(); end
-  state.Fp = win.OpenFile(fullname, "rb")
+  state.Fp = OpenFile(fullname, "rb")
   if not state.Fp then return false end
 
   local cur_parent_id = parent_id
@@ -860,7 +889,7 @@ local function PutTree(state, SrcPath, dir_item, parent_id)
   if not curr_id then return false; end
 
   local result = true
-  local dir_path = join(SrcPath, dir_item.FileName)
+  local dir_path = JoinPath(SrcPath, dir_item.FileName)
   far.RecursiveSearch(dir_path, "*",
     function(item, fullpath)
       if state:ConfirmEscape(false) then
