@@ -395,7 +395,7 @@ local function SetDir(obj, path)
       if cur_id == 1 then
         return nil
       end
-      local query = ("SELECT parent FROM sqlarc_files WHERE id=%d"):format(cur_id)
+      local query = ("SELECT parent FROM sqlarc_files WHERE isdir=1 AND id=%d"):format(cur_id)
       local item = GetOneDbItem(obj.db, query)
       if item then cur_id = item.parent; else return nil; end
 
