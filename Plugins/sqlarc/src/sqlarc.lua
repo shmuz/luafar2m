@@ -27,6 +27,7 @@ Opt.PutPrBarFileSize = 2*Opt.PutChunkSize; -- minimal file size to show progress
 
 far.ReloadDefaultScript = true
 
+local DIRSEP = package.config:sub(1, 1)
 local F = far.Flags
 local band, bor, bnot, bnew = bit64.band, bit64.bor, bit64.bnot, bit64.new
 
@@ -334,18 +335,50 @@ function export.GetPluginInfo()
   return info
 end
 
-local function SetDir(obj, path)
-  local cur_id = (path=="" or path:find("^/")) and 1 or obj.curdir
-  for dir in path:gmatch("[^/]+") do
-    local query = ("SELECT id FROM sqlarc_files WHERE isdir=1 AND parent=%d AND name=%s"):
-      format(cur_id, Norm(dir))
-    local item = GetOneDbItem(obj.db, query)
-    if item then
-      cur_id = item.id
+local function CompactPath(path)
+  local arr = {}
+  for part in path:gmatch( "[^" ..DIRSEP.. "]+" ) do
+    table.insert(arr, part)
+  end
+
+  local i = 1
+  while i <= #arr do
+    if arr[i] == "." then
+      table.remove(arr, i)
+    elseif (arr[i] == "..") and (i >= 2) and (arr[i-1] ~= "..") then
+      i = i - 1
+      table.remove(arr, i)
+      table.remove(arr, i)
     else
-      return nil
+      i = i + 1
     end
   end
+
+  return arr
+end
+
+local function SetDir(obj, path)
+  local IsAbsPath = (path == "") or path:find("^"..DIRSEP)
+  local arr = CompactPath(path)
+  local cur_id = IsAbsPath and 1 or obj.curdir
+
+  for _,dir in ipairs(arr) do
+    if dir == ".." then
+      if cur_id == 1 then
+        return nil
+      end
+      local query = ("SELECT parent FROM sqlarc_files WHERE id=%d"):format(cur_id)
+      local item = GetOneDbItem(obj.db, query)
+      if item then cur_id = item.parent; else return nil; end
+
+    else
+      local query = ("SELECT id FROM sqlarc_files WHERE isdir=1 AND parent=%d AND name=%s"):
+        format(cur_id, Norm(dir))
+      local item = GetOneDbItem(obj.db, query)
+      if item then cur_id = item.id; else return nil; end
+    end
+  end
+
   return cur_id
 end
 
@@ -675,29 +708,17 @@ end
 
 function export.SetDirectory (obj, handle, Dir, OpMode, UserData)
 --win.OutputDebugString("Dir: "..Dir)
-  local result = false
-  if Dir == ".." then
-    if obj.curdir ~= 1 then
-      local q = ("SELECT parent FROM sqlarc_files WHERE isdir=1 AND id=%d"):format(obj.curdir)
-      local item = GetOneDbItem(obj.db, q)
-      if item then
-        obj.curdir, result = item.parent, true
-      end
-    end
-  else
-    local cur_id = SetDir(obj, Dir)
-    if cur_id then
-      obj.curdir, result = cur_id, true
-    end
-  end
-  if result then
+  local cur_id = SetDir(obj, Dir)
+  if cur_id then
+    obj.curdir = cur_id
     local fullpath = GetFullDirPath(obj.db, obj.curdir)
     local opi = obj.openpanelinfo
     opi.CurDir = fullpath
     opi.PanelTitle = GetPanelTitle(obj.shorthostname, fullpath)
     opi.IsCached = false
+    return true
   end
-  return result
+  return false
 end
 
 local function PutDirectory(state, item, parent_id)
