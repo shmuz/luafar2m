@@ -26,7 +26,7 @@ local syntax_cpp =
   },
   {
     name = "BoolLiteral"; fgcolor = "white";
-    pattern = [[\b(false|true)\b]];
+    pattern = [[\b(?: false|true)\b]];
   },
   {
     name = "String"; fgcolor = "purple"; color_unfinished= "darkblue on purple";
