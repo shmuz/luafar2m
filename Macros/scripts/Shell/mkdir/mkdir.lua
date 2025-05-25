@@ -4,7 +4,21 @@
 -- Name:       Analogue of MkDir plugin from Igor Grabelnikov
 -- Note:       Written from scratch, the plugin source code was not available
 
-local Title = "Make folder"
+local Eng = {
+  Title   = "Make folder";
+  BreakOp = "Break the operation?";
+  Wait    = "Please wait...";
+  Prompt  = "Create the folder (you can use templates)";
+}
+
+local Rus = {
+  Title   = "Создание папки";
+  BreakOp = "Прервать операцию?";
+  Wait    = "Пожалуйста ждите...";
+  Prompt  = "Создать папку (вы можете использовать шаблоны)";
+}
+
+local M -- localization table
 local MacroKey = "ShiftF7"
 
 local DlgId = win.Uuid("CC48FA63-B031-4F2D-952E-43FC642722DB")
@@ -14,7 +28,7 @@ local range_dec, range_hex, range_sym = 1, 2, 3
 
 local function CheckEscape(num)
   return num % 100 == 0 and win.ExtractKey() == "ESCAPE" and
-      far.Message("Break the operation?", Title, ";YesNo") == 1
+      far.Message(M.BreakOp, M.Title, ";YesNo") == 1
 end
 
 local PatSimple = regex.new( [[
@@ -110,7 +124,7 @@ local function DoTemplate(str)
     end
   end
   local curdir = panel.GetPanelDirectory(nil, 1).Name
-  far.Message("Please wait...", Title, "")
+  far.Message(M.Wait, M.Title, "")
   for i=1,math.huge do
     if CheckEscape(i) then break end
     local dir = GetValue(parts)
@@ -135,10 +149,10 @@ local function DoSimple(str)
 end
 
 local function main()
+  M = win.GetEnv("FARLANG")=="Russian" and Rus or Eng
   local name = FName:match("(.-)[^.+]$")
   local topic = "<"..name..">Contents"
-  local str = far.InputBox (DlgId, Title, "Create the folder (you can use templates)",
-      "MkDirHistory", nil, nil, topic, 0)
+  local str = far.InputBox (DlgId, M.Title, M.Prompt, "MkDirHistory", nil, nil, topic, 0)
   if str then
     if DoSimple(str) ~= stat_ok then DoTemplate(str) end
     panel.RedrawPanel(nil, 0) -- redraw passive panel
