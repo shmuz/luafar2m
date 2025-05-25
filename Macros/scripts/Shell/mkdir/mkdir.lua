@@ -2,6 +2,7 @@
 -- Author:     Shmuel Zeigerman
 -- Published:  https://forum.farmanager.com/viewtopic.php?p=180545#p180545
 -- Name:       Analogue of MkDir plugin from Igor Grabelnikov
+-- Note:       Written from scratch, the plugin source code was not available
 
 local Title = "Make folder"
 local MacroKey = "ShiftF7"
@@ -65,7 +66,6 @@ local function GetValue(parts)
   return table.concat(t)
 end
 
---local range_dec, range_hex, range_sym = 1, 2, 3
 local function GetRange(txt)
   local fr, to
 
@@ -83,9 +83,9 @@ end
 local function DoTemplate(str)
   local parts = {}
   for d1, d2 in PatTemplate:gmatch(str) do
-    if d1 then
+    if d1 then -- fixed part
       table.insert(parts, { d1, idx=1 })
-    else
+    else       -- list
       local t = { idx=1 }
       table.insert(parts, t)
       for p in d2:gmatch("[^;]+") do
@@ -96,6 +96,7 @@ local function DoTemplate(str)
           table.insert(t, { fr=fr; to=to; cur=fr; fmt=fmt; })
         elseif kind == range_hex then
           local fmt = fr:sub(1,1)=="0" and ("%0"..#fr.."X") or "%X"
+          if fr:find("[a-f]") or to:find("[a-f]") then fmt = fmt:lower() end
           fr, to = tonumber(fr,16), tonumber(to,16)
           table.insert(t, { fr=fr; to=to; cur=fr; fmt=fmt; })
         elseif kind == range_sym then
@@ -140,8 +141,9 @@ local function main()
       "MkDirHistory", nil, nil, topic, 0)
   if str then
     if DoSimple(str) ~= stat_ok then DoTemplate(str) end
-    panel.RedrawPanel(nil, 0)
-    panel.RedrawPanel(nil, 1)
+    panel.RedrawPanel(nil, 0) -- redraw passive panel
+    panel.UpdatePanel(nil, 1) -- update active panel
+    panel.RedrawPanel(nil, 1) -- redraw active panel
   end
 end
 
