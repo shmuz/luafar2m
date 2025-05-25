@@ -1,0 +1,113 @@
+.Language=English,English
+.PluginContents=Multiple directories creation
+
+@Contents
+$ #Multiple directories creation#
+    #About#
+    ─────
+    This command allows to create multiple directories in one call. Directory
+names in the list separated with ';'. It is possible to specify more complex
+templates also, described below.
+
+
+    #Templates#
+    ─────────
+    Templates can contain ~fixed part~@Fixed@, ~list~@List@, ~range~@Range@.
+Template can also create chains of subdirectories, if backslash ('\') used.
+
+    #Note:# It is possible to disable special meaning of reserved characters
+by enclosing directory name in double quotes.
+
+
+ #Examples of templates with lists and ranges:#
+ ────────────────────────────────────────────
+    Disk{1-100}
+    Disk{001-100}
+    USER{1-5;9;12;15-20}.DATA
+    hex{1-1FF}
+    {00-ff}
+    {a-z}
+    {A-Z;a-z}
+    {Beta;Release}\Disk{1-20}
+
+ #See also:#
+ ─────────
+    ~Fixed part~@Fixed@
+    ~List~@List@
+    ~Range~@Range@
+
+
+    #Installation#
+    ────────────
+    Copy all plugin files into the subdirectory FAR\Plugins\MkDir\ and
+restart Far. Press the F11 key and select "MkDir Plugin". You can also
+assign a macro on the F7 key (see file F7.reg).
+
+
+    #Contact author:#
+    ───────────────
+    Igor Grabelnikov,
+    Netmail: 2:5063/3@fidonet,
+    E-mail: igg@iname.com
+
+@Fixed
+$ #Fixed part#
+    Any text not enclosed in curly brackets '{' and '}' is a fixed part.
+Fixed part will be copied into generated directory name without changes.
+
+@List
+$ #List#
+    One or more lists can be used in templates. 'List' here is the list of
+directory name parts, delimited with ';' and enclosed in '{' and '}'.
+Each name part from a list will be substituted in the position of the list
+in template. You may use as many lists, as you need, every list should be
+in its own brackets, however no nested brackets allowed.
+
+
+ #Examples of lists:#
+ ──────────────────
+    {1;2;3}
+    {Beta;Release}
+
+ #Examples of templates with both fixed part and list:#
+ ────────────────────────────────────────────────────
+    DISK{1;2;3}.DSK
+         - creates directories DISK1.DSK, DISK2.DSK and DISK3.DSK.
+    {Beta;Release}\{Disk1;Disk2;Disk3}
+         - creates Beta and Release directories, in each of which
+           it creates subdirectories Disk1, Disk2 and Disk3.
+@Range
+$ #Range#
+    You can also use lists with ranges. A range consists of two limit
+values, separated by '-'. You can disable the special meaning of '-'
+using the backslash escape sequence: '\-'.
+
+    Three range types supported:
+ - #decimal numbers# (if only digits 0..9 used);
+ - #hexadecimal numbers# (if only digits 0..9 and letters A..F used);
+ - #character# (if every limit value is a single character).
+
+    Numeric ranges support formatting to field width based on the first
+limit value. Every generated number is padded with '0' to this width. So
+it is possible to use ranges like {001-1000} to produce directory names
+"001", "002" ... "999", "1000".
+
+    For hexadecimal ranges capitalization (a-f or A-F) in generated names
+depends of letters used in a range limit values.
+
+
+ #Examples of lists with ranges:#
+ ──────────────────────────────
+    {1-5}
+    {1-10}
+    {01-10}
+    {1-5;9;12;15-20}
+    {1-1FF}
+    {00-ff}
+    {a-z}
+    {A-Z;a-z}
+    {Beta;Release}\Disk{1-20}
+
+
+    #Note:# please use caution using complex templates. You could produce many
+directories in case of an error in template.

@@ -1,0 +1,159 @@
+-- Started:    2025-05-25
+-- Author:     Shmuel Zeigerman
+-- Published:  https://forum.farmanager.com/viewtopic.php?p=180545#p180545
+-- Name:       Analogue of MkDir plugin from Igor Grabelnikov
+
+local Title = "Make folder"
+local MacroKey = "ShiftF7"
+
+local DlgId = win.Uuid("CC48FA63-B031-4F2D-952E-43FC642722DB")
+local FName = _filename or ...
+local stat_ok, stat_badinput, stat_template = 1, 2, 3
+local range_dec, range_hex, range_sym = 1, 2, 3
+
+local function CheckEscape(num)
+  return num % 100 == 0 and win.ExtractKey() == "ESCAPE" and
+      far.Message("Break the operation?", Title, ";YesNo") == 1
+end
+
+local PatSimple = regex.new( [[
+  "([^"]+)"(?: ;+|$) |
+  ([^;"]+) (?: ;+|$) |
+  (.+)
+]], "x")
+
+local PatTemplate = regex.new( [[
+     ( [^{]+ )       |
+  \{ ( [^{]+ ) \}
+]], "x")
+
+local function IncIndex(parts)
+  for k=#parts, 1, -1 do
+    local t = parts[k]
+    local item = t[t.idx]
+    if type(item) == "table" then -- table representing a range
+      if item.cur < item.to then
+        item.cur = item.cur + 1
+        return true
+      else
+        item.cur = item.fr
+      end
+    end
+    if t.idx < #t then
+      t.idx = t.idx + 1
+      return true
+    else
+      t.idx = 1
+    end
+  end
+end
+
+local function GetValue(parts)
+  local t = {}
+  for _,v in ipairs(parts) do
+    local item = v[v.idx]
+    if type(item) == "table" then -- table representing a range
+      if item.sym then
+        t[#t+1] = utf8.char(item.cur)
+      else
+        t[#t+1] = item.fmt:format(item.cur)
+      end
+    else
+      t[#t+1] = item
+    end
+  end
+  return table.concat(t)
+end
+
+--local range_dec, range_hex, range_sym = 1, 2, 3
+local function GetRange(txt)
+  local fr, to
+
+  fr, to = txt:match("^(%d+)%-(%d+)$") -- decimal range
+  if fr then return range_dec, fr, to; end
+
+  fr,to = txt:match("^(%x+)%-(%x+)$") -- hexadecimal range
+  if fr then return range_hex, fr, to; end
+
+  fr,to = txt:match("^(%a)%-(%a)$") -- symbolic range
+  if fr then return range_sym, fr, to; end
+end
+
+
+local function DoTemplate(str)
+  local parts = {}
+  for d1, d2 in PatTemplate:gmatch(str) do
+    if d1 then
+      table.insert(parts, { d1, idx=1 })
+    else
+      local t = { idx=1 }
+      table.insert(parts, t)
+      for p in d2:gmatch("[^;]+") do
+        local kind, fr, to = GetRange(p)
+        if kind == range_dec then
+          local fmt = fr:sub(1,1)=="0" and ("%0"..#fr.."d") or "%d"
+          fr, to = tonumber(fr), tonumber(to)
+          table.insert(t, { fr=fr; to=to; cur=fr; fmt=fmt; })
+        elseif kind == range_hex then
+          local fmt = fr:sub(1,1)=="0" and ("%0"..#fr.."X") or "%X"
+          fr, to = tonumber(fr,16), tonumber(to,16)
+          table.insert(t, { fr=fr; to=to; cur=fr; fmt=fmt; })
+        elseif kind == range_sym then
+          fr, to = fr:byte(), to:byte()
+          table.insert(t, { fr=fr; to=to; cur=fr; sym=true; })
+        else
+          p = p:gsub("\\([%-\\])", "%1") -- escaped '-', according to help
+          table.insert(t, p)
+        end
+      end
+    end
+  end
+  local curdir = panel.GetPanelDirectory(nil, 1).Name
+  far.Message("Please wait...", Title, "")
+  for i=1,math.huge do
+    if CheckEscape(i) then break end
+    local dir = GetValue(parts)
+    win.CreateDir(win.JoinPath(curdir, dir))
+    if not IncIndex(parts) then break end
+  end
+end
+
+local function DoSimple(str)
+  local dirs = {}
+  for d1, d2, bad in PatSimple:gmatch(str) do
+    if bad                     then return stat_badinput
+    elseif d2 and d2:find("{") then return stat_template
+    else table.insert(dirs, d1 or d2)
+    end
+  end
+  local curdir = panel.GetPanelDirectory(nil, 1).Name
+  for _,dir in ipairs(dirs) do
+    win.CreateDir(win.JoinPath(curdir, dir))
+  end
+  return stat_ok
+end
+
+local function main()
+  local name = FName:match("(.-)[^.+]$")
+  local topic = "<"..name..">Contents"
+  local str = far.InputBox (DlgId, Title, "Create the folder (you can use templates)",
+      "MkDirHistory", nil, nil, topic, 0)
+  if str then
+    if DoSimple(str) ~= stat_ok then DoTemplate(str) end
+    panel.RedrawPanel(nil, 0)
+    panel.RedrawPanel(nil, 1)
+  end
+end
+
+if not Macro then
+  main()
+  return
+end
+
+Macro {
+  description="mkdir with templates";
+  area="Shell"; key=MacroKey;
+  flags="NoPluginPanels";
+  id="3CEFA3A8-334E-4BAA-8DAD-87DBF02E1897";
+  action=function() main() end;
+}
