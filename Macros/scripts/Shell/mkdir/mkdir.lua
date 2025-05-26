@@ -19,17 +19,10 @@ local Rus = {
 }
 
 local M -- localization table
-local MacroKey = "ShiftF7"
-
 local DlgId = win.Uuid("CC48FA63-B031-4F2D-952E-43FC642722DB")
 local FName = _filename or ...
 local stat_ok, stat_badinput, stat_template = 1, 2, 3
 local range_dec, range_hex, range_sym = 1, 2, 3
-
-local function CheckEscape(num)
-  return num % 100 == 0 and win.ExtractKey() == "ESCAPE" and
-      far.Message(M.BreakOp, M.Title, ";YesNo") == 1
-end
 
 local PatSimple = regex.new( [[
   "([^"]+)"(?: ;+|$) |
@@ -41,6 +34,23 @@ local PatTemplate = regex.new( [[
      ( [^{]+ )       |
   \{ ( [^{]+ ) \}
 ]], "x")
+
+local function SetHookFunction(name, default)
+  return type(_G.Test)=="table" and type(_G.Test[name])=="function"
+      and _G.Test[name] or default
+end
+
+local function MakeDirDefault(curdir, dir)
+  return win.CreateDir(win.JoinPath(curdir, dir))
+end
+
+local InputBox = SetHookFunction("InputBox", far.InputBox)
+local MakeDir = SetHookFunction("MakeDir", MakeDirDefault)
+
+local function CheckEscape(num)
+  return num % 100 == 0 and win.ExtractKey() == "ESCAPE" and
+      far.Message(M.BreakOp, M.Title, ";YesNo") == 1
+end
 
 local function IncIndex(parts)
   for k=#parts, 1, -1 do
@@ -128,7 +138,7 @@ local function DoTemplate(str)
   for i=1,math.huge do
     if CheckEscape(i) then break end
     local dir = GetValue(parts)
-    win.CreateDir(win.JoinPath(curdir, dir))
+    MakeDir(curdir, dir)
     if not IncIndex(parts) then break end
   end
 end
@@ -143,7 +153,7 @@ local function DoSimple(str)
   end
   local curdir = panel.GetPanelDirectory(nil, 1).Name
   for _,dir in ipairs(dirs) do
-    win.CreateDir(win.JoinPath(curdir, dir))
+    MakeDir(curdir, dir)
   end
   return stat_ok
 end
@@ -152,7 +162,7 @@ local function main()
   M = win.GetEnv("FARLANG")=="Russian" and Rus or Eng
   local name = FName:match("(.-)[^.+]$")
   local topic = "<"..name..">Contents"
-  local str = far.InputBox (DlgId, M.Title, M.Prompt, "MkDirHistory", nil, nil, topic, 0)
+  local str = InputBox (DlgId, M.Title, M.Prompt, "MkDirHistory", nil, nil, topic, 0)
   if str then
     if DoSimple(str) ~= stat_ok then DoTemplate(str) end
     panel.RedrawPanel(nil, 0) -- redraw passive panel
@@ -168,7 +178,7 @@ end
 
 Macro {
   description="mkdir with templates";
-  area="Shell"; key=MacroKey;
+  area="Shell"; key="ShiftF7";
   flags="NoPluginPanels";
   id="3CEFA3A8-334E-4BAA-8DAD-87DBF02E1897";
   action=function() main() end;

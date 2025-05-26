@@ -443,6 +443,7 @@ local function ExecuteCommand (args, _sFrom)
       break
     elseif v.opt == "r" then
       local f = assert(loadfile(v.param))
+      env._filename = v.param
       setfenv(f, env)(unpack(v))
       break
     elseif v.opt == "e" then
