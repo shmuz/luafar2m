@@ -35,18 +35,6 @@ local PatTemplate = regex.new( [[
   \{ ( [^{]+ ) \}
 ]], "x")
 
-local function SetHookFunction(name, default)
-  return type(_G.Test)=="table" and type(_G.Test[name])=="function"
-      and _G.Test[name] or default
-end
-
-local function MakeDirDefault(curdir, dir)
-  return win.CreateDir(win.JoinPath(curdir, dir))
-end
-
-local InputBox = SetHookFunction("InputBox", far.InputBox)
-local MakeDir = SetHookFunction("MakeDir", MakeDirDefault)
-
 local function CheckEscape(num)
   return num % 100 == 0 and win.ExtractKey() == "ESCAPE" and
       far.Message(M.BreakOp, M.Title, ";YesNo") == 1
@@ -138,7 +126,7 @@ local function DoTemplate(str)
   for i=1,math.huge do
     if CheckEscape(i) then break end
     local dir = GetValue(parts)
-    MakeDir(curdir, dir)
+    win.CreateDir(win.JoinPath(curdir, dir))
     if not IncIndex(parts) then break end
   end
 end
@@ -153,7 +141,7 @@ local function DoSimple(str)
   end
   local curdir = panel.GetPanelDirectory(nil, 1).Name
   for _,dir in ipairs(dirs) do
-    MakeDir(curdir, dir)
+    win.CreateDir(win.JoinPath(curdir, dir))
   end
   return stat_ok
 end
@@ -162,7 +150,7 @@ local function main()
   M = win.GetEnv("FARLANG")=="Russian" and Rus or Eng
   local name = FName:match("(.-)[^.+]$")
   local topic = "<"..name..">Contents"
-  local str = InputBox (DlgId, M.Title, M.Prompt, "MkDirHistory", nil, nil, topic, 0)
+  local str = far.InputBox (DlgId, M.Title, M.Prompt, "MkDirHistory", nil, nil, topic, 0)
   if str then
     if DoSimple(str) ~= stat_ok then DoTemplate(str) end
     panel.RedrawPanel(nil, 0) -- redraw passive panel
