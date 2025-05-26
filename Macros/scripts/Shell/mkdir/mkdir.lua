@@ -21,7 +21,6 @@ local Rus = {
 local M -- localization table
 local DlgId = win.Uuid("CC48FA63-B031-4F2D-952E-43FC642722DB")
 local FName = _filename or ...
-local stat_ok, stat_badinput, stat_template = 1, 2, 3
 local range_dec, range_hex, range_sym = 1, 2, 3
 
 local PatSimple = regex.new( [[
@@ -35,8 +34,8 @@ local PatTemplate = regex.new( [[
   \{ ( [^{]+ ) \}
 ]], "x")
 
-local function CheckEscape(num)
-  return num % 100 == 0 and win.ExtractKey() == "ESCAPE" and
+local function CheckEscape(num, base)
+  return num % base == 0 and win.ExtractKey() == "ESCAPE" and
       far.Message(M.BreakOp, M.Title, ";YesNo") == 1
 end
 
@@ -121,29 +120,23 @@ local function DoTemplate(str)
       end
     end
   end
-  local curdir = panel.GetPanelDirectory(nil, 1).Name
+  local dirs = {}
   far.Message(M.Wait, M.Title, "")
   for i=1,math.huge do
-    if CheckEscape(i) then break end
-    local dir = GetValue(parts)
-    win.CreateDir(win.JoinPath(curdir, dir))
+    dirs[i] = GetValue(parts)
     if not IncIndex(parts) then break end
+    if CheckEscape(i, 1000) then return nil end
   end
+  return dirs
 end
 
 local function DoSimple(str)
   local dirs = {}
   for d1, d2, bad in PatSimple:gmatch(str) do
-    if bad                     then return stat_badinput
-    elseif d2 and d2:find("{") then return stat_template
-    else table.insert(dirs, d1 or d2)
-    end
+    if bad or (d2 and d2:find("{")) then return nil end
+    table.insert(dirs, d1 or d2)
   end
-  local curdir = panel.GetPanelDirectory(nil, 1).Name
-  for _,dir in ipairs(dirs) do
-    win.CreateDir(win.JoinPath(curdir, dir))
-  end
-  return stat_ok
+  return dirs
 end
 
 local function main()
@@ -152,9 +145,17 @@ local function main()
   local topic = "<"..name..">Contents"
   local str = far.InputBox (DlgId, M.Title, M.Prompt, "MkDirHistory", nil, nil, topic, 0)
   if str then
-    if DoSimple(str) ~= stat_ok then DoTemplate(str) end
+    local dirs = DoSimple(str) or DoTemplate(str)
+    if dirs then
+      local curdir = panel.GetPanelDirectory(nil, 1).Name
+      far.Message(M.Wait, M.Title, "")
+      for i,dir in ipairs(dirs) do
+        win.CreateDir(win.JoinPath(curdir, dir))
+        if CheckEscape(i, 100) then break end
+      end
+      panel.UpdatePanel(nil, 1) -- update active panel
+    end
     panel.RedrawPanel(nil, 0) -- redraw passive panel
-    panel.UpdatePanel(nil, 1) -- update active panel
     panel.RedrawPanel(nil, 1) -- redraw active panel
   end
 end
