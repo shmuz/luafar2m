@@ -5,16 +5,18 @@
 -- Note:       Written from scratch, the plugin source code was not available
 
 local Eng = {
-  Title   = "Make folder";
+  Title   = "Make folders";
   BreakOp = "Break the operation?";
-  Wait    = "Please wait...";
+  ListMsg = "Creating the list.\nPlease wait...";
+  DirsMsg = "Creating directories.\nPlease wait...";
   Prompt  = "Create the folder (you can use templates)";
 }
 
 local Rus = {
-  Title   = "Создание папки";
+  Title   = "Создание папок";
   BreakOp = "Прервать операцию?";
-  Wait    = "Пожалуйста ждите...";
+  ListMsg = "Создаётся список.\nПожалуйста ждите...";
+  DirsMsg = "Создаются папки.\nПожалуйста ждите...";
   Prompt  = "Создать папку (вы можете использовать шаблоны)";
 }
 
@@ -29,9 +31,13 @@ local PatTemplate = regex.new( [[
   \{ ( [^}]+ ) \}
 ]], "x")
 
-local function CheckEscape(num, base)
-  return num % base == 0 and win.ExtractKey() == "ESCAPE" and
-      far.Message(M.BreakOp, M.Title, ";YesNo") == 1
+local function CheckEscape(num, base, text)
+  if num % base == 0 then
+    if win.ExtractKey()=="ESCAPE" and far.Message(M.BreakOp, M.Title, ";YesNo")==1 then
+      return true
+    end
+    far.Message(text, M.Title, "")
+  end
 end
 
 local function IncIndex(parts)
@@ -115,11 +121,10 @@ local function DoTemplate(str, dirs)
       end
     end
   end
-  far.Message(M.Wait, M.Title, "")
   for i=1,math.huge do
     table.insert(dirs, GetValue(parts))
     if not IncIndex(parts) then break end
-    if CheckEscape(i, 1000) then return "break" end
+    if CheckEscape(i, 1000, M.ListMsg) then return "break" end
   end
   return dirs
 end
@@ -193,10 +198,9 @@ local function main()
     local dirs = GetDirs(str)
     if type(dirs) == "table" and dirs[1] then
       local curdir = panel.GetPanelDirectory(nil, 1).Name
-      far.Message(M.Wait, M.Title, "")
       for i,dir in ipairs(dirs) do
         win.CreateDir(win.JoinPath(curdir, dir))
-        if CheckEscape(i, 100) then break end
+        if CheckEscape(i, 100, M.DirsMsg) then break end
       end
       panel.UpdatePanel(nil, 1) -- update active panel
       if Panel then
