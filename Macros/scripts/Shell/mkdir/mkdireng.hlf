@@ -39,16 +39,9 @@ by enclosing directory name in double quotes.
 
     #Installation#
     ────────────
-    Copy all plugin files into the subdirectory FAR\Plugins\MkDir\ and
-restart Far. Press the F11 key and select "MkDir Plugin". You can also
-assign a macro on the F7 key (see file F7.reg).
+    Copy all supplied files into directory #%FARPROFILE%\Macros\scripts\MkDir#
+and restart Far. Press the key combination assigned to the macro.
 
-
-    #Contact author:#
-    ───────────────
-    Igor Grabelnikov,
-    Netmail: 2:5063/3@fidonet,
-    E-mail: igg@iname.com
 
 @Fixed
 $ #Fixed part#

@@ -18,20 +18,15 @@ local Rus = {
   Prompt  = "Создать папку (вы можете использовать шаблоны)";
 }
 
-local M -- localization table
+local DIRSEP = package.config:sub(1,1)
+local M = Eng -- localization table
 local DlgId = win.Uuid("CC48FA63-B031-4F2D-952E-43FC642722DB")
 local FName = _filename or ...
 local range_dec, range_hex, range_sym = 1, 2, 3
 
-local PatSimple = regex.new( [[
-  "([^"]+)"(?: ;+|$) |
-  ([^;"]+) (?: ;+|$) |
-  (.+)
-]], "x")
-
 local PatTemplate = regex.new( [[
      ( [^{]+ )       |
-  \{ ( [^{]+ ) \}
+  \{ ( [^}]+ ) \}
 ]], "x")
 
 local function CheckEscape(num, base)
@@ -91,7 +86,7 @@ local function GetRange(txt)
 end
 
 
-local function DoTemplate(str)
+local function DoTemplate(str, dirs)
   local parts = {}
   for d1, d2 in PatTemplate:gmatch(str) do
     if d1 then -- fixed part
@@ -120,21 +115,71 @@ local function DoTemplate(str)
       end
     end
   end
-  local dirs = {}
   far.Message(M.Wait, M.Title, "")
   for i=1,math.huge do
-    dirs[i] = GetValue(parts)
+    table.insert(dirs, GetValue(parts))
     if not IncIndex(parts) then break end
-    if CheckEscape(i, 1000) then return nil end
+    if CheckEscape(i, 1000) then return "break" end
   end
   return dirs
 end
 
-local function DoSimple(str)
+local function GetDirs(str)
   local dirs = {}
-  for d1, d2, bad in PatSimple:gmatch(str) do
-    if bad or (d2 and d2:find("{")) then return nil end
-    table.insert(dirs, d1 or d2)
+  local st = 1
+  local len = str:len()
+  local text, templ
+
+  while st <= len do -- 1 loop = 1 task
+    if text then
+      local done = false
+      local fr,to,cap = str:find('([;{])', st)
+      if fr and cap==";" then
+        text = text..str:sub(st,fr-1)
+        st = to + 1
+        done = true
+      elseif fr and cap=="{" then
+        text = text..str:sub(st,fr-1)
+        st = fr
+        fr,to,cap = str:find("({[^}]*})",st)
+        if fr == st then
+          text = text..cap
+          st = to + 1
+          templ = true
+        else
+          text = text.."{"
+          st = st + 1
+        end
+      elseif not fr then
+        text = text..str:sub(st)
+        st = len + 1
+      end
+
+      if done or (st > len) then
+        if text:find('"') then error("syntax") end
+        if templ then
+          if DoTemplate(text, dirs) == "break" then return "break" end
+        else
+          table.insert(dirs,text)
+        end
+        text = nil
+      end
+
+    else
+      local fr,to,cap = str:find('"(.-)"',st)
+      if fr == st then
+        if cap ~= "" then table.insert(dirs,cap) end
+        st = to + 1
+      else
+        fr,to = str:find(";+",st)
+        if fr == st then
+          st = to + 1
+        else
+          text = ""
+          templ = false
+        end
+      end
+    end
   end
   return dirs
 end
@@ -145,8 +190,8 @@ local function main()
   local topic = "<"..name..">Contents"
   local str = far.InputBox (DlgId, M.Title, M.Prompt, "MkDirHistory", nil, nil, topic, 0)
   if str then
-    local dirs = DoSimple(str) or DoTemplate(str)
-    if dirs then
+    local dirs = GetDirs(str)
+    if type(dirs) == "table" and dirs[1] then
       local curdir = panel.GetPanelDirectory(nil, 1).Name
       far.Message(M.Wait, M.Title, "")
       for i,dir in ipairs(dirs) do
@@ -154,6 +199,10 @@ local function main()
         if CheckEscape(i, 100) then break end
       end
       panel.UpdatePanel(nil, 1) -- update active panel
+      if Panel then
+        local fname = dirs[1]:match(DIRSEP=="/" and "^[^/]+" or "^[^/\\]+")
+        Panel.SetPos(0, fname)
+      end
     end
     panel.RedrawPanel(nil, 0) -- redraw passive panel
     panel.RedrawPanel(nil, 1) -- redraw active panel
@@ -161,8 +210,13 @@ local function main()
 end
 
 if not Macro then
-  main()
-  return
+  local command = select(2,...)
+  if command == "require" then
+    return { main=main; GetDirs=GetDirs; }
+  else
+    main()
+    return
+  end
 end
 
 Macro {
