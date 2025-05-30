@@ -63,7 +63,9 @@ end
 
 function export.ProcessPanelEvent (object, handle, Event, Param)
   if Event == F.FE_IDLE then
-    panel.UpdatePanel(handle,nil,true)
-    panel.RedrawPanel(handle)
+    ---- Don't call UpdatePanel here as with huge number of files it
+    ---- causes big processor load and delayed response to keystrokes.
+    -- panel.UpdatePanel(handle,nil,true)
+    -- panel.RedrawPanel(handle)
   end
 end
