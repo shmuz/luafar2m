@@ -191,8 +191,8 @@ local function GetDirs(str)
 end
 
 local function GetUserString()
-  local name = FName:match("(.-)[^.+]$")
-  local topic = "<"..name..">Contents"
+  local path = FName:match(".+"..DIRSEP)
+  local topic = "<"..path..">Contents"
   local eFlags = F.DIF_HISTORY + F.DIF_USELASTHISTORY
   local eHistory = "MkDirHistory"
   local items = {
