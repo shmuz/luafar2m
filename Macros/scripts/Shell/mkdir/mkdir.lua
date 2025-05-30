@@ -220,7 +220,7 @@ local function ApplyAliases(str)
 
   local fp = io.open(FName:match(".+"..DIRSEP)..fname)
   if fp then
-    for line in fp:lines(fp) do
+    for line in fp:lines() do
       if not line:find("^%s*#") then -- if not comment
         local name,alias = line:match(patLine)
         if name and alias ~= "" then map[name:lower()]=alias end
