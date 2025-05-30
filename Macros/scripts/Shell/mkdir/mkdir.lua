@@ -21,6 +21,7 @@ local Rus = {
 }
 
 local DIRSEP = package.config:sub(1,1)
+local F = far.Flags
 local M = Eng -- localization table
 local DlgId = win.Uuid("CC48FA63-B031-4F2D-952E-43FC642722DB")
 local FName = _filename or ...
@@ -189,12 +190,24 @@ local function GetDirs(str)
   return dirs
 end
 
-local function main()
-  M = win.GetEnv("FARLANG")=="Russian" and Rus or Eng
+local function GetUserString()
   local name = FName:match("(.-)[^.+]$")
   local topic = "<"..name..">Contents"
-  local str = far.InputBox (DlgId, M.Title, M.Prompt, "MkDirHistory", nil, nil, topic, 0)
-  if str then
+  local eFlags = F.DIF_HISTORY + F.DIF_USELASTHISTORY
+  local eHistory = "MkDirHistory"
+  local items = {
+    {F.DI_DOUBLEBOX, 3,1,72,4,  0,0,        0,0,      M.Title},
+    {F.DI_TEXT,      5,2, 0,2,  0,0,        0,0,      M.Prompt},
+    {F.DI_EDIT,      5,3,70,3,  0,eHistory, 0,eFlags, ""},
+  }
+  local ret = far.Dialog(DlgId,-1,-1,76,6,topic,items)
+  if ret and ret >= 1 then return items[3][10] end
+end
+
+local function main()
+  M = win.GetEnv("FARLANG")=="Russian" and Rus or Eng
+  local str = GetUserString()
+  if str and str ~= "" then
     local dirs = GetDirs(str)
     if type(dirs) == "table" and dirs[1] then
       local curdir = panel.GetPanelDirectory(nil, 1).Name
