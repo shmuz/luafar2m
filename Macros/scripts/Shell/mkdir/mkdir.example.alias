@@ -1,0 +1,10 @@
+# Rename "mkdir.example.alias" to "mkdir.alias"
+# The lines starting with # are ignored
+# The lines' format is: alias name followed by space(s) followed by alias value
+# Alias names may not contain spaces
+# Alias names are case insensitive (foo and FOO is the same alias)
+# In the input dialog aliases must be within angle brackets, e.g. <journey>
+
+# Examples
+journey {Documents;Photo;Video;Music}
+months  {January;February;March;April;May;June;July;August;September;October;November;December}

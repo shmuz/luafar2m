@@ -5,19 +5,23 @@
 -- Note:       Written from scratch, the plugin source code was not available
 
 local Eng = {
-  Title   = "Make folders";
-  BreakOp = "Break the operation?";
-  ListMsg = "Creating the list.\nPlease wait...";
-  DirsMsg = "Creating directories.\nPlease wait...";
-  Prompt  = "Create the folder (you can use templates)";
+  Title     = "Make folders";
+  BreakOp   = "Break the operation?";
+  ListMsg   = "Creating the list.\nPlease wait...";
+  DirsMsg   = "Creating directories.\nPlease wait...";
+  Prompt    = "Create the folder (you can use templates)";
+  AliasErr  = "Alias <%s> not found";
+  AliasFile = "Can't process aliases as '%s' not found";
 }
 
 local Rus = {
-  Title   = "Создание папок";
-  BreakOp = "Прервать операцию?";
-  ListMsg = "Создаётся список.\nПожалуйста ждите...";
-  DirsMsg = "Создаются папки.\nПожалуйста ждите...";
-  Prompt  = "Создать папку (вы можете использовать шаблоны)";
+  Title     = "Создание папок";
+  BreakOp   = "Прервать операцию?";
+  ListMsg   = "Создаётся список.\nПожалуйста ждите...";
+  DirsMsg   = "Создаются папки.\nПожалуйста ждите...";
+  Prompt    = "Создать папку (вы можете использовать шаблоны)";
+  AliasErr  = "Псевдоним <%s> не найден";
+  AliasFile = "Невозможно обработать псевдонимы: '%s' не найден";
 }
 
 local DIRSEP = package.config:sub(1,1)
@@ -26,6 +30,10 @@ local M = Eng -- localization table
 local DlgId = win.Uuid("CC48FA63-B031-4F2D-952E-43FC642722DB")
 local FName = _filename or ...
 local range_dec, range_hex, range_sym = 1, 2, 3
+
+local function ErrMsg(str)
+  far.Message(str, M.Title, ";OK", "w")
+end
 
 local PatTemplate = regex.new( [[
      ( [^{]+ )       |
@@ -204,26 +212,63 @@ local function GetUserString()
   if ret and ret >= 1 then return items[3][10] end
 end
 
+local function ApplyAliases(str)
+  local fname = "mkdir.alias"
+  local patLine = "^%s*(%S+)%s+(.-)%s*$"
+  local patAlias = "<(%S%S-)>"
+  local map = {}
+
+  local fp = io.open(FName:match(".+"..DIRSEP)..fname)
+  if fp then
+    for line in fp:lines(fp) do
+      local name,alias = line:match(patLine)
+      if name and alias ~= "" then map[name:lower()]=alias end
+    end
+    fp:close(fp)
+  else
+    if str:find(patAlias) then
+      ErrMsg(M.AliasFile:format(fname))
+      return nil
+    end
+  end
+
+  local ok = true
+  str = str:gsub(patAlias,
+    function(c)
+      local val = map[c:lower()]
+      if val == nil then
+        ErrMsg(M.AliasErr:format(c))
+        ok = false
+      end
+      return val
+    end)
+
+  return ok and str
+end
+
 local function main()
   M = win.GetEnv("FARLANG")=="Russian" and Rus or Eng
   local str = GetUserString()
-  if str and str ~= "" then
-    local dirs = GetDirs(str)
-    if type(dirs) == "table" and dirs[1] then
-      local curdir = panel.GetPanelDirectory(nil, 1).Name
-      for i,dir in ipairs(dirs) do
-        win.CreateDir(win.JoinPath(curdir, dir))
-        if CheckEscape(i, 100, M.DirsMsg) then break end
-      end
-      panel.UpdatePanel(nil, 1) -- update active panel
-      if Panel then
-        local fname = dirs[1]:match(DIRSEP=="/" and "^[^/]+" or "^[^/\\]+")
-        Panel.SetPos(0, fname)
-      end
+  if (not str) or str == "" then return end
+
+  str = ApplyAliases(str)
+  if not str then return end
+
+  local dirs = GetDirs(str)
+  if type(dirs) == "table" and dirs[1] then
+    local curdir = panel.GetPanelDirectory(nil, 1).Name
+    for i,dir in ipairs(dirs) do
+      win.CreateDir(win.JoinPath(curdir, dir))
+      if CheckEscape(i, 100, M.DirsMsg) then break end
     end
-    panel.RedrawPanel(nil, 0) -- redraw passive panel
-    panel.RedrawPanel(nil, 1) -- redraw active panel
+    panel.UpdatePanel(nil, 1) -- update active panel
+    if Panel then
+      local fname = dirs[1]:match(DIRSEP=="/" and "^[^/]+" or "^[^/\\]+")
+      Panel.SetPos(0, fname)
+    end
   end
+  panel.RedrawPanel(nil, 0) -- redraw passive panel
+  panel.RedrawPanel(nil, 1) -- redraw active panel
 end
 
 if not Macro then
