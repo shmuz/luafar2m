@@ -9,7 +9,7 @@ local Eng = {
   BreakOp   = "Break the operation?";
   ListMsg   = "Creating the list.\nPlease wait...";
   DirsMsg   = "Creating directories.\nPlease wait...";
-  Prompt    = "Create the folder (you can use templates)";
+  Prompt    = "Create the folder (templates can be used)";
   AliasErr  = "Alias <%s> not found";
   AliasFile = "Can't process aliases as '%s' not found";
 }
@@ -19,7 +19,7 @@ local Rus = {
   BreakOp   = "Прервать операцию?";
   ListMsg   = "Создаётся список.\nПожалуйста ждите...";
   DirsMsg   = "Создаются папки.\nПожалуйста ждите...";
-  Prompt    = "Создать папку (вы можете использовать шаблоны)";
+  Prompt    = "Создать папку (можно использовать шаблоны)";
   AliasErr  = "Псевдоним <%s> не найден";
   AliasFile = "Невозможно обработать псевдонимы: '%s' не найден";
 }
@@ -40,13 +40,11 @@ local PatTemplate = regex.new( [[
   \{ ( [^}]+ ) \}
 ]], "x")
 
-local function CheckEscape(num, base, text)
-  if num % base == 0 then
-    if win.ExtractKey()=="ESCAPE" and far.Message(M.BreakOp, M.Title, ";YesNo")==1 then
-      return true
-    end
-    far.Message(text, M.Title, "")
+local function CheckEscape(text)
+  if win.ExtractKey()=="ESCAPE" and far.Message(M.BreakOp, M.Title, ";YesNo")==1 then
+    return true
   end
+  far.Message(text, M.Title, "")
 end
 
 local function IncIndex(parts)
@@ -133,7 +131,7 @@ local function DoTemplate(str, dirs)
   for i=1,math.huge do
     table.insert(dirs, GetValue(parts))
     if not IncIndex(parts) then break end
-    if CheckEscape(i, 1000, M.ListMsg) then return "break" end
+    if i%1000 == 0 and CheckEscape(M.ListMsg) then return "break" end
   end
   return dirs
 end
@@ -261,7 +259,7 @@ local function main()
     local curdir = panel.GetPanelDirectory(nil, 1).Name
     for i,dir in ipairs(dirs) do
       win.CreateDir(win.JoinPath(curdir, dir))
-      if CheckEscape(i, 100, M.DirsMsg) then break end
+      if i%100 == 0 and CheckEscape(M.DirsMsg) then break end
     end
     panel.UpdatePanel(nil, 1) -- update active panel
     if Panel then
