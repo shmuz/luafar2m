@@ -63,7 +63,7 @@ local function ApplyAliases(str)
   local patAlias = "<(%S%S-)>"
   local map = {}
 
-  local fp = io.open(FName:match(".+"..DIRSEP)..fname)
+  local fp = io.open(ScriptDir..fname)
   if fp then
     for line in fp:lines() do
       if not line:find("^%s*#") then -- if not comment
