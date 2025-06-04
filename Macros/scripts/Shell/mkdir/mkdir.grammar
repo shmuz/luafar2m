@@ -1,0 +1,147 @@
+-- highlight: lua
+-- started: 2025-06-01
+
+local lpeg = require "lpeg"
+
+local delim  = lpeg.P(";")
+local open   = lpeg.P("{")
+local close  = lpeg.P("}")
+local dash   = lpeg.P("-")
+local quote  = lpeg.P("\"")
+local decnum = lpeg.R("09") ^ 1
+local hexnum = lpeg.R("09","af","AF") ^ 1
+local symbol = lpeg.utfR(1, 0x10FFFF)
+
+local special  = delim + open + close + quote + lpeg.S("<>")  -- special character
+
+local decrange = (open * lpeg.C(decnum) * dash * lpeg.C(decnum) * close) /
+  function(fr,to)
+    local fmt = fr:sub(1,1)=="0" and ("%0"..#fr.."d") or "%d"
+    fr, to = tonumber(fr), tonumber(to)
+    return { fr=fr; to=to; cur=fr; fmt=fmt; }
+  end
+
+local hexrange = open * lpeg.C(hexnum) * dash * lpeg.C(hexnum) * close /
+  function(fr,to)
+    local fmt = fr:sub(1,1)=="0" and ("%0"..#fr.."X") or "%X"
+    if fr:find("[a-f]") or to:find("[a-f]") then fmt = fmt:lower() end
+    fr, to = tonumber(fr,16), tonumber(to,16)
+    return { fr=fr; to=to; cur=fr; fmt=fmt; }
+  end
+
+local symrange = open * lpeg.C(symbol) * dash * lpeg.C(symbol) * close /
+  function(fr,to)
+    fr, to = fr:byte(), to:byte()
+    return { fr=fr; to=to; cur=fr; sym=true; }
+  end
+
+local range    = decrange + hexrange + symrange                  -- any range
+local unquoted = lpeg.C((symbol - special) ^ 1)                  -- unquoted char sequence
+local quoted   = quote * lpeg.C((symbol - quote) ^ 1) * quote    -- quoted char sequence
+local literal  = quoted + unquoted                               -- literal string
+
+local List   = lpeg.V("List")
+local Concat = lpeg.V("Concat")
+local Enum   = lpeg.V("Enum")
+
+local Grammar = lpeg.P {
+  "All",
+  All = List * (-1);
+  List = delim^0 * lpeg.Ct( Concat * (delim^1 * Concat)^0 ) * delim^0
+      / function(t) t.idx=1; return t; end;
+  Concat = lpeg.Ct( (range + Enum + literal) ^ 1 ) / function(t) t.concat=true; return t; end;
+  Enum = open * List * close;
+}
+
+local function IncIndex(item)
+  if type(item) == "string" then
+    return false
+
+  elseif item.idx then
+    if IncIndex(item[item.idx]) then
+      return true
+    elseif item.idx < #item then
+      item.idx = item.idx + 1
+      return true
+    else
+      item.idx = 1
+    end
+
+  elseif item.concat then
+    for k=#item, 1, -1 do
+      if IncIndex(item[k]) then
+        return true
+      end
+    end
+
+  elseif item.cur then
+    if item.cur < item.to then
+      item.cur = item.cur + 1
+      return true
+    else
+      item.cur = item.fr
+    end
+
+  else
+    error("IncIndex")
+  end
+
+end
+
+local function GetValue(item)
+  if type(item) == "string" then
+    return item
+
+  elseif item.idx then
+    return GetValue(item[item.idx])
+
+  elseif item.concat then
+    local t = {}
+    for _,v in ipairs(item) do
+      local out
+      if type(v) == "string" then
+        out = v
+      elseif type(v) == "table" then
+        if v.idx or v.concat then
+          out = GetValue(v)
+        elseif v.sym then
+          out = utf8.char(v.cur)
+        elseif v.fmt then
+          out = v.fmt:format(v.cur)
+        else
+          error("GetValue - 1")
+        end
+      else
+        error("GetValue - 2")
+      end
+      t[#t+1] = out
+    end
+    return table.concat(t)
+
+  else
+    error("GetValue - 2")
+
+  end
+end
+
+local function DoConcat(acc, concat)
+  repeat
+    table.insert(acc, GetValue(concat))
+  until not IncIndex(concat)
+end
+
+local function GetList(subj)
+  local list = Grammar:match(subj)
+  if list then
+    local acc = {}
+    for _,v in ipairs(list) do
+      DoConcat(acc, v)
+    end
+    return acc
+  end
+  return nil
+end
+
+return {
+  GetList = GetList;
+}

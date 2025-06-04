@@ -23,11 +23,11 @@ by enclosing directory name in double quotes.
  ────────────────────────────────────────────
     Disk{1-100}
     Disk{001-100}
-    USER{1-5;9;12;15-20}.DATA
+    USER{{1-5};9;12;{15-20}}.DATA
     hex{1-1FF}
     {00-ff}
     {a-z}
-    {A-Z;a-z}
+    {A-Z};{a-z}
     {Beta;Release}\Disk{1-20}
 
  #See also:#
@@ -47,6 +47,8 @@ and restart Far. Press the key combination assigned to the macro.
 $ #Fixed part#
     Any text not enclosed in curly brackets '{' and '}' is a fixed part.
 Fixed part will be copied into generated directory name without changes.
+If a fixed part contains at least one of the characters #{#, #}#, #;#
+then it must be put into double quotes, e.g. "abc{}def;123".
 
 @List
 $ #List#
@@ -54,7 +56,7 @@ $ #List#
 directory name parts, delimited with ';' and enclosed in '{' and '}'.
 Each name part from a list will be substituted in the position of the list
 in template. You may use as many lists, as you need, every list should be
-in its own brackets, however no nested brackets allowed.
+in its own brackets.
 
 
  #Examples of lists:#
@@ -72,8 +74,7 @@ in its own brackets, however no nested brackets allowed.
 @Range
 $ #Range#
     You can also use lists with ranges. A range consists of two limit
-values, separated by '-'. You can disable the special meaning of '-'
-using the backslash escape sequence: '\-'.
+values, separated by '-'. A range must be inside braces, e.g. {12-35}.
 
     Three range types supported:
  - #decimal numbers# (if only digits 0..9 used);
@@ -94,11 +95,11 @@ depends of letters used in a range limit values.
     {1-5}
     {1-10}
     {01-10}
-    {1-5;9;12;15-20}
+    {1-5};9;12;{15-20}
     {1-1FF}
     {00-ff}
     {a-z}
-    {A-Z;a-z}
+    {A-Z};{a-z}
     {Beta;Release}\Disk{1-20}
 
 

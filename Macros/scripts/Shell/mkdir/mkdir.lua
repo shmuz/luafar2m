@@ -12,6 +12,7 @@ local Eng = {
   Prompt    = "Create the folder (templates can be used)";
   AliasErr  = "Alias <%s> not found";
   AliasFile = "Can't process aliases as '%s' not found";
+  SyntaxErr = "Syntax error in the input data";
 }
 
 local Rus = {
@@ -22,6 +23,7 @@ local Rus = {
   Prompt    = "Создать папку (можно использовать шаблоны)";
   AliasErr  = "Псевдоним <%s> не найден";
   AliasFile = "Невозможно обработать псевдонимы: '%s' не найден";
+  SyntaxErr = "Ошибка синтаксиса во входных данных";
 }
 
 local DIRSEP = package.config:sub(1,1)
@@ -29,16 +31,11 @@ local F = far.Flags
 local M = Eng -- localization table
 local DlgId = win.Uuid("CC48FA63-B031-4F2D-952E-43FC642722DB")
 local FName = _filename or ...
-local range_dec, range_hex, range_sym = 1, 2, 3
+local ScriptDir = FName:match(".+"..DIRSEP)
 
 local function ErrMsg(str)
   far.Message(str, M.Title, ";OK", "w")
 end
-
-local PatTemplate = regex.new( [[
-     ( [^{]+ )       |
-  \{ ( [^}]+ ) \}
-]], "x")
 
 local function CheckEscape(text)
   if win.ExtractKey()=="ESCAPE" and far.Message(M.BreakOp, M.Title, ";YesNo")==1 then
@@ -47,158 +44,8 @@ local function CheckEscape(text)
   far.Message(text, M.Title, "")
 end
 
-local function IncIndex(parts)
-  for k=#parts, 1, -1 do
-    local t = parts[k]
-    local item = t[t.idx]
-    if type(item) == "table" then -- table representing a range
-      if item.cur < item.to then
-        item.cur = item.cur + 1
-        return true
-      else
-        item.cur = item.fr
-      end
-    end
-    if t.idx < #t then
-      t.idx = t.idx + 1
-      return true
-    else
-      t.idx = 1
-    end
-  end
-end
-
-local function GetValue(parts)
-  local t = {}
-  for _,v in ipairs(parts) do
-    local item = v[v.idx]
-    if type(item) == "table" then -- table representing a range
-      if item.sym then
-        t[#t+1] = utf8.char(item.cur)
-      else
-        t[#t+1] = item.fmt:format(item.cur)
-      end
-    else
-      t[#t+1] = item
-    end
-  end
-  return table.concat(t)
-end
-
-local function GetRange(txt)
-  local fr, to
-
-  fr, to = txt:match("^(%d+)%-(%d+)$") -- decimal range
-  if fr then return range_dec, fr, to; end
-
-  fr,to = txt:match("^(%x+)%-(%x+)$") -- hexadecimal range
-  if fr then return range_hex, fr, to; end
-
-  fr,to = txt:match("^(%a)%-(%a)$") -- symbolic range
-  if fr then return range_sym, fr, to; end
-end
-
-
-local function DoTemplate(str, dirs)
-  local parts = {}
-  for d1, d2 in PatTemplate:gmatch(str) do
-    if d1 then -- fixed part
-      table.insert(parts, { d1, idx=1 })
-    else       -- list
-      local t = { idx=1 }
-      table.insert(parts, t)
-      for p in d2:gmatch("[^;]+") do
-        local kind, fr, to = GetRange(p)
-        if kind == range_dec then
-          local fmt = fr:sub(1,1)=="0" and ("%0"..#fr.."d") or "%d"
-          fr, to = tonumber(fr), tonumber(to)
-          table.insert(t, { fr=fr; to=to; cur=fr; fmt=fmt; })
-        elseif kind == range_hex then
-          local fmt = fr:sub(1,1)=="0" and ("%0"..#fr.."X") or "%X"
-          if fr:find("[a-f]") or to:find("[a-f]") then fmt = fmt:lower() end
-          fr, to = tonumber(fr,16), tonumber(to,16)
-          table.insert(t, { fr=fr; to=to; cur=fr; fmt=fmt; })
-        elseif kind == range_sym then
-          fr, to = fr:byte(), to:byte()
-          table.insert(t, { fr=fr; to=to; cur=fr; sym=true; })
-        else
-          p = p:gsub("\\([%-\\])", "%1") -- escaped '-', according to help
-          table.insert(t, p)
-        end
-      end
-    end
-  end
-  for i=1,math.huge do
-    table.insert(dirs, GetValue(parts))
-    if not IncIndex(parts) then break end
-    if i%1000 == 0 and CheckEscape(M.ListMsg) then return "break" end
-  end
-  return dirs
-end
-
-local function GetDirs(str)
-  local dirs = {}
-  local st = 1
-  local len = str:len()
-  local text, templ
-
-  while st <= len do -- 1 loop = 1 task
-    if text then
-      local done = false
-      local fr,to,cap = str:find('([;{])', st)
-      if fr and cap==";" then
-        text = text..str:sub(st,fr-1)
-        st = to + 1
-        done = true
-      elseif fr and cap=="{" then
-        text = text..str:sub(st,fr-1)
-        st = fr
-        fr,to,cap = str:find("({[^}]*})",st)
-        if fr == st then
-          text = text..cap
-          st = to + 1
-          templ = true
-        else
-          text = text.."{"
-          st = st + 1
-        end
-      elseif not fr then
-        text = text..str:sub(st)
-        st = len + 1
-      end
-
-      if done or (st > len) then
-        if text:find('"') then error("syntax") end
-        if templ then
-          if DoTemplate(text, dirs) == "break" then return "break" end
-        else
-          table.insert(dirs,text)
-        end
-        text = nil
-      end
-
-    else
-      local fr,to,cap = str:find('"(.-)"',st)
-      if fr == st then
-        if cap ~= "" then table.insert(dirs,cap) end
-        st = to + 1
-      else
-        fr,to = str:find(";+",st)
-        if fr == st then
-          st = to + 1
-        else
-          text = ""
-          templ = false
-        end
-      end
-    end
-  end
-  return dirs
-end
-
 local function GetUserString()
-  local path = FName:match(".+"..DIRSEP)
-  local topic = "<"..path..">Contents"
+  local topic = "<"..ScriptDir..">Contents"
   local eFlags = F.DIF_HISTORY + F.DIF_USELASTHISTORY
   local eHistory = "MkDirHistory"
   local items = {
@@ -254,9 +101,10 @@ local function main()
   str = ApplyAliases(str)
   if not str then return end
 
-  local dirs = GetDirs(str)
-  if type(dirs) == "table" and dirs[1] then
-    local curdir = panel.GetPanelDirectory(nil, 1).Name
+  local grammar = assert(dofile(ScriptDir.."mkdir.grammar"))
+  local dirs = grammar.GetList(str)
+  if dirs then
+    local curdir = panel.GetPanelDirectory(nil,1).Name
     for i,dir in ipairs(dirs) do
       win.CreateDir(win.JoinPath(curdir, dir))
       if i%100 == 0 and CheckEscape(M.DirsMsg) then break end
@@ -266,15 +114,18 @@ local function main()
       local fname = dirs[1]:match(DIRSEP=="/" and "^[^/]+" or "^[^/\\]+")
       Panel.SetPos(0, fname)
     end
+    panel.RedrawPanel(nil, 0) -- redraw passive panel
+    panel.RedrawPanel(nil, 1) -- redraw active panel
+  else
+    ErrMsg(M.SyntaxErr)
   end
-  panel.RedrawPanel(nil, 0) -- redraw passive panel
-  panel.RedrawPanel(nil, 1) -- redraw active panel
 end
 
 if not Macro then
   local command = select(2,...)
   if command == "require" then
-    return { main=main; GetDirs=GetDirs; }
+    local grammar = assert(dofile(ScriptDir.."mkdir.grammar"))
+    return { main=main; GetDirs=grammar.GetList; }
   else
     main()
     return
