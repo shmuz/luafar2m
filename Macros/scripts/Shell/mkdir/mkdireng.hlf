@@ -40,6 +40,7 @@ by enclosing directory name in double quotes.
     #Installation#
     ────────────
     Copy all supplied files into directory #%FARPROFILE%\Macros\scripts\MkDir#
+(Far3) or #~~/.config/far2m/Macros/scripts/MkDir# (Far2m)
 and restart Far. Press the key combination assigned to the macro.
 
 
