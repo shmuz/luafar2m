@@ -45,7 +45,7 @@ local function CheckEscape(text)
 end
 
 local function ApplyAliases(str)
-  -- if 'str''contains no aliases then just return 'str'
+  -- if 'str' contains no aliases then just return 'str'
   local patAlias = "<(%S%S-)>"
   if not str:find(patAlias) then return str end
 
