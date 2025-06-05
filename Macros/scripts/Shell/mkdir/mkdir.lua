@@ -44,6 +44,71 @@ local function CheckEscape(text)
   far.Message(text, M.Title, "")
 end
 
+local function ApplyAliases(str)
+  -- if 'str''contains no aliases then just return 'str'
+  local patAlias = "<(%S%S-)>"
+  if not str:find(patAlias) then return str end
+
+  -- if no alias file found then return nil
+  local fname = "mkdir.alias"
+  local fp = io.open(ScriptDir..fname)
+  if not fp then
+    ErrMsg(M.AliasFile:format(fname))
+    return nil
+  end
+
+  -- collect aliases from the file
+  local patLine = "^%s*(%S+)%s+(.-)%s*$"
+  local map, luamap = {}, {}
+  for line in fp:lines() do
+    if not line:find("^%s*#") then -- if not comment
+      local name,alias = line:match(patLine)
+      if name and alias ~= "" then
+        local key = name:lower()
+        local luakey = key:match("lua:(%S+)")
+        if luakey then luamap[luakey] = alias
+        else map[key] = alias
+        end
+      end
+    end
+  end
+  fp:close(fp)
+
+  -- expand aliases in 'str'
+  local ok = true
+  local env = setmetatable({}, { __index=_G })
+  local function subst(c)
+    if ok then
+      local key = c:lower()
+      local val = map[key]
+      if val then
+        return val -- simple substitution
+      end
+      val = luamap[key]
+      if val then
+        -- substitution with Lua expression
+        local chunk, ret, ok2
+        chunk,ret = loadstring("return "..val)
+        if not chunk then chunk,ret = loadstring(val) end
+        if chunk then
+          setfenv(chunk, env)
+          ok2, ret = pcall(chunk)
+          if ok2 then return tostring(ret)
+          else ErrMsg(ret); ok = false;
+          end
+        else
+          ErrMsg(ret); ok = false;
+        end
+      else -- alias not found
+        ErrMsg(M.AliasErr:format(c)); ok = false;
+      end
+    end
+  end
+  str = str:gsub(patAlias, subst)
+
+  return ok and str
+end
+
 local function GetUserString()
   local topic = "<"..ScriptDir..">Contents"
   local eFlags = F.DIF_HISTORY + F.DIF_USELASTHISTORY
@@ -53,53 +118,21 @@ local function GetUserString()
     {F.DI_TEXT,      5,2, 0,2,  0,0,        0,0,      M.Prompt},
     {F.DI_EDIT,      5,3,70,3,  0,eHistory, 0,eFlags, ""},
   }
-  local ret = far.Dialog(DlgId,-1,-1,76,6,topic,items)
-  if ret and ret >= 1 then return items[3][10] end
-end
-
-local function ApplyAliases(str)
-  local fname = "mkdir.alias"
-  local patLine = "^%s*(%S+)%s+(.-)%s*$"
-  local patAlias = "<(%S%S-)>"
-  local map = {}
-
-  local fp = io.open(ScriptDir..fname)
-  if fp then
-    for line in fp:lines() do
-      if not line:find("^%s*#") then -- if not comment
-        local name,alias = line:match(patLine)
-        if name and alias ~= "" then map[name:lower()]=alias end
-      end
-    end
-    fp:close(fp)
-  else
-    if str:find(patAlias) then
-      ErrMsg(M.AliasFile:format(fname))
-      return nil
+  local str
+  local function proc(hDlg,msg,par1,par2)
+    if msg == F.DN_CLOSE and par1 >= 1 then
+      str = ApplyAliases(hDlg:GetText(3))
+      if not str then return 0 end
     end
   end
-
-  local ok = true
-  str = str:gsub(patAlias,
-    function(c)
-      local val = map[c:lower()]
-      if val == nil then
-        ErrMsg(M.AliasErr:format(c))
-        ok = false
-      end
-      return val
-    end)
-
-  return ok and str
+  local ret = far.Dialog(DlgId,-1,-1,76,6,topic,items,nil,proc)
+  if ret and ret >= 1 then return str end
 end
 
 local function main()
   M = win.GetEnv("FARLANG")=="Russian" and Rus or Eng
   local str = GetUserString()
   if (not str) or str == "" then return end
-
-  str = ApplyAliases(str)
-  if not str then return end
 
   local grammar = assert(dofile(ScriptDir.."mkdir.grammar"))
   local dirs = grammar.GetList(str)

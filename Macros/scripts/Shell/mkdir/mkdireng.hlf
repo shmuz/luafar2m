@@ -6,7 +6,7 @@ $ #Multiple directories creation#
     #About#
     ─────
     This command allows to create multiple directories in one call. Directory
-names in the list separated with ';'. It is possible to specify more complex
+names in the list separated with '#;#'. It is possible to specify more complex
 templates also, described below.
 
 
@@ -35,6 +35,7 @@ by enclosing directory name in double quotes.
     ~Fixed part~@Fixed@
     ~List~@List@
     ~Range~@Range@
+    ~Aliases~@Aliases@
 
 
     #Installation#
@@ -72,6 +73,7 @@ in its own brackets.
     {Beta;Release}\{Disk1;Disk2;Disk3}
          - creates Beta and Release directories, in each of which
            it creates subdirectories Disk1, Disk2 and Disk3.
+
 @Range
 $ #Range#
     You can also use lists with ranges. A range consists of two limit
@@ -106,3 +108,23 @@ depends of letters used in a range limit values.
 
     #Note:# please use caution using complex templates. You could produce many
 directories in case of an error in template.
+
+@Aliases
+$ #Aliases#
+ *  Rename #mkdir.example.alias# to #mkdir.alias#
+ *  The lines starting with ## are ignored
+ *  The lines' format is: alias name followed by space(s) followed by alias value
+ *  Alias names may not contain spaces
+ *  Alias names are case insensitive (foo and FOO is the same alias)
+ *  In the input dialog aliases must be within angle brackets, e.g. #<journey>#
+ 
+ *  If an alias name has a #lua:# prefix then the alias is Lua code that will
+be executed producing the final alias value. The #lua:# prefix must be omitted
+in the input dialog, e.g. alias name #lua:date# corresponds to just #<date>#
+in the dialog.
+
+ #Examples:#
+ ─────────
+ journey   {Documents;Photo;Video;Music}
+ months    {January;February;March;April;May;June;July;August;September;October;November;December}
+ lua:date  os.date("%Y-%m-%d")

@@ -5,6 +5,12 @@
 # Alias names are case insensitive (foo and FOO is the same alias)
 # In the input dialog aliases must be within angle brackets, e.g. <journey>
 
+# If alias name has a "lua:" prefix then the alias is Lua code that will be
+# executed producing the final alias value.
+# The "lua:" prefix must be omitted in the input dialog, e.g. alias name
+# lua:date corresponds to just <date> in the dialog.
+
 # Examples
-journey {Documents;Photo;Video;Music}
-months  {January;February;March;April;May;June;July;August;September;October;November;December}
+journey   {Documents;Photo;Video;Music}
+months    {January;February;March;April;May;June;July;August;September;October;November;December}
+lua:date  os.date("%Y-%m-%d__%H-%M-%S")
