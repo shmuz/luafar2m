@@ -1,7 +1,7 @@
 -- Started:    2025-05-25
 -- Author:     Shmuel Zeigerman
 -- Published:  https://forum.farmanager.com/viewtopic.php?p=180545#p180545
--- Name:       Analogue of MkDir plugin from Igor Grabelnikov
+-- Note:       Inspired by MkDir plugin (https://plugring.farmanager.com/plugin.php?pid=127)
 -- Note:       Written from scratch, the plugin source code was not available
 
 local Eng = {
@@ -93,8 +93,17 @@ local function ApplyAliases(str)
         if chunk then
           setfenv(chunk, env)
           ok2, ret = pcall(chunk)
-          if ok2 then return tostring(ret)
-          else ErrMsg(ret); ok = false;
+          if ok2 then
+            if type(ret) ~= "table" then ret = { ret } end
+            for i=1,#ret do
+              ret[i] = tostring(ret[i])
+              if ret[i]:find("[;{}]") then
+                ret[i] = '"'..ret[i]..'"' -- assumes knowledge about the grammar
+              end
+            end
+            return "{"..table.concat(ret,";").."}" -- assumes knowledge about the grammar
+          else
+            ErrMsg(ret); ok = false;
           end
         else
           ErrMsg(ret); ok = false;

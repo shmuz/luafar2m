@@ -111,20 +111,33 @@ directories in case of an error in template.
 
 @Aliases
 $ #Aliases#
- *  Rename #mkdir.example.alias# to #mkdir.alias#
- *  The lines starting with ## are ignored
- *  The lines' format is: alias name followed by space(s) followed by alias value
- *  Alias names may not contain spaces
- *  Alias names are case insensitive (foo and FOO is the same alias)
- *  In the input dialog aliases must be within angle brackets, e.g. #<journey>#
+ #General information#
+ ───────────────────
+ #*# The aliases are read from #mkdir.alias# file if it exists.
+ #*# The lines starting with ## are ignored
+ #*# The lines' format is: alias name followed by space(s) followed by alias value
+ #*# Alias names may not contain spaces
+ #*# Alias names are case insensitive (foo and FOO is the same alias)
+ #*# In the input dialog aliases must be within angle brackets, e.g. #<journey>#
+
  
- *  If an alias name has a #lua:# prefix then the alias is Lua code that will
-be executed producing the final alias value. The #lua:# prefix must be omitted
-in the input dialog, e.g. alias name #lua:date# corresponds to just #<date>#
-in the dialog.
+ #Lua aliases#
+ ───────────
+ If an alias name has a #lua:# prefix then the alias is Lua code that will
+be executed. The Lua code may be either an expression or a chunk explicitely
+returning a value.
+ - A returned string is used as is.
+ - A returned table causes a ~list~@List@ creation.
+ - In the input dialog the prefix #lua:# should be omitted, e.g. alias name
+#lua:date# corresponds to #<date># in the dialog.
+
 
  #Examples:#
  ─────────
  journey   {Documents;Photo;Video;Music}
  months    {January;February;March;April;May;June;July;August;September;October;November;December}
  lua:date  os.date("%Y-%m-%d")
+ lua:test  t={}; for k=10,100,7 do table.insert(t,k) end; return t
+
+
+ ~Contents~@Contents@
