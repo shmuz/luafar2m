@@ -2,3 +2,4 @@
 _build
 misc
 Macros/scripts/_keyreplace.cfg
+Macros/scripts/Shell/mkdir/mkdir.alias

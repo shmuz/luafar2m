@@ -80,7 +80,7 @@ local function ApplyAliases(str)
     local key = c:lower()
     local val = map[key]
     if val == nil then
-      ErrMsg(M.AliasName:format(c))
+      ErrMsg(M.AliasErr:format(c))
       ok = false
       return
     end
