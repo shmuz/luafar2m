@@ -119,12 +119,18 @@ local function GetUserString()
   local topic = "<"..ScriptDir..">Contents"
   local eFlags = F.DIF_HISTORY + F.DIF_USELASTHISTORY
   local eHistory = "MkDirHistory"
-  local cbstate = IsPassivePanel and 1 or 0
+
+  local cbFlags = 0
+  local cbState = IsPassivePanel and 1 or 0
+  if panel.GetPanelDirectory(nil,0).Name == "" then
+    cbFlags, cbState = F.DIF_DISABLE, 0  -- passive panel is plugin panel
+  end
+
   local items = {
-    {F.DI_DOUBLEBOX, 3,1,72,5,  0,0,         0, 0,      M.Title},
-    {F.DI_TEXT,      5,2, 0,2,  0,0,         0, 0,      M.Prompt},
-    {F.DI_EDIT,      5,3,70,3,  0,eHistory,  0, eFlags, ""},
-    {F.DI_CHECKBOX,  5,4, 0,4,  cbstate, 0,  0, 0,      M.CBoxPassive},
+    {F.DI_DOUBLEBOX, 3,1,72,5,  0,0,         0, 0,       M.Title},
+    {F.DI_TEXT,      5,2, 0,2,  0,0,         0, 0,       M.Prompt},
+    {F.DI_EDIT,      5,3,70,3,  0,eHistory,  0, eFlags,  ""},
+    {F.DI_CHECKBOX,  5,4, 0,4,  cbState, 0,  0, cbFlags, M.CBoxPassive},
   }
   local posEdit, posChbox = 3, 4
   local str
