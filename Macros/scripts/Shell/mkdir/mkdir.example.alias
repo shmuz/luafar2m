@@ -1,20 +1,19 @@
-# Rename "mkdir.example.alias" to "mkdir.alias"
-# The lines starting with # are ignored
-# The lines' format is: alias name followed by space(s) followed by alias value
-# Alias names may not contain spaces
-# Alias names are case insensitive (foo and FOO is the same alias)
-# In the input dialog aliases must be within angle brackets, e.g. <journey>
+-- highlight: lua
 
-# If alias name has a "lua:" prefix then the alias is Lua code that will be
-# executed producing the final alias value. The Lua code may be either an expression
-# or a chunk explicitely returning a value.
-# - a string is used as is.
-# - a table causes a list creation (see the plugin's help about lists).
-# The "lua:" prefix must be omitted in the input dialog, e.g. alias name
-# lua:date corresponds to just <date> in the dialog.
+-- Rename "mkdir.example.alias" to "mkdir.alias".
+-- This is a Lua file despite its extension.
+-- Aliases are the global variables defined in this file.
+-- Alias names are case insensitive (foo and FOO is the same alias).
+-- Every alias may be string, table or function.
+--   * functions: the first returned value is used depending on its type as described below
+--   * tables are converted to lists, e.g. {"foo","bar"} becomes {foo;bar}
+--   * other types are converted to strings
+-- In the input dialog aliases must be within angle brackets, e.g. <journey>
 
-# Examples
-journey   {Documents;Photo;Video;Music}
-months    {January;February;March;April;May;June;July;August;September;October;November;December}
-lua:date  os.date("%Y-%m-%d__%H-%M-%S")
-lua:test  t={}; for k=10,100,7 do table.insert(t,k) end; return t
+-- # Examples
+journey = "{Documents;Photo;Video;Music}"
+months  = "{January;February;March;April;May;June;July;August;September;October;November;December}"
+месяцы  = "{Январь;Февраль;Март;Апрель;Май;Июнь;Июль;Август;Сентябрь;Октябрь;Ноябрь;Декабрь}"
+date    = os.date("%Y-%m-%d__%H-%M-%S")
+fruit   = { "apple", "pear", "cherry" }
+test    = function() local t={}; for k=10,100,7 do table.insert(t,k) end; return t; end

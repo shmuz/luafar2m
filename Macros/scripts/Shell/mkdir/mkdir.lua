@@ -49,72 +49,66 @@ local function ApplyAliases(str)
   local patAlias = "<(%S%S-)>"
   if not str:find(patAlias) then return str end
 
-  -- if no alias file found then return nil
+  local ok, chunk, msg
+
+  -- load the alias file
   local fname = "mkdir.alias"
-  local fp = io.open(ScriptDir..fname)
-  if not fp then
-    ErrMsg(M.AliasFile:format(fname))
-    return nil
+  chunk, msg = loadfile(ScriptDir..fname)
+  if not chunk then
+    ErrMsg(msg); return nil
   end
 
-  -- collect aliases from the file
-  local patLine = "^%s*(%S+)%s+(.-)%s*$"
-  local map, luamap = {}, {}
-  for line in fp:lines() do
-    if not line:find("^%s*#") then -- if not comment
-      local name,alias = line:match(patLine)
-      if name and alias ~= "" then
-        local key = name:lower()
-        local luakey = key:match("lua:(%S+)")
-        if luakey then luamap[luakey] = alias
-        else map[key] = alias
-        end
-      end
-    end
+  -- run the alias file
+  local env = setmetatable({}, {__index=_G})
+  setfenv(chunk, env)
+  ok, msg = pcall(chunk)
+  if not ok then
+    ErrMsg(msg); return nil
   end
-  fp:close(fp)
+
+  -- convert all aliases' names to lower case
+  local map = {}
+  for k,v in pairs(env) do
+    if type(k) == "string" then map[k:lower()] = v end
+  end
 
   -- expand aliases in 'str'
-  local ok = true
-  local env = setmetatable({}, { __index=_G })
+  ok = true
   local function subst(c)
-    if ok then
-      local key = c:lower()
-      local val = map[key]
-      if val then
-        return val -- simple substitution
-      end
-      val = luamap[key]
-      if val then
-        -- substitution with Lua expression
-        local chunk, ret, ok2
-        chunk,ret = loadstring("return "..val)
-        if not chunk then chunk,ret = loadstring(val) end
-        if chunk then
-          setfenv(chunk, env)
-          ok2, ret = pcall(chunk)
-          if ok2 then
-            if type(ret) ~= "table" then ret = { ret } end
-            for i=1,#ret do
-              ret[i] = tostring(ret[i])
-              if ret[i]:find("[;{}]") then
-                ret[i] = '"'..ret[i]..'"' -- assumes knowledge about the grammar
-              end
-            end
-            return "{"..table.concat(ret,";").."}" -- assumes knowledge about the grammar
-          else
-            ErrMsg(ret); ok = false;
-          end
-        else
-          ErrMsg(ret); ok = false;
-        end
-      else -- alias not found
-        ErrMsg(M.AliasErr:format(c)); ok = false;
+    if not ok then return end
+
+    local key = c:lower()
+    local val = map[key]
+    if val == nil then
+      ErrMsg(M.AliasName:format(c))
+      ok = false
+      return
+    end
+
+    if type(val) == "function" then -- use the first return value
+      setfenv(val, env)
+      ok, val = pcall(val)
+      if not ok then
+        ErrMsg(val)
+        return
       end
     end
-  end
-  str = str:gsub(patAlias, subst)
 
+    if type(val) == "table" then
+      for i=1,#val do
+        val[i] = tostring(val[i])
+        if val[i]:find("[;{}]") then
+          val[i] = '"'..val[i]..'"' -- assumes knowledge about the grammar
+        end
+      end
+      return "{"..table.concat(val,";").."}" -- assumes knowledge about the grammar
+    else
+      return tostring(val)
+    end
+
+  end
+
+  str = str:gsub(patAlias, subst)
   return ok and str
 end
 
