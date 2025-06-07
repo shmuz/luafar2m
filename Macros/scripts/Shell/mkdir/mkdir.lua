@@ -5,25 +5,27 @@
 -- Note:       Written from scratch, the plugin source code was not available
 
 local Eng = {
-  Title     = "Make folders";
-  BreakOp   = "Break the operation?";
-  ListMsg   = "Creating the list.\nPlease wait...";
-  DirsMsg   = "Creating directories.\nPlease wait...";
-  Prompt    = "Create the folder (templates can be used)";
-  AliasErr  = "Alias <%s> not found";
-  AliasFile = "Can't process aliases as '%s' not found";
-  SyntaxErr = "Syntax error in the input data";
+  Title       = "Make directories";
+  BreakOp     = "Break the operation?";
+  ListMsg     = "Creating the list.\nPlease wait...";
+  DirsMsg     = "Creating directories.\nPlease wait...";
+  Prompt      = "&Create the directory";
+  AliasErr    = "Alias <%s> not found";
+  AliasFile   = "Can't process aliases as '%s' not found";
+  SyntaxErr   = "Syntax error in the input data";
+  CBoxPassive = "on the &Passive panel";
 }
 
 local Rus = {
-  Title     = "Создание папок";
-  BreakOp   = "Прервать операцию?";
-  ListMsg   = "Создаётся список.\nПожалуйста ждите...";
-  DirsMsg   = "Создаются папки.\nПожалуйста ждите...";
-  Prompt    = "Создать папку (можно использовать шаблоны)";
-  AliasErr  = "Псевдоним <%s> не найден";
-  AliasFile = "Невозможно обработать псевдонимы: '%s' не найден";
-  SyntaxErr = "Ошибка синтаксиса во входных данных";
+  Title       = "Создание папок";
+  BreakOp     = "Прервать операцию?";
+  ListMsg     = "Создаётся список.\nПожалуйста ждите...";
+  DirsMsg     = "Создаются папки.\nПожалуйста ждите...";
+  Prompt      = "&Создать папку";
+  AliasErr    = "Псевдоним <%s> не найден";
+  AliasFile   = "Невозможно обработать псевдонимы: '%s' не найден";
+  SyntaxErr   = "Ошибка синтаксиса во входных данных";
+  CBoxPassive = "на &Пассивной панели";
 }
 
 local DIRSEP = package.config:sub(1,1)
@@ -32,6 +34,7 @@ local M = Eng -- localization table
 local DlgId = win.Uuid("CC48FA63-B031-4F2D-952E-43FC642722DB")
 local FName = _filename or ...
 local ScriptDir = FName:match(".+"..DIRSEP)
+local IsPassivePanel = false
 
 local function ErrMsg(str)
   far.Message(str, M.Title, ";OK", "w")
@@ -116,19 +119,23 @@ local function GetUserString()
   local topic = "<"..ScriptDir..">Contents"
   local eFlags = F.DIF_HISTORY + F.DIF_USELASTHISTORY
   local eHistory = "MkDirHistory"
+  local cbstate = IsPassivePanel and 1 or 0
   local items = {
-    {F.DI_DOUBLEBOX, 3,1,72,4,  0,0,        0,0,      M.Title},
-    {F.DI_TEXT,      5,2, 0,2,  0,0,        0,0,      M.Prompt},
-    {F.DI_EDIT,      5,3,70,3,  0,eHistory, 0,eFlags, ""},
+    {F.DI_DOUBLEBOX, 3,1,72,5,  0,0,         0, 0,      M.Title},
+    {F.DI_TEXT,      5,2, 0,2,  0,0,         0, 0,      M.Prompt},
+    {F.DI_EDIT,      5,3,70,3,  0,eHistory,  0, eFlags, ""},
+    {F.DI_CHECKBOX,  5,4, 0,4,  cbstate, 0,  0, 0,      M.CBoxPassive},
   }
+  local posEdit, posChbox = 3, 4
   local str
   local function proc(hDlg,msg,par1,par2)
     if msg == F.DN_CLOSE and par1 >= 1 then
-      str = ApplyAliases(hDlg:GetText(3))
+      str = ApplyAliases(hDlg:GetText(posEdit))
       if not str then return 0 end
+      IsPassivePanel = hDlg:GetCheck(posChbox) ~= 0
     end
   end
-  local ret = far.Dialog(DlgId,-1,-1,76,6,topic,items,nil,proc)
+  local ret = far.Dialog(DlgId,-1,-1,76,7,topic,items,nil,proc)
   if ret and ret >= 1 then return str end
 end
 
@@ -140,13 +147,14 @@ local function main()
   local grammar = assert(dofile(ScriptDir.."mkdir.grammar"))
   local dirs = grammar.GetList(str)
   if dirs then
-    local curdir = panel.GetPanelDirectory(nil,1).Name
+    local numPanel = IsPassivePanel and 0 or 1
+    local curdir = panel.GetPanelDirectory(nil,numPanel).Name
     for i,dir in ipairs(dirs) do
       win.CreateDir(win.JoinPath(curdir, dir))
       if i%100 == 0 and CheckEscape(M.DirsMsg) then break end
     end
-    panel.UpdatePanel(nil, 1) -- update active panel
-    if Panel then
+    panel.UpdatePanel(nil, numPanel)
+    if Panel and not IsPassivePanel then
       local fname = dirs[1]:match(DIRSEP=="/" and "^[^/]+" or "^[^/\\]+")
       Panel.SetPos(0, fname)
     end
