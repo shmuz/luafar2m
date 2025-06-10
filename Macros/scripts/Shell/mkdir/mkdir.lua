@@ -160,6 +160,7 @@ local function GetTheList()
     if msg == F.DN_BTNCLICK and par1 == posPreview then
       local list = get_list(hDlg)
       if list then
+        for i,v in ipairs(list) do list[i] = { text=v } end
         far.Menu({Title=M.MenuPreview; Bottom="["..#list.."]"}, list)
       end
       hDlg:SetFocus(posEdit)
