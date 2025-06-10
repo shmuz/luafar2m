@@ -14,6 +14,8 @@ local Eng = {
   AliasFile   = "Can't process aliases as '%s' not found";
   SyntaxErr   = "Syntax error in the input data";
   CBoxPassive = "on the &Passive panel";
+  MenuPreview = "Preview";
+  BtnPreview  = "P&review";
 }
 
 local Rus = {
@@ -26,6 +28,8 @@ local Rus = {
   AliasFile   = "Невозможно обработать псевдонимы: '%s' не найден";
   SyntaxErr   = "Ошибка синтаксиса во входных данных";
   CBoxPassive = "на &Пассивной панели";
+  MenuPreview = "Предпросмотр";
+  BtnPreview  = "П&редпросмотр";
 }
 
 local DIRSEP = package.config:sub(1,1)
@@ -35,6 +39,7 @@ local DlgId = win.Uuid("CC48FA63-B031-4F2D-952E-43FC642722DB")
 local FName = _filename or ...
 local ScriptDir = FName:match(".+"..DIRSEP)
 local IsPassivePanel = false
+local Grammar
 
 local function ErrMsg(str)
   far.Message(str, M.Title, ";OK", "w")
@@ -115,11 +120,15 @@ local function ApplyAliases(str)
   return ok and str
 end
 
-local function GetUserString()
+local function GetTheList()
   local topic = "<"..ScriptDir..">Contents"
   local eFlags = F.DIF_HISTORY + F.DIF_USELASTHISTORY
   local eHistory = "MkDirHistory"
+  local W = 70
+  local OutList
 
+  local btFlags = F.DIF_BTNNOCLOSE
+  local btX1 = W - 3 - M.BtnPreview:len()
   local cbFlags = 0
   local cbState = IsPassivePanel and 1 or 0
   if panel.GetPanelDirectory(nil,0).Name == "" then
@@ -127,31 +136,52 @@ local function GetUserString()
   end
 
   local items = {
-    {F.DI_DOUBLEBOX, 3,1,72,5,  0,0,         0, 0,       M.Title},
-    {F.DI_TEXT,      5,2, 0,2,  0,0,         0, 0,       M.Prompt},
-    {F.DI_EDIT,      5,3,70,3,  0,eHistory,  0, eFlags,  ""},
-    {F.DI_CHECKBOX,  5,4, 0,4,  cbState, 0,  0, cbFlags, M.CBoxPassive},
+    {F.DI_DOUBLEBOX, 3,    1, W+2, 5,  0, 0,        0, 0,       M.Title},
+    {F.DI_TEXT,      5,    2,   0, 2,  0, 0,        0, 0,       M.Prompt},
+    {F.DI_EDIT,      5,    3,   W, 3,  0, eHistory, 0, eFlags,  ""},
+    {F.DI_CHECKBOX,  5,    4,   0, 4,  cbState, 0,  0, cbFlags, M.CBoxPassive},
+    {F.DI_BUTTON,    btX1, 4,   0, 4,  0, 0,        0, btFlags, M.BtnPreview},
   }
-  local posEdit, posChbox = 3, 4
-  local str
-  local function proc(hDlg,msg,par1,par2)
-    if msg == F.DN_CLOSE and par1 >= 1 then
-      str = ApplyAliases(hDlg:GetText(posEdit))
-      if not str then return 0 end
-      IsPassivePanel = hDlg:GetCheck(posChbox) ~= 0
+  local posEdit, posChbox, posPreview = 3, 4, 5
+
+  local function get_list(hDlg)
+    local str = ApplyAliases(hDlg:GetText(posEdit))
+    if str then
+      Grammar = Grammar or assert(dofile(ScriptDir.."mkdir.grammar"))
+      local list = Grammar.GetList(str)
+      if not list then
+        ErrMsg(M.SyntaxErr)
+      end
+      return list
     end
   end
-  local ret = far.Dialog(DlgId,-1,-1,76,7,topic,items,nil,proc)
-  if ret and ret >= 1 then return str end
+
+  local function proc(hDlg, msg, par1, par2)
+    if msg == F.DN_BTNCLICK and par1 == posPreview then
+      local list = get_list(hDlg)
+      if list then
+        far.Menu({Title=M.MenuPreview; Bottom="["..#list.."]"}, list)
+      end
+      hDlg:SetFocus(posEdit)
+
+    elseif msg == F.DN_CLOSE and par1 >= 1 then
+      OutList = get_list(hDlg)
+      if OutList then
+        IsPassivePanel = hDlg:GetCheck(posChbox) ~= 0
+      else
+        return 0
+      end
+
+    end
+  end
+
+  local ret = far.Dialog(DlgId, -1,-1,W+6,7, topic,items,nil,proc)
+  if ret and ret >= 1 then return OutList end
 end
 
 local function main()
   M = win.GetEnv("FARLANG")=="Russian" and Rus or Eng
-  local str = GetUserString()
-  if (not str) or str == "" then return end
-
-  local grammar = assert(dofile(ScriptDir.."mkdir.grammar"))
-  local dirs = grammar.GetList(str)
+  local dirs = GetTheList()
   if dirs then
     local numPanel = IsPassivePanel and 0 or 1
     local curdir = panel.GetPanelDirectory(nil,numPanel).Name
@@ -166,8 +196,6 @@ local function main()
     end
     panel.RedrawPanel(nil, 0) -- redraw passive panel
     panel.RedrawPanel(nil, 1) -- redraw active panel
-  else
-    ErrMsg(M.SyntaxErr)
   end
 end
 
