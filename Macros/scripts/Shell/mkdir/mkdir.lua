@@ -7,7 +7,6 @@
 local Eng = {
   Title       = "Make directories";
   BreakOp     = "Break the operation?";
-  ListMsg     = "Creating the list.\nPlease wait...";
   DirsMsg     = "Creating directories.\nPlease wait...";
   Prompt      = "&Create the directory";
   AliasErr    = "Alias <%s> not found";
@@ -16,12 +15,12 @@ local Eng = {
   CBoxPassive = "on the &Passive panel";
   MenuPreview = "Preview";
   BtnPreview  = "P&review";
+  ErrFarVer   = "This script requires %s or newer";
 }
 
 local Rus = {
   Title       = "Создание папок";
   BreakOp     = "Прервать операцию?";
-  ListMsg     = "Создаётся список.\nПожалуйста ждите...";
   DirsMsg     = "Создаются папки.\nПожалуйста ждите...";
   Prompt      = "&Создать папку";
   AliasErr    = "Псевдоним <%s> не найден";
@@ -30,6 +29,7 @@ local Rus = {
   CBoxPassive = "на &Пассивной панели";
   MenuPreview = "Предпросмотр";
   BtnPreview  = "П&редпросмотр";
+  ErrFarVer   = "Данному скрипту требуется %s или новее";
 }
 
 local DIRSEP = package.config:sub(1,1)
@@ -43,6 +43,15 @@ local Grammar
 
 local function ErrMsg(str)
   far.Message(str, M.Title, ";OK", "w")
+end
+
+local function CheckFarVersion()
+  if (require "lpeg").utfR then
+    return true
+  else
+    local ver = DIRSEP=="\\" and "FAR 3.0.6381" or "far2m 2024-10-10"
+    ErrMsg(M.ErrFarVer:format(ver))
+  end
 end
 
 local function CheckEscape(text)
@@ -182,7 +191,7 @@ end
 
 local function main()
   M = win.GetEnv("FARLANG")=="Russian" and Rus or Eng
-  local dirs = GetTheList()
+  local dirs = CheckFarVersion() and GetTheList()
   if dirs then
     local numPanel = IsPassivePanel and 0 or 1
     local curdir = panel.GetPanelDirectory(nil,numPanel).Name
