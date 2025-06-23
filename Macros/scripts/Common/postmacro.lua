@@ -3,6 +3,7 @@
 -- Author:                  Shmuel Zeigerman
 -- Published:               2015-11-24 (https://forum.farmanager.com/viewtopic.php?f=60&t=9940)
 -- Language:                Lua 5.1
+-- Portability:             far3 (>= 3777), far2m
 -- Far plugin:              LuaMacro
 -- Dependencies:            Lua module far2.simpledialog
 ------------------------------------------------------------------------------------------------
@@ -16,6 +17,7 @@ local DB_Key   = "shmuz"
 local DB_Name  = "Post macro"
 local osWindows = package.config:sub(1,1) == "\\"
 local F = far.Flags
+local SendMsg = far.SendDlgMessage
 
 -- Options
 local DefaultOpt = {
@@ -24,15 +26,17 @@ local DefaultOpt = {
   loop = false;   -- true: call the dialog again after the macro execution is finished
 }
 
-local ExpandEnv, GetPanelInfo
+local GetPanelInfo = function(whatPanel)
+  return panel.GetPanelInfo(nil, whatPanel)
+end
+
+local ExpandEnv
 if osWindows then
   local build = select(4, far.AdvControl("ACTL_GETFARMANAGERVERSION",true))
   if build < 3777 then return end
   ExpandEnv = function(aStr) return (aStr:gsub("%%(.-)%%", win.GetEnv)) end
-  GetPanelInfo = function(whatPanel) return panel.GetPanelInfo(nil,whatPanel) end
 else
   ExpandEnv = win.ExpandEnv
-  GetPanelInfo = panel.GetPanelInfo
 end
 
 local Env = {}
@@ -90,7 +94,7 @@ local function GetText (aOpt)
   end
 
   local function set_ext(hDlg)
-    local ext = hDlg:GetCheck(Pos.moon)==F.BSTATE_CHECKED and "moon" or "lua"
+    local ext = SendMsg(hDlg, "DM_GETCHECK", Pos.moon)==F.BSTATE_CHECKED and "moon" or "lua"
     Elem.sequence.ext, Elem.params.ext = ext, ext
   end
 
@@ -115,8 +119,8 @@ local function GetText (aOpt)
     if not f then far.Message(msg, Title, nil, "w"); return 0; end
     f2, msg = loadstring("return "..tOut.params)
     if not f2 then far.Message(msg, Title, nil, "w"); return 0; end
-    hDlg:AddHistory(Pos.sequence, tOut.sequence)
-    hDlg:AddHistory(Pos.params, tOut.params)
+    SendMsg(hDlg, "DM_ADDHISTORY", Pos.sequence, tOut.sequence)
+    SendMsg(hDlg, "DM_ADDHISTORY", Pos.params, tOut.params)
   end
 
   Items.proc = function(hDlg, Msg, Par1, Par2)
