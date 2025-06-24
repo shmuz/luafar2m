@@ -4,7 +4,7 @@
 -- Author:                  Shmuel Zeigerman
 -- Published:               2015-10-29 (http://forum.farmanager.com/viewtopic.php?p=133298#p133298)
 -- Language:                Lua 5.1
--- Minimal Far version:     3.0.3300 (Windows), 2.4 (Linux)
+-- Portability:             far3 (>= 3300), far2m
 -- Far plugin:              LuaMacro, LF4Editor, LFSearch, LFHistory (any of them)
 -- Depends on:              Lua modules 'far2.simpledialog' and 'far2.settings'
 ------------------------------------------------------------------------------------------------
@@ -12,11 +12,12 @@
 -- OPTIONS --
 local OptAddToPluginsMenu = true
 local OptUseMacro = true
+local OptMacroKey = "CtrlShiftP"
 -- END OF OPTIONS --
 
 local dirsep = package.config:sub(1,1)
-local osWindows = dirsep == "\\"
 local F = far.Flags
+local SendMsg = far.SendDlgMessage
 
 local thisDir do
   -- handle the script argument to ensure correct work in both LuaMacro and LF4Ed plugins
@@ -25,8 +26,8 @@ local thisDir do
   if type(arg)=="string" then thisDir = mf and arg:match(".+"..dirsep) or arg end -- LuaMacro or LF4Ed
 end
 
-local SETTINGS_KEY  = osWindows and "Duplicate Fighter" or "shmuz"
-local SETTINGS_NAME = osWindows and "settings"          or "Duplicate Fighter"
+local SETTINGS_KEY  = "shmuz"
+local SETTINGS_NAME = "Duplicate Fighter"
 
 local mEng = {
   OK          = "OK";
@@ -180,16 +181,16 @@ local function Main()
   local Pos = dlg:Indexes()
 
   local initaction = function(hDlg)
-    local val = osWindows and (ST.useexpr and 1 or 0) or ST.useexpr
-    hDlg:Enable(Pos.toboolean, val)
-    hDlg:Enable(Pos.lbExpr, val)
-    hDlg:Enable(Pos.edExpr, val)
+    local val = ST.useexpr and 1 or 0
+    SendMsg(hDlg, F.DM_ENABLE, Pos.toboolean, val)
+    SendMsg(hDlg, F.DM_ENABLE, Pos.lbExpr,    val)
+    SendMsg(hDlg, F.DM_ENABLE, Pos.edExpr,    val)
   end
 
   local useexpr_action = function(hDlg, p2)
-    hDlg:Enable(Pos.toboolean, p2)
-    hDlg:Enable(Pos.lbExpr, p2)
-    hDlg:Enable(Pos.edExpr, p2)
+    SendMsg(hDlg, F.DM_ENABLE, Pos.toboolean, p2)
+    SendMsg(hDlg, F.DM_ENABLE, Pos.lbExpr,    p2)
+    SendMsg(hDlg, F.DM_ENABLE, Pos.edExpr,    p2)
   end
 
   local function GetFunc(txt)
@@ -238,7 +239,7 @@ if Macro then
     Macro {
       id="7DDF4974-C0B4-4333-BEAE-B7C3A30AF7F2";
       description = M.TITLE;
-      area="Editor"; key="CtrlShiftP"; action=Main;
+      area="Editor"; key=OptMacroKey; action=Main;
     }
   end
   if OptAddToPluginsMenu and MenuItem then
