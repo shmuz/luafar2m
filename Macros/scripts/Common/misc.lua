@@ -75,9 +75,17 @@ Macro {
   end;
 }
 
+Macro {
+  description="Show User Menu";
+  area="Common"; key="F2";
+  id="35358025-B0E1-4D42-8DCC-FD1AA734E229";
+  action=function()
+    mf.usermenu()
+  end;
+}
+
 NoMacro {
   description="Key logger";
   area="Common"; key="/.+/";
   condition=function(key) far.Log(key) end;
 }
-

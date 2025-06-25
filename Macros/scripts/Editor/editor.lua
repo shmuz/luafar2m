@@ -1,17 +1,6 @@
 local F = far.Flags
 
 Macro {
-  id="064E3824-0517-4E07-88CD-32334D3EB490";
-  description="Use CtrlS for saving files instead of F2";
-  area="Editor"; key="CtrlS F2";
-  action = function()
-    if akey(1,1)=="CtrlS" then Keys("F2")
-    elseif akey(1,1)=="F2" then mf.usermenu()
-    end
-  end;
-}
-
-Macro {
   id="4210FF9C-A661-42B8-9D9A-FF9373B5FA9E";
   description="Insert new GUID";
   area="Editor"; key="CtrlF11";
