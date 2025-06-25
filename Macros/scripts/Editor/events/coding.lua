@@ -1,10 +1,11 @@
+------------------------------------------------------------------------------------------------
 -- Started              : 2021-03-06
--- Platform             : Windows/Far3, Linux/far2m
--- Minimal Far3 version : 3.0.3300
+-- Portability          : far3 (>= 3300), far2m
 -- Far plugin           : Either LuaMacro or LF4Ed
 -- Description          : Customize the following operations in the Far Editor:
 --                        (1) indent on Enter press (configurable per file extension)
 --                        (2) dedent on Backspace press
+------------------------------------------------------------------------------------------------
 
 local F = far.Flags
 local osWindows = package.config:sub(1,1) == "\\"
