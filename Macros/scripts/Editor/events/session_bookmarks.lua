@@ -1,29 +1,40 @@
--- http://forum.farmanager.com/viewtopic.php?p=141574#p141574
+------------------------------------------------------------------------------------------------
+-- Started              : 2016-11-11 (?)
+-- Author               : Shmuel Zeigerman
+-- Portability          : far3 (>= 4834), far2m
+-- Far plugin           : Either LuaMacro or LF4Ed (?)
+-- Published            : http://forum.farmanager.com/viewtopic.php?p=141574#p141574
+------------------------------------------------------------------------------------------------
+
+local F = far.Flags
+if not F.ECF_AUTODELETE then
+  return
+end
+local colorFlags = F.ECF_AUTODELETE + (F.ECF_TABMARKFIRST or 0) +
+    (F.ECF_TABMARKCURRENT or 0) -- luacheck: ignore 143 (undefined field)
 
 -------- Settings --------
 local Color = 0xCF
+local ColorPriority = 500
 --------------------------
-
-local F = far.Flags
-local colorFlags = F.ECF_AUTODELETE
 
 Event {
   description="EE_REDRAW: session Bookmarks";
   group="EditorEvent";
   action=function(EditorId, Event, Param)
     if Event==F.EE_REDRAW then
-      local Arr = editor.GetSessionBookmarks()
+      local Arr = editor.GetSessionBookmarks(EditorId)
       if Arr and Arr[1] then
-        local Info = editor.GetInfo()
+        local Info = editor.GetInfo(EditorId)
         for _,v in ipairs(Arr) do
-          editor.AddColor(nil,v.Line,Info.LeftPos,Info.LeftPos,colorFlags,Color)
+          editor.AddColor(EditorId,v.Line,Info.LeftPos,Info.LeftPos,colorFlags,Color,ColorPriority)
         end
       end
     end
   end
 }
 
-local function SetPosition(bm, info) -- info is currently not used
+local function SetPosition(bm)
   editor.SetPosition(nil, bm.Line, bm.Cursor, nil, bm.Line-bm.ScreenLine+1, bm.LeftPos)
 end
 
@@ -37,7 +48,7 @@ local function Goto(forward)
   for i,v in ipairs(Arr) do
     if not v.index then
       local bm = Arr[ forward and (i<#Arr and i+1 or 1) or (i>1 and i-1 or #Arr) ]
-      SetPosition(bm, Info)
+      SetPosition(bm)
       break
     end
   end
@@ -48,21 +59,22 @@ local function BookmarksMenu()
   local properties = {Title="Bookmarks", Bottom="Keys: Enter Del Esc", Flags=F.FMENU_AUTOHIGHLIGHT+F.FMENU_WRAPMODE}
   local bkeys = {{BreakKey="DELETE"}}
   while Info do
-    local Arr = editor.GetSessionBookmarks() or {}
+    local Arr = editor.GetSessionBookmarks()
+    if not Arr then break end
     for i,v in ipairs(Arr) do v.index=i end
     table.sort(Arr, function(a,b) return a.Line < b.Line end)
     local items = {}
     for i,v in ipairs(Arr) do
       local ch = i<10 and i or i<36 and string.char(i+55)
-      ch =  (ch and ch..". " or "") .. editor.GetString(nil,v.Line,2)
+      ch =  (ch and ch..". " or "") .. editor.GetString(nil,v.Line,3)
       items[i] = { text=ch; bm=v }
     end
     local v,pos = far.Menu(properties, items, bkeys)
     if not v then break end
     if v.BreakKey=="DELETE" then
-      if items[pos] then editor.DeleteSessionBookmark(nil,items[pos].bm.index) end
+      if items[pos] then editor.DeleteSessionBookmark(nil, items[pos].bm.index) end
     else
-      SetPosition(v.bm, Info); break
+      SetPosition(v.bm); break
     end
   end
 end
@@ -73,7 +85,8 @@ Macro {
   area="Editor"; key="ShiftF9";
   action=function()
     local Info = editor.GetInfo()
-    local Arr = editor.GetSessionBookmarks() or {}
+    local Arr = editor.GetSessionBookmarks()
+    if not (Info and Arr) then return end
     local deleted
     for i,v in ipairs(Arr) do
       if v.Line == Info.CurLine then editor.DeleteSessionBookmark(nil,i); deleted=true; end
