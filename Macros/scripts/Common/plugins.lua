@@ -5,6 +5,7 @@
 -- Language:                Lua 5.1
 -- Portability:             far3 (>= 4831), far2m
 -- Far plugin:              LuaMacro, LF4Editor
+-- Dependencies:            far2.lua_explorer (Lua module)
 ------------------------------------------------------------------------------------------------
 
 -- Settings
