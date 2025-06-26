@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------------------------
--- Started              : 2016-11-11 (?)
+-- Started              : 2016-11-11
 -- Author               : Shmuel Zeigerman
 -- Portability          : far3 (>= 4834), far2m
 -- Far plugin           : Either LuaMacro or LF4Ed (?)
