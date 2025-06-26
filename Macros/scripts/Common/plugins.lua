@@ -1,6 +1,11 @@
--- started    : 2011-02-20
--- far2m port : 2023-01-11
--- forum      : https://forum.farmanager.com/viewtopic.php?t=13263
+------------------------------------------------------------------------------------------------
+-- Started:                 2011-02-20
+-- Author:                  Shmuel Zeigerman
+-- Published:               https://forum.farmanager.com/viewtopic.php?t=13263
+-- Language:                Lua 5.1
+-- Portability:             far3 (>= 4831), far2m
+-- Far plugin:              LuaMacro, LF4Editor
+------------------------------------------------------------------------------------------------
 
 -- Settings
 local macrokey     = "AltShiftF11"
