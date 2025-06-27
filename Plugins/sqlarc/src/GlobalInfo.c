@@ -9,6 +9,7 @@ SHAREDSYMBOL void WINAPI GetGlobalInfoW(struct GlobalInfo *aInfo)
   aInfo->Title         = L"Sqlarc";
   aInfo->Description   = L"Sqlarc, plugin for Far Manager";
   aInfo->Author        = L"Shmuel Zeigerman";
+  aInfo->UseMenuGuids  = 0;
 }
 //---------------------------------------------------------------------------
 

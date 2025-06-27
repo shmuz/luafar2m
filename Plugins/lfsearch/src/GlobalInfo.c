@@ -9,6 +9,7 @@ SHAREDSYMBOL void WINAPI GetGlobalInfoW(struct GlobalInfo *aInfo)
   aInfo->Title         = L"LuaFAR Search";
   aInfo->Description   = L"Plugin for search and replace";
   aInfo->Author        = L"Shmuel Zeigerman";
+  aInfo->UseMenuGuids  = 0;
 }
 //---------------------------------------------------------------------------
 

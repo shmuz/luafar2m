@@ -9,6 +9,7 @@ SHAREDSYMBOL void WINAPI GetGlobalInfoW(struct GlobalInfo *aInfo)
   aInfo->Title         = L"Lua Panel";
   aInfo->Description   = L"Panel-mode Lua-state browser";
   aInfo->Author        = L"Shmuel Zeigerman";
+  aInfo->UseMenuGuids  = 0;
 }
 //---------------------------------------------------------------------------
 

@@ -9,6 +9,7 @@ SHAREDSYMBOL void WINAPI GetGlobalInfoW(struct GlobalInfo *aInfo)
   aInfo->Title         = L"LuaFAR for Editor";
   aInfo->Description   = L"A host for scripts and script packets";
   aInfo->Author        = L"Shmuel Zeigerman";
+  aInfo->UseMenuGuids  = 0;
 }
 //---------------------------------------------------------------------------
 

@@ -9,6 +9,7 @@ SHAREDSYMBOL void WINAPI GetGlobalInfoW(struct GlobalInfo *aInfo)
   aInfo->Title         = L"Polygon";
   aInfo->Description   = L"Plugin for viewing and editing SQLite3 database files";
   aInfo->Author        = L"Artem Senichev, Shmuel Zeigerman";
+  aInfo->UseMenuGuids  = 0;
 }
 //---------------------------------------------------------------------------
 
