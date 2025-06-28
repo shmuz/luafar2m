@@ -1,4 +1,10 @@
--- Started: 2016-02-28
+------------------------------------------------------------------------------------------------
+-- Started:                 2016-02-28
+-- Author:                  Shmuel Zeigerman
+-- Language:                Lua 5.1
+-- Portability:             far3 (>= 3300), far2m
+-- Far plugin:              LuaMacro
+------------------------------------------------------------------------------------------------
 -- Goal: pick some text from current editor line into dialog input field
 -- What is picked:
 --   (a) if some text in the line is selected - that text is picked
@@ -10,6 +16,9 @@
 -- SETTINGS
 local pattern = regex.new("(\\w+)")
 -- END OF SETTINGS
+
+local F = far.Flags
+local Send = far.SendDlgMessage
 
 local function GetTextFromEditor (curtext)
   local line = editor.GetString()
@@ -35,14 +44,17 @@ local function GetTextFromEditor (curtext)
 end
 
 Macro {
-  id="BD8E52B8-D85A-4EE3-BE69-BCC0C72CCED3";
   description="Pick word under editor cursor";
   area="Dialog"; key="CtrlShiftW";
   action=function()
-    local tp = Dlg.ItemType
-    if tp==4 or tp==6 or tp==10 then -- edit/fixedit/combobox
-      local text = GetTextFromEditor(Dlg.GetValue(-1,0))
-      if text then Keys("CtrlY"); print(text); end
+    local dinfo = far.AdvControl("ACTL_GETWINDOWINFO", nil)
+    if dinfo then
+      local nfocus = Send(dinfo.Id, "DM_GETFOCUS")
+      local ditem = Send(dinfo.Id, "DM_GETDLGITEM", nfocus)
+      if ditem and (ditem[1]==F.DI_EDIT or ditem[1]==F.DI_FIXEDIT or ditem[1]==F.DI_COMBOBOX) then
+        local text = GetTextFromEditor(ditem[10])
+        if text then Send(dinfo.Id, "DM_SETTEXT", nfocus, text) end
+      end
     end
   end;
 }
