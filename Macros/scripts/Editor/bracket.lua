@@ -1,4 +1,11 @@
--- bracket.lua
+------------------------------------------------------------------------------------------------
+-- Started:                 2006-02-09
+-- Author:                  Shmuel Zeigerman
+-- Published:               2007-08-10 (https://forum.farmanager.com/viewtopic.php?p=26092#p26092)
+-- Language:                Lua 5.1
+-- Portability:             far3 (>= 3300), far2m
+-- Far plugin:              LuaMacro, LF4Editor, LFSearch, LFHistory (any of them)
+------------------------------------------------------------------------------------------------
 
 local function FastGetString (num)
   return editor.GetString(nil, num, 2)
