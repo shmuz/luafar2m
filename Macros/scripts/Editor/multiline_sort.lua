@@ -1,22 +1,18 @@
--- Started               : 2021-01-20
--- Minimal Far3 version  : 3.0.3300
--- Far3 plugin           : LuaMacro, LF4Editor, LFSearch, LFHistory (any of them)
--- Dependencies          : Lua modules 'far2.simpledialog' and 'far2.settings'
--- Minimal far2m version : https://github.com/shmuz/far2m
--- Far2m plugin          : LuaMacro, LF4Editor (any of them)
+------------------------------------------------------------------------------------------------
+-- Started:                 2021-01-20
+-- Author:                  Shmuel Zeigerman
+-- Language:                Lua 5.1
+-- Portability:             far3 (>= 3300), far2m
+-- Far plugin:              LuaMacro, LF4Editor, LFSearch, LFHistory (any of them)
+-- Depends on:              'far2.simpledialog', 'far2.settings' (Lua modules)
+------------------------------------------------------------------------------------------------
 
 local MacroKey = "CtrlF2"
 local SETTINGS_KEY    = "shmuz"
 local SETTINGS_SUBKEY = "editor_multiline_sort"
 local Title = "Multiline sort"
-local Info = { --luacheck: no unused
-  Author        = "Shmuel Zeigerman";
-  Guid          = "4F6D1949-B9D9-4F36-8015-309D4BD13E60";
-  MinFarVersion = "3.0.3300";
-  Started       = "2021-01-20";
-  Title         = Title;
-}
 local F = far.Flags
+local Send = far.SendDlgMessage
 local KEEP_DIALOG_OPEN = 0
 
 local function ShowHelp()
@@ -117,7 +113,7 @@ local function get_data_from_dialog()
   local function Presets_action (hDlg,Par1,Par2)
     local PrMenu = require "far2.presets"
     Data.presets = Data.presets or {}
-    hDlg:ShowDialog(0)
+    Send(hDlg, F.DM_SHOWDIALOG, 0)
 
     local preset, modified = PrMenu(PresetParams, Data.presets,
       function() return Dlg:GetDialogState(hDlg) end,
@@ -130,8 +126,8 @@ local function get_data_from_dialog()
       settings.msave(SETTINGS_KEY, SETTINGS_SUBKEY, Data)
     end
 
-    hDlg:ShowDialog(1)
-    hDlg:SetFocus(Pos.btnOK)
+    Send(hDlg, F.DM_SHOWDIALOG, 1)
+    Send(hDlg, F.DM_SETFOCUS, Pos.btnOK)
   end
 
   function items.proc(hDlg, Msg, Par1, Par2)
