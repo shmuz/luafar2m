@@ -3,8 +3,8 @@
 -- Author:                  Shmuel Zeigerman
 -- Published:               2013-01-24 (https://forum.farmanager.com/viewtopic.php?f=60&t=7654)
 -- Language:                Lua 5.1
--- Minimal Far version:     3.0.3300
--- Depends on:              far2/simpledialog.lua (on Lua package.path)
+-- Portability:             far3 (>= 3300), far2m
+-- Depends on:              far2.simpledialog.lua (Lua module)
 ------------------------------------------------------------------------------------------------
 
 local function InsertMacro()
@@ -47,10 +47,10 @@ local function InsertMacro()
     if Msg == F.DN_BTNCLICK then
       local item = data[Param1]
       if item.name=="bActivePanel" or item.name=="bPassivePanel" then
-        local enable = hDlg:GetCheck(Param1) == 1
-        hDlg:Enable(Param1+1, enable)
-        hDlg:Enable(Param1+2, enable)
-        hDlg:Enable(Param1+3, enable)
+        local enable = far.SendDlgMessage(hDlg,"DM_GETCHECK",Param1)
+        for k=1,3 do
+          far.SendDlgMessage(hDlg,"DM_ENABLE",Param1+k,enable)
+        end
       end
     end
   end;
@@ -107,7 +107,7 @@ Macro {
   action=function()
   end;
 }
-]] ) : format(win.Uuid("U"), out.sDescr, table.concat(tFlags," "))
+]] ) : format(win.Uuid(win.Uuid()):upper(), out.sDescr, table.concat(tFlags," "))
 
   print(tResult)
 end
