@@ -1,3 +1,12 @@
+------------------------------------------------------------------------------------------------
+-- Started:                 2015-07-09
+-- Author:                  Shmuel Zeigerman
+-- Published:               2019-01-17 (https://forum.farmanager.com/viewtopic.php?p=152617#p152617)
+-- Language:                Lua 5.1
+-- Portability:             far3 (>= 3300), far2m
+-- Far plugin:              LuaMacro, LF4Editor
+------------------------------------------------------------------------------------------------
+
 local function GetText()
   local text = Editor.SelValue
   return (text ~= "") and text or Editor.GetStr()
