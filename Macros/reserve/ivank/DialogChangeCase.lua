@@ -4,7 +4,7 @@ local F = far.Flags
 
 local function Main(mode)
   local hDlg = far.AdvControl(F.ACTL_GETWINDOWINFO).Id
-  if hDlg == 0 then return end
+  if type(hDlg) ~= "userdata" then return end
   local idx = hDlg:send(F.DM_GETFOCUS)
   local Text = hDlg:send(F.DM_GETTEXT, idx)
   local Sel = hDlg:send(F.DM_GETSELECTION, idx)
