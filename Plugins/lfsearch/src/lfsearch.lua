@@ -6,6 +6,8 @@ local M -- forward declaration
 local History = _Plugin and _Plugin.History -- forward declaration
 local HField = _Plugin and _Plugin.HField -- forward declaration
 local MenuFlags = bit64.bor(F.FMENU_WRAPMODE, F.FMENU_AUTOHIGHLIGHT)
+local PluginConfigGuid1 = win.Uuid("B2C08615-ED7C-491D-BE5C-8758FDAB9139")
+local PluginMenuGuid1   = win.Uuid("3D5E7985-3B5D-4777-A572-BA7C621B3731")
 _G.lfsearch = {}
 
 local SETTINGS_KEY = nil
@@ -318,7 +320,9 @@ function export.GetPluginInfo()
   return {
     CommandPrefix = "lfs",
     Flags = F.PF_EDITOR,
+    PluginMenuGuids = PluginMenuGuid1,
     PluginMenuStrings = { M.MMenuTitle },
+    PluginConfigGuids = PluginConfigGuid1,
     PluginConfigStrings = { M.MMenuTitle },
   }
 end

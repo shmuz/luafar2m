@@ -9,7 +9,7 @@ SHAREDSYMBOL void WINAPI GetGlobalInfoW(struct GlobalInfo *aInfo)
   aInfo->Title         = L"LuaFAR Temp. Panel";
   aInfo->Description   = L"A Lua clone of TmpPanel plugin";
   aInfo->Author        = L"Far Group, Shmuel Zeigerman";
-  aInfo->UseMenuGuids  = 0;
+  aInfo->UseMenuGuids  = 1;
 }
 //---------------------------------------------------------------------------
 

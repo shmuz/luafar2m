@@ -623,11 +623,16 @@ local function GetCommandTable()
   return commandTable
 end
 
+local PluginMenuGuid1   = win.Uuid("181fa8c3-fd3f-44a8-9c16-e3ca753c4ccb")
+local PluginConfigGuid1 = win.Uuid("688f9ee4-d0ac-49d0-b66b-8dbaa989f22c")
+
 function export.GetPluginInfo()
   return {
     CommandPrefix = "lfh",
     Flags = bit64.bor(F.PF_EDITOR, F.PF_VIEWER),
+    PluginConfigGuids   = PluginConfigGuid1,
     PluginConfigStrings = { M.mPluginTitle },
+    PluginMenuGuids   = PluginMenuGuid1,
     PluginMenuStrings = { M.mPluginTitle },
   }
 end

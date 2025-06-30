@@ -9,7 +9,7 @@ SHAREDSYMBOL void WINAPI GetGlobalInfoW(struct GlobalInfo *aInfo)
   aInfo->Title         = L"Pseudo file generator";
   aInfo->Description   = L"Pseudo file generator";
   aInfo->Author        = L"Shmuel Zeigerman";
-  aInfo->UseMenuGuids  = 0;
+  aInfo->UseMenuGuids  = 1;
 }
 //---------------------------------------------------------------------------
 

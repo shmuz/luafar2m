@@ -9,7 +9,7 @@ SHAREDSYMBOL void WINAPI GetGlobalInfoW(struct GlobalInfo *aInfo)
   aInfo->Title         = L"Macro2Lua converter";
   aInfo->Description   = L"Converter from macro language to Lua";
   aInfo->Author        = L"Shmuel Zeigerman";
-  aInfo->UseMenuGuids  = 0;
+  aInfo->UseMenuGuids  = 1;
 }
 //---------------------------------------------------------------------------
 

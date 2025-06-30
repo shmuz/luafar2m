@@ -7,9 +7,6 @@ local Title = "File generator"
 
 local OpenPanelInfoFlags = bit64.bor(F.OPIF_ADDDOTS)
 
-local PluginMenuGuid1   = win.Uuid("8DEBE183-0BD7-4223-BDF3-41325A7E24C8")
-local PluginConfigGuid1 = win.Uuid("CF6F0F3B-0814-4CB9-B8D2-E5CAD986B4F2")
-
 function export.GetPluginInfo()
   return {
     CommandPrefix = "fgen",

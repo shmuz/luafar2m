@@ -19,10 +19,13 @@ local Settings = {
   LastSortOrder = 0;
 }
 
+local PluginMenuGuid1 = win.Uuid("8127E2DF-C01C-46B9-8E5D-056EFBB0AAF7")
+
 function export.GetPluginInfo()
   return {
     CommandPrefix = "luapanel",
     Flags = 0,
+    PluginMenuGuids   = PluginMenuGuid1,
     PluginMenuStrings = { Title },
   }
 end

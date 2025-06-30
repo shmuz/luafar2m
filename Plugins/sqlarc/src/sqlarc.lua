@@ -41,9 +41,9 @@ end
 local sql3 = require "lsqlite3"
 local SimpleDialog = require "far2.simpledialog"
 
-local PluginGuid, Title do
+local Title do
   local info = osWin and export.GetGlobalInfo() or far.GetPluginGlobalInfo() -- luacheck: ignore
-  PluginGuid, Title = info.Guid, info.Title
+  Title = info.Title
 end
 
 local QCreateFiles = [[
@@ -353,12 +353,14 @@ function export.Analyse(Data)
   end
 end
 
+local MenuGuid1 = win.Uuid("1BE0FB0B-93AE-42BC-97DC-6C7BE4DA72B0")
+
 function export.GetPluginInfo()
   local info = { Flags=0 }
   info.CommandPrefix = "sqlarc"
-  info.PluginMenuGuids = PluginGuid
+  info.PluginMenuGuids = MenuGuid1
   info.PluginMenuStrings = { Title }
-  -- info.PluginConfigGuids = PluginGuid
+  -- info.PluginConfigGuids = MenuGuid1
   -- info.PluginConfigStrings = { M.ps_title }
   return info
 end

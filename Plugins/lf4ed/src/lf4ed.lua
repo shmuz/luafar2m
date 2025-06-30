@@ -610,6 +610,9 @@ local function export_Open (aFrom, _aId, aItem)
   end
 end
 
+local PluginMenuGuid1   = win.Uuid("e7218df9-e556-4801-8715-f14e2348fcce")
+local PluginConfigGuid1 = win.Uuid("0411deb2-73d0-49a6-95c0-3e24150edd44")
+
 function export.GetPluginInfo()
   local flags = bor(F.PF_EDITOR, F.PF_DISABLEPANELS)
   local useritems = _Plugin.UserItems
@@ -619,10 +622,12 @@ function export.GetPluginInfo()
     if #useritems.dialog > 0 then flags = bor(flags, F.PF_DIALOG) end
   end
   return {
-    Flags = flags,
-    PluginMenuStrings = { M.MPluginName },
-    PluginConfigStrings = { M.MPluginName },
     CommandPrefix = "lfe",
+    Flags = flags,
+    PluginConfigGuids   = PluginConfigGuid1,
+    PluginConfigStrings = { M.MPluginName },
+    PluginMenuGuids   = PluginMenuGuid1,
+    PluginMenuStrings = { M.MPluginName },
   }
 end
 
