@@ -1,8 +1,13 @@
--- Started:    2025-05-25
--- Author:     Shmuel Zeigerman
--- Published:  https://forum.farmanager.com/viewtopic.php?p=180545#p180545
--- Note:       Inspired by MkDir plugin (https://plugring.farmanager.com/plugin.php?pid=127)
--- Note:       Written from scratch, the plugin source code was not available
+------------------------------------------------------------------------------------------------
+-- Started:                 2025-05-25
+-- Author:                  Shmuel Zeigerman
+-- Published:               https://forum.farmanager.com/viewtopic.php?p=180545#p180545
+-- Language:                Lua 5.1
+-- Portability:             far3 (>= 6381), far2m
+-- Far plugin:              LuaMacro, LF4Editor
+-- Note:                    Inspired by MkDir plugin (https://plugring.farmanager.com/plugin.php?pid=127)
+-- Note:                    Written from scratch, the plugin source code was not available
+------------------------------------------------------------------------------------------------
 
 local Eng = {
   Title       = "Make directories";
