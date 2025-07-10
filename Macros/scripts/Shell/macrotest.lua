@@ -117,6 +117,29 @@ local function test_hexed(verbose)
   end
 end
 
+local function test_farapi_lua(verbose)
+  far.Message("Please wait...", "Test farapi.lua", "")
+  local script  = os.getenv("HOME").."/repos/far2m/luamacro/farapi/make_farapi.lua"
+  local oldfile = os.getenv("HOME").."/repos/far2m/luafar/lua_share/far2/farapi.lua"
+  local newfile = "/tmp/far2m_farapi.lua"
+  local fp, strOld, strNew
+
+  assert (loadfile(script)) (newfile)
+
+  fp = assert(io.open(oldfile))
+  strOld = fp:read("*all")
+  fp:close()
+  fp = assert(io.open(newfile))
+  strNew = fp:read("*all")
+  fp:close()
+  assert(strOld == strNew, "Test farapi.lua failed")
+
+  if verbose then
+    far.Message("PASS", "Test farapi.lua")
+  end
+  for k=0,1 do panel.RedrawPanel(nil,k) end
+end
+
 Macro {
   id="B7B0B120-A616-4CBF-AB83-34E2EC024083";
   description="Test macro engine";
@@ -168,6 +191,14 @@ if jit then
 end
 
 Macro {
+  id="0BD88546-AA06-4569-A80D-0E9EEAC2CB7B";
+  description="Test farapi.lua";
+  area="Shell"; key="CtrlShiftF12";
+  sortpriority=15;
+  action=function() test_farapi_lua(true) end;
+}
+
+Macro {
   id="5838EF38-4EB6-4104-BD41-EE80124827E6";
   description="Test ALL";
   area="Shell"; key="CtrlShiftF12";
@@ -177,6 +208,7 @@ Macro {
     test_lfsearch()
     test_polygon()
     test_sqlarc()
+    test_farapi_lua()
     if jit then test_hexed() end
     far.Message("PASS", "ALL tests")
   end;
