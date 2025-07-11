@@ -22,17 +22,17 @@ local function ToggleCross()
   end
 end
 
-local function RedrawCross (EI)
-  local ID = EI.EditorID
-  local BottomLine = math.min(EI.TopScreenLine+EI.WindowSizeY-1, EI.TotalLines)
-  for y=EI.TopScreenLine,BottomLine  do
-    local toreal = function(pos) return editor.TabToReal(ID,y,pos) end
+local function RedrawCross (id)
+  local EI = editor.GetInfo(id)
+  local BottomLine = math.min(EI.TopScreenLine + EI.WindowSizeY - 1, EI.TotalLines)
+  for y = EI.TopScreenLine, BottomLine  do
+    local toreal = function(pos) return editor.TabToReal(id,y,pos) end
     if y == EI.CurLine then
-      local from, to = toreal(EI.LeftPos), toreal(EI.LeftPos+EI.WindowSizeX-1)
-      editor.AddColor(ID, y, from, to, ColorFlags, Color1)
+      local from, to = toreal(EI.LeftPos), toreal(EI.LeftPos + EI.WindowSizeX - 1)
+      editor.AddColor(id, y, from, to, ColorFlags, Color1)
     end
     local offs = toreal(EI.CurPos)
-    editor.AddColor(ID, y, offs, offs, ColorFlags, y==EI.CurLine and Color2 or Color1)
+    editor.AddColor(id, y, offs, offs, ColorFlags, y==EI.CurLine and Color2 or Color1)
   end
 end
 
@@ -48,8 +48,7 @@ Event {
       Editors[id] = state
       if state.active then
         if param == F.EEREDRAW_ALL then
-          local EI = editor.GetInfo(id)
-          RedrawCross(EI)
+          RedrawCross(id)
         else
           editor.Redraw()
         end
