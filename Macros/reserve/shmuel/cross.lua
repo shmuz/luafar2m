@@ -44,9 +44,8 @@ Event {
     elseif event == F.EE_CLOSE then
       Editors[id] = nil
     elseif event == F.EE_REDRAW then
-      local state = Editors[id] or {}
-      Editors[id] = state
-      if state.active then
+      local state = Editors[id]
+      if state and state.active then
         if param == F.EEREDRAW_ALL then
           RedrawCross(id)
         else
