@@ -4,8 +4,6 @@ local F = far.Flags
 local ColorFlags = bit64.bor(0, F.ECF_AUTODELETE) -- was: F.ECF_TABMARKCURRENT
 local Color1 = 0x71
 local Color2 = 0xE1
-local SyncCode = 0x635A73DF
-local SyncSent
 
 local Editors do
   local guid = "72A977B4-8DF6-476A-9230-A46C9BB2D56B"
@@ -49,23 +47,14 @@ Event {
       local state = Editors[id] or {}
       Editors[id] = state
       if state.active then
-        local ei = editor.GetInfo(id)
-        if ei then
-          RedrawCross(ei)
-          if not SyncSent then
-            actl.Synchro(SyncCode)
-          end
-          SyncSent = not SyncSent
+        if param == F.EEREDRAW_ALL then
+          local EI = editor.GetInfo(id)
+          RedrawCross(EI)
+        else
+          editor.Redraw()
         end
       end
     end
-  end;
-}
-
-Event {
-  group="SynchroEvent";
-  action=function(event, param)
-    if param == SyncCode then editor.Redraw() end
   end;
 }
 
