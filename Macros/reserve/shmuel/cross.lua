@@ -31,7 +31,7 @@ local function RedrawCross (id)
       local from, to = toreal(EI.LeftPos), toreal(EI.LeftPos + EI.WindowSizeX - 1)
       editor.AddColor(id, y, from, to, ColorFlags, Color1)
     end
-    local offs = toreal(EI.CurPos)
+    local offs = toreal(EI.CurTabPos)
     editor.AddColor(id, y, offs, offs, ColorFlags, y==EI.CurLine and Color2 or Color1)
   end
 end
