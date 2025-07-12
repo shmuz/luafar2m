@@ -742,14 +742,14 @@ function export.ProcessEditorEvent (id, event, param)
   elseif event == F.EE_CLOSE then
     Editors[id] = nil
   elseif event == F.EE_REDRAW then
-    if param == F.EEREDRAW_ALL then -- far2 specifics, not needed for far3
-      local ei = editor.GetInfo(id)
-      if not Editors[id] then
-        OnNewEditor(id, ei)
-      end
-      local state = Editors[id]
-      if state and ei then
-        if state.Class and state.On then
+    local ei = editor.GetInfo(id)
+    if not Editors[id] then
+      OnNewEditor(id, ei)
+    end
+    local state = Editors[id]
+    if state and ei then
+      if state.Class and state.On then
+        if param == F.EEREDRAW_ALL then -- far2 specifics, not needed for far3
           local GetNextString = MakeGetString(
               ei.EditorID,
               state.bFastMode and math.max(ei.TopScreenLine-state.nFastLines, 1) or 1,
@@ -757,12 +757,16 @@ function export.ProcessEditorEvent (id, event, param)
               ei.TopScreenLine)
           RedrawSyntax(state.Class.CS, ei, GetNextString, state.nColorPriority,
               state.extrapattern, state.extracolor)
-        elseif state.extrapattern then
+        else
+          editor.Redraw(id) -- required for highlighting matching brackets, etc.
+        end
+      elseif state.extrapattern then
+        if param == F.EEREDRAW_ALL then
           RedrawExtraPattern(ei, state.nColorPriority, state.extrapattern, state.extracolor)
+        else
+          editor.Redraw(id)
         end
       end
-    else
-      editor.Redraw(id) -- required for highlighting matching brackets, etc.
     end
   end
 end
