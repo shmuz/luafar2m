@@ -345,11 +345,11 @@ local function CreateObject(filename)
   return obj
 end
 
-function export.Analyse(Data)
-  if Data.FileName == nil then -- ShiftF1
+function export.Analyse(Info)
+  if Info.FileName == nil then -- ShiftF1
     return true
   else
-    return string.find(Data.Buffer,"^SQLite format 3") and CheckAppId(Data.Buffer)
+    return string.find(Info.Buffer,"^SQLite format 3") and CheckAppId(Info.Buffer)
   end
 end
 
