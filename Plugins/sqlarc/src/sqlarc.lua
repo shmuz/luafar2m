@@ -414,8 +414,7 @@ end
 
 function export.Open(OpenFrom, Guid, Data)
   if OpenFrom == F.OPEN_ANALYSE then
-    if osWin then Data = Data.FileName end
-    return CreateObject(Data)
+    return CreateObject(Data.FileName)
 
   elseif OpenFrom == F.OPEN_SHORTCUT then
     local obj = CreateObject(Data.HostFile)

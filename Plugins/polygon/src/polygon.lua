@@ -366,9 +366,7 @@ function export.Open(OpenFrom, Guid, Item)
   local FileName, Opt = nil, nil
 
   if OpenFrom == F.OPEN_ANALYSE then
-    if OS_WIN then FileName = Item.FileName
-    else FileName = Item
-    end
+    FileName = Item.FileName
 
   elseif OpenFrom == F.OPEN_SHORTCUT then
     if OS_WIN then FileName = Item.HostFile
