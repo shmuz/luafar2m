@@ -60,7 +60,7 @@ Macro {
 
 Macro {
   description="Show User Menu";
-  area="Common"; key="F2";
+  area="Shell Editor Dialog Menu"; key="F2";
   id="35358025-B0E1-4D42-8DCC-FD1AA734E229";
   action=function()
     mf.usermenu()
