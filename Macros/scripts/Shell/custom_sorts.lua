@@ -124,7 +124,7 @@ do
 local FoldersByName
 SortModes.Extension.InitSort =
   function(opt)
-    FoldersByName = 0==Far.GetConfig("Panel.SortFolderExt")
+    FoldersByName = not Far.GetConfig("Panel.SortFolderExt")
   end
 SortModes.Extension.Compare =
   function (p1,p2,opt)

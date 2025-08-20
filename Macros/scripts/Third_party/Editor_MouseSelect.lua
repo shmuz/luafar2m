@@ -76,7 +76,7 @@ S.Timing = S.Timing==nil and Settings().Timing or S.Timing
 local function Condition()
   -- Функция инициализации переменных и проверки условия запуска макроса,
   -- чтобы не запускать макрос при кликах в скролбар, функциональные клавиши и т.п.
-  TitleBar=Far.GetConfig("Editor.ShowTitleBar") -- Если строка статуса включена, то надо корректировать координату Y мыши и не выделять если в неё кликнули.
+  TitleBar=Far.GetConfig("Editor.ShowTitleBar") and 1 or 0 -- Если строка статуса включена, то надо корректировать координату Y мыши и не выделять если в неё кликнули.
   KeyBar=Far.KeyBar_Show(0) -- Если кейбар включен, то не выделять если в него кликнули.
   ScrollBar=Editor.Set(15,-1) -- Если скролбар включен, то не выделять если в него кликнули.
   return Mouse.X<Far.Width-ScrollBar and Mouse.Y>=TitleBar and Mouse.Y<Far.Height-KeyBar -- Кликнули в текст, значит разрешим макрос макрос.
