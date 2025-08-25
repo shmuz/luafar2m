@@ -734,6 +734,18 @@ local function OnNewEditor (id, ei)
   end
 end
 
+-- This trick is needed under Far2m (not needed under Far3).
+-- Far2m does not redraw the entire visible part of the editor when navigation keys are pressed.
+-- That makes problems with highlighting matching brackets.
+function export.ProcessEditorInput (Rec)
+  local state = Editors[editor.GetInfo().EditorID]
+  if state and state.On then
+    if state.Class and state.Class.CS.bracketmatch then
+      editor.Redraw()
+    end
+  end
+end
+
 function export.ProcessEditorEvent (id, event, param)
   if event == F.EE_READ then
     if not Editors[id] then
@@ -749,23 +761,15 @@ function export.ProcessEditorEvent (id, event, param)
     local state = Editors[id]
     if state and ei then
       if state.Class and state.On then
-        if param == F.EEREDRAW_ALL then -- far2 specifics, not needed for far3
-          local GetNextString = MakeGetString(
-              ei.EditorID,
-              state.bFastMode and math.max(ei.TopScreenLine-state.nFastLines, 1) or 1,
-              math.min(ei.TopScreenLine+ei.WindowSizeY-1, ei.TotalLines),
-              ei.TopScreenLine)
-          RedrawSyntax(state.Class.CS, ei, GetNextString, state.nColorPriority,
-              state.extrapattern, state.extracolor)
-        else
-          editor.Redraw(id) -- required for highlighting matching brackets, etc.
-        end
+        local GetNextString = MakeGetString(
+            ei.EditorID,
+            state.bFastMode and math.max(ei.TopScreenLine-state.nFastLines, 1) or 1,
+            math.min(ei.TopScreenLine+ei.WindowSizeY-1, ei.TotalLines),
+            ei.TopScreenLine)
+        RedrawSyntax(state.Class.CS, ei, GetNextString, state.nColorPriority,
+            state.extrapattern, state.extracolor)
       elseif state.extrapattern then
-        if param == F.EEREDRAW_ALL then
-          RedrawExtraPattern(ei, state.nColorPriority, state.extrapattern, state.extracolor)
-        else
-          editor.Redraw(id)
-        end
+        RedrawExtraPattern(ei, state.nColorPriority, state.extrapattern, state.extracolor)
       end
     end
   end
@@ -799,8 +803,8 @@ do
         local f, msg = loadfile(fullpath)
         if f then
           AddClass_filename = fullpath
-          local ok, msg2 = pcall(setfenv(f, {Class=AddClass}))
-          if not ok then ErrMsg(msg2, nil, "wl") end
+          local ok, msg = pcall(setfenv(f, {Class=AddClass}))
+          if not ok then ErrMsg(msg, nil, "wl") end
         else
           ErrMsg(msg)
         end
