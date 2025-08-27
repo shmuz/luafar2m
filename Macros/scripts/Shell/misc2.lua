@@ -8,7 +8,9 @@ local function ShowDiff (aName)
   local fp = io.popen("git diff >"..file)
   if fp then
     fp:close()
-    Plugin.Command(far.GetPluginId(), "edit:[1,1]"..file)
+    local flags = "EF_NONMODAL EF_IMMEDIATERETURN EF_DISABLEHISTORY EF_DELETEONLYFILEONCLOSE"
+    editor.Editor(file,nil,nil,nil,nil,nil,flags)
+    editor.SetPosition(nil,1,1)
   end
   panel.SetPanelDirectory(nil, 1, dir);
 end
