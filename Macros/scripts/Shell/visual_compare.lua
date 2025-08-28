@@ -20,11 +20,6 @@ local Modes = { -- uncomment those modes you will actually use
 }
 
 local F = far.Flags
-local FarCmdsId = osWindows and "3A2AF458-43E2-4715-AFEA-93D33D56C0C2" or far.GetPluginId()
-
-local function GetPanelDirectory(pan)
-  return panel.GetPanelDirectory(nil,pan).Name
-end
 
 local function isfile(item)      return not item.FileAttributes:find("d") end
 local function isselected(item)  return bit64.band(item.Flags,F.PPIF_SELECTED) ~= 0 end
@@ -40,14 +35,28 @@ local function fexist(file)
   return attr and not attr:find("d")
 end
 
-local function join(dir, file)
-  return dir=="" and file
-    or dir:find(dirsep.."$") and dir..file
-    or dir..dirsep..file
+local function fullname(dir, file)
+  return file:find(dirsep) and file or win.JoinPath(dir, file)
 end
 
-local function fullname(dir, file)
-  return file:find(dirsep) and file or join(dir, file)
+local function MkTempFileName()
+  local fname = os.date("%Y-%m-%d-%H-%M-%S.diff")
+  if osWindows then
+    local Temp = assert(os.getenv("TEMP"), "env. var. TEMP is not set")
+    return win.JoinPath(Temp, fname)
+  else
+    return far.InMyTemp(fname)
+  end
+end
+
+local function CreateTempFile(trgActive, trgPassive)
+  local file = MkTempFileName()
+  local command = ("diff -u %q %q > %s"):format(trgActive, trgPassive, file)
+  local fp = io.popen(command)
+  if fp then
+    fp:close()
+    return file
+  end
 end
 
 -- collect items, skip directories
@@ -71,8 +80,8 @@ end
 
 local function GetPairForCompare()
   local ACT,PSV = 1,0 -- active and passive panels
-  local dirActive  = GetPanelDirectory(ACT)
-  local dirPassive = GetPanelDirectory(PSV)
+  local dirActive  = panel.GetPanelDirectory(ACT).Name
+  local dirPassive = panel.GetPanelDirectory(PSV).Name
   local trgActive, trgPassive
   --------------------------------------------------------------------------------------------------
   local selAct, selPass = Collect(ACT,2), Collect(PSV,1)
@@ -84,7 +93,7 @@ local function GetPairForCompare()
     trgPassive = fullname(dirPassive, selPass[1].FileName)
   elseif next(selAct) and dirPassive ~= "" then
     local name1 = (selAct[1] or selAct.Current).FileName
-    local fullname2 = join(dirPassive, extract_name(name1))
+    local fullname2 = win.JoinPath(dirPassive, extract_name(name1))
     if fexist(fullname2) then
       trgActive  = fullname(dirActive, name1)
       trgPassive = fullname2
@@ -136,12 +145,20 @@ local function Run(trgActive, trgPassive)
     Keys("CtrlO")
 
   elseif mode == "diff_edit" then
-    local command = ("diff -u %q %q"):format(trgActive,trgPassive)
-    Plugin.Command(FarCmdsId, "edit:<"..command)
+    local file = CreateTempFile(trgActive, trgPassive)
+    if file then
+      local flags = "EF_NONMODAL EF_IMMEDIATERETURN EF_ENABLE_F6 EF_DISABLEHISTORY EF_DELETEONLYFILEONCLOSE"
+      editor.Editor(file,nil,nil,nil,nil,nil,flags)
+      editor.SetPosition(nil,1,1)
+    end
 
   elseif mode == "diff_view" then
-    local command = ("diff -u %q %q"):format(trgActive,trgPassive)
-    Plugin.Command(FarCmdsId, "view:<"..command)
+    local file = CreateTempFile(trgActive, trgPassive)
+    if file then
+      local flags = "VF_NONMODAL VF_IMMEDIATERETURN VF_ENABLE_F6 VF_DISABLEHISTORY VF_DELETEONLYFILEONCLOSE"
+      viewer.Viewer(file,nil,nil,nil,nil,nil,flags)
+      viewer.SetPosition(nil,0,1)
+    end
 
   end
 end
