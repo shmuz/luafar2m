@@ -393,6 +393,7 @@ function Cal:Calendar(DateTime)
 end
 
 Macro {
+  id="920ABC6E-7E48-4E9E-A084-350699127AF4";
   area="Common"; key=S.Key; description=M.Descr;
   action=function()
     local HorizWeek = mf.akey(1) == "CtrlShift6"
