@@ -7,11 +7,12 @@
 --     (3) The first day of week can be specified (was: Monday)
 --     (4) Added button [Today] for setting the current date
 --     (5) The calendar starts from 0001-01-01 (was: 1601-01-01)
+--     (6) Layout can be either "vertical weeks" (as in original) or "horizontal weeks"
 -------------------------------------------------------------------------------
 
 ---- Настройки
 local Settings = {
-  Key = "CtrlShift5";
+  Key = "CtrlShift5 CtrlShift6";
   FirstDayOfWeek = 0; -- 0=Sunday, 1=Monday, etc.
 }
 local S = Settings
@@ -43,9 +44,22 @@ local _Colors = far.Colors or F -- luacheck: no global (different between far2 a
 local COLOR_ENB = far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGTEXT)
 local COLOR_DSB = far.AdvControl(F.ACTL_GETCOLOR,_Colors.COL_DIALOGDISABLED)
 local COLOR_WD  = {0x79}
-local WEEK = 7   -- serves also as user control height
-local UC_HOR = 6 -- user control width, in cells
+local WEEK = 7
+local NUMWEEKS = 6
 local CELL_WIDTH = 4
+
+local Cal = {}
+local Cal_meta = { __index=Cal }
+
+local function NewCalendar(aHorizontalWeek)
+  local self = setmetatable({}, Cal_meta)
+  self.HorizWeek = aHorizontalWeek
+  self.ucHoriz = aHorizontalWeek and WEEK or NUMWEEKS -- user control width, in cells
+  self.ucVert = aHorizontalWeek and NUMWEEKS or WEEK  -- user control height
+  self.IncHoriz = aHorizontalWeek and 1 or WEEK
+  self.IncVert = aHorizontalWeek and WEEK or 1
+  return self
+end
 
 -- Встроенные языки / Built-in languages
 local function Messages()
@@ -56,6 +70,12 @@ local M=Messages()
 
 local function GetDayOfWeek(num)
   return M.DaysOfWeek[(S.FirstDayOfWeek+num-1) % WEEK + 1]
+end
+
+local function GetAllDaysOfWeek()
+  local t = {}
+  for k=1,WEEK do t[k] = GetDayOfWeek(k) end
+  return table.concat(t, (" "):rep(CELL_WIDTH - 2))
 end
 
 -------------------------------------------------------------------------------
@@ -210,14 +230,14 @@ local function DecYear(dt) -- убавить 1 год
   return IncDay(dt,-Inc)
 end
 
-local function Calendar(DateTime)
+function Cal:Calendar(DateTime)
   local sd = require "far2.simpledialog"
   M=Messages()
 
   local Months={}
   for m,v in ipairs(M.Months) do Months[m] = {["Text"]=v}; end
 
-  local buff = far.CreateUserControl(CELL_WIDTH*UC_HOR, WEEK)
+  local buff = far.CreateUserControl(CELL_WIDTH * self.ucHoriz, WEEK)
 
   local Items = {
     guid="615d826b-3921-48bb-9cf2-c6d345833855";
@@ -232,7 +252,15 @@ local function Calendar(DateTime)
     {tp="combobox"; name="Month";    dropdown=1; x1=11; x2=23;    y1=""; list=Months; }, --Месяц
     {tp="butt";     name="IncMonth"; btnnoclose=1;   x1=27; text=">"; y1="";          }, --Месяц вперёд
     {tp="sep" },
+  }
+  local function AddItems(tt)
+    for _,v in ipairs(tt) do table.insert(Items, v) end
+  end
 
+  if self.HorizWeek then AddItems {
+    {tp="text"; text=GetAllDaysOfWeek(); x1=6; colors=COLOR_WD; },
+    {tp="user"; name="User"; width=CELL_WIDTH*self.ucHoriz; height=self.ucVert; buffer=buff; }}
+  else AddItems {
     {tp="text"; text=GetDayOfWeek(1); width=2; colors=COLOR_WD; },
     {tp="text"; text=GetDayOfWeek(2); width=2; colors=COLOR_WD; },
     {tp="text"; text=GetDayOfWeek(3); width=2; colors=COLOR_WD; },
@@ -240,14 +268,16 @@ local function Calendar(DateTime)
     {tp="text"; text=GetDayOfWeek(5); width=2; colors=COLOR_WD; },
     {tp="text"; text=GetDayOfWeek(6); width=2; colors=COLOR_WD; },
     {tp="text"; text=GetDayOfWeek(7); width=2; colors=COLOR_WD; },
+    {tp="user"; name="User"; x1=8; ystep=1-WEEK; width=CELL_WIDTH*self.ucHoriz; height=WEEK; buffer=buff; }}
+  end
 
-    {tp="user";     name="User";     x1=8; ystep=1-WEEK; width=CELL_WIDTH*UC_HOR; height=WEEK; buffer=buff; },
+  AddItems {
     {tp="sep" },
-    {tp="fixedit";  name="Date";     x1=7; x2=16; mask="99.99.9999"; readonly=1; },
-    {tp="butt";     name="Today";    x1=18;  text=M.Today; y1=""; btnnoclose=1;  }, -- Установить текущую дату
+    {tp="fixedit"; name="Date";   x1=7; x2=16; mask="99.99.9999"; readonly=1; },
+    {tp="butt";    name="Today";  x1=18;  text=M.Today; y1=""; btnnoclose=1;  }, -- Установить текущую дату
     {tp="sep" },
-    {tp="butt";     name="Close";    centergroup=1; default=1; text=M.Close; focus=1; },
-    {tp="butt";     name="Insert";   centergroup=1; x1=18;  text=M.Ins; y1=""; }, -- Вставить дату
+    {tp="butt";    name="Close";  centergroup=1; default=1; text=M.Close; focus=1; },
+    {tp="butt";    name="Insert"; centergroup=1; x1=18;  text=M.Ins; y1=""; }, -- Вставить дату
   }
 
   local Dlg = sd.New(Items)
@@ -266,7 +296,7 @@ local function Calendar(DateTime)
     local day=WeekStartDay(MonthFirstDay(dT))
     ITic=nil
     local elem={}
-    for w=0,UC_HOR-1 do
+    for w=0,NUMWEEKS-1 do
       for d=1,WEEK do
         local txt
         if day.wYear==Current.wYear and day.wMonth==Current.wMonth and day.wDay==Current.wDay then
@@ -279,7 +309,9 @@ local function Calendar(DateTime)
           txt = ("%3s "):format(day.wDay)
         end
         local color=day.wMonth==dT.wMonth and COLOR_ENB or COLOR_DSB
-        local curpos=1+(w+(d-1)*UC_HOR)*CELL_WIDTH
+        local curpos = self.HorizWeek
+          and 1 + ((d-1) + w*self.ucHoriz) * CELL_WIDTH
+          or  1 + (w + (d-1)*self.ucHoriz) * CELL_WIDTH
         for k=1,CELL_WIDTH do
           elem.Char=txt:sub(k,k)
           elem.Attributes=color
@@ -295,10 +327,10 @@ local function Calendar(DateTime)
 
   local keyaction = function(hDlg,Param1,KeyName)
     if Param1==Pos.User then
-      if     KeyName=="Left"      then dt=IncDay(dt,-WEEK)
-      elseif KeyName=="Up"        then dt=IncDay(dt,-1)
-      elseif KeyName=="Right"     then dt=IncDay(dt, WEEK)
-      elseif KeyName=="Down"      then dt=IncDay(dt, 1)
+      if     KeyName=="Left"      then dt=IncDay(dt, -self.IncHoriz)
+      elseif KeyName=="Up"        then dt=IncDay(dt, -self.IncVert)
+      elseif KeyName=="Right"     then dt=IncDay(dt, self.IncHoriz)
+      elseif KeyName=="Down"      then dt=IncDay(dt, self.IncVert)
       elseif KeyName=="CtrlLeft"  then dt=DecMonth(dt)
       elseif KeyName=="CtrlUp"    then dt=DecYear (dt)
       elseif KeyName=="CtrlRight" then dt=IncMonth(dt)
@@ -310,11 +342,12 @@ local function Calendar(DateTime)
   end
 
   local mouseaction = function(hDlg,Param1,Param2)
-    if Param1==Pos.User then
-      if Param2.ButtonState==F.FROM_LEFT_1ST_BUTTON_PRESSED then
-        local i=math.floor(Param2.MousePositionX/CELL_WIDTH)*WEEK+Param2.MousePositionY+1
-        dt=IncDay(dt,i-ITic)
-        Rebuild(hDlg,dt)
+    if Param1 == Pos.User then
+      if Param2.ButtonState == F.FROM_LEFT_1ST_BUTTON_PRESSED then
+        local i = math.floor(Param2.MousePositionX/CELL_WIDTH) * self.IncHoriz
+            + Param2.MousePositionY * self.IncVert + 1
+        dt = IncDay(dt, i - ITic)
+        Rebuild(hDlg, dt)
       end
     end
   end
@@ -358,26 +391,12 @@ local function Calendar(DateTime)
   local out,pos = Dlg:Run()
   if out and pos==Pos.Insert then mf.print(out.Date) end
 end
--------------------------------------------------------------------------------
-local Common_Calendar={
-  Calendar      = Calendar;
-  DecMonth      = DecMonth;
-  DecYear       = DecYear;
-  IncDay        = IncDay;
-  IncMonth      = IncMonth;
-  IncYear       = IncYear;
-  Leap          = Leap;
-  MonthFirstDay = MonthFirstDay;
-  Today         = Today;
-  WeekStartDay  = WeekStartDay;
-}
--------------------------------------------------------------------------------
-if _filename then return Calendar(...) end
-if not Macro then return {Common_Calendar=Common_Calendar} end
--------------------------------------------------------------------------------
 
 Macro {
-  id="920ABC6E-7E48-4E9E-A084-350699127AF4";
   area="Common"; key=S.Key; description=M.Descr;
-  action=function() Calendar() end;
+  action=function()
+    local HorizWeek = mf.akey(1) == "CtrlShift6"
+    local cal = NewCalendar(HorizWeek)
+    cal:Calendar()
+  end;
 }
