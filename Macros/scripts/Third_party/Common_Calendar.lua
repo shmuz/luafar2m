@@ -339,16 +339,16 @@ function Cal:Show(DateTime)
     IsRebuilding=false
   end
 
-  local keyaction = function(hDlg,Param1,KeyName)
+  local keyaction = function(hDlg,Param1,Key)
     if Param1==Pos.User then
-      if     KeyName=="Left"      then dt=IncDay(dt, -self.IncHoriz)
-      elseif KeyName=="Up"        then dt=IncDay(dt, -self.IncVert)
-      elseif KeyName=="Right"     then dt=IncDay(dt, self.IncHoriz)
-      elseif KeyName=="Down"      then dt=IncDay(dt, self.IncVert)
-      elseif KeyName=="CtrlLeft"  then dt=DecMonth(dt)
-      elseif KeyName=="CtrlUp"    then dt=DecYear (dt)
-      elseif KeyName=="CtrlRight" then dt=IncMonth(dt)
-      elseif KeyName=="CtrlDown"  then dt=IncYear (dt)
+      if     Key=="Left"                     then dt=IncDay(dt, -self.IncHoriz)
+      elseif Key=="Up"                       then dt=IncDay(dt, -self.IncVert)
+      elseif Key=="Right"                    then dt=IncDay(dt, self.IncHoriz)
+      elseif Key=="Down"                     then dt=IncDay(dt, self.IncVert)
+      elseif Key=="CtrlLeft" or Key=="PgUp"  then dt=DecMonth(dt)
+      elseif Key=="CtrlRight" or Key=="PgDn" then dt=IncMonth(dt)
+      elseif Key=="CtrlUp"                   then dt=DecYear (dt)
+      elseif Key=="CtrlDown"                 then dt=IncYear (dt)
       else return
       end
       Rebuild(hDlg,dt)
