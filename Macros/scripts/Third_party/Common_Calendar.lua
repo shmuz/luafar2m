@@ -19,6 +19,7 @@
 
 local Settings = {
   ColorWeekDay    = 0x79;
+  ColorToday      = 0x3F;
   FirstWeekDay    = 0; -- 0=Sunday, 1=Monday, etc.
   HorizontalWeek  = true;
   MacroKey        = "CtrlShift5";
@@ -214,12 +215,13 @@ end
 local Cal = {}
 local Cal_meta = { __index=Cal }
 
-local function NewCalendar(aHorizWeek, aFirstWeekDay, aColorWeekDay)
+local function NewCalendar(aHorizWeek, aFirstWeekDay, aColorWeekDay, aColorToday)
   local self = setmetatable({}, Cal_meta)
 
   self.HorizWeek    = aHorizWeek==nil and S.HorizontalWeek or aHorizWeek
   self.FirstWeekDay = aFirstWeekDay or S.FirstWeekDay
   self.ColorWeekDay = aColorWeekDay or S.ColorWeekDay
+  self.ColorToday   = aColorToday   or S.ColorToday
 
   self.ucHoriz  = self.HorizWeek and WEEK or NUMWEEKS  -- user control width, in cells
   self.ucVert   = self.HorizWeek and NUMWEEKS or WEEK  -- user control height
@@ -304,29 +306,30 @@ function Cal:Show(DateTime)
     Send(hDlg,F.DM_ENABLEREDRAW,0)
     Send(hDlg,F.DM_SETTEXT,Pos.Year,("%04d"):format(dT.wYear))
     Send(hDlg,F.DM_LISTSETCURPOS,Pos.Month,{SelectPos=dT.wMonth})
+
     local day = self:WeekStartDay(MonthFirstDay(dT))
     ITic=nil
     local elem={}
+
     for w=0,NUMWEEKS-1 do
       for d=1,WEEK do
-        local txt
-        if day.wYear==Current.wYear and day.wMonth==Current.wMonth and day.wDay==Current.wDay then
-          txt = ("[%2s]"):format(day.wDay)
+        local txt = ("%3s "):format(day.wDay)
+        local color = day.wMonth==dT.wMonth and COLOR_ENB or COLOR_DSB
+        local is_today = day.wYear==Current.wYear and day.wMonth==Current.wMonth
+                         and day.wDay==Current.wDay
+        if is_today then
           ITic= ITic or w*WEEK+d
         elseif day.wDay==dT.wDay then
           txt = ("{%2s}"):format(day.wDay)
           ITic=day.wMonth==dT.wMonth and w*WEEK+d or ITic
-        else
-          txt = ("%3s "):format(day.wDay)
         end
-        local color=day.wMonth==dT.wMonth and COLOR_ENB or COLOR_DSB
         local curpos = self.HorizWeek
           and 1 + ((d-1) + w*self.ucHoriz) * CELL_WIDTH
           or  1 + (w + (d-1)*self.ucHoriz) * CELL_WIDTH
         for k=1,CELL_WIDTH do
-          elem.Char=txt:sub(k,k)
-          elem.Attributes=color
-          buff[curpos+k-1]=elem
+          elem.Char = txt:sub(k,k)
+          elem.Attributes = (is_today and k>1 and self.ColorToday) or color
+          buff[curpos+k-1] = elem
         end
         day=IncDay(day,1)
       end
@@ -403,18 +406,14 @@ function Cal:Show(DateTime)
   if out and pos==Pos.Insert then mf.print(out.Date) end
 end
 
-local function Run()
-  local cal = NewCalendar(S.HorizontalWeek, S.FirstWeekDay, S.ColorWeekDay)
-  cal:Show()
-end
-
 if not Macro then
-  return Run()
+  NewCalendar():Show()
+  return
 end
 
 Macro {
   id="920ABC6E-7E48-4E9E-A084-350699127AF4";
   description=M.Descr;
   area="Common"; key=S.MacroKey;
-  action=function() Run() end;
+  action=function() NewCalendar():Show() end;
 }
