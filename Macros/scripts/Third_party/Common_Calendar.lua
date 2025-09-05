@@ -273,15 +273,16 @@ function Cal:Show(DateTime)
     for _,v in ipairs{...} do table.insert(Items, v) end
   end
 
+  local ucWidth = CELL_WIDTH * self.ucHoriz
   if self.HorizWeek then AddItems(
       {tp="text"; text=self:GetAllDaysOfWeek(); x1=6; colors={self.ColorWeekDay}; },
-      {tp="user"; name="User"; width=CELL_WIDTH*self.ucHoriz; height=self.ucVert; buffer=buff; })
+      {tp="user"; name="User"; width=ucWidth; height=self.ucVert; buffer=buff; focus=1; })
   else
     for k=1,WEEK do AddItems(
       {tp="text"; text=self:GetDayOfWeek(k); width=2; colors={self.ColorWeekDay}; })
     end
     AddItems(
-      {tp="user"; name="User"; x1=8; ystep=1-WEEK; width=CELL_WIDTH*self.ucHoriz; height=WEEK; buffer=buff; })
+      {tp="user"; name="User"; x1=8; ystep=1-WEEK; width=ucWidth; height=WEEK; buffer=buff; focus=1; })
   end
 
   AddItems(
@@ -289,7 +290,7 @@ function Cal:Show(DateTime)
       {tp="fixedit"; name="Date";   x1=7; x2=16; mask="99.99.9999"; readonly=1; },
       {tp="butt";    name="Today";  x1=18;  text=M.Today; y1=""; btnnoclose=1;  }, -- Set current date
       {tp="sep" },
-      {tp="butt";    name="Close";  centergroup=1; default=1; text=M.Close; focus=1; },
+      {tp="butt";    name="Close";  centergroup=1; default=1; text=M.Close; },
       {tp="butt";    name="Insert"; centergroup=1; x1=18;  text=M.Ins; y1=""; } -- Insert date
   )
 
