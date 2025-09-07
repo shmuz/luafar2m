@@ -380,7 +380,7 @@ function Cal:Show(DateTime)
       elseif Param1==Pos.Today    then
         Current=Today()
         dt=CopyDate(Current)
-        Send(hDlg,F.DM_SETFOCUS,Pos.Close)
+        Send(hDlg,F.DM_SETFOCUS,Pos.User)
       else return
       end
       Rebuild(hDlg,dt)
