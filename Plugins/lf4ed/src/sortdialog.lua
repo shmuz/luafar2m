@@ -45,9 +45,8 @@ local function SortDialog (aData, columntype)
     {tp="edit";  name="edtColPat"; x1=44, y1=""; x2=56; hist=HIST_COLPAT; text=COLPAT_DEFAULT},
     {tp="butt";  name="btnColPat"; x1=59, y1=""; btnnoclose=1; text=M.MDefault},
     {tp="sep"; },
-    {tp="text";  name="labFileName"; text=M.MFileName; },
-    {tp="edit";  name="edtFileName"; x1=21; y1=""; x2=55; hist=HIST_FILENAME},
-    {tp="chbox"; name="cbxFileName"; x1=58; y1=""; text=M.MEnable4},
+    {tp="chbox"; name="cbxFileName"; text=M.MFileName; },
+    {tp="edit";  name="edtFileName"; x1=25; y1=""; hist=HIST_FILENAME},
     {tp="sep"; },
     {tp="butt";  centergroup=1; text=M.MOk; default=1; },
     {tp="butt";  centergroup=1; text=M.MCancel; cancel=1; },
@@ -75,13 +74,13 @@ local function SortDialog (aData, columntype)
       Check(hDlg, Pos.cbxUse1, Pos.edtExpr1, Pos.cbxRev1, Pos.labExpr1, Pos.cbxCase1)
       Check(hDlg, Pos.cbxUse2, Pos.edtExpr2, Pos.cbxRev2, Pos.labExpr2, Pos.cbxCase2)
       Check(hDlg, Pos.cbxUse3, Pos.edtExpr3, Pos.cbxRev3, Pos.labExpr3, Pos.cbxCase3)
-      Check(hDlg, Pos.cbxFileName, Pos.labFileName, Pos.edtFileName)
+      Check(hDlg, Pos.cbxFileName, Pos.edtFileName)
     elseif msg == F.DN_BTNCLICK then
       hDlg:EnableRedraw(false)
       if     param1 == Pos.cbxUse1     then Check(hDlg, Pos.cbxUse1, Pos.edtExpr1, Pos.cbxRev1, Pos.labExpr1, Pos.cbxCase1)
       elseif param1 == Pos.cbxUse2     then Check(hDlg, Pos.cbxUse2, Pos.edtExpr2, Pos.cbxRev2, Pos.labExpr2, Pos.cbxCase2)
       elseif param1 == Pos.cbxUse3     then Check(hDlg, Pos.cbxUse3, Pos.edtExpr3, Pos.cbxRev3, Pos.labExpr3, Pos.cbxCase3)
-      elseif param1 == Pos.cbxFileName then Check(hDlg, Pos.cbxFileName, Pos.labFileName, Pos.edtFileName)
+      elseif param1 == Pos.cbxFileName then Check(hDlg, Pos.cbxFileName, Pos.edtFileName)
       elseif param1 == Pos.btnColPat   then hDlg:SetText(Pos.edtColPat, COLPAT_DEFAULT) end
       hDlg:EnableRedraw(true)
     end
