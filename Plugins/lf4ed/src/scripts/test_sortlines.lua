@@ -1,3 +1,5 @@
+local sortlines = require "sortlines"
+
 local F = far.Flags
 
 local function OpenHelperEditor(filename)
@@ -8,7 +10,7 @@ end
 
 local function CloseHelperEditor()
   editor.Quit()
-  actl.Commit()
+  far.AdvControl("ACTL_COMMIT")
 end
 
 local function ProtectedError(msg, level)
@@ -33,7 +35,7 @@ local function PrepareFile (filename)
   if bit64.band (editInfo.CurState, F.ECSTATE_SAVED) == 0 then
     local result = far.Message("\nSave current file?\n",
       "A new file will be created", "Yes;No;Cancel")
-    if result < 0 or result == 3 then return false end
+    if result < 1 or result == 3 then return false end
     if result == 1 and not editor.SaveFile(nil,editInfo.FileName) then
       far.Message"Could not save file. Canceling the operation."
       return false
@@ -49,9 +51,19 @@ local function PrepareFile (filename)
 end
 
 
+--[==[-------------------------------------------------------------------------
+@data:        Input data; array of strings (table)
+@selection:   <y1>-<y2>[-<x1>-<x2>] (string)
+@refer:       Reference data, either of:
+                  a string (concatenation of 1-digit indexes into @data), or
+                  a table (array of strings)
+@expr:        <expr1>[;<expr2>[;<expr3>]] (string)
+              Syntax of exprN:
+                  reverse, case_sens, rest = exprN:match "(%-?)([+?]?)(.*)"
+@colpat:      Column pattern (Perl regexp; string; optional: default="\\S+")
+@onlysel:     Sort only in vertical selection (boolean)
+---------------------------------------------------------------------------]==]
 local function TestCase (data, selection, refer, expr, colpat, onlysel)
-  local sl = require "sortlines"
-  -----------------------------------------------------------------------------
   local y1,y2 = selection:match"^(%d+)%-(%d+)"
   ProtectedAssert(y1)
   local x1,x2 = selection:match"^%d+%-%d+%-(%d+)%-(%d+)$"
@@ -64,42 +76,31 @@ local function TestCase (data, selection, refer, expr, colpat, onlysel)
   end
   -----------------------------------------------------------------------------
   local control = {}
-  local e1 = expr:match "^[^;]+"
-  local e2 = expr:match "^[^;]*;([^;]+)"
-  local e3 = expr:match "^[^;]*;[^;]*;([^;]+)"
-  if e1 and e1 ~= "" then
-    control.cbxUse1 = true
-    local rev, case = e1:match"^(%-?)(%+?)"
-    if rev == "-" then control.cbxRev1=true end
-    if case == "+" then control.cbxCase1=true end
-    control.edtExpr1 = e1:sub(1+#rev+#case)
-  end
-  if e2 and e2 ~= "" then
-    control.cbxUse2 = true
-    local rev, case = e2:match"^(%-?)(%+?)"
-    if rev == "-" then control.cbxRev2=true end
-    if case == "+" then control.cbxCase2=true end
-    control.edtExpr2 = e2:sub(1+#rev+#case)
-  end
-  if e3 and e3 ~= "" then
-    control.cbxUse3 = true
-    local rev, case = e3:match"^(%-?)(%+?)"
-    if rev == "-" then control.cbxRev3=true end
-    if case == "+" then control.cbxCase3=true end
-    control.edtExpr3 = e3:sub(1+#rev+#case)
+  local i = 0
+  for v in expr:gmatch("[^;]*;?") do
+    i = i + 1
+    if v ~= "" then
+      control["cbxUse"..i] = true
+      local rev, case = v:match"^(%-?)([+?]?)"
+      if rev == "-" then control["cbxRev"..i]=true end
+      control["cbxCase"..i] = (case=="+") or (case=="?" and 2)
+      control["edtExpr"..i] = v:sub(1+#rev+#case)
+    end
   end
   control.edtColPat = colpat or "\\S+"
   control.cbxOnlySel = onlysel
   -----------------------------------------------------------------------------
   ClearBuffer()
-  for _=1,#data do editor.InsertString() end
+  for _=1,#data do
+    editor.InsertString()
+  end
   for i,line in ipairs(data) do
     editor.SetPosition(nil, i, 1)
     editor.SetString(nil, i, line, "")
   end
   editor.Select(nil,unpack(selection))
   -----------------------------------------------------------------------------
-  sl.SortWithRawData(control)
+  sortlines.SortWithRawData(control)
   for i = 1, #data do
     editor.SetPosition(nil,i, 1)
     local s = editor.GetString(nil,i)
