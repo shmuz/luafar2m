@@ -219,6 +219,11 @@ criteria at a time.
     Global functions provided by the script can be used in the #Expr.#
     fields of the dialog.
 
+ #Randomize#
+
+    The selected lines (or their parts) are sorted in pseudorandom order.
+    All expressions are ignored.
+
 ^\1FSimple Examples (no knowledge of Lua is required)\-
 
  #Example 1:#   a          [ ] Reverse
