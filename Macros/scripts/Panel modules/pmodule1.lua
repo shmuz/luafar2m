@@ -24,16 +24,15 @@ local function FileToObject(FileName)
   end
 end
 
-function mod.OpenFilePlugin (Name, Data, OpMode)
-  if Name and Name:sub(-5):lower() == ".abcd" then
-    return FileToObject(Name)
-  end
+function mod.Analyse(Data)
+  return Data.FileName and Data.FileName:sub(-5):lower() == ".abcd"
 end
 
 function mod.Open(OpenFrom, _Id, Item)
-  if OpenFrom == F.OPEN_SHORTCUT then
+  if OpenFrom == F.OPEN_ANALYSE then
+    return FileToObject(Item.FileName)
+  elseif OpenFrom == F.OPEN_SHORTCUT then
     return FileToObject(Item.HostFile)
-
   elseif OpenFrom == F.OPEN_FINDLIST then -- luacheck: ignore
     -- If we uncomment the line "return true", then this module will be
     -- used instead of TmpPanel for displaying search results.

@@ -46,6 +46,14 @@ local function FileToObject(HostFile)
   fp:close()
 end
 
+function mod.Analyse(Data)
+  if Data.FileName == nil then -- ShiftF1
+    return true
+  else
+    return ExtractFileName(Data.Buffer)
+  end
+end
+
 local function CreateArchive()
   local sd = require "far2.simpledialog"
   local fname = JoinPath(far.GetCurrentDirectory(), "FileName1")
@@ -71,18 +79,15 @@ local function CreateArchive()
   end
 end
 
-function mod.OpenFilePlugin (Name, Data, OpMode)
-  if Name == nil then -- ShiftF1
-    return CreateArchive()
-  else
-    local target = ExtractFileName(Data)
-    if target then return FileToObject(Name) end
-  end
-end
-
-function mod.Open (OpenFrom, _Id, Data)
-  if OpenFrom == F.OPEN_SHORTCUT then
-    return FileToObject(Data)
+function mod.Open(OpenFrom, Guid, Data)
+  if OpenFrom == F.OPEN_ANALYSE then
+    if Data.FileName then
+      return FileToObject(Data.FileName)
+    else -- ShiftF1
+      return CreateArchive()
+    end
+  elseif OpenFrom == F.OPEN_SHORTCUT then
+    return FileToObject(Data.HostFile)
   end
 end
 

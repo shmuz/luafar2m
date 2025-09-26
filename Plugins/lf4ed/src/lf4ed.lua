@@ -10,8 +10,8 @@ local SETTINGS_NAME = "settings"
 
 -- CONFIGURATION : keep it at the file top !!
 local DefaultCfg = {
-  -- Default script will be recompiled and run every time Open/OpenFilePlugin
-  -- are called: set true for debugging, false for normal use;
+  -- Default script will be recompiled and run every time Open
+  -- is called: set true for debugging, false for normal use;
   ReloadDefaultScript = false;
 
   -- Reload Lua libraries each time they are require()d:

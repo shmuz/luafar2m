@@ -4,7 +4,7 @@
 -- CONFIGURATION : keep it at the file top !!
 local Cfg = {
   ReloadDefaultScript = true, -- Default script will be recompiled and run every time
-                              -- Open/OpenFilePlugin are called: set true for
+                              -- Open is called: set true for
                               -- debugging, false for normal use;
 
   ReloadOnRequire = true, -- Reload lua libraries each time they are require()d:
@@ -28,7 +28,10 @@ local function Require (name)
 end
 
 function export.Open (From, _Id, Item)
-  if From == F.OPEN_COMMANDLINE then
+  if From == F.OPEN_ANALYSE then
+    return Env:Open(From, Item)
+
+  elseif From == F.OPEN_COMMANDLINE then
     return Env:Open(From, Item)
 
   elseif From == F.OPEN_PLUGINSMENU then
@@ -40,8 +43,8 @@ function export.Open (From, _Id, Item)
   end
 end
 
-function export.OpenFilePlugin (Name, Data)
-  return Env:OpenFilePlugin (Name, Data)
+function export.Analyse (Data)
+  return Env:Analyse (Data)
 end
 
 function export.GetPluginInfo()
