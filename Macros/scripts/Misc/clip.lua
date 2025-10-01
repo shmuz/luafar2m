@@ -20,7 +20,8 @@ Macro {
   action=function()
     local txt = far.PasteFromClipboard()
     if txt==nil or txt=="" then
-      far.CopyToClipboard(mf.mload(KEY,NAME))
+      txt = mf.mload(KEY,NAME)
+      if type(txt)=="string" then far.CopyToClipboard(txt) end
     end
   end;
 }
