@@ -62,6 +62,12 @@ local function IsDevice(FileData)
   return FileData.FileAttributes:find("[fgjk]") -- device_fifo| device_char| device_block| device_sock
 end
 
+-- A temporary super-simplistic (symlinks-related) workaround for non-windows systems.
+-- A smarter (and pretty complex) solution is implemented in far2l.
+local function NewRecurseGuard()
+  return { ["/"] = true; }
+end
+
 local function MaskGenerator (mask, skippath, casesens)
   if CheckMask(mask) then
     local flags = bor(skippath and F.PN_SKIPPATH or 0, casesens and F.PN_CASESENSITIVE or 0)
@@ -830,7 +836,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
       flags.symlinks = true
     end
 
-    local tRecurseGuard = {}
+    local tRecurseGuard = NewRecurseGuard()
     for _, item in ipairs(itemList) do
       local filedata = win.GetFileInfo(item)
       -- note: filedata can be nil for root directories
@@ -943,7 +949,7 @@ local function CollectAllItems (aData, tParams, fFileMask, fDirMask, fDirExMask,
   end
 
   local fileList = {}
-  local tRecurseGuard = {}
+  local tRecurseGuard = NewRecurseGuard()
   DisplayListState(0)
   for _, item in ipairs(itemList) do
     local filedata = win.GetFileInfo(item)
