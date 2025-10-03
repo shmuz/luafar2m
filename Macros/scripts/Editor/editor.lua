@@ -14,16 +14,15 @@ Macro {
   description="Save and run script from editor";
   area="Editor"; key="CtrlF12";
   action=function()
-    for k=1,2 do
-      local info=editor.GetInfo()
-      if bit64.band(info.CurState, F.ECSTATE_SAVED)~=0 then
-        local Flags = info.FileName:sub(-5):lower()==".moon" and "KMFLAGS_MOONSCRIPT"
-          or "KMFLAGS_LUA"
-        far.MacroPost('@"' .. info.FileName .. '"', Flags)
-        break
+    local info = editor.GetInfo()
+    if bit64.band(info.CurState, F.ECSTATE_MODIFIED) ~= 0 then
+      if not editor.SaveFile() then
+        far.Message("Could not save file. The script will not be run.")
+        return
       end
-      if k==1 then editor.SaveFile(); end
     end
+    local Flags = info.FileName:sub(-5):lower()==".moon" and "KMFLAGS_MOONSCRIPT" or "KMFLAGS_LUA"
+    far.MacroPost('@"' .. info.FileName .. '"', Flags)
   end;
 }
 
