@@ -53,7 +53,7 @@ local function CheckEditor()
   end
 
   local eInfo = editor.GetInfo()
-  if eInfo.CurState == F.ECSTATE_MODIFIED then
+  if bit64.band(eInfo.CurState, F.ECSTATE_SAVED) == 0 then
     if not editor.SaveFile() then
       far.Message("Could not save the file", Info.Title, nil, "w")
       return

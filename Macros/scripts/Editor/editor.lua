@@ -15,7 +15,7 @@ Macro {
   area="Editor"; key="CtrlF12";
   action=function()
     local info = editor.GetInfo()
-    if bit64.band(info.CurState, F.ECSTATE_MODIFIED) ~= 0 then
+    if bit64.band(info.CurState, F.ECSTATE_SAVED) == 0 then
       if not editor.SaveFile() then
         far.Message("Could not save file. The script will not be run.")
         return
