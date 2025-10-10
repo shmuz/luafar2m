@@ -11,7 +11,7 @@ local syntax_ini =
   },
   {
     name = "Name"; fgcolor = "yellow";
-    pattern = [[ ^ \s* \w+ \s* (?= =) ]];
+    pattern = [[ ^ \s* [^=\s]+ \s* (?= =) ]];
   },
   {
     name = "String"; fgcolor = "purple";
