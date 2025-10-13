@@ -45,12 +45,12 @@ local RS2, rsm2 = CreateRS()
 
 local function GetRegex(sSearchPat, bCaseSens)
   local tmpHandle = ffi.new("HANDLE[1]")
-  if 0 ~= RegExpControl(nil, F.RECTL_CREATE, ffi.cast("LONG_PTR", tmpHandle)) then
-    ffi.gc(tmpHandle, function(h) RegExpControl(h[0], F.RECTL_FREE, 0) end)
+  if 0 ~= RegExpControl(nil, C.RECTL_CREATE, ffi.cast("LONG_PTR", tmpHandle)) then
+    ffi.gc(tmpHandle, function(h) RegExpControl(h[0], C.RECTL_FREE, 0) end)
     sSearchPat = "/"..sSearchPat.."/"
     if not bCaseSens then sSearchPat = sSearchPat.."i"; end
     local Pat32 = win.Utf8ToUtf32(sSearchPat) .. "\0\0\0"
-    if 0 ~= RegExpControl(tmpHandle[0], F.RECTL_COMPILE, ffi.cast("LONG_PTR",Pat32)) then
+    if 0 ~= RegExpControl(tmpHandle[0], C.RECTL_COMPILE, ffi.cast("LONG_PTR",Pat32)) then
       return tmpHandle
     end
   end
@@ -111,8 +111,8 @@ Panel.LoadCustomSortMode (SortMode, {
     RS1.Text, RS1.Length = p1.FileName, C.wcslen(p1.FileName)
     RS2.Text, RS2.Length = p2.FileName, C.wcslen(p2.FileName)
 
-    local ret1 = RegExpControl(Handle[0], F.RECTL_SEARCHEX, ffi.cast("LONG_PTR", ffi.cast("void*", RS1)))
-    local ret2 = RegExpControl(Handle[0], F.RECTL_SEARCHEX, ffi.cast("LONG_PTR", ffi.cast("void*", RS2)))
+    local ret1 = RegExpControl(Handle[0], C.RECTL_SEARCHEX, ffi.cast("LONG_PTR", ffi.cast("void*", RS1)))
+    local ret2 = RegExpControl(Handle[0], C.RECTL_SEARCHEX, ffi.cast("LONG_PTR", ffi.cast("void*", RS2)))
     if ret1 == ret2 and ret1 ~= 0 then
       return tonumber(RS1.Match[0].start - RS2.Match[0].start)
     else
