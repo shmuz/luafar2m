@@ -554,8 +554,7 @@ local function OpenFromMacro (aItem)
   }
   local area = map[far.MacroGetArea()]
   if area then
-    local args = { far.SplitCmdLine(aItem) }
-    ProcessCommand(args, area)
+    ProcessCommand(aItem, area)
   end
 end
 
