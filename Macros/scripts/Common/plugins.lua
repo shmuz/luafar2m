@@ -3,8 +3,8 @@
 -- Author:                  Shmuel Zeigerman
 -- Published:               https://forum.farmanager.com/viewtopic.php?t=13263
 -- Language:                Lua 5.1
--- Portability:             far3 (>= 4831), far2m
--- Far plugin:              LuaMacro, LF4Editor
+-- Portability:             far3 (>= 3300), far2m
+-- Far plugin:              Any LuaFAR plugin.
 -- Dependencies:            far2.lua_explorer (Lua module)
 ------------------------------------------------------------------------------------------------
 
@@ -17,17 +17,17 @@ local osWindows = package.config:sub(1,1)=="\\"
 local F=far.Flags
 
 local Data = {
-  { BreakKey="F3";         command="showinfo";        help="Show plugin info";      os="lw"; },
-  { BreakKey="Enter";      command="load";            help="Load plugin";           os="lw"; },
-  { BreakKey="Ins";        command="forcedload";      help="Forced load plugin";    os="lw"; },
-  { BreakKey="Del";        command="unload";          help="Unload plugin";         os="lw"; },
-  { BreakKey="F8";         command="clearcache";      help="Clear plugin's cache";  os="l";  },
-  {                                                                                 os="lw"; }, --help separator
-  { BreakKey="CtrlEnter";  command="load_all";        help="Load all";              os="lw"; },
-  { BreakKey="CtrlIns";    command="forcedload_all";  help="Forced load all";       os="lw"; },
-  { BreakKey="CtrlDel";    command="unload_all";      help="Unload all";            os="lw"; },
-  { BreakKey="F1";         command="showhelp";        help="Show help";             os="lw"; },
-  { BreakKey="F24";        command=nil;               help=nil;                     os="lw"; },
+  { BreakKey="F3";        BK="F3";         command="showinfo";        help="Show plugin info";      os="lw"; },
+  { BreakKey="RETURN";    BK="Enter";      command="load";            help="Load plugin";           os="lw"; },
+  { BreakKey="INSERT";    BK="Ins";        command="forcedload";      help="Forced load plugin";    os="lw"; },
+  { BreakKey="DELETE";    BK="Del";        command="unload";          help="Unload plugin";         os="lw"; },
+  { BreakKey="F8";        BK="F8";         command="clearcache";      help="Clear plugin's cache";  os="l";  },
+  { --[[ help separator ]]                                                                          os="lw"; },
+  { BreakKey="C+RETURN";  BK="CtrlEnter";  command="load_all";        help="Load all";              os="lw"; },
+  { BreakKey="C+INSERT";  BK="CtrlIns";    command="forcedload_all";  help="Forced load all";       os="lw"; },
+  { BreakKey="C+DELETE";  BK="CtrlDel";    command="unload_all";      help="Unload all";            os="lw"; },
+  { BreakKey="F1";        BK="F1";         command="showhelp";        help="Show help";             os="lw"; },
+  { BreakKey="F24";       BK="F24";        command=nil;               help=nil;                     os="lw"; },
 }
 
 local breakkeys = {}
@@ -37,7 +37,7 @@ for _,v in ipairs(Data) do
   if v.os:find(osWindows and "w" or "l") then
     if v.BreakKey then
       if v.help then
-        table.insert(helpmessage, ("%-16s%s"):format(v.BreakKey, v.help))
+        table.insert(helpmessage, ("%-16s%s"):format(v.BK, v.help))
       end
       table.insert(breakkeys,v)
     else
@@ -65,11 +65,13 @@ local function GetFileName(name)
   return name:match(osWindows and "[^\\]+$" or "[^/]+$");
 end
 
+-- This function's posts a macro to show its message box on top of the menu.
+--   *  far.MacroPost is used because it is available in any LuaFAR plugin
+--      (mf.postmacro is only available in LuaMacro).
+--   *  Keys('F24') forces rereading the plugins' data.
 local function SpecialMessage(text, title, flags)
-  mf.postmacro(function()
-      far.Message(text, title, nil, flags)
-      Keys("F24") -- force rereading the plugins' data after the dialog was shown
-    end)
+  local seq = ("far.Message(%q, %q, nil, %q); Keys('F24')"):format(text, title, flags)
+  far.MacroPost(seq)
 end
 
 local function Main()
@@ -184,6 +186,8 @@ local function Main()
     end
   end
 end
+
+if not Macro then Main(); return; end
 
 Macro {
   id="B1C9D1B5-E4DE-4CEE-8766-CA8DA5FAE654";
