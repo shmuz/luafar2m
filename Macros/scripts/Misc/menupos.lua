@@ -32,7 +32,7 @@ Macro {
 Macro {
   id="592C27DF-1812-4789-9880-7CAC0EF670B5";
   description="Plugin Menu Select Pos";
-  area="Shell Editor Viewer"; key="F11";
+  area="Common"; key="F11";
   action=function()
     PlugMenuArea = Area.Current
     local V = data[Area.Current]
