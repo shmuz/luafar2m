@@ -2,8 +2,8 @@
 -- Started:                 2023-07-01
 -- Author:                  Shmuel Zeigerman
 -- Language:                Lua 5.1
--- Portability:             far3 (>= 5285), far2m
--- Far plugin:              LuaMacro, LF4Editor
+-- Portability:             far3 (>= 5285: regex.exec), far2m
+-- Far plugin:              Any LuaFAR plugin
 -- Dependencies:            far2.simpledialog (Lua module)
 ------------------------------------------------------------------------------------------------
 

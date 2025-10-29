@@ -1,12 +1,17 @@
------------------------------------------------------------------------------
--- Name:     FIN == "Fix Incorrect Names"
--- Started:  2010-08-26
--- Author:   Shmuel Zeigerman
+------------------------------------------------------------------------------------------------
+-- Name:                    FIN == "Fix Incorrect Names"
+-- Started:                 2010-08-26
+-- Author:                  Shmuel Zeigerman
+-- Published:               https://forum.farmanager.com/viewtopic.php?t=7864
+-- Language:                Lua 5.1
+-- Portability:             far3 (>= 3300), far2m
+-- Far plugin:              LuaMacro, LF4Ed
 -- Original author of plugin in Pascal: Андрей Подлазов aka Тигрёнок.
------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------
 
 local Pattern = "%s+$"
 local F = far.Flags
+local Send = far.SendDlgMessage
 
 local GUIDs = {
   [win.Uuid("fcef11c4-5490-451d-8b4a-62fa03f52759")] = "CopyFilesId",
@@ -24,15 +29,15 @@ local function FIN (Event, FarDialogEvent)
   if Event == F.DE_DLGPROCINIT and FarDialogEvent.Msg == F.DN_CLOSE
                                and FarDialogEvent.Param1 >= 1 then
     local hDlg = FarDialogEvent.hDlg
-    local DialogInfo = hDlg:GetDialogInfo()
+    local DialogInfo = Send(hDlg, "DM_GETDIALOGINFO")
     if DialogInfo and GUIDs[DialogInfo.Id] then
       for item = 1, 1e6 do
-        local FarDialogItem = hDlg:GetDlgItem(item)
+        local FarDialogItem = Send(hDlg, "DM_GETDLGITEM", item)
         if not FarDialogItem then break end
         if FarDialogItem[1] == F.DI_EDIT then
           local str, n = FarDialogItem[10]:gsub(Pattern, "")
           if n > 0 then
-            hDlg:SetText(item, str)
+            Send(hDlg, "DM_SETTEXT", item, str)
           end
           break
         end
