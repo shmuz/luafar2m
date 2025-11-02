@@ -4,11 +4,16 @@
 -- Started:          2025-11-01
 -- Author:           Shmuel Zeigerman
 -- Language:         Lua 5.1
--- Portability:      far3 (>= ????), far2m
+-- Portability:      far3 (>= 6139), far2m
 -- Far plugin:       LuaMacro
 ------------------------------------------------------------------------------------------------
 
 local osWindows = "\\" == string.sub(package.config,1,1)
+if osWindows then
+  local farbuild = select(4, far.AdvControl("ACTL_GETFARMANAGERVERSION", true))
+  if farbuild < 6139 then return end
+end
+
 local set_key, set_name = "temp", "PanelsOnExitFar"
 
 local function Save()
