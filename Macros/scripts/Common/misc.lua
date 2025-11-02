@@ -11,16 +11,12 @@ Macro {
   end;
 }
 
-do
-  local LMguid = far.GetPluginId()
-  local MBguid = "EF6D67A2-59F7-4DF3-952E-F9049877B492"
-  Macro {
-    id="BFC9624A-51AA-475C-B30E-3ECB8A73D22B";
-    description="Macro Browser";
-    area="Common"; key="AltShiftF1";
-    action=function() Plugin.Menu(LMguid,MBguid) end;
-  }
-end
+Macro {
+  id="BFC9624A-51AA-475C-B30E-3ECB8A73D22B";
+  description="Macro Browser";
+  area="Common"; key="AltShiftF1";
+  action=function() Plugin.Call(far.GetPluginId(),"browser") end;
+}
 
 Macro {
   id="71A8298A-0237-429D-83F3-FC8EB5630979";
