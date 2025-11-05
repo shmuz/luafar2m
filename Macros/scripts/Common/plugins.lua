@@ -10,31 +10,31 @@
 
 -- Settings
 local macrokey     = "AltShiftF11"
-local lua_explorer = "far2.lua_explorer"
 -- /Settings
 
 local osWindows = package.config:sub(1,1)=="\\"
 local F=far.Flags
+local lua_explorer = "far2.lua_explorer"
 
 local Data = {
-  { BreakKey="F3";        BK="F3";         command="showinfo";        help="Show plugin info";      os="lw"; },
-  { BreakKey="RETURN";    BK="Enter";      command="load";            help="Load plugin";           os="lw"; },
-  { BreakKey="INSERT";    BK="Ins";        command="forcedload";      help="Forced load plugin";    os="lw"; },
-  { BreakKey="DELETE";    BK="Del";        command="unload";          help="Unload plugin";         os="lw"; },
+  { BreakKey="F3";        BK="F3";         command="showinfo";        help="Show plugin info";    },
+  { BreakKey="RETURN";    BK="Enter";      command="load";            help="Load plugin";         },
+  { BreakKey="INSERT";    BK="Ins";        command="forcedload";      help="Forced load plugin";  },
+  { BreakKey="DELETE";    BK="Del";        command="unload";          help="Unload plugin";       },
   { BreakKey="F8";        BK="F8";         command="clearcache";      help="Clear plugin's cache";  os="l";  },
-  { --[[ help separator ]]                                                                          os="lw"; },
-  { BreakKey="C+RETURN";  BK="CtrlEnter";  command="load_all";        help="Load all";              os="lw"; },
-  { BreakKey="C+INSERT";  BK="CtrlIns";    command="forcedload_all";  help="Forced load all";       os="lw"; },
-  { BreakKey="C+DELETE";  BK="CtrlDel";    command="unload_all";      help="Unload all";            os="lw"; },
-  { BreakKey="F1";        BK="F1";         command="showhelp";        help="Show help";             os="lw"; },
-  { BreakKey="F24";       BK="F24";        command=nil;               help=nil;                     os="lw"; },
+  { --[[ help separator ]] },
+  { BreakKey="C+RETURN";  BK="Ctrl+Enter"; command="load_all";        help="Load all";            },
+  { BreakKey="C+INSERT";  BK="Ctrl+Ins";   command="forcedload_all";  help="Forced load all";     },
+  { BreakKey="C+DELETE";  BK="Ctrl+Del";   command="unload_all";      help="Unload all";          },
+  { BreakKey="C+R";       BK="Ctrl+R";     command=nil;               help="Re-read all"          },
+  { BreakKey="F1";        BK="F1";         command="showhelp";        help="Show help";           },
 }
 
 local breakkeys = {}
 local helpmessage = {}
 
 for _,v in ipairs(Data) do
-  if v.os:find(osWindows and "w" or "l") then
+  if v.os == nil or v.os:find(osWindows and "w" or "l") then
     if v.BreakKey then
       if v.help then
         table.insert(helpmessage, ("%-16s%s"):format(v.BK, v.help))
@@ -68,9 +68,9 @@ end
 -- This function's posts a macro to show its message box on top of the menu.
 --   *  far.MacroPost is used because it is available in any LuaFAR plugin
 --      (mf.postmacro is only available in LuaMacro).
---   *  Keys('F24') forces rereading the plugins' data.
+--   *  Keys('CtrlR') forces rereading the plugins' data.
 local function SpecialMessage(text, title, flags)
-  local seq = ("far.Message(%q, %q, nil, %q); Keys('F24')"):format(text, title, flags)
+  local seq = ("far.Message(%q, %q, nil, %q); Keys('CtrlR')"):format(text, title, flags)
   far.MacroPost(seq)
 end
 
