@@ -63,14 +63,13 @@ Macro {
     local fname, lnum
     local minuses = 0
     for ln = EI.CurLine,1,-1 do
-      local _lnum, _minus
       local str = editor.GetString(nil,ln,3)
       if not lnum then
-        _lnum  = str:match("^@@.-%+(%d+)")
+        local _lnum  = str:match("^@@.-%+(%d+)")
         if _lnum then
           lnum = tonumber(_lnum) + EI.CurLine - ln - 1 - minuses
         end
-        _minus = str:match("^%-")
+        local _minus = str:match("^%-")
         if _minus then
           minuses = minuses + 1
         end
