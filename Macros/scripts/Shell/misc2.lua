@@ -60,21 +60,28 @@ Macro {
   priority=60; -- suppress "jump from Grep results" binded to the same key
   action=function()
     local EI = editor.GetInfo()
-    local rootname = win.JoinPath(far.GetMyHome(), "repos", EI.FileName:match("([^/]+)%.[^.]*$"))
     local fname, lnum
     local minuses = 0
     for ln = EI.CurLine,1,-1 do
+      local _lnum, _minus
       local str = editor.GetString(nil,ln,3)
-      local _minus = str:match("^%-")
-      local _lnum  = str:match("^@@.-%+(%d+)")
-      local _fname = str:match("^%+%+%+%s+b/(.+)")
-      if _minus then minuses = minuses + 1 end
-      if _lnum then lnum = tonumber(_lnum) + EI.CurLine - ln - 1 - minuses; end
-      if _fname then fname = _fname; break; end
+      if not lnum then
+        _lnum  = str:match("^@@.-%+(%d+)")
+        if _lnum then
+          lnum = tonumber(_lnum) + EI.CurLine - ln - 1 - minuses
+        end
+        _minus = str:match("^%-")
+        if _minus then
+          minuses = minuses + 1
+        end
+      end
+      fname = str:match("^%+%+%+%s+b/(.+)")
+      if fname then break; end
     end
-    if not (fname and lnum) then return end
-    local flags = "EF_NONMODAL EF_IMMEDIATERETURN EF_DISABLEHISTORY"
-    fname = win.JoinPath(rootname, fname)
-    editor.Editor(fname, nil,nil,nil,nil,nil, flags, lnum)
+    if fname and lnum then
+      local flags = "EF_NONMODAL EF_IMMEDIATERETURN EF_DISABLEHISTORY"
+      fname = win.JoinPath(far.GetMyHome(), "repos", EI.FileName:match("([^/]+)%.[^.]*$"), fname)
+      editor.Editor(fname, nil,nil,nil,nil,nil, flags, lnum)
+    end
   end;
 }
