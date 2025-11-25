@@ -30,9 +30,8 @@ local function GetData()
 
   Items.proc = function(hDlg, msg, param1, param2)
     if msg == F.DN_CLOSE then
-      if hDlg:GetText(Pos.filemask) == "" then
-        far.Message("File mask field is empty", "Warning", nil, "w" ); return 0;
-      end
+      local mask = hDlg:GetText(Pos.filemask)
+      if not far.CheckMask(mask, "PN_SHOWERRORMESSAGE") then return 0 end
     end
   end
 
