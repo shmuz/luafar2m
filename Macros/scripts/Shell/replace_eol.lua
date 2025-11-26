@@ -43,22 +43,24 @@ local function GetData()
   return out
 end
 
-local function ReplaceEOL(fname, EOL)
-  local fp, msg = io.open(fname, "rb")
+local function ReplaceEOL(item, fname, EOL)
+  local fp, msg = win.OpenFile(fname, "rb")
   if not fp then
+    msg = item.FileName.."\n"..msg
     far.Message(msg, "Open for read", nil, "w")
     return
   end
 
-  local txt = fp:read("*all")
+  local txt = fp:read(item.FileSize)
   fp:close()
   if txt:find("%z") then return end -- don't process files containing \0
 
   local txt2 = regex.gsub(txt, "\r\n|\n|\r", EOL)
   if txt2 == txt then return end -- nothing changed
 
-  fp, msg = io.open(fname, "wb")
+  fp, msg = win.OpenFile(fname, "wb")
   if not fp then
+    msg = item.FileName.."\n"..msg
     far.Message(msg, "Open for write", nil, "w")
     return
   end
@@ -71,12 +73,16 @@ local function main()
   local data = GetData()
   if not data then return end
 
+  if far.Message("Your files will be modified.\nContinue?", "Warning", "Yes;No", "w") ~= 1 then
+    return
+  end
+
   local start_dir = panel.GetPanelDirectory(nil,1).Name
   local n_total, n_changed = 0, 0
   far.RecursiveSearch(start_dir, data.filemask,
     function(item, fullpath)
       if not item.FileAttributes:find("d") then
-        local res = ReplaceEOL(fullpath, data.EOL)
+        local res = ReplaceEOL(item, fullpath, data.EOL)
         n_total = n_total + 1
         if res then n_changed = n_changed + 1 end
       end
