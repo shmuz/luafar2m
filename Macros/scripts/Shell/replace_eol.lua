@@ -57,7 +57,6 @@ end
 local function ReplaceEOL(item, fname, EOL)
   local fp, msg = OpenFile(fname, "rb")
   if not fp then
-    msg = item.FileName.."\n"..msg
     far.Message(msg, "Open for read", nil, "w")
     return
   end
@@ -71,7 +70,6 @@ local function ReplaceEOL(item, fname, EOL)
 
   fp, msg = OpenFile(fname, "wb")
   if not fp then
-    msg = item.FileName.."\n"..msg
     far.Message(msg, "Open for write", nil, "w")
     return
   end
