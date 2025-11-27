@@ -1,6 +1,17 @@
--- Started: 2025-11-23
--- Replace line ends
--- Files found to contain \0 (binary nulls) are skipped
+-- Description:
+--     Replace line ends.
+--     Files found to contain \0 (binary nulls) are skipped.
+--
+-- Started      : 2025-11-23
+-- Author       : Shmuel Zeigerman
+-- Language     : Lua 5.1
+-- Portability  : far3, far2m
+-- Far plugin   : Any LuaFAR plugin.
+-- Dependencies : far2.simpledialog (Lua module)
+
+
+local osWindows = package.config:sub(1,1) == "\\"
+local OpenFile = osWindows and io.open or win.OpenFile
 
 local F = far.Flags
 local sd = require "far2.simpledialog"
@@ -44,7 +55,7 @@ local function GetData()
 end
 
 local function ReplaceEOL(item, fname, EOL)
-  local fp, msg = win.OpenFile(fname, "rb")
+  local fp, msg = OpenFile(fname, "rb")
   if not fp then
     msg = item.FileName.."\n"..msg
     far.Message(msg, "Open for read", nil, "w")
@@ -58,7 +69,7 @@ local function ReplaceEOL(item, fname, EOL)
   local txt2 = regex.gsub(txt, "\r\n|\n|\r", EOL)
   if txt2 == txt then return end -- nothing changed
 
-  fp, msg = win.OpenFile(fname, "wb")
+  fp, msg = OpenFile(fname, "wb")
   if not fp then
     msg = item.FileName.."\n"..msg
     far.Message(msg, "Open for write", nil, "w")
