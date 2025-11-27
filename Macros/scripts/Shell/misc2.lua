@@ -43,13 +43,30 @@ Macro {
   end
 }
 
+-- Search for an item having the typed char the most close to name's beginning
 Macro {
   id="6F4A2EBD-FE21-4417-8AA7-451FDFB3B8F4";
   description="Quick search";
   area="Shell"; key="/LAlt\\S/";
   action=function()
     local ch = akey(1):sub(-1)
-    Keys("Alt*", ch)
+    local PI = panel.GetPanelInfo(nil,1)
+    local patt = ("[%s%s]"):format(ch:upper(), ch:lower())
+    local pos, offs
+    for i = 0, PI.ItemsNumber-1 do
+      local j = 1 + (i + PI.CurrentItem - 1) % PI.ItemsNumber
+      local fname = Panel.Item(0,j,0)
+      local fpos = fname:find("[^/]+$") -- to work in TmpPanel too
+      local from = fname:find(patt, fpos)
+      if from then
+        if pos == nil or from < offs then
+          pos, offs = j, from
+        end
+        if from == 1 then break end
+      end
+    end
+    if pos then Panel.SetPosIdx(0, pos) end
+    Keys("Alt*", ch:lower())
   end;
 }
 
