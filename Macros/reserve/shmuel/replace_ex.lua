@@ -16,32 +16,40 @@ local Items = {
   { tp="dbox";  text="Replace EX"; },
 
   { tp="chbox"; name="recurse"; text="&Recursively"; x1=W+5; },
-
   { tp="text";  text="&File mask:"; ystep=0; width=W; },
   { tp="edit";  name="filemask"; hist="Masks"; focus=1; },
 
   { tp="text";  text="&Search for:"; },
   { tp="edit";  name="search"; hist="SearchText"; },
-
   { tp="text";  text="R&eplace with:"; },
   { tp="edit";  name="replace"; hist="ReplaceText"; },
+
+  { tp="chbox"; name="funcmode";  text="Functi&on mode"; x1=8; },
+  { tp="text";  text="I&nitial code:"; width=16; },
+  { tp="edit";  name="initfunc";  hist="InitFunc"; y1=""; x1=19; },
+  { tp="text";  text="Final co&de:"; width=16; },
+  { tp="edit";  name="finalfunc"; hist="FinalFunc"; y1=""; x1=19; },
+  { tp="sep" },
 
   { tp="chbox"; name="regex";      text="Re&gular expressions"; },
   { tp="chbox"; name="casesens";   text="&Case sensitive"; },
   { tp="chbox"; name="wholewords"; text="&Whole words"; },
-
   { tp="chbox"; name="extended";   text="&Ignore spaces"; ystep=-2; x1=5+W; },
   { tp="chbox"; name="multiline";  text="&Multi-line"; x1=5+W; },
   { tp="chbox"; name="fileasline"; text="File as a &line"; x1=5+W; },
 
   { tp="sep" },
   { tp="butt"; centergroup=1; default=1; text="OK"; },
+  { tp="butt"; centergroup=1; cancel=1; text="Clear"; btnnoclose=1; name="clear"; },
   { tp="butt"; centergroup=1; cancel=1; text="Cancel"; },
 }
 
+-- Get data from the dialog
 local function GetData()
   local Dlg = sd.New(Items)
   local Pos = Dlg:Indexes()
+  local RepFunc, InitFunc, FinalFunc -- make upvalues for dialog procedure for reusing later
+
   Dlg:LoadData(sett.mload(set_key, set_name) or {})
 
   local function OnRegexChange(hDlg)
@@ -51,11 +59,34 @@ local function GetData()
     hDlg:Enable(Pos.fileasline, enb)
   end
 
+  local function OnFuncModeChange(hDlg)
+    local enb = hDlg:GetCheck(Pos.funcmode)
+    for k=1,4 do
+      hDlg:Enable(Pos.funcmode + k, enb)
+    end
+  end
+
+  local function Clear(hDlg)
+    for pos,elem in ipairs(Items) do
+      if elem.tp == "chbox" then hDlg:SetCheck(pos,false)
+      elseif elem.tp == "edit" then hDlg:SetText(pos,"")
+      end
+    end
+    OnRegexChange(hDlg)
+    OnFuncModeChange(hDlg)
+  end
+
   Items.proc = function(hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
       OnRegexChange(hDlg)
+      OnFuncModeChange(hDlg)
+
     elseif msg == F.DN_BTNCLICK then
-      if param1 == Pos.regex then OnRegexChange(hDlg) end
+      if param1 == Pos.regex then OnRegexChange(hDlg)
+      elseif param1 == Pos.funcmode then OnFuncModeChange(hDlg)
+      elseif param1 == Pos.clear then Clear(hDlg)
+      end
+
     elseif msg == F.DN_CLOSE then
       if not far.CheckMask(param2.filemask, "PN_SHOWERRORMESSAGE") then
         return 0
@@ -63,17 +94,49 @@ local function GetData()
       --------------------------------
       local patt = param2.search
       if patt == "" or param2.regex and not pcall(regex.new, patt) then
-        far.Message("Invalid search string", "Warning", nil, "w")
+        far.Message("Invalid search string", "Search field error", nil, "w")
         return 0
+      end
+      --------------------------------
+      if param2.funcmode then
+        local str = "local T = { [0]=select(1,...); select(2, ...) }\n"
+        local chunk, msg2 = loadstring(str..param2.replace)
+        if chunk then
+          RepFunc = chunk
+        else
+          far.Message(msg2, "Replace field error", nil, "w")
+          return 0
+        end
+
+        InitFunc, msg2 = loadstring(param2.initfunc)
+        if not InitFunc then
+          far.Message(msg2, "Initial code error", nil, "w")
+          return 0
+        end
+
+        FinalFunc, msg2 = loadstring(param2.finalfunc)
+        if not FinalFunc then
+          far.Message(msg2, "Final code error", nil, "w")
+          return 0
+        end
       end
     end
   end
 
   local out = Dlg:Run()
   if out then
+    --------------------------------
     sett.msave(set_key, set_name, out)
     --------------------------------
-    if out.regex then
+    out.env = setmetatable({}, {__index=_G})
+    --------------------------------
+    out.initfunc, out.finalfunc = nil, nil
+    if out.funcmode then
+      out.search = "("..out.search..")" -- make regex.gsub produce T[0]
+      out.replace = setfenv(RepFunc, out.env)
+      out.initfunc = setfenv(InitFunc, out.env)
+      out.finalfunc = setfenv(FinalFunc, out.env)
+    elseif out.regex then
       out.replace = regex.gsub(out.replace,
           [[ \\(.) | \$ ( [0-9A-Z] ) ]],
           function(c1, c2) return c1 or "%"..c2 end,
@@ -92,6 +155,7 @@ local function GetData()
     if out.wholewords then
       out.search = "\\b"..out.search.."\\b"
     end
+    --------------------------------
   end
   return out
 end
@@ -107,7 +171,10 @@ local function ReplaceInFile(item, fname, data)
   fp:close()
   if txt:find("%z") then return end -- don't process files containing \0
 
+  if data.initfunc then data.initfunc() end
   local txt2 = regex.gsub(txt, data.search, data.replace, nil, data.cflags)
+  if data.finalfunc then data.finalfunc() end
+
   if txt2 == txt then return end -- nothing changed
 
   fp, msg = OpenFile(fname, "wb")
