@@ -26,9 +26,12 @@ local Items = {
   { tp="text";  text="R&eplace with:"; },
   { tp="edit";  name="replace"; hist="ReplaceText"; },
 
+  { tp="chbox"; name="regex";      text="Re&gular expressions"; },
   { tp="chbox"; name="casesens";   text="&Case sensitive"; },
-  { tp="chbox"; name="extended";   text="&Ignore spaces"; },
-  { tp="chbox"; name="multiline";  text="&Multi-line"; ystep=-1; x1=5+W; },
+  { tp="chbox"; name="wholewords"; text="&Whole words"; },
+
+  { tp="chbox"; name="extended";   text="&Ignore spaces"; ystep=-2; x1=5+W; },
+  { tp="chbox"; name="multiline";  text="&Multi-line"; x1=5+W; },
   { tp="chbox"; name="fileasline"; text="File as a &line"; x1=5+W; },
 
   { tp="sep" },
@@ -39,31 +42,54 @@ local Items = {
 local function GetData()
   local Dlg = sd.New(Items)
   local Pos = Dlg:Indexes()
-  Dlg:LoadData(mf.mload(set_key, set_name) or {})
+  Dlg:LoadData(sett.mload(set_key, set_name) or {})
+
+  local function OnRegexChange(hDlg)
+    local enb = hDlg:GetCheck(Pos.regex)
+    hDlg:Enable(Pos.extended, enb)
+    hDlg:Enable(Pos.multiline, enb)
+    hDlg:Enable(Pos.fileasline, enb)
+  end
 
   Items.proc = function(hDlg, msg, param1, param2)
-    if msg == F.DN_CLOSE then
-      local mask = hDlg:GetText(Pos.filemask)
-      if not far.CheckMask(mask, "PN_SHOWERRORMESSAGE") then return 0 end
-      local patt = hDlg:GetText(Pos.search)
-      if patt == "" or not pcall(regex.new, patt) then
-        far.Message("Invalid search string", "Warning", nil, "w"); return 0;
+    if msg == F.DN_INITDIALOG then
+      OnRegexChange(hDlg)
+    elseif msg == F.DN_BTNCLICK then
+      if param1 == Pos.regex then OnRegexChange(hDlg) end
+    elseif msg == F.DN_CLOSE then
+      if not far.CheckMask(param2.filemask, "PN_SHOWERRORMESSAGE") then
+        return 0
+      end
+      --------------------------------
+      local patt = param2.search
+      if patt == "" or param2.regex and not pcall(regex.new, patt) then
+        far.Message("Invalid search string", "Warning", nil, "w")
+        return 0
       end
     end
   end
 
   local out = Dlg:Run()
   if out then
-    mf.msave(set_key, set_name, out)
+    sett.msave(set_key, set_name, out)
+    --------------------------------
     out.replace = regex.gsub(out.replace,
         [[ \\(.) | \$ ( [0-9A-Z] ) ]],
         function(c1, c2) return c1 or "%"..c2 end,
         nil, "ix")
-    out.cflags = ""
-    if not out.casesens   then out.cflags = out.cflags.."i" end
-    if out.extended       then out.cflags = out.cflags.."x" end
-    if out.multiline      then out.cflags = out.cflags.."m" end
-    if out.fileasline     then out.cflags = out.cflags.."s" end
+    --------------------------------
+    out.cflags = out.casesens and "" or "i"
+    if out.regex then
+      if out.extended   then out.cflags = out.cflags.."x" end
+      if out.multiline  then out.cflags = out.cflags.."m" end
+      if out.fileasline then out.cflags = out.cflags.."s" end
+    else
+      out.search = out.search:gsub("%p", "\\%0")
+    end
+    --------------------------------
+    if out.wholewords then
+      out.search = "\\b"..out.search.."\\b"
+    end
   end
   return out
 end
