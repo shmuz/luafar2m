@@ -73,10 +73,12 @@ local function GetData()
   if out then
     sett.msave(set_key, set_name, out)
     --------------------------------
-    out.replace = regex.gsub(out.replace,
-        [[ \\(.) | \$ ( [0-9A-Z] ) ]],
-        function(c1, c2) return c1 or "%"..c2 end,
-        nil, "ix")
+    if out.regex then
+      out.replace = regex.gsub(out.replace,
+          [[ \\(.) | \$ ( [0-9A-Z] ) ]],
+          function(c1, c2) return c1 or "%"..c2 end,
+          nil, "ix")
+    end
     --------------------------------
     out.cflags = out.casesens and "" or "i"
     if out.regex then
