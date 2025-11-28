@@ -50,8 +50,6 @@ local function GetData()
   local Pos = Dlg:Indexes()
   local RepFunc, InitFunc, FinalFunc -- make upvalues for dialog procedure for reusing later
 
-  Dlg:LoadData(sett.mload(set_key, set_name) or {})
-
   local function OnRegexChange(hDlg)
     local enb = hDlg:GetCheck(Pos.regex)
     hDlg:Enable(Pos.extended, enb)
@@ -66,7 +64,7 @@ local function GetData()
     end
   end
 
-  local function Clear(hDlg)
+  local function ClearControls(hDlg)
     for pos,elem in ipairs(Items) do
       if elem.tp == "chbox" then hDlg:SetCheck(pos,false)
       elseif elem.tp == "edit" then hDlg:SetText(pos,"")
@@ -74,55 +72,59 @@ local function GetData()
     end
     OnRegexChange(hDlg)
     OnFuncModeChange(hDlg)
+    hDlg:SetFocus(Pos.filemask)
+  end
+
+  local function OnCloseDialog(hDlg, param1, out)
+    if not far.CheckMask(out.filemask, "PN_SHOWERRORMESSAGE") then
+      return 0
+    end
+    --------------------------------
+    local patt = out.search
+    if patt == "" or out.regex and not pcall(regex.new, patt) then
+      far.Message("Invalid search string", "Search field error", nil, "w")
+      return 0
+    end
+    --------------------------------
+    if out.funcmode then
+      local msg
+
+      local str = "local T = { [0]=select(1,...); select(2, ...) }\n" .. out.replace
+      RepFunc, msg = loadstring(str)
+      if not RepFunc then
+        far.Message(msg, "Replace field error", nil, "w")
+        return 0
+      end
+
+      InitFunc, msg = loadstring(out.initfunc)
+      if not InitFunc then
+        far.Message(msg, "Initial code error", nil, "w")
+        return 0
+      end
+
+      FinalFunc, msg = loadstring(out.finalfunc)
+      if not FinalFunc then
+        far.Message(msg, "Final code error", nil, "w")
+        return 0
+      end
+    end
   end
 
   Items.proc = function(hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
       OnRegexChange(hDlg)
       OnFuncModeChange(hDlg)
-
     elseif msg == F.DN_BTNCLICK then
       if param1 == Pos.regex then OnRegexChange(hDlg)
       elseif param1 == Pos.funcmode then OnFuncModeChange(hDlg)
-      elseif param1 == Pos.clear then Clear(hDlg)
+      elseif param1 == Pos.clear then ClearControls(hDlg)
       end
-
     elseif msg == F.DN_CLOSE then
-      if not far.CheckMask(param2.filemask, "PN_SHOWERRORMESSAGE") then
-        return 0
-      end
-      --------------------------------
-      local patt = param2.search
-      if patt == "" or param2.regex and not pcall(regex.new, patt) then
-        far.Message("Invalid search string", "Search field error", nil, "w")
-        return 0
-      end
-      --------------------------------
-      if param2.funcmode then
-        local str = "local T = { [0]=select(1,...); select(2, ...) }\n"
-        local chunk, msg2 = loadstring(str..param2.replace)
-        if chunk then
-          RepFunc = chunk
-        else
-          far.Message(msg2, "Replace field error", nil, "w")
-          return 0
-        end
-
-        InitFunc, msg2 = loadstring(param2.initfunc)
-        if not InitFunc then
-          far.Message(msg2, "Initial code error", nil, "w")
-          return 0
-        end
-
-        FinalFunc, msg2 = loadstring(param2.finalfunc)
-        if not FinalFunc then
-          far.Message(msg2, "Final code error", nil, "w")
-          return 0
-        end
-      end
+      return OnCloseDialog(hDlg, param1, param2)
     end
   end
 
+  Dlg:LoadData(sett.mload(set_key, set_name) or {})
   local out = Dlg:Run()
   if out then
     --------------------------------
@@ -157,6 +159,7 @@ local function GetData()
     end
     --------------------------------
   end
+
   return out
 end
 
@@ -171,9 +174,15 @@ local function ReplaceInFile(item, fname, data)
   fp:close()
   if txt:find("%z") then return end -- don't process files containing \0
 
-  if data.initfunc then data.initfunc() end
+  -- if data.initfunc then
+  --   data.initfunc()
+  -- end
+
   local txt2 = regex.gsub(txt, data.search, data.replace, nil, data.cflags)
-  if data.finalfunc then data.finalfunc() end
+
+  -- if data.finalfunc then
+  --   data.finalfunc()
+  -- end
 
   if txt2 == txt then return end -- nothing changed
 
@@ -195,6 +204,10 @@ local function main()
     return
   end
 
+  if data.initfunc then
+    data.initfunc()
+  end
+
   local start_dir = panel.GetPanelDirectory(nil,1).Name
   local n_total, n_changed = 0, 0
   far.RecursiveSearch(start_dir, data.filemask,
@@ -206,6 +219,10 @@ local function main()
       end
     end,
     data.recurse and "FRS_RECUR" or 0)
+
+  if data.finalfunc then
+    data.finalfunc()
+  end
 
   local msg = ("%d files processed\n%d files modified"):format(n_total, n_changed)
   far.Message(msg, "Done")
