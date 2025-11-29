@@ -7,6 +7,7 @@ local F = far.Flags
 local sd = require "far2.simpledialog"
 local sett = mf or require "far2.settings"
 local set_key, set_name = "temp", "Replace_EX"
+local Title = "Replace in files"
 
 local W = 35
 local Items = {
@@ -24,19 +25,19 @@ local Items = {
   { tp="text";  text="R&eplace with:"; },
   { tp="edit";  name="replace"; hist="ReplaceText"; },
 
-  { tp="chbox"; name="funcmode";  text="Functi&on mode"; x1=8; },
-  { tp="text";  text="I&nitial code:"; width=16; },
-  { tp="edit";  name="initfunc";  hist="InitFunc"; y1=""; x1=19; },
-  { tp="text";  text="Final co&de:"; width=16; },
-  { tp="edit";  name="finalfunc"; hist="FinalFunc"; y1=""; x1=19; },
-  { tp="sep" },
-
   { tp="chbox"; name="regex";      text="Re&gular expressions"; },
   { tp="chbox"; name="casesens";   text="&Case sensitive"; },
   { tp="chbox"; name="wholewords"; text="&Whole words"; },
   { tp="chbox"; name="extended";   text="&Ignore spaces"; ystep=-2; x1=5+W; },
   { tp="chbox"; name="multiline";  text="&Multi-line"; x1=5+W; },
   { tp="chbox"; name="fileasline"; text="File as a &line"; x1=5+W; },
+  { tp="sep" },
+
+  { tp="chbox"; name="funcmode";  text="Functi&on mode"; },
+  { tp="text";  text="I&nitial code:"; width=16; },
+  { tp="edit";  name="initfunc";  hist="InitFunc"; y1=""; x1=19; ext="lua"; },
+  { tp="text";  text="Final co&de:"; width=16; },
+  { tp="edit";  name="finalfunc"; hist="FinalFunc"; y1=""; x1=19; ext="lua"; },
 
   { tp="sep" },
   { tp="butt"; centergroup=1; default=1; text="OK"; },
@@ -47,31 +48,32 @@ local Items = {
 -- Get data from the dialog
 local function GetData()
   local Dlg = sd.New(Items)
-  local Pos = Dlg:Indexes()
+  local Pos, Elem = Dlg:Indexes()
   local RepFunc, InitFunc, FinalFunc -- make upvalues for dialog procedure for reusing later
-
-  local function OnRegexChange(hDlg)
-    local enb = hDlg:GetCheck(Pos.regex)
-    hDlg:Enable(Pos.extended, enb)
-    hDlg:Enable(Pos.multiline, enb)
-    hDlg:Enable(Pos.fileasline, enb)
-  end
 
   local function OnFuncModeChange(hDlg)
     local enb = hDlg:GetCheck(Pos.funcmode)
     for k=1,4 do
       hDlg:Enable(Pos.funcmode + k, enb)
     end
+    Elem.replace.ext = (enb ~= 0) and "lua" or nil
+  end
+
+  local function OnRegexChange(hDlg)
+    local enb = hDlg:GetCheck(Pos.regex)
+    hDlg:Enable(Pos.extended, enb)
+    hDlg:Enable(Pos.multiline, enb)
+    hDlg:Enable(Pos.fileasline, enb)
+    hDlg:Enable(Pos.funcmode, enb)
+    if enb == 0 then
+      hDlg:SetCheck(Pos.funcmode, 0)
+    end
+    OnFuncModeChange(hDlg)
   end
 
   local function ClearControls(hDlg)
-    for pos,elem in ipairs(Items) do
-      if elem.tp == "chbox" then hDlg:SetCheck(pos,false)
-      elseif elem.tp == "edit" then hDlg:SetText(pos,"")
-      end
-    end
+    Dlg:ClearControls(hDlg)
     OnRegexChange(hDlg)
-    OnFuncModeChange(hDlg)
     hDlg:SetFocus(Pos.filemask)
   end
 
@@ -113,7 +115,6 @@ local function GetData()
   Items.proc = function(hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
       OnRegexChange(hDlg)
-      OnFuncModeChange(hDlg)
     elseif msg == F.DN_BTNCLICK then
       if param1 == Pos.regex then OnRegexChange(hDlg)
       elseif param1 == Pos.funcmode then OnFuncModeChange(hDlg)
@@ -200,22 +201,31 @@ local function main()
   local data = GetData()
   if not data then return end
 
-  if far.Message("Your files will be modified.\nContinue?", "Warning", "Yes;No", "w") ~= 1 then
-    return
-  end
-
   if data.initfunc then
     data.initfunc()
   end
 
   local start_dir = panel.GetPanelDirectory(nil,1).Name
   local n_total, n_changed = 0, 0
+  local Ask = true
   far.RecursiveSearch(start_dir, data.filemask,
     function(item, fullpath)
       if not item.FileAttributes:find("d") then
-        local res = ReplaceInFile(item, fullpath, data)
-        n_total = n_total + 1
-        if res then n_changed = n_changed + 1 end
+        local Process = not Ask
+        if Ask then
+          local msg = ("\"%s\" will be modified"):format(fullpath)
+          local res = far.Message(msg, Title, "&Modify;&Skip;&All;&Cancel", "w")
+          if     res == 1 then Process = true
+          elseif res == 2 then Process = false
+          elseif res == 3 then Process,Ask = true,false
+          else return true
+          end
+        end
+        if Process then
+          local res = ReplaceInFile(item, fullpath, data)
+          n_total = n_total + 1
+          if res then n_changed = n_changed + 1 end
+        end
       end
     end,
     data.recurse and "FRS_RECUR" or 0)
