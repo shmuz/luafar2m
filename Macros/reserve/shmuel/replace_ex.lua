@@ -40,8 +40,9 @@ local Items = {
   { tp="edit";  name="finalfunc"; hist="FinalFunc"; y1=""; x1=19; ext="lua"; },
 
   { tp="sep" },
-  { tp="butt"; centergroup=1; default=1; text="OK"; },
+  { tp="butt"; centergroup=1; default=1; text="Run"; },
   { tp="butt"; centergroup=1; cancel=1; text="Clear"; btnnoclose=1; name="clear"; },
+  { tp="butt"; centergroup=1; cancel=1; text="Reload"; btnnoclose=1; name="reload"; },
   { tp="butt"; centergroup=1; cancel=1; text="Cancel"; },
 }
 
@@ -73,6 +74,12 @@ local function GetData()
 
   local function ClearControls(hDlg)
     Dlg:ClearControls(hDlg)
+    OnRegexChange(hDlg)
+    hDlg:SetFocus(Pos.filemask)
+  end
+
+  local function ReloadControls(hDlg)
+    Dlg:SetDialogState(hDlg, sett.mload(set_key, set_name) or {})
     OnRegexChange(hDlg)
     hDlg:SetFocus(Pos.filemask)
   end
@@ -119,6 +126,7 @@ local function GetData()
       if param1 == Pos.regex then OnRegexChange(hDlg)
       elseif param1 == Pos.funcmode then OnFuncModeChange(hDlg)
       elseif param1 == Pos.clear then ClearControls(hDlg)
+      elseif param1 == Pos.reload then ReloadControls(hDlg)
       end
     elseif msg == F.DN_CLOSE then
       return OnCloseDialog(hDlg, param1, param2)
@@ -164,16 +172,21 @@ local function GetData()
   return out
 end
 
+local function BreakQuery(fname, msg, title)
+  msg = fname .."\n".. msg
+  local res = far.Message(msg, title, "&Continue;&Terminate", "w")
+  return res == 2
+end
+
 local function ReplaceInFile(item, fname, data)
   local fp, msg = OpenFile(fname, "rb")
   if not fp then
-    far.Message(msg, "Open for read", nil, "w")
-    return
+    return BreakQuery(fname, msg, "Open for read") and "break"
   end
 
   local txt = fp:read(item.FileSize)
   fp:close()
-  if txt:find("%z") then return end -- don't process files containing \0
+  if string.find(txt, "%z") then return end -- don't process files containing \0
 
   -- if data.initfunc then
   --   data.initfunc()
@@ -189,8 +202,7 @@ local function ReplaceInFile(item, fname, data)
 
   fp, msg = OpenFile(fname, "wb")
   if not fp then
-    far.Message(msg, "Open for write", nil, "w")
-    return
+    return BreakQuery(fname, msg, "Open for write") and "break"
   end
   fp:write(txt2)
   fp:close()
@@ -210,7 +222,7 @@ local function main()
   local Ask = true
   far.RecursiveSearch(start_dir, data.filemask,
     function(item, fullpath)
-      if not item.FileAttributes:find("d") then
+      if not item.FileAttributes:find("[djk]") then
         local Process = not Ask
         if Ask then
           local msg = ("\"%s\" will be modified"):format(fullpath)
@@ -222,9 +234,13 @@ local function main()
           end
         end
         if Process then
-          local res = ReplaceInFile(item, fullpath, data)
           n_total = n_total + 1
-          if res then n_changed = n_changed + 1 end
+          local res = ReplaceInFile(item, fullpath, data)
+          if res == "break" then
+            return true
+          elseif res then
+            n_changed = n_changed + 1
+          end
         end
       end
     end,
