@@ -172,9 +172,16 @@ local function GetData()
   return out
 end
 
+local function PleaseWait()
+  far.Message("Please wait...", Title, "")
+end
+
 local function BreakQuery(fname, msg, title)
   msg = fname .."\n".. msg
   local res = far.Message(msg, title, "&Continue;&Terminate", "w")
+  if res ~= 2 then
+    PleaseWait()
+  end
   return res == 2
 end
 
@@ -220,27 +227,41 @@ local function main()
   local start_dir = panel.GetPanelDirectory(nil,1).Name
   local n_total, n_changed = 0, 0
   local Ask = true
+  local last_count = 0
+
+  PleaseWait()
   far.RecursiveSearch(start_dir, data.filemask,
     function(item, fullpath)
-      if not item.FileAttributes:find("[djk]") then
-        local Process = not Ask
-        if Ask then
-          local msg = ("\"%s\" will be modified"):format(fullpath)
-          local res = far.Message(msg, Title, "&Modify;&Skip;&All;&Cancel", "w")
-          if     res == 1 then Process = true
-          elseif res == 2 then Process = false
-          elseif res == 3 then Process,Ask = true,false
-          else return true
-          end
+      if item.FileAttributes:find("[dejk]") then -- dir | reparse point | device_block | device_sock
+        return
+      end
+      local ProcessFile = not Ask
+      if Ask then
+        -- ask user what to do
+        local msg = ("\"%s\" will be modified"):format(fullpath)
+        local res = far.Message(msg, Title, "&Modify;&Skip;&All;&Cancel", "w")
+        if     res == 1 then ProcessFile = true
+        elseif res == 2 then ProcessFile = false
+        elseif res == 3 then ProcessFile,Ask = true,false
+        else return true
         end
-        if Process then
-          n_total = n_total + 1
-          local res = ReplaceInFile(item, fullpath, data)
-          if res == "break" then
+        PleaseWait()
+      end
+      if ProcessFile then
+        -- process the file
+        n_total = n_total + 1
+        local res = ReplaceInFile(item, fullpath, data)
+        if res == "break" then
+          return true
+        elseif res then
+          n_changed = n_changed + 1
+        end
+        -- check if the user pressed Esc
+        if n_total - last_count >= 100 and win.ExtractKey() == "ESCAPE" then
+          if 1 == far.Message("Break the operation?", Title, "Yes;No", "w") then
             return true
-          elseif res then
-            n_changed = n_changed + 1
           end
+          last_count = n_total
         end
       end
     end,
@@ -250,8 +271,10 @@ local function main()
     data.finalfunc()
   end
 
+  panel.RedrawPanel(nil,0)
+  panel.RedrawPanel(nil,1)
   local msg = ("%d files processed\n%d files modified"):format(n_total, n_changed)
-  far.Message(msg, "Done")
+  far.Message(msg, Title)
 end
 
 if not Macro then main() return end
