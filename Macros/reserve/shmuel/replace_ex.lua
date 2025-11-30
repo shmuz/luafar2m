@@ -1,7 +1,8 @@
 -- Started      : 2025-11-27
 
 local osWindows = package.config:sub(1,1) == "\\"
-local OpenFile = osWindows and io.open or win.OpenFile
+local OpenFile = osWindows and io.open or win.OpenFile --luacheck:ignore
+local Clock = osWindows and function() return far.FarClock()/1e6 end or win.Clock --luacheck:ignore
 
 local F = far.Flags
 local sd = require "far2.simpledialog"
@@ -176,13 +177,15 @@ local function PleaseWait()
   far.Message("Please wait...", Title, "")
 end
 
+local function MessageAndWait(...)
+  local res = far.Message(...)
+  PleaseWait()
+  return res
+end
+
 local function BreakQuery(fname, msg, title)
   msg = fname .."\n".. msg
-  local res = far.Message(msg, title, "&Continue;&Terminate", "w")
-  if res ~= 2 then
-    PleaseWait()
-  end
-  return res == 2
+  return 2 == MessageAndWait(msg, title, "&Continue;&Terminate", "w")
 end
 
 local function ReplaceInFile(item, fname, data)
@@ -191,19 +194,26 @@ local function ReplaceInFile(item, fname, data)
     return BreakQuery(fname, msg, "Open for read") and "break"
   end
 
-  local txt = fp:read(item.FileSize)
+  -- Lua 5.1 and LuaJIT return nil on reading an empty file. Workaround that.
+  local txt = (item.FileSize == 0) and "" or fp:read(item.FileSize)
   fp:close()
-  if string.find(txt, "%z") then return end -- don't process files containing \0
 
-  -- if data.initfunc then
-  --   data.initfunc()
-  -- end
+  -- Don't process some corner cases
+  if not txt or #txt ~= item.FileSize then -- more processing is required
+    return
+  end
 
+  -- Don't process files containing either \0 or invalid UTF-8 (it's by design).
+  if string.find(txt,"%z") or not txt:isvalid() then
+    return
+  end
+
+  -- if data.initfunc then data.initfunc() end
+
+  -- Do the main work.
   local txt2 = regex.gsub(txt, data.search, data.replace, nil, data.cflags)
 
-  -- if data.finalfunc then
-  --   data.finalfunc()
-  -- end
+  -- if data.finalfunc then data.finalfunc() end
 
   if txt2 == txt then return end -- nothing changed
 
@@ -227,7 +237,7 @@ local function main()
   local start_dir = panel.GetPanelDirectory(nil,1).Name
   local n_total, n_changed = 0, 0
   local Ask = true
-  local last_count = 0
+  local last_clock = Clock()
 
   PleaseWait()
   far.RecursiveSearch(start_dir, data.filemask,
@@ -239,13 +249,12 @@ local function main()
       if Ask then
         -- ask user what to do
         local msg = ("\"%s\" will be modified"):format(fullpath)
-        local res = far.Message(msg, Title, "&Modify;&Skip;&All;&Cancel", "w")
+        local res = MessageAndWait(msg, Title, "&Modify;&Skip;&All;&Cancel", "w")
         if     res == 1 then ProcessFile = true
         elseif res == 2 then ProcessFile = false
         elseif res == 3 then ProcessFile,Ask = true,false
         else return true
         end
-        PleaseWait()
       end
       if ProcessFile then
         -- process the file
@@ -257,11 +266,14 @@ local function main()
           n_changed = n_changed + 1
         end
         -- check if the user pressed Esc
-        if n_total - last_count >= 100 and win.ExtractKey() == "ESCAPE" then
-          if 1 == far.Message("Break the operation?", Title, "Yes;No", "w") then
-            return true
+        local now = Clock()
+        if now - last_clock >= 0.2 then
+          last_clock = now
+          if win.ExtractKey() == "ESCAPE" then
+            if 1 == MessageAndWait("Break the operation?", Title, "Yes;No", "w") then
+              return true
+            end
           end
-          last_count = n_total
         end
       end
     end,
