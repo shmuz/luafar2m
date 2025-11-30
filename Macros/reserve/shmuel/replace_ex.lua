@@ -10,45 +10,45 @@ local sett = mf or require "far2.settings"
 local set_key, set_name = "temp", "Replace_EX"
 local Title = "Replace in files"
 
-local W = 35
-local Items = {
-  guid = "E2661CE3-04DA-4106-A496-250C3924A331";
-  -- help = "Contents";
-  width = 2 * (W + 3);
-  { tp="dbox";  text="Replace EX"; },
-
-  { tp="chbox"; name="recurse"; text="&Recursively"; x1=W+5; },
-  { tp="text";  text="&File mask:"; ystep=0; width=W; },
-  { tp="edit";  name="filemask"; hist="Masks"; focus=1; },
-
-  { tp="text";  text="&Search for:"; },
-  { tp="edit";  name="search"; hist="SearchText"; },
-  { tp="text";  text="R&eplace with:"; },
-  { tp="edit";  name="replace"; hist="ReplaceText"; },
-
-  { tp="chbox"; name="regex";      text="Re&gular expressions"; },
-  { tp="chbox"; name="casesens";   text="&Case sensitive"; },
-  { tp="chbox"; name="wholewords"; text="&Whole words"; },
-  { tp="chbox"; name="extended";   text="&Ignore spaces"; ystep=-2; x1=5+W; },
-  { tp="chbox"; name="multiline";  text="&Multi-line"; x1=5+W; },
-  { tp="chbox"; name="fileasline"; text="File as a &line"; x1=5+W; },
-  { tp="sep" },
-
-  { tp="chbox"; name="funcmode";  text="Functi&on mode"; },
-  { tp="text";  text="I&nitial code:"; width=16; },
-  { tp="edit";  name="initfunc";  hist="InitFunc"; y1=""; x1=19; ext="lua"; },
-  { tp="text";  text="Final co&de:"; width=16; },
-  { tp="edit";  name="finalfunc"; hist="FinalFunc"; y1=""; x1=19; ext="lua"; },
-
-  { tp="sep" },
-  { tp="butt"; centergroup=1; default=1; text="Run"; },
-  { tp="butt"; centergroup=1; cancel=1; text="Clear"; btnnoclose=1; name="clear"; },
-  { tp="butt"; centergroup=1; cancel=1; text="Reload"; btnnoclose=1; name="reload"; },
-  { tp="butt"; centergroup=1; cancel=1; text="Cancel"; },
-}
-
 -- Get data from the dialog
 local function GetData()
+  local W = 35
+  local Items = {
+    guid = "E2661CE3-04DA-4106-A496-250C3924A331";
+    -- help = "Contents";
+    width = 2 * (W + 3);
+    { tp="dbox";  text="Replace EX"; },
+
+    { tp="chbox"; name="recurse"; text="&Recursively"; x1=W+5; },
+    { tp="text";  text="&File mask:"; ystep=0; width=W; },
+    { tp="edit";  name="filemask"; hist="Masks"; focus=1; },
+
+    { tp="text";  text="&Search for:"; },
+    { tp="edit";  name="search"; hist="SearchText"; },
+    { tp="text";  text="R&eplace with:"; },
+    { tp="edit";  name="replace"; hist="ReplaceText"; },
+
+    { tp="chbox"; name="regex";      text="Re&gular expressions"; },
+    { tp="chbox"; name="casesens";   text="&Case sensitive"; },
+    { tp="chbox"; name="wholewords"; text="&Whole words"; },
+    { tp="chbox"; name="extended";   text="&Ignore spaces"; ystep=-2; x1=5+W; },
+    { tp="chbox"; name="multiline";  text="&Multi-line"; x1=5+W; },
+    { tp="chbox"; name="fileasline"; text="File as a &line"; x1=5+W; },
+    { tp="sep" },
+
+    { tp="chbox"; name="funcmode";  text="Functi&on mode"; },
+    { tp="text";  text="I&nitial code:"; width=16; },
+    { tp="edit";  name="initfunc";  hist="InitFunc"; y1=""; x1=19; ext="lua"; },
+    { tp="text";  text="Final co&de:"; width=16; },
+    { tp="edit";  name="finalfunc"; hist="FinalFunc"; y1=""; x1=19; ext="lua"; },
+
+    { tp="sep" },
+    { tp="butt"; centergroup=1; default=1; text="Run"; },
+    { tp="butt"; centergroup=1; cancel=1; text="Clear"; btnnoclose=1; name="clear"; },
+    { tp="butt"; centergroup=1; cancel=1; text="Reload"; btnnoclose=1; name="reload"; },
+    { tp="butt"; centergroup=1; cancel=1; text="Cancel"; },
+  }
+
   local Dlg = sd.New(Items)
   local Pos, Elem = Dlg:Indexes()
   local RepFunc, InitFunc, FinalFunc -- make upvalues for dialog procedure for reusing later
@@ -185,13 +185,13 @@ end
 
 local function BreakQuery(fname, msg, title)
   msg = fname .."\n".. msg
-  return 2 == MessageAndWait(msg, title, "&Continue;&Terminate", "w")
+  return MessageAndWait(msg, title, "&Continue;&Terminate", "w") == 2 and "break"
 end
 
 local function ReplaceInFile(item, fname, data)
   local fp, msg = OpenFile(fname, "rb")
   if not fp then
-    return BreakQuery(fname, msg, "Open for read") and "break"
+    return BreakQuery(fname, msg, "Open for read")
   end
 
   -- Lua 5.1 and LuaJIT return nil on reading an empty file. Workaround that.
@@ -219,7 +219,7 @@ local function ReplaceInFile(item, fname, data)
 
   fp, msg = OpenFile(fname, "wb")
   if not fp then
-    return BreakQuery(fname, msg, "Open for write") and "break"
+    return BreakQuery(fname, msg, "Open for write")
   end
   fp:write(txt2)
   fp:close()
