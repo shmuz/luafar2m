@@ -173,8 +173,10 @@ local function GetData()
   return out
 end
 
+local n_total, n_changed
 local function PleaseWait()
-  far.Message("Please wait...", Title, "")
+  local msg = ("%d/%d files modified. Please wait..."):format(n_changed, n_total)
+  far.Message(msg, Title, "")
 end
 
 local function MessageAndWait(...)
@@ -235,7 +237,7 @@ local function main()
   end
 
   local start_dir = panel.GetPanelDirectory(nil,1).Name
-  local n_total, n_changed = 0, 0
+  n_total, n_changed = 0, 0
   local Ask = true
   local last_clock = Clock()
 
@@ -274,6 +276,7 @@ local function main()
               return true
             end
           end
+          PleaseWait()
         end
       end
     end,
