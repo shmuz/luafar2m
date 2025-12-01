@@ -149,7 +149,12 @@ local function GetData()
       out.initfunc = setfenv(InitFunc, out.env)
       out.finalfunc = setfenv(FinalFunc, out.env)
     elseif out.regex then
+      -- provide the expected meaning of \n, \r, etc.
       out.replace = out.replace:gsub("\\(.)", { a="\a"; e="\27"; f="\f"; n="\n"; r="\r"; t="\t"; })
+      -- remove special meaning of % character
+      out.replace = out.replace:gsub("%%", "%%%%")
+      -- remove backslashes from the characters escaped with them
+      -- and replace $0, $1, etc. with %0, %1, etc., as regex.gsub expects %
       out.replace = regex.gsub(out.replace,
           [[ \\(.) | \$ ( [0-9A-Z] ) ]],
           function(c1, c2) return c1 or "%"..c2 end,
@@ -295,7 +300,7 @@ local function main()
 
   local start_dir = panel.GetPanelDirectory(nil,1).Name
   n_total, n_changed = 0, 0
-  local Ask = true
+  local Ask = not data.funcmode
   local YesToAll = false
   local last_clock = Clock()
 
@@ -309,7 +314,7 @@ local function main()
       if Ask then
         -- ask user what to do
         local msg = ("File will be modified\n%s"):format(fullpath)
-        local res = MessageAndWait(msg, Title, "&Modify;&All;&Skip;&Cancel", "w")
+        local res = MessageAndWait(msg, Title, "&Modify;&All;&Skip;&Cancel")
         if     res == 1 then ProcessFile = true
         elseif res == 2 then ProcessFile,Ask = true,false
         elseif res == 3 then ProcessFile = false
