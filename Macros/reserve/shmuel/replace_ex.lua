@@ -7,6 +7,7 @@ local Clock = osWindows and function() return far.FarClock()/1e6 end or win.Cloc
 local F = far.Flags
 local sd = require "far2.simpledialog"
 local sett = mf or require "far2.settings"
+local libMessage = require "far2.message"
 local set_key, set_name = "temp", "Replace_EX"
 local Title = "Replace in files"
 
@@ -99,7 +100,7 @@ local function GetData()
     if out.funcmode then
       local msg
 
-      local str = "local T = { [0]=select(1,...); select(2, ...) }\n" .. out.replace
+      local str = "T = { [0]=select(1,...); select(2, ...) }\n" .. out.replace
       RepFunc, msg = loadstring(str)
       if not RepFunc then
         far.Message(msg, "Replace field error", nil, "w")
@@ -140,15 +141,15 @@ local function GetData()
     --------------------------------
     sett.msave(set_key, set_name, out)
     --------------------------------
-    out.env = setmetatable({}, {__index=_G})
-    --------------------------------
     out.initfunc, out.finalfunc = nil, nil
     if out.funcmode then
+      out.env = setmetatable({ N1=0;N2=0;A1={};A2={}; }, {__index=_G})
       out.search = "("..out.search..")" -- make regex.gsub produce T[0]
       out.replace = setfenv(RepFunc, out.env)
       out.initfunc = setfenv(InitFunc, out.env)
       out.finalfunc = setfenv(FinalFunc, out.env)
     elseif out.regex then
+      out.replace = out.replace:gsub("\\(.)", { a="\a"; e="\27"; f="\f"; n="\n"; r="\r"; t="\t"; })
       out.replace = regex.gsub(out.replace,
           [[ \\(.) | \$ ( [0-9A-Z] ) ]],
           function(c1, c2) return c1 or "%"..c2 end,
@@ -173,11 +174,13 @@ local function GetData()
   return out
 end
 
+
 local n_total, n_changed
 local function PleaseWait()
   local msg = ("%d/%d files modified. Please wait..."):format(n_changed, n_total)
   far.Message(msg, Title, "")
 end
+
 
 local function MessageAndWait(...)
   local res = far.Message(...)
@@ -185,15 +188,36 @@ local function MessageAndWait(...)
   return res
 end
 
+
 local function BreakQuery(fname, msg, title)
   msg = fname .."\n".. msg
-  return MessageAndWait(msg, title, "&Continue;&Terminate", "w") == 2 and "break"
+  return MessageAndWait(msg, title, "&Continue;&Terminate", "w") ~= 1
 end
 
-local function ReplaceInFile(item, fname, data)
+
+local function AskForReplace(fname, src, trg)
+  local color = libMessage.GetInvertedColor("COL_DIALOGTEXT")
+  local msg = {
+      fname, "\n",
+      {separator=1, text=" Replace "},
+      {text=src, color=color}, "\n",
+      {separator=1, text=" with "},
+      {text=trg, color=color},
+  }
+  local btns = "&Yes;Yes &for this file;Yes for &all files\n"
+              .. "&Skip;Skip for &this file;&Cancel"
+
+  local res = libMessage.Message(msg, Title, btns, "cl", nil,
+      win.Uuid("CADC0532-6A02-42C9-94D9-6F9B3EDDA55E"))
+  PleaseWait()
+  return res
+end
+
+
+local function ReplaceInFile(item, fname, data, yes_to_all)
   local fp, msg = OpenFile(fname, "rb")
   if not fp then
-    return BreakQuery(fname, msg, "Open for read")
+    return false, BreakQuery(fname, msg, "Open for read") and "cancel"
   end
 
   -- Lua 5.1 and LuaJIT return nil on reading an empty file. Workaround that.
@@ -210,23 +234,56 @@ local function ReplaceInFile(item, fname, data)
     return
   end
 
-  -- if data.initfunc then data.initfunc() end
+  -- env. variables for the current file processing
+  local env = data.env
+  local freplace = data.replace
+
+  local file_yes, file_no = yes_to_all, false
+  local cancel_all = false
+
+  if data.funcmode then
+    env.FN = fname  -- file name; as in LF Search
+    env.item = item -- access to file parameters
+    env.n1, env.n2 = 0, 0   -- counters
+    env.a1, env.a2 = {}, {} -- tables
+
+    freplace = function(...)
+      if file_yes then
+        return data.replace(...)
+      elseif file_no then
+        return
+      else
+        local val = data.replace(...)
+        local ret = AskForReplace(fname, env.T[0], val)
+        yes_to_all = (ret == 3)
+        cancel_all = (ret < 1 or ret == 6)
+        file_yes   = (ret == 2 or ret == 3)
+        file_no    = (ret < 1 or ret == 5 or ret == 6)
+        return (ret==1 or ret==2 or ret==3) and val
+      end
+    end
+  end
 
   -- Do the main work.
-  local txt2 = regex.gsub(txt, data.search, data.replace, nil, data.cflags)
+  local txt2 = regex.gsub(txt, data.search, freplace, nil, data.cflags)
 
-  -- if data.finalfunc then data.finalfunc() end
-
-  if txt2 == txt then return end -- nothing changed
-
-  fp, msg = OpenFile(fname, "wb")
-  if not fp then
-    return BreakQuery(fname, msg, "Open for write")
+  local result = false
+  if txt2 ~= txt then -- if something changed
+    fp, msg = OpenFile(fname, "wb")
+    if fp then
+      fp:write(txt2)
+      fp:close()
+      result = true
+    else
+      if BreakQuery(fname, msg, "Open for write") then
+        cancel_all = true
+      end
+    end
   end
-  fp:write(txt2)
-  fp:close()
-  return true
+
+  return result, (cancel_all and "cancel") or (yes_to_all and "all")
 end
+
 
 local function main()
   local data = GetData()
@@ -239,6 +296,7 @@ local function main()
   local start_dir = panel.GetPanelDirectory(nil,1).Name
   n_total, n_changed = 0, 0
   local Ask = true
+  local YesToAll = false
   local last_clock = Clock()
 
   PleaseWait()
@@ -250,22 +308,25 @@ local function main()
       local ProcessFile = not Ask
       if Ask then
         -- ask user what to do
-        local msg = ("\"%s\" will be modified"):format(fullpath)
-        local res = MessageAndWait(msg, Title, "&Modify;&Skip;&All;&Cancel", "w")
+        local msg = ("File will be modified\n%s"):format(fullpath)
+        local res = MessageAndWait(msg, Title, "&Modify;&All;&Skip;&Cancel", "w")
         if     res == 1 then ProcessFile = true
-        elseif res == 2 then ProcessFile = false
-        elseif res == 3 then ProcessFile,Ask = true,false
+        elseif res == 2 then ProcessFile,Ask = true,false
+        elseif res == 3 then ProcessFile = false
         else return true
         end
       end
       if ProcessFile then
         -- process the file
+        local mod, act = ReplaceInFile(item, fullpath, data, YesToAll)
         n_total = n_total + 1
-        local res = ReplaceInFile(item, fullpath, data)
-        if res == "break" then
-          return true
-        elseif res then
+        if mod then
           n_changed = n_changed + 1
+        end
+        if act == "cancel" then
+          return true
+        elseif act == "all" then
+          YesToAll = true
         end
         -- check if the user pressed Esc
         local now = Clock()
@@ -291,6 +352,7 @@ local function main()
   local msg = ("%d files processed\n%d files modified"):format(n_total, n_changed)
   far.Message(msg, Title)
 end
+
 
 if not Macro then main() return end
 
