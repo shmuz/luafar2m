@@ -158,40 +158,6 @@ local function GetSearchAreas(aData)
 end
 
 
-local hst_map = { ["\\"]="\\"; n="\n"; r="\r"; t="\t"; }
-
-local function GetDialogHistory (name)
-  local value
-  local fname = far.InMyConfig("history/dialogs.hst")
-  local fp = io.open(fname)
-  if fp then
-    local head = ("[SavedDialogHistory/%s]"):format(name)
-    local in_section
-    for line in fp:lines() do
-      if in_section then
-        if line:find("[", 1, true) == 1 then -- new section begins
-          break
-        end
-        local v = line:match("^Lines=(.*)")
-        if v then
-          if v:sub(1,1) == '"' then
-            v = v:sub(2,-2):gsub("\\(.)", hst_map)
-            value = v:match("(.-)\n") or v
-          else
-            value = v
-          end
-          break
-        end
-      elseif line:find(head, 1, true) == 1 then
-        in_section = true
-      end
-    end
-    fp:close()
-  end
-  return value
-end
-
-
 -- Same as tfind, but all input and output offsets are in characters rather than bytes.
 local function WrapTfindMethod (tfind)
   local usub, ssub = ("").sub, string.sub
@@ -515,6 +481,7 @@ function SRFrame:InsertInDialog (aPanelsDialog, aOp)
   local insert = table.insert
   local Items = self.Items
   local md = 40 -- "middle"
+  local config = _Plugin.History["config"]
   ------------------------------------------------------------------------------
   if aPanelsDialog then
     insert(Items, { tp="chbox"; name="bCaseSensFileMask"; x1=md; text=M.MDlgFileMaskCaseSens; nohilite=1; })
@@ -523,7 +490,7 @@ function SRFrame:InsertInDialog (aPanelsDialog, aOp)
   end
   ------------------------------------------------------------------------------
   insert(Items, { tp="text"; text=M.MDlgSearchPat; })
-  insert(Items, { tp="edit"; name="sSearchPat"; hist="SearchText"; })
+  insert(Items, { tp="edit"; name="sSearchPat"; hist="SearchText"; uselasthistory=config.rPickHistory; })
   ------------------------------------------------------------------------------
   if aPanelsDialog and aOp == "grep" then
     insert(Items, { tp="text";  text=M.MDlgSkipPat; })
@@ -620,20 +587,14 @@ function SRFrame:OnDataLoaded (aData)
   if not self.bScriptCall then
     if bInEditor then
       local config = _Plugin.History["config"]
-      if config.rPickHistory then
-        Items[Pos.sSearchPat].val = GetDialogHistory("SearchText") or aData.sSearchPat or ""
-      elseif config.rPickNowhere then
+      if config.rPickNowhere then
         Items[Pos.sSearchPat].val = ""
         if Pos.sReplacePat then Items[Pos.sReplacePat].val = ""; end
-      else -- (default) if config.rPickEditor then
+      elseif config.rPickEditor then
         Items[Pos.sSearchPat].val = GetWordUnderCursor() or ""
       end
     else
-      Items[Pos.sSearchPat].val =
-        aData.sSearchPat == "" and ""
-        or GetDialogHistory("SearchText")
-        or aData.sSearchPat
-        or ""
+      Items[Pos.sSearchPat].val = aData.sSearchPat or ""
     end
   end
 
@@ -1205,7 +1166,6 @@ return {
   ErrorMsg              = ErrorMsg;
   FormatInt             = FormatInt;
   FormatTime            = FormatTime;
-  GetDialogHistory      = GetDialogHistory;
   GetRegexLib           = GetRegexLib;
   GetReplaceFunction    = GetReplaceFunction;
   GetSearchAreas        = GetSearchAreas;

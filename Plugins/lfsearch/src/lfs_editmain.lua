@@ -171,7 +171,7 @@ local function EditorAction (aOp, aData, aScriptCall)
 
   elseif aOp == "repeat" or aOp == "repeat_rev" then
     bReplace = (State.sLastOp == "replace")
-    local searchtext = _Plugin.sSearchWord or Common.GetDialogHistory("SearchText")
+    local searchtext = _Plugin.sSearchWord
     if searchtext ~= aData.sSearchPat then
       bReplace = false
       aData.bSearchBack = false
