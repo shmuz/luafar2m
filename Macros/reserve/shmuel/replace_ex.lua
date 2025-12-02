@@ -44,10 +44,11 @@ local function GetData()
     { tp="edit";  name="finalfunc"; hist="FinalFunc"; y1=""; x1=19; ext="lua"; },
 
     { tp="sep" },
-    { tp="butt"; centergroup=1; default=1; text="Run"; },
-    { tp="butt"; centergroup=1; cancel=1; text="Clear"; btnnoclose=1; name="clear"; },
-    { tp="butt"; centergroup=1; cancel=1; text="Reload"; btnnoclose=1; name="reload"; },
-    { tp="butt"; centergroup=1; cancel=1; text="Cancel"; },
+    { tp="butt"; centergroup=1; text="Run"; default=1; },
+    { tp="butt"; centergroup=1; text="Clear";  btnnoclose=1; name="clear"; },
+    { tp="butt"; centergroup=1; text="Reload"; btnnoclose=1; name="reload"; },
+    { tp="butt"; centergroup=1; text="Save";   btnnoclose=1; name="save"; },
+    { tp="butt"; centergroup=1; text="Cancel"; cancel=1; },
   }
 
   local Dlg = sd.New(Items)
@@ -83,6 +84,11 @@ local function GetData()
   local function ReloadControls(hDlg)
     Dlg:SetDialogState(hDlg, sett.mload(set_key, set_name) or {})
     OnRegexChange(hDlg)
+    hDlg:SetFocus(Pos.filemask)
+  end
+
+  local function SaveControls(hDlg)
+    sett.msave(set_key, set_name, Dlg:GetDialogState(hDlg))
     hDlg:SetFocus(Pos.filemask)
   end
 
@@ -127,8 +133,9 @@ local function GetData()
     elseif msg == F.DN_BTNCLICK then
       if param1 == Pos.regex then OnRegexChange(hDlg)
       elseif param1 == Pos.funcmode then OnFuncModeChange(hDlg)
-      elseif param1 == Pos.clear then ClearControls(hDlg)
+      elseif param1 == Pos.clear  then ClearControls(hDlg)
       elseif param1 == Pos.reload then ReloadControls(hDlg)
+      elseif param1 == Pos.save   then SaveControls(hDlg)
       end
     elseif msg == F.DN_CLOSE then
       return OnCloseDialog(hDlg, param1, param2)
@@ -247,24 +254,40 @@ local function ReplaceInFile(item, fname, data, yes_to_all)
   local cancel_all = false
 
   if data.funcmode then
-    env.FN = fname  -- file name; as in LF Search
-    env.item = item -- access to file parameters
-    env.n1, env.n2 = 0, 0   -- counters
-    env.a1, env.a2 = {}, {} -- tables
+    env.FN = fname            -- file name; as in LF Search
+    env.M, env.R = 0, 0       -- counters of matches and replacements; as in LF Search
+    env.item = item           -- access to file parameters
+    env.n1, env.n2 = 0, 0     -- counters
+    env.a1, env.a2 = {}, {}   -- tables
 
     freplace = function(...)
-      if file_yes then
-        return data.replace(...)
-      elseif file_no then
+      env.M = env.M + 1
+      if file_no then return end
+
+      local val = data.replace(...)
+      if not val then return end -- false value = no replace now
+
+      local tp = type(val)
+      if tp ~= "string" and tp ~= "number" then
+        file_no = true -- true non-string non-number value = no further replaces
         return
-      else
-        local val = data.replace(...)
-        local ret = AskForReplace(fname, env.T[0], val)
-        yes_to_all = (ret == 3)
-        cancel_all = (ret < 1 or ret == 6)
-        file_yes   = (ret == 2 or ret == 3)
-        file_no    = (ret < 1 or ret == 5 or ret == 6)
-        return (ret==1 or ret==2 or ret==3) and val
+      end
+
+      local ret
+      if not file_yes then
+        ret = AskForReplace(fname, env.T[0], val)
+        if     ret == 1 then  ret = ret
+        elseif ret == 2 then  file_yes = true
+        elseif ret == 3 then  file_yes, yes_to_all = true, true
+        elseif ret == 4 then  ret = ret
+        elseif ret == 5 then  file_no = true
+        else                  file_no, cancel_all = true, true
+        end
+      end
+
+      if file_yes or ret == 1 then
+        env.R = env.R + 1
+        return val
       end
     end
   end
