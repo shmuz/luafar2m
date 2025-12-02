@@ -1,8 +1,8 @@
 # Replace EX — Replace in files (SUPER Replace)
 
-Script: replace_ex.lua
-Macro: Ctrl+Alt+E
-Dialog title: "Replace in files"
+- Script: replace_ex.lua
+- Macro: Ctrl+Alt+E
+- Dialog title: "Replace in files"
 
 Overview
 --------
@@ -93,30 +93,30 @@ Examples
 
 Basic plain-text replace (non-regex)
 - Purpose: replace "TODO" with "DONE" in *.txt files in current directory:
-  - File mask: *.txt
-  - Search for: TODO
-  - Replace with: DONE
+  - File mask: `*.txt`
+  - Search for: `TODO`
+  - Replace with: `DONE`
   - Regular expressions: unchecked
   - Run
 
 Regex with capture groups
 - Purpose: swap two words separated by a colon "key:value" to "value:key":
-  - File mask: *.cfg
+  - File mask: `*.cfg`
   - Regular expressions: checked
-  - Search for: (\w+):(\w+)
-  - Replace with: $2:$1
+  - Search for: `(\w+):(\w+)`
+  - Replace with: `$2:$1`
   (The script converts $1/$2 to the proper replacement syntax for the underlying regex engine.)
 
 Function mode example: conditional replacement and counting
 - Suppose you want to increment a number captured in a pattern:
   - Regular expressions: checked
   - Function mode: checked
-  - Search for: (\bcount:\s*)(\d+)
+  - Search for: `(\bcount:\s*)(\d+)`
   - Replace with (Lua chunk):
-      -- increment captured number and update per-file counter
-      local prefix = T[1]      -- "count: "
-      local num = tonumber(T[2]) or 0
-      return prefix .. tostring(num + 1)
+        -- increment captured number and update per-file counter
+        local prefix = T[1]      -- "count: "
+        local num = tonumber(T[2]) or 0
+        return prefix .. tostring(num + 1)
 
 Notes about the T table in Function mode:
 - T[0] = whole match
