@@ -113,10 +113,12 @@ Function mode example: conditional replacement and counting
   - Function mode: checked
   - Search for: `(\bcount:\s*)(\d+)`
   - Replace with (Lua chunk):
-        -- increment captured number and update per-file counter
-        local prefix = T[1]      -- "count: "
-        local num = tonumber(T[2]) or 0
-        return prefix .. tostring(num + 1)
+    ```lua
+    -- increment captured number and update per-file counter
+    local prefix = T[1]      -- "count: "
+    local num = tonumber(T[2]) or 0
+    return prefix .. tostring(num + 1)
+    ```
 
 Notes about the T table in Function mode:
 - T[0] = whole match
