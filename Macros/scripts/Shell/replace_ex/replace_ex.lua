@@ -1,5 +1,7 @@
 -- Started      : 2025-11-27
 
+local MAX_SIZE = 2 ^ 28 -- (256 MiB) skip files larger than this value
+
 local osWindows = package.config:sub(1,1) == "\\"
 local OpenFile = osWindows and io.open or win.OpenFile --luacheck:ignore
 local Clock = osWindows and function() return far.FarClock()/1e6 end or win.Clock --luacheck:ignore
@@ -227,6 +229,14 @@ end
 
 
 local function ReplaceInFile(item, fname, data, yes_to_all)
+  if item.FileSize > MAX_SIZE then
+    local msg = ("%s\nFile is too large (%.1f Mib)"):format(fname, item.FileSize/2^20)
+    local ret = MessageAndWait(msg, Title, "&Skip;&Process anyway;&Terminate", "w")
+    if     ret == 1 then return false, false
+    elseif ret ~= 2 then return false, "cancel"
+    end
+  end
+
   local fp, msg = OpenFile(fname, "rb")
   if not fp then
     return false, BreakQuery(fname, msg, "Open for read") and "cancel"
