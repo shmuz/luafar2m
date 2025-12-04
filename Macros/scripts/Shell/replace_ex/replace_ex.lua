@@ -23,7 +23,7 @@ local function GetData()
     { tp="dbox";  text="Replace EX"; },
 
     { tp="chbox"; name="recurse"; text="&Recursively"; x1=W+5; },
-    { tp="text";  text="&File mask:"; ystep=0; width=W; },
+    { tp="text";  text="&File mask:"; y1=""; width=W; },
     { tp="edit";  name="filemask"; hist="Masks"; focus=1; },
 
     { tp="text";  text="&Search for:"; },
@@ -35,8 +35,8 @@ local function GetData()
     { tp="chbox"; name="casesens";   text="&Case sensitive"; },
     { tp="chbox"; name="wholewords"; text="&Whole words"; },
     { tp="chbox"; name="extended";   text="&Ignore spaces"; ystep=-2; x1=5+W; },
-    { tp="chbox"; name="multiline";  text="&Multi-line"; x1=5+W; },
-    { tp="chbox"; name="fileasline"; text="File as a &line"; x1=5+W; },
+    { tp="chbox"; name="multiline";  text="&Multi-line"; x1=""; },
+    { tp="chbox"; name="fileasline"; text="File as a &line"; x1=""; },
     { tp="sep" },
 
     { tp="chbox"; name="funcmode";  text="Functi&on mode"; },
