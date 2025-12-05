@@ -58,7 +58,6 @@ local function my_gsub(subj, psearch, trepl, ask)
     local from, to, caps = psearch:tfind(subj, pos)
     if from then
       local cur_rep = {}
-      insert(cur_rep, subj:sub(pos, from-1))
       nmatch = nmatch + 1
 
       for _,v in ipairs(trepl) do
@@ -69,14 +68,17 @@ local function my_gsub(subj, psearch, trepl, ask)
         end
       end
 
+      local new = concat(cur_rep)
+
       if bNumLimit or not ask then
         nrepl = nrepl + 1
-        insert(acc, concat(cur_rep))
+        insert(acc, subj:sub(pos, from-1))
+        insert(acc, new)
       else
-        local new = concat(cur_rep)
         local ret = ask(subj:sub(from,to), new) -- "yes", "all", "no", "none"
         if ret == "yes" or ret == "all" then
           nrepl = nrepl + 1
+          insert(acc, subj:sub(pos, from-1))
           insert(acc, new)
           if ret == "all" then ask = nil; end
         elseif ret == "no" then
