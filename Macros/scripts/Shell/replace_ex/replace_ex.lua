@@ -13,6 +13,99 @@ local libMessage = require "far2.message"
 local set_key, set_name = "temp", "Replace_EX"
 local Title = "Replace in files"
 
+
+local function process_repl(repl)
+  local pos, idx, acc = 1, 0, { max_bracket = 0; }
+
+  local add_string = function(str)
+    if type(acc[idx])  == "string" then
+      acc[idx] = acc[idx] .. str
+    else
+      idx = idx + 1
+      acc[idx] = str
+    end
+  end
+
+  repl = repl:gsub("\\(.)", { a="\a"; e="\27"; f="\f"; n="\n"; r="\r"; t="\t"; })
+
+  while true do
+    local from, to, cap1, cap2 = regex.find(repl, [[ \\(.) | \$([0-9A-Z]) ]], pos, "ix")
+    if from then
+      add_string(repl:sub(pos, from-1))
+      if cap1 then
+        add_string(cap1)
+      else
+        idx = idx + 1
+        acc[idx] = 1 + tonumber(cap2, 35) -- 35 corresponds to [0-9A-Z]
+        acc.max_bracket = math.max(acc.max_bracket, acc[idx])
+      end
+      pos = to + 1
+    else
+      add_string(repl:sub(pos))
+      return acc
+    end
+  end
+end
+
+
+local function my_gsub(subj, psearch, trepl, ask)
+  local insert = table.insert
+  local pos, acc = 1, {}
+  local nmatch, nrepl = 0, 0
+
+  while true do
+    local from, to, caps = psearch:tfind(subj, pos)
+    if from then
+      local cur_rep = {}
+      nmatch = nmatch + 1
+      insert(acc, subj:sub(pos, from-1))
+
+      for _,v in ipairs(trepl) do
+        if type(v) == "string" then
+          insert(cur_rep, v)
+        elseif caps[v] then
+          insert(cur_rep, caps[v])
+        end
+      end
+
+      local new = table.concat(cur_rep)
+      if ask then
+        local old = subj:sub(from, to)
+        local ret = ask(old, new) -- "yes", "all", "no", "none"
+        if ret=="yes" or ret=="all" then
+          nrepl = nrepl + 1
+          insert(acc, new)
+        else
+          insert(acc, old)
+        end
+        if ret == "none" then
+          insert(acc, subj:sub(to + 1))
+          break
+        elseif ret == "all" then
+          ask = nil
+        end
+      else
+        nrepl = nrepl + 1
+        insert(acc, new)
+      end
+
+      if from <= to then -- non-empty match
+        pos = to + 1
+      else -- empty match
+        insert(acc, subj:sub(from,from))
+        pos = from + 1
+      end
+
+    else
+      insert(acc, subj:sub(pos))
+      break
+    end
+  end
+
+  return table.concat(acc), nmatch, nrepl
+end
+
+
 -- Get data from the dialog
 local function GetData()
   local W = 35
@@ -55,7 +148,7 @@ local function GetData()
 
   local Dlg = sd.New(Items)
   local Pos, Elem = Dlg:Indexes()
-  local RepFunc, InitFunc, FinalFunc -- make upvalues for dialog procedure for reusing later
+  local OutTable
 
   local function OnFuncModeChange(hDlg)
     local enb = hDlg:GetCheck(Pos.funcmode)
@@ -95,37 +188,85 @@ local function GetData()
   end
 
   local function OnCloseDialog(hDlg, param1, out)
+    -- store 'out' for reusing on exit
+    OutTable = out
+
+    -- check mask
     if not far.CheckMask(out.filemask, "PN_SHOWERRORMESSAGE") then
       return 0
     end
-    --------------------------------
-    local patt = out.search
-    if patt == "" or out.regex and not pcall(regex.new, patt) then
-      far.Message("Invalid search string", "Search field error", nil, "w")
+
+    -- check if search string is empty
+    if out.search == "" then
+      far.Message("Empty search string", "Search field error", nil, "w");
       return 0
     end
-    --------------------------------
+
+    -- set cflags
+    out.cflags = out.casesens and "" or "i"
+    if out.regex then
+      if out.extended   then out.cflags = out.cflags.."x" end
+      if out.multiline  then out.cflags = out.cflags.."m" end
+      if out.fileasline then out.cflags = out.cflags.."s" end
+    end
+
+    -- (1) process search pattern
+    if out.regex then
+      out.search = "("..out.search..")" -- make gsub produce $0 or T[0]
+    else
+      out.search = out.search:gsub("%p", "\\%0")
+    end
+
+    -- (2) process search pattern
+    if out.wholewords then
+      out.search = "\\b"..out.search.."\\b"
+    end
+
+    -- (3) process search pattern
+    local ok, patt = pcall(regex.new, out.search, out.cflags)
+    if ok then
+      out.search = patt
+    else
+      far.Message(patt, "Search field error", nil, "w")
+      return 0
+    end
+
+    -- process replace pattern versus search pattern
+    if not out.funcmode then
+      out.trepl = process_repl(out.replace)
+      if out.trepl.max_bracket >= out.search:bracketscount() then
+        far.Message("Invalid capture number", "Replace field error", nil, "w")
+        return 0
+      end
+    end
+
+    -- process function mode
     if out.funcmode then
-      local msg
-
       local str = "T = { [0]=select(1,...); select(2, ...) }\n" .. out.replace
-      RepFunc, msg = loadstring(str)
+      local RepFunc, msg1 = loadstring(str)
       if not RepFunc then
-        far.Message(msg, "Replace field error", nil, "w")
+        far.Message(msg1, "Replace field error", nil, "w")
         return 0
       end
 
-      InitFunc, msg = loadstring(out.initfunc)
+      local InitFunc, msg2 = loadstring(out.initfunc)
       if not InitFunc then
-        far.Message(msg, "Initial code error", nil, "w")
+        far.Message(msg2, "Initial code error", nil, "w")
         return 0
       end
 
-      FinalFunc, msg = loadstring(out.finalfunc)
+      local FinalFunc, msg3 = loadstring(out.finalfunc)
       if not FinalFunc then
-        far.Message(msg, "Final code error", nil, "w")
+        far.Message(msg3, "Final code error", nil, "w")
         return 0
       end
+
+      out.env = setmetatable({ N1=0;N2=0;A1={};A2={}; }, {__index=_G})
+      out.replace = setfenv(RepFunc, out.env)
+      out.initfunc = setfenv(InitFunc, out.env)
+      out.finalfunc = setfenv(FinalFunc, out.env)
+    else
+      out.initfunc, out.finalfunc = nil, nil
     end
   end
 
@@ -147,45 +288,9 @@ local function GetData()
   Dlg:LoadData(sett.mload(set_key, set_name) or {})
   local out = Dlg:Run()
   if out then
-    --------------------------------
     sett.msave(set_key, set_name, out)
-    --------------------------------
-    out.initfunc, out.finalfunc = nil, nil
-    if out.funcmode then
-      out.env = setmetatable({ N1=0;N2=0;A1={};A2={}; }, {__index=_G})
-      out.search = "("..out.search..")" -- make regex.gsub produce T[0]
-      out.replace = setfenv(RepFunc, out.env)
-      out.initfunc = setfenv(InitFunc, out.env)
-      out.finalfunc = setfenv(FinalFunc, out.env)
-    elseif out.regex then
-      -- provide the expected meaning of \n, \r, etc.
-      out.replace = out.replace:gsub("\\(.)", { a="\a"; e="\27"; f="\f"; n="\n"; r="\r"; t="\t"; })
-      -- remove special meaning of % character
-      out.replace = out.replace:gsub("%%", "%%%%")
-      -- remove backslashes from the characters escaped with them
-      -- and replace $0, $1, etc. with %0, %1, etc., as regex.gsub expects %
-      out.replace = regex.gsub(out.replace,
-          [[ \\(.) | \$ ( [0-9A-Z] ) ]],
-          function(c1, c2) return c1 or "%"..c2 end,
-          nil, "ix")
-    end
-    --------------------------------
-    out.cflags = out.casesens and "" or "i"
-    if out.regex then
-      if out.extended   then out.cflags = out.cflags.."x" end
-      if out.multiline  then out.cflags = out.cflags.."m" end
-      if out.fileasline then out.cflags = out.cflags.."s" end
-    else
-      out.search = out.search:gsub("%p", "\\%0")
-    end
-    --------------------------------
-    if out.wholewords then
-      out.search = "\\b"..out.search.."\\b"
-    end
-    --------------------------------
+    return OutTable
   end
-
-  return out
 end
 
 
@@ -303,10 +408,21 @@ local function ReplaceInFile(item, fname, data, yes_to_all)
   end
 
   -- Do the main work.
-  local txt2 = regex.gsub(txt, data.search, freplace, nil, data.cflags)
+  local txt2
+  if data.funcmode then
+    txt2 = data.search:gsub(txt, freplace)
+  else
+    local function ask(old, new)
+      local r = AskForReplace(fname, old, new)
+      cancel_all = (r < 1) or (r == 6)
+      yes_to_all = (r == 3)
+      return r==1 and "yes" or (r==2 or r==3) and "all" or r==4 and "no" or "none"
+    end
+    txt2 = my_gsub(txt, data.search, data.trepl, not file_yes and ask)
+  end
 
   local result = false
-  if txt2 ~= txt then -- if something changed
+  if (not cancel_all) and (txt2 ~= txt) then -- not canceled and text changed
     fp, msg = OpenFile(fname, "wb")
     if fp then
       fp:write(txt2)
@@ -333,7 +449,6 @@ local function main()
 
   local start_dir = panel.GetPanelDirectory(nil,1).Name
   n_total, n_changed = 0, 0
-  local Ask = not data.funcmode
   local YesToAll = false
   local last_clock = Clock()
 
@@ -343,40 +458,27 @@ local function main()
       if item.FileAttributes:find("[dejk]") then -- dir | reparse point | device_block | device_sock
         return
       end
-      local ProcessFile = not Ask
-      if Ask then
-        -- ask user what to do
-        local msg = ("File will be modified\n%s"):format(fullpath)
-        local res = MessageAndWait(msg, Title, "&Modify;&All;&Skip;&Cancel")
-        if     res == 1 then ProcessFile = true
-        elseif res == 2 then ProcessFile,Ask = true,false
-        elseif res == 3 then ProcessFile = false
-        else return true
-        end
+      -- process the file
+      local mod, act = ReplaceInFile(item, fullpath, data, YesToAll)
+      n_total = n_total + 1
+      if mod then
+        n_changed = n_changed + 1
       end
-      if ProcessFile then
-        -- process the file
-        local mod, act = ReplaceInFile(item, fullpath, data, YesToAll)
-        n_total = n_total + 1
-        if mod then
-          n_changed = n_changed + 1
-        end
-        if act == "cancel" then
-          return true
-        elseif act == "all" then
-          YesToAll = true
-        end
-        -- check if the user pressed Esc
-        local now = Clock()
-        if now - last_clock >= 0.2 then
-          last_clock = now
-          if win.ExtractKey() == "ESCAPE" then
-            if 1 == MessageAndWait("Break the operation?", Title, "Yes;No", "w") then
-              return true
-            end
+      if act == "cancel" then
+        return true
+      elseif act == "all" then
+        YesToAll = true
+      end
+      -- check if the user pressed Esc
+      local now = Clock()
+      if now - last_clock >= 0.2 then
+        last_clock = now
+        if win.ExtractKey() == "ESCAPE" then
+          if 1 == MessageAndWait("Break the operation?", Title, "Yes;No", "w") then
+            return true
           end
-          PleaseWait()
         end
+        PleaseWait()
       end
     end,
     data.recurse and "FRS_RECUR" or 0)
