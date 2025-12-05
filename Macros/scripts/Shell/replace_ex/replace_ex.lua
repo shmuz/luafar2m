@@ -49,16 +49,17 @@ end
 
 
 local function my_gsub(subj, psearch, trepl, ask)
-  local insert = table.insert
+  local insert, concat = table.insert, table.concat
   local pos, acc = 1, {}
   local nmatch, nrepl = 0, 0
+  local bNumLimit = type(ask) == "number"
 
-  while true do
+  while (not bNumLimit) or (nrepl < ask) do
     local from, to, caps = psearch:tfind(subj, pos)
     if from then
       local cur_rep = {}
+      insert(cur_rep, subj:sub(pos, from-1))
       nmatch = nmatch + 1
-      insert(acc, subj:sub(pos, from-1))
 
       for _,v in ipairs(trepl) do
         if type(v) == "string" then
@@ -68,25 +69,21 @@ local function my_gsub(subj, psearch, trepl, ask)
         end
       end
 
-      local new = table.concat(cur_rep)
-      if ask then
-        local old = subj:sub(from, to)
-        local ret = ask(old, new) -- "yes", "all", "no", "none"
-        if ret=="yes" or ret=="all" then
+      if bNumLimit or not ask then
+        nrepl = nrepl + 1
+        insert(acc, concat(cur_rep))
+      else
+        local new = concat(cur_rep)
+        local ret = ask(subj:sub(from,to), new) -- "yes", "all", "no", "none"
+        if ret == "yes" or ret == "all" then
           nrepl = nrepl + 1
           insert(acc, new)
-        else
-          insert(acc, old)
-        end
-        if ret == "none" then
-          insert(acc, subj:sub(to + 1))
+          if ret == "all" then ask = nil; end
+        elseif ret == "no" then
+          insert(acc, subj:sub(pos, to))
+        else -- if ret == "none"
           break
-        elseif ret == "all" then
-          ask = nil
         end
-      else
-        nrepl = nrepl + 1
-        insert(acc, new)
       end
 
       if from <= to then -- non-empty match
@@ -97,11 +94,11 @@ local function my_gsub(subj, psearch, trepl, ask)
       end
 
     else
-      insert(acc, subj:sub(pos))
       break
     end
   end
 
+  insert(acc, subj:sub(pos))
   return table.concat(acc), nmatch, nrepl
 end
 
@@ -494,7 +491,17 @@ local function main()
 end
 
 
-if not Macro then main() return end
+if select(1, ...) == "test" then
+  return {
+    process_repl = process_repl;
+    my_gsub = my_gsub;
+  }
+end
+
+if not Macro then
+  main()
+  return
+end
 
 Macro {
   id="11986160-83AE-474D-9E85-D615A77AF658";
