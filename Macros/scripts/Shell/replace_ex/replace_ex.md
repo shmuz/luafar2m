@@ -1,182 +1,195 @@
-# Replace EX — Replace in files (SUPER Replace)
+# Replace EX — User Manual
 
-- Script: replace_ex.lua
-- Macro: Ctrl+Alt+E
-- Dialog title: "Replace in files"
+Version: based on replace_ex.lua (commit ac8b3e0)
+Last updated: 2025-12-05
 
 Overview
 --------
-Replace EX is a Far Manager macro/utility that performs search-and-replace operations across files. It supports plain-text replacement, regular expressions with common flags, and a powerful "function mode" where the replacement is a Lua expression or function that can inspect/modify each match and track state across files. The macro is intended for UTF-8 text files and skips binary files and files with invalid UTF-8.
+Replace EX is a Find-and-Replace utility implemented as a Far Manager macro (area: Shell). It lets you search and replace text across files with optional regular expression support and an advanced "function mode" that runs Lua code for replacements. The tool is interactive: it can prompt per match, per file, or apply changes automatically.
 
-Important highlights:
-- Works from the current panel directory and walks files matching a mask (optionally recursively).
-- By default the utility will prompt (Ask) before modifying each file; behavior differs in function mode (see below).
-- Replacements are done in-memory: file contents are loaded, transformed, and written back if changed.
-- The macro will not process files containing NULs or invalid UTF-8 sequences.
-- No automatic backups are made — make sure to back up important files first.
+Key features
+- Search and replace across files in the current panel directory (optionally recursive).
+- File mask support (wildcards).
+- Regular expression mode with flags (case-insensitive, extended, multiline, treat file as a single line).
+- "File as a line" mode to treat entire file contents as one string (useful for multi-line patterns).
+- Function mode: supply Lua code for custom replacements, with per-file initialization and finalization code and a shared environment.
+- Ask/confirm replacement dialogs with "yes", "yes for this file", "yes for all files", "skip", and "cancel" options.
+- Skips binary files (contains NUL or invalid UTF-8) and very large files (over 256 MiB by default).
+- Macro keybinding: Ctrl+Alt+E (id: 11986160-83AE-474D-9E85-D615A77AF658).
 
-Dialog fields and controls
---------------------------
-Main controls:
-- File mask — file glob pattern(s) used for selecting files (history: "Masks").
-- Search for — text or regular-expression pattern to search for (history: "SearchText").
-- Replace with — replacement text, or Lua code when Function mode is enabled (history: "ReplaceText").
-- Recursively — search subdirectories.
-- Run / Clear / Reload / Save / Cancel buttons:
-  - Run — start the operation.
-  - Clear — clear dialog fields (does not close dialog).
-  - Reload — restore the saved dialog state/settings.
-  - Save — persist current dialog state/settings (stored under key Replace_EX).
-  - Cancel — close dialog.
+How to run
+----------
+- Place the macro in your Far Manager macros directory (it's already implemented as a Macro block in replace_ex.lua).
+- Open the Shell (Files) panel and navigate to the directory where you want the replacements to start.
+- Press Ctrl+Alt+E (or run the macro by name "SUPER Replace") to open the Replace EX dialog.
 
-Options:
-- Regular expressions — if checked, treats "Search for" as a regular-expression pattern.
-- Case sensitive — when unchecked, matching is case-insensitive.
-- Whole words — search pattern is wrapped with word boundaries (\bpattern\b).
-- Extended (regex) — ignore whitespace/comments in the regex (flag x).
-- Multi-line (regex) — multi-line mode (flag m).
-- File as a line (regex) — let '.' match newlines (flag s). Treat file as a single line.
-- Function mode — treat the Replace field as Lua code rather than plain replacement text.
-- Initial code / Final code — Lua code executed before starting and after finishing (only used in Function mode).
-
-Histories and settings:
-- The dialog saves settings (file mask, regex flags, etc.) with Save and Reload. The code uses a settings key "Replace_EX" in the persistent settings (via the script's settings facility).
-- Edit boxes have edit ext="lua" for function/initial/final fields in function mode.
-
-Operation modes explained
+Dialog fields and options
 -------------------------
+Items you will see in the dialog:
 
-1) Plain text mode (Regular expressions unchecked)
-- The "Search for" string is treated as a literal string.
-- Special pattern characters are automatically escaped (so you don't need to escape punctuation).
-- Matching respects the Case sensitive and Whole words options.
-- The search is converted to a regex-escaped pattern under the hood, then applied.
+- Recursively
+  - If checked, subdirectories are searched recursively.
 
-2) Regular expression mode
-- Uses the regex library used by the script (via regex.gsub).
-- Flags built:
-  - case-insensitive when Case sensitive is unchecked -> adds "i"
-  - extended -> adds "x" (ignore whitespace/comments)
-  - multiline -> adds "m"
-  - file-as-line -> adds "s"
-- Replace field processing:
-  - Recognizes standard backslash escapes: \n, \r, \t, \f, \a, etc.
-  - Dollar placeholders like $0, $1, $2 are converted to the form expected by regex.gsub (the script converts $n to %n).
-  - Escaped characters like \. are unescaped appropriately.
-- Whole words wraps the pattern with \b on both ends.
+- File mask
+  - Standard wildcard masks (e.g. `*.txt`, `**/*.lua` depending on Far's mask rules). Mask is validated by Far.
 
-3) Function mode (power user)
-- Replace field becomes a Lua chunk that is evaluated and used to compute replacements.
-- The Replace field is loaded as a Lua chunk with the following automatic prefix:
-    T = { [0]=select(1,...); select(2, ...) }
-  then your code follows. This creates a table T visible to your code:
-  - T[0] is the entire match (the whole substring matched by the search).
-  - T[1], T[2], ... are the captured groups from the regex pattern.
-- In addition, the environment for the chunk includes several helper variables (per-file, updated before processing each file):
-  - FN — filename being processed (string)
-  - M — number of matches found so far in the current file
-  - R — number of replacements performed so far in the current file
-  - item — file metadata (size and attributes as passed by far.RecursiveSearch)
-  - n1, n2 — counters you may use from your own code (initialized to 0 each file)
-  - a1, a2 — tables you can use for accumulating state (initialized empty each file)
-- Initial code (InitFunc) and Final code (FinalFunc) are Lua chunks also executed in the same environment before/after processing (this environment persists across files but per-file fields such as FN/M/R are updated).
-- What your Replace function should return:
-  - return nil or false -> no replacement for that match (no change).
-  - return string or number -> used as replacement text.
-  - return any other non-string, non-number true/boolean/object -> interpreted as stop further replacements for this file (file_no), i.e. subsequent matches in that file will not be replaced.
-- Per-match interactive prompting:
-  - When in function mode, the script does not ask to modify each file before processing (Ask = false). However, inside the replacement function the script will prompt per match (AskForReplace) unless you set file_yes to true or return a value triggering auto-accept.
-  - The AskForReplace dialog offers options: Yes, Yes for this file, Yes for all files, Skip, Skip for this file, Cancel.
+- Search for
+  - The text or regular expression to search for.
+  - If empty, the dialog will warn and not run.
+
+- Replace with
+  - Replacement string (or Lua code when Function mode is enabled).
+
+- Regular expressions
+  - Toggle regular expression mode.
+  - When enabled, extra regex-related options become available.
+
+- Case sensitive
+  - When checked, searches are case-sensitive; otherwise, case-insensitive.
+
+- Whole words
+  - Enclose the search pattern with word boundaries (`\b... \b`).
+
+- Ignore spaces (Extended)
+  - When regex mode is on, the "x" flag is added, allowing whitespace in the pattern and `#` comments as per extended regex behavior.
+
+- Multi-line
+  - Adds the "m" regex flag, affecting `^` and `$` behavior.
+
+- File as a line
+  - Adds the "s" regex flag making `.` match newlines, effectively allowing the file to be treated as a single text string for regex matching.
+
+- Function mode
+  - When checked, the "Replace with" field becomes Lua code. You can also provide:
+    - Initial code (run once before processing files)
+    - Final code (run once after processing files)
+  - The replacement code runs in a custom environment (see Function Mode section below).
+
+Buttons
+- Run — execute the search-and-replace operation.
+- Clear — clears controls.
+- Reload — reload saved settings into controls.
+- Save — save current settings.
+- Cancel — close the dialog without changes.
+
+Replacement syntax (normal mode)
+-------------------------------
+- Escape sequences:
+  - Use backslash escapes in the replacement text: `\n`, `\t`, `\r`, `\f`, `\a`, `\e`.
+    - Example: Replace `\n` in replace box will insert a newline character.
+
+- Capture references:
+  - Use `$0`, `$1`, `$2`, ... `$9`, `$A` ... `$Z` to insert captures from the search regular expression.
+  - $0 corresponds to the entire match; $1 to the first user capture, $2 to the second, etc.
+  - Letters (A..Z) extend capturing beyond single-digit indexes (base-35 notation is used internally).
+  - Example: Search: `(foo)(bar)` (in regex mode) and Replace: `$1-$2` → yields `foo-bar`.
+
+Notes about indexing: The tool wraps the provided search pattern into an extra capturing group internally, so `$0` refers to the full match (the wrapper group). `$1` refers to the first capture from the user's original pattern, `$2` to the second, and so on. The dialog validates capture indices (it will refuse replacements referencing non-existent captures).
+
+Interactive confirmation behavior
+---------------------------------
+When replacements are performed, you can be prompted to confirm each replacement. The per‑match dialog offers options:
+- Yes — replace this occurrence.
+- Yes for this file — replace remaining occurrences in this file without further prompts.
+- Yes for all files — replace all remaining occurrences in all files without further prompts.
+- Skip — skip this occurrence.
+- Skip for this file — skip the remaining occurrences in this file.
+- Cancel — abort the entire operation.
+
+Function mode (Lua replacement)
+-------------------------------
+Function mode gives you full Lua control over replacements:
+
+- How it works
+  - The Replace-with field becomes Lua code (a function body). Internally the macro builds a replacement function from the code. The replacement function is called for each match with captures as arguments.
+  - You may supply optional Initial code and Final code. All three (initial, replacement, final) share the same environment.
+
+- Environment variables available in your replacement function:
+  - T — table of captures:
+    - T[0] — whole match
+    - T[1..] — capture groups
+    - The replacement builder sets up T as the simplest way to access captures from the function.
+  - FN — current file name.
+  - M — number of matches in the current file (incremented as matches are seen).
+  - R — number of replacements made in the current file (incremented whenever you return a non-nil string to replace).
+  - item — file item table (fields such as FileSize, FileAttributes, etc. as provided by Far's recursive search).
+  - n1, n2 — numeric counters you can use freely per-file (initialized to 0).
+  - a1, a2 — tables you can use freely per-file (initialized to {}).
+  - The environment starts with N1, N2, A1, A2 and then per-file lowercase counterparts are set; both forms are present to reduce surprises.
+  - The initial code runs once before processing files; final code runs after everything is processed.
+
+- Replacement function behavior
+  - Your function should return a string (or number convertible to string) to perform a replacement.
+  - To skip replacing a match, return nil or false.
+  - Returning a non-string non-number signals the tool to stop making replacements for the remainder of the current file.
+
+- Example
+  - Initial code:
+    local sum = 0
+  - Replace code:
+    sum = sum + tonumber(T[1] or 0)
+    return tostring(sum)
+  - Final code:
+    print("Done. Last sum:", sum)
+
+Safety and constraints
+----------------------
+- Large files:
+  - Files larger than 256 MiB (2^28 bytes) are by default not processed. The tool asks whether to skip, process anyway, or terminate when large files are encountered.
+
+- Binary / encoding:
+  - Files containing NUL bytes (`\0`) or invalid UTF-8 are skipped (the utility is designed to operate on text files only).
+
+- Atomicity and backups:
+  - Changes are written back to the original file (opened with "wb" and overwritten). No automatic backups are created. Make sure you have backups or version control if you need to revert changes.
+
+- Error handling:
+  - If a file cannot be opened for read or write, the tool presents a dialog to continue, skip, or terminate.
+  - Invalid regex or invalid replacement function code will be reported before any file processing starts.
+
+Limitations and behavior details
+--------------------------------
+- The search pattern and flags:
+  - If "Regular expressions" is unchecked, the search text is escaped so it is treated literally.
+  - "Whole words" wraps the search with `\b` boundaries.
+  - The dialog builds the regex with a wrapper group so `T[0]` and `$0` refer to the full match.
+
+- Replacement token parsing:
+  - Replacement parsing recognizes `$` followed by characters in [0-9A-Z] (case-insensitive). This allows references beyond 9 (e.g. `$A` for capture index 10). The mapping is based on a base-35 conversion (digits and letters).
+
+- Matching engine:
+  - The script uses Far's regex API (`regex.new`, `:tfind` and related functions) and adapts flags to the pattern. Behavior matches the regex engine provided in your Far+Lua environment.
 
 Examples
 --------
+1) Simple literal replace (non-regex)
+- File mask: `*.txt`
+- Search for: `foo`
+- Replace with: `bar`
+- Regular expressions: unchecked
+- Result: all literal `"foo"` occurrences replaced with `"bar"` (interactive confirmation available).
 
-Basic plain-text replace (non-regex)
-- Purpose: replace "TODO" with "DONE" in *.txt files in current directory:
-  - File mask: `*.txt`
-  - Search for: `TODO`
-  - Replace with: `DONE`
-  - Regular expressions: unchecked
-  - Run
+2) Regex replace with captures
+- File mask: `*.txt`
+- Search for: `(\d+)-(\d+)`
+- Replace with: `$2/$1`
+- Regular expressions: checked
+- Example: `2025-12` -> `12/2025`.
 
-Regex with capture groups
-- Purpose: swap two words separated by a colon "key:value" to "value:key":
-  - File mask: `*.cfg`
-  - Regular expressions: checked
-  - Search for: `(\w+):(\w+)`
-  - Replace with: `$2:$1`
-  (The script converts $1/$2 to the proper replacement syntax for the underlying regex engine.)
+3) Function mode example (increment numbers in a file)
+- Regular expressions: checked
+- Search for: `(\d+)`
+- Function mode: checked
+- Initial code:
+  count = 0
+- Replace function:
+  count = count + 1
+  return tostring(tonumber(T[1]) + 1)
+- Final code:
+  print("Processed matches in last file:", count)
 
-Function mode example: conditional replacement and counting
-- Suppose you want to increment a number captured in a pattern:
-  - Regular expressions: checked
-  - Function mode: checked
-  - Search for: `(\bcount:\s*)(\d+)`
-  - Replace with (Lua chunk):
-    ```lua
-    -- increment captured number and update per-file counter
-    local prefix = T[1]      -- "count: "
-    local num = tonumber(T[2]) or 0
-    return prefix .. tostring(num + 1)
-    ```
-
-Notes about the T table in Function mode:
-- T[0] = whole match
-- T[1..N] = captures (if your regex uses captures)
-- Example: pattern "(hello) (world)" -> T[0] = "hello world", T[1] = "hello", T[2] = "world"
-
-Prompts and interactions
-------------------------
-- Before processing each file (when not in function mode), the script will prompt:
-  - Modify (process this file)
-  - All (process this and all following files without asking)
-  - Skip (don't process this file)
-  - Cancel (terminate operation)
-- During replacements (function mode), the replace function can trigger per-match prompts:
-  - The prompt offers: Yes, Yes for this file, Yes for all files, Skip, Skip for this file, Cancel.
-  - Use the return values of your replacement code and env variables to control interactive behavior.
-
-Implementation details & limitations
------------------------------------
-- The macro uses far.RecursiveSearch starting from the current panel directory (panel.GetPanelDirectory(nil,1).Name) and the provided file mask.
-- Files with attributes matching [dejk] (directory, reparse point, device block, socket) are skipped.
-- Binary/unsafe files:
-  - Files containing \0 (NUL) or invalid UTF-8 are skipped.
-- Empty files: due to a Lua 5.1/LuaJIT behavior the code handles empty file reads explicitly (an empty-file workaround).
-- Files are fully loaded into memory; for very large files this may be memory-intensive.
-- When writing changed content back, the file is overwritten. There is no automatic backup/undo provided by the script — consider using version control or manual backups before running large-scale replacements.
-- If a file cannot be opened for reading or writing, the script offers a "Break/Continue" choice.
-
-Tips and best practices
------------------------
-- Test first on a small sample or a copy of your directory to confirm expected behavior.
-- If using complex regexes, test them in a regex tester or on a sample file first.
-- Use the Save button to store commonly used patterns and options; Reload to restore them.
-- Use Function mode only if you need per-match logic or complex transformations. Function mode is powerful but requires Lua knowledge and care.
-- Consider using the "Yes for all files" options (either via prompts or via your function logic) to speed up large runs when interactive prompts are not needed.
-- If you intend to run against many or large files, ensure you have a current backup or commit to version control first.
-
-Troubleshooting
----------------
-- "Invalid search string" message — occurs if the Search for field is empty or, when regex is checked, the regex cannot be compiled. Verify the pattern.
-- "Replace field error" / "Initial code error" / "Final code error" — occurs when the provided Lua chunk has a syntax/error at load time. Fix Lua code; use simple prints during development.
-- No changes seen — verify file mask, recursion option, search expression, and that files are not skipped as binary or unreadable.
-- If the script prompts for replacing content but you expected an automatic change, double-check function mode logic and file_yes/yes_to_all behavior in your function code.
-
-Safety checklist before a big run
----------------------------------
-1. Back up the directory or ensure you have changes committed in version control.
-2. Test the search and replacement on a handful of files (small file mask).
-3. If in doubt, keep Regular expressions unchecked and use plain-text replace, or test regex in a separate tester.
-4. Use Save to persist working parameters, so you can reuse or revert.
-
-Technical references
---------------------
-- Settings key used by the macro: set_key="temp", set_name="Replace_EX" (saved via the script's settings facility).
-- Macro binding details: Macro { area="Shell"; key="CtrlAltE"; description="SUPER Replace"; flags="NoPluginPanels" }
-- The script uses the regex library via regex.gsub and passes flags string (e.g. "ixms").
-
-License and attribution
------------------------
-- This documentation pertains to the replace_ex.lua script in this repository.
-- Follow the repository license for redistribution and modification.
+Tips
+----
+- Use Save/Reload to store common search/replace sets.
+- Test on a copy of a directory first, especially when using function mode or regexes that might match more widely than expected.
+- Use interactive confirmations the first time you run a complex replacement to verify expected changes.
