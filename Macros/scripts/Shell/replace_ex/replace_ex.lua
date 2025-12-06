@@ -13,8 +13,10 @@ local libMessage = require "far2.message"
 local set_key, set_name = "temp", "Replace_EX"
 local Title = "Replace in files"
 
+local n_total, n_changed
 
-local function process_repl(repl)
+
+local function transform_repl(repl)
   local pos, idx, acc = 1, 0, { max_bracket = 0; }
 
   local add_string = function(str)
@@ -26,18 +28,18 @@ local function process_repl(repl)
     end
   end
 
-  repl = repl:gsub("\\(.)", { a="\a"; e="\27"; f="\f"; n="\n"; r="\r"; t="\t"; })
+  repl = repl:gsub("\\(.)", { ["\\"]="\\"; a="\a"; e="\27"; f="\f"; n="\n"; r="\r"; t="\t"; })
 
   while true do
-    local from, to, cap1, cap2 = regex.find(repl, [[ \\(.) | \$([0-9A-Z]) ]], pos, "ix")
+    local from, to, cap = repl:find("%$(.?)", pos)
     if from then
       add_string(repl:sub(pos, from-1))
-      if cap1 then
-        add_string(cap1)
-      else
+      if cap:match("[0-9A-Za-z]") then
         idx = idx + 1
-        acc[idx] = 1 + tonumber(cap2, 35) -- 35 corresponds to [0-9A-Z]
+        acc[idx] = tonumber(cap, 35) -- 35 corresponds to [0-9A-Za-z]
         acc.max_bracket = math.max(acc.max_bracket, acc[idx])
+      else
+        add_string(cap)
       end
       pos = to + 1
     else
@@ -48,21 +50,30 @@ local function process_repl(repl)
 end
 
 
-local function my_gsub(subj, psearch, trepl, ask)
+local function gsub_ex(subj, psearch, trepl, ask)
   local insert, concat = table.insert, table.concat
   local pos, acc = 1, {}
   local nmatch, nrepl = 0, 0
   local bNumLimit = type(ask) == "number"
+  local last_to
 
   while (not bNumLimit) or (nrepl < ask) do
     local from, to, caps = psearch:tfind(subj, pos)
-    if from then
+    if from == nil then
+      break
+    elseif to == last_to then -- an empty match adjacent to the previous match is discarded
+      insert(acc, subj:sub(from,from))
+      pos = from + 1
+    else
       local cur_rep = {}
+      last_to = to
       nmatch = nmatch + 1
 
       for _,v in ipairs(trepl) do
         if type(v) == "string" then
           insert(cur_rep, v)
+        elseif v == 0 then
+          insert(cur_rep, subj:sub(from, to))
         elseif caps[v] then
           insert(cur_rep, caps[v])
         end
@@ -94,9 +105,6 @@ local function my_gsub(subj, psearch, trepl, ask)
         insert(acc, subj:sub(from,from))
         pos = from + 1
       end
-
-    else
-      break
     end
   end
 
@@ -105,8 +113,7 @@ local function my_gsub(subj, psearch, trepl, ask)
 end
 
 
--- Get data from the dialog
-local function GetData()
+local function GetDataFromDialog()
   local W = 35
   local Items = {
     guid = "E2661CE3-04DA-4106-A496-250C3924A331";
@@ -232,9 +239,9 @@ local function GetData()
 
     -- process replace pattern versus search pattern
     if not out.funcmode then
-      out.trepl = process_repl(out.replace)
-      if out.trepl.max_bracket >= out.search:bracketscount() then
-        far.Message("Invalid capture number", "Replace field error", nil, "w")
+      out.trepl = transform_repl(out.replace)
+      if 1 + out.trepl.max_bracket >= out.search:bracketscount() then
+        far.Message("Invalid group number", "Replace field error", nil, "w")
         return 0
       end
     end
@@ -293,7 +300,6 @@ local function GetData()
 end
 
 
-local n_total, n_changed
 local function PleaseWait()
   local msg = ("%d/%d files modified. Please wait..."):format(n_changed, n_total)
   far.Message(msg, Title, "")
@@ -417,7 +423,7 @@ local function ReplaceInFile(item, fname, data, yes_to_all)
       yes_to_all = (r == 3)
       return r==1 and "yes" or (r==2 or r==3) and "all" or r==4 and "no" or "none"
     end
-    txt2 = my_gsub(txt, data.search, data.trepl, not file_yes and ask)
+    txt2 = gsub_ex(txt, data.search, data.trepl, not file_yes and ask)
   end
 
   local result = false
@@ -439,7 +445,7 @@ end
 
 
 local function main()
-  local data = GetData()
+  local data = GetDataFromDialog()
   if not data then return end
 
   if data.initfunc then
@@ -495,8 +501,8 @@ end
 
 if select(1, ...) == "test" then
   return {
-    process_repl = process_repl;
-    my_gsub = my_gsub;
+    gsub_ex = gsub_ex;
+    transform_repl = transform_repl;
   }
 end
 
