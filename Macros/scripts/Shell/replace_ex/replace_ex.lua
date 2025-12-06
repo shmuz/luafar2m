@@ -1,6 +1,6 @@
 -- Started      : 2025-11-27
 
-local MAX_SIZE = 2 ^ 28 -- (256 MiB) skip files larger than this value
+local MAX_SIZE = 2 ^ 27 -- (128 MiB) skip files larger than this value
 
 local osWindows = package.config:sub(1,1) == "\\"
 local OpenFile = osWindows and io.open or win.OpenFile --luacheck:ignore
@@ -55,6 +55,7 @@ local function gsub_ex(subj, psearch, trepl, ask)
   local pos, acc = 1, {}
   local nmatch, nrepl = 0, 0
   local bNumLimit = type(ask) == "number"
+  local br_count = psearch:bracketscount()
   local last_to
 
   while (not bNumLimit) or (nrepl < ask) do
@@ -72,7 +73,7 @@ local function gsub_ex(subj, psearch, trepl, ask)
       for _,v in ipairs(trepl) do
         if type(v) == "string" then
           insert(cur_rep, v)
-        elseif v == 0 then
+        elseif v == 0 or (v == 1 and br_count == 1) then
           insert(cur_rep, subj:sub(from, to))
         elseif caps[v] then
           insert(cur_rep, caps[v])
@@ -218,7 +219,9 @@ local function GetDataFromDialog()
 
     -- (1) process search pattern
     if out.regex then
-      out.search = "("..out.search..")" -- make gsub produce $0 or T[0]
+      if out.funcmode then
+        out.search = "("..out.search..")" -- make gsub produce T[0]
+      end
     else
       out.search = out.search:gsub("%p", "\\%0")
     end
@@ -240,8 +243,9 @@ local function GetDataFromDialog()
     -- process replace pattern versus search pattern
     if not out.funcmode then
       out.trepl = transform_repl(out.replace)
-      if 1 + out.trepl.max_bracket >= out.search:bracketscount() then
-        far.Message("Invalid group number", "Replace field error", nil, "w")
+      local m, n = out.trepl.max_bracket, out.search:bracketscount()
+      if m > n or (m == n and m ~= 1) then
+        far.Message("Invalid group number $"..m, "Replace field error", nil, "w")
         return 0
       end
     end
