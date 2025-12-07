@@ -210,7 +210,6 @@ local function GetDataFromDialog()
       out.initfunc = setfenv(InitFunc, out.env)
       out.finalfunc = setfenv(FinalFunc, out.env)
     else
-      out.env = {}
       out.initfunc, out.finalfunc = nil, nil
     end
   end
@@ -305,19 +304,18 @@ local function ReplaceInFile(item, fname, data, yes_to_all)
     return
   end
 
-  -- env. variables for the current file processing
-  local env = data.env
   local br_count = data.search:bracketscount()
   local insert = table.insert
 
   local file_yes, file_no = yes_to_all, false
   local cancel_all = false
 
-  env.FN = fname            -- file name; as in LF Search
-  env.M, env.R = 0, 0       -- counters of matches and replacements; as in LF Search
-  env.item = item           -- access to file parameters
-  env.n1, env.n2 = 0, 0     -- counters
-  env.a1, env.a2 = {}, {}   -- tables
+  local env = data.env or {} -- env. variables for the current file processing
+  env.FN = fname             -- file name; as in LF Search
+  env.M, env.R = 0, 0        -- counters of matches and replacements; as in LF Search
+  env.item = item            -- access to file parameters
+  env.n1, env.n2 = 0, 0      -- counters
+  env.a1, env.a2 = {}, {}    -- tables
 
   local function freplace(...)
     env.M = env.M + 1
