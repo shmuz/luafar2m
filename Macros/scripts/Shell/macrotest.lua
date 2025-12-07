@@ -140,13 +140,6 @@ local function test_farapi_lua(verbose)
   for k=0,1 do panel.RedrawPanel(nil,k) end
 end
 
-local function test_replace_ex(verbose)
-  dofile(far.InMyConfig("Macros/reserve/shmuel/test_replace_ex.lua"))
-  if verbose then
-    far.Message("PASS", "Test replace_ex.lua")
-  end
-end
-
 Macro {
   id="B7B0B120-A616-4CBF-AB83-34E2EC024083";
   description="Test macro engine";
@@ -206,14 +199,6 @@ Macro {
 }
 
 Macro {
-  id="5271BA7F-7B51-4547-B028-1CFA6860A677";
-  description="Test replace_ex.lua";
-  area="Shell"; key="CtrlShiftF12";
-  sortpriority=25;
-  action=function() test_replace_ex(true) end;
-}
-
-Macro {
   id="5838EF38-4EB6-4104-BD41-EE80124827E6";
   description="Test ALL";
   area="Shell"; key="CtrlShiftF12";
@@ -224,7 +209,6 @@ Macro {
     test_polygon()
     test_sqlarc()
     test_farapi_lua()
-    test_replace_ex()
     if jit then test_hexed() end
     far.Message("PASS", "ALL tests")
   end;

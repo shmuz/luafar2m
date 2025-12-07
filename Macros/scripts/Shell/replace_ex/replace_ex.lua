@@ -50,70 +50,6 @@ local function transform_repl(repl)
 end
 
 
-local function gsub_ex(subj, psearch, trepl, ask)
-  local insert, concat = table.insert, table.concat
-  local pos, acc = 1, {}
-  local nmatch, nrepl = 0, 0
-  local bNumLimit = type(ask) == "number"
-  local br_count = psearch:bracketscount()
-  local last_to
-
-  while (not bNumLimit) or (nrepl < ask) do
-    local from, to, caps = psearch:tfind(subj, pos)
-    if from == nil then
-      break
-    elseif to == last_to then -- an empty match adjacent to the previous match is discarded
-      insert(acc, subj:sub(from,from))
-      pos = from + 1
-    else
-      local cur_rep = {}
-      last_to = to
-      nmatch = nmatch + 1
-
-      for _,v in ipairs(trepl) do
-        if type(v) == "string" then
-          insert(cur_rep, v)
-        elseif v == 0 or (v == 1 and br_count == 1) then
-          insert(cur_rep, subj:sub(from, to))
-        elseif caps[v] then
-          insert(cur_rep, caps[v])
-        end
-      end
-
-      local new = concat(cur_rep)
-
-      if bNumLimit or not ask then
-        nrepl = nrepl + 1
-        insert(acc, subj:sub(pos, from-1))
-        insert(acc, new)
-      else
-        local ret = ask(subj:sub(from,to), new) -- "yes", "all", "no", "none"
-        if ret == "yes" or ret == "all" then
-          nrepl = nrepl + 1
-          insert(acc, subj:sub(pos, from-1))
-          insert(acc, new)
-          if ret == "all" then ask = nil; end
-        elseif ret == "no" then
-          insert(acc, subj:sub(pos, to))
-        else -- if ret == "none"
-          break
-        end
-      end
-
-      if from <= to then -- non-empty match
-        pos = to + 1
-      else -- empty match
-        insert(acc, subj:sub(from,from))
-        pos = from + 1
-      end
-    end
-  end
-
-  insert(acc, subj:sub(pos))
-  return table.concat(acc), nmatch, nrepl
-end
-
-
 local function GetDataFromDialog()
   local W = 35
   local Items = {
@@ -219,9 +155,7 @@ local function GetDataFromDialog()
 
     -- (1) process search pattern
     if out.regex then
-      if out.funcmode then
-        out.search = "("..out.search..")" -- make gsub produce T[0]
-      end
+      out.search = "("..out.search..")" -- make gsub produce T[0]
     else
       out.search = out.search:gsub("%p", "\\%0")
     end
@@ -243,7 +177,7 @@ local function GetDataFromDialog()
     -- process replace pattern versus search pattern
     if not out.funcmode then
       out.trepl = transform_repl(out.replace)
-      local m, n = out.trepl.max_bracket, out.search:bracketscount()
+      local m, n = out.trepl.max_bracket, out.search:bracketscount() - 1
       if m > n or (m == n and m ~= 1) then
         far.Message("Invalid group number $"..m, "Replace field error", nil, "w")
         return 0
@@ -276,6 +210,7 @@ local function GetDataFromDialog()
       out.initfunc = setfenv(InitFunc, out.env)
       out.finalfunc = setfenv(FinalFunc, out.env)
     else
+      out.env = {}
       out.initfunc, out.finalfunc = nil, nil
     end
   end
@@ -372,63 +307,68 @@ local function ReplaceInFile(item, fname, data, yes_to_all)
 
   -- env. variables for the current file processing
   local env = data.env
-  local freplace = data.replace
+  local br_count = data.search:bracketscount()
+  local insert = table.insert
 
   local file_yes, file_no = yes_to_all, false
   local cancel_all = false
 
-  if data.funcmode then
-    env.FN = fname            -- file name; as in LF Search
-    env.M, env.R = 0, 0       -- counters of matches and replacements; as in LF Search
-    env.item = item           -- access to file parameters
-    env.n1, env.n2 = 0, 0     -- counters
-    env.a1, env.a2 = {}, {}   -- tables
+  env.FN = fname            -- file name; as in LF Search
+  env.M, env.R = 0, 0       -- counters of matches and replacements; as in LF Search
+  env.item = item           -- access to file parameters
+  env.n1, env.n2 = 0, 0     -- counters
+  env.a1, env.a2 = {}, {}   -- tables
 
-    freplace = function(...)
-      env.M = env.M + 1
-      if file_no then return end
+  local function freplace(...)
+    env.M = env.M + 1
+    if file_no then return end
 
-      local val = data.replace(...)
-      if not val then return end -- false value = no replace now
-
-      local tp = type(val)
-      if tp ~= "string" and tp ~= "number" then
-        file_no = true -- true non-string non-number value = no further replaces
-        return
-      end
-
-      local ret
-      if not file_yes then
-        ret = AskForReplace(fname, env.T[0], val)
-        if     ret == 1 then  ret = ret
-        elseif ret == 2 then  file_yes = true
-        elseif ret == 3 then  file_yes, yes_to_all = true, true
-        elseif ret == 4 then  ret = ret
-        elseif ret == 5 then  file_no = true
-        else                  file_no, cancel_all = true, true
+    local val
+    if data.funcmode then
+      val = data.replace(...)
+    else
+      local caps = {...}
+      local cur_rep = {}
+      for _,v in ipairs(data.trepl) do
+        if type(v) == "string" then
+          insert(cur_rep, v)
+        elseif v == 0 or (v == 1 and br_count == 2) then
+          insert(cur_rep, caps[1])
+        elseif caps[v+1] then
+          insert(cur_rep, caps[v+1])
         end
       end
+      val = table.concat(cur_rep)
+    end
 
-      if file_yes or ret == 1 then
-        env.R = env.R + 1
-        return val
+    if not val then return end -- false value = no replace now
+
+    local tp = type(val)
+    if tp ~= "string" and tp ~= "number" then
+      file_no = true -- true non-string non-number value = no further replaces
+      return
+    end
+
+    local ret
+    if not file_yes then
+      ret = AskForReplace(fname, (...), val)
+      if     ret == 1 then  ret = ret
+      elseif ret == 2 then  file_yes = true
+      elseif ret == 3 then  file_yes, yes_to_all = true, true
+      elseif ret == 4 then  ret = ret
+      elseif ret == 5 then  file_no = true
+      else                  file_no, cancel_all = true, true
       end
+    end
+
+    if file_yes or ret == 1 then
+      env.R = env.R + 1
+      return val
     end
   end
 
   -- Do the main work.
-  local txt2
-  if data.funcmode then
-    txt2 = data.search:gsub(txt, freplace)
-  else
-    local function ask(old, new)
-      local r = AskForReplace(fname, old, new)
-      cancel_all = (r < 1) or (r == 6)
-      yes_to_all = (r == 3)
-      return r==1 and "yes" or (r==2 or r==3) and "all" or r==4 and "no" or "none"
-    end
-    txt2 = gsub_ex(txt, data.search, data.trepl, not file_yes and ask)
-  end
+  local txt2 = data.search:gsub(txt, freplace)
 
   local result = false
   if (not cancel_all) and (txt2 ~= txt) then -- not canceled and text changed
@@ -505,7 +445,6 @@ end
 
 if select(1, ...) == "test" then
   return {
-    gsub_ex = gsub_ex;
     transform_repl = transform_repl;
   }
 end
