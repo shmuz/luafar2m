@@ -36,7 +36,7 @@ local function transform_repl(repl)
       add_string(repl:sub(pos, from-1))
       if cap:match("[0-9A-Za-z]") then
         idx = idx + 1
-        acc[idx] = tonumber(cap, 35) -- 35 corresponds to [0-9A-Za-z]
+        acc[idx] = tonumber(cap, 36) -- 36 corresponds to [0-9A-Za-z]
         acc.max_bracket = math.max(acc.max_bracket, acc[idx])
       else
         add_string(cap)
@@ -257,6 +257,9 @@ local function BreakQuery(fname, msg, title)
 end
 
 
+-- return values of AskForReplace()
+local YES_NOW, YES_FILE, YES_ALL, SKIP_NOW, SKIP_FILE, SKIP_ALL = 1,2,3,4,5,6
+
 local function AskForReplace(fname, src, trg)
   local color = libMessage.GetInvertedColor("COL_DIALOGTEXT")
   local msg = {
@@ -307,7 +310,8 @@ local function ReplaceInFile(item, fname, data, yes_to_all)
   local br_count = data.search:bracketscount()
   local insert = table.insert
 
-  local file_yes, file_no = yes_to_all, false
+  local file_yes = yes_to_all
+  local file_no = false
   local cancel_all = false
 
   local env = data.env or {} -- env. variables for the current file processing
@@ -321,11 +325,20 @@ local function ReplaceInFile(item, fname, data, yes_to_all)
     env.M = env.M + 1
     if file_no then return end
 
+    local caps = {...}
     local val
     if data.funcmode then
       val = data.replace(...)
+      if val then
+        local tp = type(val)
+        if tp ~= "string" and tp ~= "number" then
+          file_no = true -- true non-string non-number value = no further replaces
+          return
+        end
+      else
+        return -- false value = no replace now
+      end
     else
-      local caps = {...}
       local cur_rep = {}
       for _,v in ipairs(data.trepl) do
         if type(v) == "string" then
@@ -339,27 +352,19 @@ local function ReplaceInFile(item, fname, data, yes_to_all)
       val = table.concat(cur_rep)
     end
 
-    if not val then return end -- false value = no replace now
-
-    local tp = type(val)
-    if tp ~= "string" and tp ~= "number" then
-      file_no = true -- true non-string non-number value = no further replaces
-      return
-    end
-
-    local ret
+    local ret = SKIP_ALL
     if not file_yes then
-      ret = AskForReplace(fname, (...), val)
-      if     ret == 1 then  ret = ret
-      elseif ret == 2 then  file_yes = true
-      elseif ret == 3 then  file_yes, yes_to_all = true, true
-      elseif ret == 4 then  ret = ret
-      elseif ret == 5 then  file_no = true
-      else                  file_no, cancel_all = true, true
+      ret = AskForReplace(fname, caps[1], val)
+      if     ret == YES_NOW   then  ret = ret
+      elseif ret == YES_FILE  then  file_yes = true
+      elseif ret == YES_ALL   then  file_yes, yes_to_all = true, true
+      elseif ret == SKIP_NOW  then  ret = ret
+      elseif ret == SKIP_FILE then  file_no = true
+      else                          file_no, cancel_all = true, true
       end
     end
 
-    if file_yes or ret == 1 then
+    if file_yes or ret == YES_NOW then
       env.R = env.R + 1
       return val
     end
