@@ -2,9 +2,9 @@
 
 local MAX_SIZE = 2 ^ 27 -- (128 MiB) skip files larger than this value
 
-local osWindows = package.config:sub(1,1) == "\\"
-local OpenFile = osWindows and io.open or win.OpenFile --luacheck:ignore
-local Clock = osWindows and function() return far.FarClock()/1e6 end or win.Clock --luacheck:ignore
+-- far2m / far3 compatibility
+local OpenFile = win.OpenFile or io.open --luacheck:ignore
+local Clock = win.Clock or function() return far.FarClock()/1e6 end --luacheck:ignore
 
 local F = far.Flags
 local sd = require "far2.simpledialog"
