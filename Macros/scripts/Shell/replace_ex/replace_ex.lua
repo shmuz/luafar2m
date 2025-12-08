@@ -5,6 +5,7 @@ local MAX_SIZE = 2 ^ 27 -- (128 MiB) skip files larger than this value
 -- far2m / far3 compatibility
 local OpenFile = win.OpenFile or io.open --luacheck:ignore
 local Clock = win.Clock or function() return far.FarClock()/1e6 end --luacheck:ignore
+local DirSep = package.config:sub(1,1)
 
 local F = far.Flags
 local sd = require "far2.simpledialog"
@@ -62,6 +63,9 @@ local function GetDataFromDialog()
     { tp="text";  text="&File mask:"; y1=""; width=W; },
     { tp="edit";  name="filemask"; hist="Masks"; focus=1; },
 
+    { tp="chbox"; name="dest_enable"; text="Destination &path:"; },
+    { tp="edit";  name="dest_path"; hist="RepExDestPath"; },
+
     { tp="text";  text="&Search for:"; },
     { tp="edit";  name="search"; hist="SearchText"; },
     { tp="text";  text="R&eplace with:"; },
@@ -92,6 +96,14 @@ local function GetDataFromDialog()
   local Dlg = sd.New(Items)
   local Pos, Elem = Dlg:Indexes()
   local OutTable
+
+  local function OnDestEnableChange(hDlg, btn_click)
+    local enb = hDlg:GetCheck(Pos.dest_enable)
+    hDlg:Enable(Pos.dest_path, enb)
+    if btn_click then
+      hDlg:SetFocus(enb ~= 0 and Pos.dest_path or Pos.search)
+    end
+  end
 
   local function OnFuncModeChange(hDlg)
     local enb = hDlg:GetCheck(Pos.funcmode)
@@ -216,9 +228,11 @@ local function GetDataFromDialog()
 
   Items.proc = function(hDlg, msg, param1, param2)
     if msg == F.DN_INITDIALOG then
+      OnDestEnableChange(hDlg, false)
       OnRegexChange(hDlg)
     elseif msg == F.DN_BTNCLICK then
       if param1 == Pos.regex then OnRegexChange(hDlg)
+      elseif param1 == Pos.dest_enable then OnDestEnableChange(hDlg, true)
       elseif param1 == Pos.funcmode then OnFuncModeChange(hDlg)
       elseif param1 == Pos.clear  then ClearControls(hDlg)
       elseif param1 == Pos.reload then ReloadControls(hDlg)
@@ -276,6 +290,19 @@ local function AskForReplace(fname, src, trg)
       win.Uuid("CADC0532-6A02-42C9-94D9-6F9B3EDDA55E"))
   PleaseWait()
   return res
+end
+
+
+local function GetDestFileName(fname, data)
+  if data.dest_enable then
+    local rel_path = fname:sub(data.start_dir:len() + 1)
+    local full_path = win.JoinPath(data.dest_path, rel_path)
+    local dir = full_path:match("^.*" .. DirSep)
+    win.CreateDir(dir)
+    return full_path
+  else
+    return fname
+  end
 end
 
 
@@ -375,13 +402,14 @@ local function ReplaceInFile(item, fname, data, yes_to_all)
 
   local result = false
   if (not cancel_all) and (txt2 ~= txt) then -- not canceled and text changed
-    fp, msg = OpenFile(fname, "wb")
+    local destname = GetDestFileName(fname, data)
+    fp, msg = OpenFile(destname, "wb")
     if fp then
       fp:write(txt2)
       fp:close()
       result = true
     else
-      if BreakQuery(fname, msg, "Open for write") then
+      if BreakQuery(destname, msg, "Open for write") then
         cancel_all = true
       end
     end
@@ -399,13 +427,13 @@ local function main()
     data.initfunc()
   end
 
-  local start_dir = panel.GetPanelDirectory(nil,1).Name
+  data.start_dir = panel.GetPanelDirectory(nil,1).Name
   n_total, n_changed = 0, 0
   local YesToAll = false
   local last_clock = Clock()
 
   PleaseWait()
-  far.RecursiveSearch(start_dir, data.filemask,
+  far.RecursiveSearch(data.start_dir, data.filemask,
     function(item, fullpath)
       if item.FileAttributes:find("[dejk]") then -- dir | reparse point | device_block | device_sock
         return
