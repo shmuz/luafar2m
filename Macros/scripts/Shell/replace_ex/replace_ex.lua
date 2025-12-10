@@ -14,8 +14,6 @@ local libMessage = require "far2.message"
 local set_key, set_name = "temp", "Replace_EX"
 local Title = "Replace in files"
 
-local n_total, n_changed
-
 
 local function transform_repl(repl)
   local pos, idx, acc = 1, 0, { max_bracket = 0; }
@@ -252,29 +250,43 @@ local function GetDataFromDialog()
 end
 
 
-local function PleaseWait()
-  local msg = ("%d/%d files modified. Please wait..."):format(n_changed, n_total)
+local Maker = {}
+local MakerMeta = { __index=Maker; }
+
+local function NewMaker(delta)
+  local obj = {
+    delta = delta;
+    last = delta;
+    n_total = 0;
+    n_changed = 0;
+  }
+  return setmetatable(obj, MakerMeta)
+end
+
+
+function Maker:PleaseWait()
+  local msg = ("%d/%d files modified. Please wait..."):format(self.n_changed, self.n_total)
   far.Message(msg, Title, "")
 end
 
 
-local function MessageAndWait(...)
+function Maker:MessageAndWait(...)
   local res = far.Message(...)
-  PleaseWait()
+  self:PleaseWait()
   return res
 end
 
 
-local function BreakQuery(fname, msg, title)
+function Maker:BreakQuery(fname, msg, title)
   msg = fname .."\n".. msg
-  return MessageAndWait(msg, title, "&Continue;&Terminate", "w") ~= 1
+  return self:MessageAndWait(msg, title, "&Continue;&Terminate", "w") ~= 1
 end
 
 
 -- return values of AskForReplace()
 local YES_NOW, YES_FILE, YES_ALL, SKIP_NOW, SKIP_FILE, SKIP_ALL = 1,2,3,4,5,6
 
-local function AskForReplace(fname, src, trg)
+function Maker:AskForReplace(fname, src, trg)
   local color = libMessage.GetInvertedColor("COL_DIALOGTEXT")
   local msg = {
       fname, "\n",
@@ -288,28 +300,27 @@ local function AskForReplace(fname, src, trg)
 
   local res = libMessage.Message(msg, Title, btns, "cl", nil,
       win.Uuid("CADC0532-6A02-42C9-94D9-6F9B3EDDA55E"))
-  PleaseWait()
+  self:PleaseWait()
   return res
 end
 
 
-local function GetDestFileName(fname, data)
-  if data.dest_enable then
-    local rel_path = fname:sub(data.start_dir:len() + 1)
-    local full_path = win.JoinPath(data.dest_path, rel_path)
-    local dir = full_path:match("^.*" .. DirSep)
+local function GetDestFileName(fname, dest_path, rel_path)
+  local full_path = win.JoinPath(dest_path, rel_path)
+  local dir = full_path:match("^.*" .. DirSep)
+  if dir then
     win.CreateDir(dir)
-    return full_path
-  else
-    return fname
   end
+  return full_path
 end
 
 
-local function ReplaceInFile(item, fname, data, yes_to_all)
+function Maker:ReplaceInFile(item, data, yes_to_all)
+  local fname = item.FullPath
+
   if item.FileSize > MAX_SIZE then
     local msg = ("%s\nFile is too large (%.1f Mib)"):format(fname, item.FileSize/2^20)
-    local ret = MessageAndWait(msg, Title, "&Skip;&Process anyway;&Terminate", "w")
+    local ret = self:MessageAndWait(msg, Title, "&Skip;&Process anyway;&Terminate", "w")
     if     ret == 1 then return false, false
     elseif ret ~= 2 then return false, "cancel"
     end
@@ -317,7 +328,7 @@ local function ReplaceInFile(item, fname, data, yes_to_all)
 
   local fp, msg = OpenFile(fname, "rb")
   if not fp then
-    return false, BreakQuery(fname, msg, "Open for read") and "cancel"
+    return false, self:BreakQuery(fname, msg, "Open for read") and "cancel"
   end
 
   -- Lua 5.1 and LuaJIT return nil on reading an empty file. Workaround that.
@@ -381,7 +392,7 @@ local function ReplaceInFile(item, fname, data, yes_to_all)
 
     local ret = SKIP_ALL
     if not file_yes then
-      ret = AskForReplace(fname, caps[1], val)
+      ret = self:AskForReplace(fname, caps[1], val)
       if     ret == YES_NOW   then  ret = ret
       elseif ret == YES_FILE  then  file_yes = true
       elseif ret == YES_ALL   then  file_yes, yes_to_all = true, true
@@ -401,21 +412,40 @@ local function ReplaceInFile(item, fname, data, yes_to_all)
   local txt2 = data.search:gsub(txt, freplace)
 
   local result = false
+
   if (not cancel_all) and (txt2 ~= txt) then -- not canceled and text changed
-    local destname = GetDestFileName(fname, data)
+    local destname = fname
+    if data.dest_enable then
+      destname = GetDestFileName(fname, data.dest_path, item.RelPath)
+    end
     fp, msg = OpenFile(destname, "wb")
     if fp then
       fp:write(txt2)
       fp:close()
       result = true
     else
-      if BreakQuery(destname, msg, "Open for write") then
+      if self:BreakQuery(destname, msg, "Open for write") then
         cancel_all = true
       end
     end
   end
 
   return result, (cancel_all and "cancel") or (yes_to_all and "all")
+end
+
+
+function Maker:CheckForEscape(obj)
+  local now = Clock()
+  if now > self.last then
+    if win.ExtractKey() == "ESCAPE" then
+      if 1 == self:MessageAndWait("Break the operation?", Title, "Yes;No", "w") then
+        return true
+      end
+      now = Clock()
+    end
+    self.last = now + self.delta
+    self:PleaseWait()
+  end
 end
 
 
@@ -427,41 +457,53 @@ local function main()
     data.initfunc()
   end
 
-  data.start_dir = panel.GetPanelDirectory(nil,1).Name
-  n_total, n_changed = 0, 0
-  local YesToAll = false
-  local last_clock = Clock()
+  local userbreak
+  local start_dir = panel.GetPanelDirectory(nil,1).Name
+  local start_dir_len = start_dir:len()
+  local obj = NewMaker(0.2)
 
-  PleaseWait()
-  far.RecursiveSearch(data.start_dir, data.filemask,
+  -- 1-st stage: collect files (prevents picking up files created by this utility)
+  local Files = {}
+  far.RecursiveSearch(start_dir, data.filemask,
     function(item, fullpath)
-      if item.FileAttributes:find("[dejk]") then -- dir | reparse point | device_block | device_sock
-        return
+      if not item.FileAttributes:find("[dejk]") then -- dir | reparse point | device_block | device_sock
+        item.FullPath = fullpath
+        item.RelPath = fullpath:sub(start_dir_len + 1):gsub("^"..DirSep, "") -- remove leading slash if any
+        table.insert(Files, item)
       end
-      -- process the file
-      local mod, act = ReplaceInFile(item, fullpath, data, YesToAll)
-      n_total = n_total + 1
-      if mod then
-        n_changed = n_changed + 1
-      end
-      if act == "cancel" then
+      if obj:CheckForEscape() then
+        userbreak = true
         return true
-      elseif act == "all" then
-        YesToAll = true
-      end
-      -- check if the user pressed Esc
-      local now = Clock()
-      if now - last_clock >= 0.2 then
-        last_clock = now
-        if win.ExtractKey() == "ESCAPE" then
-          if 1 == MessageAndWait("Break the operation?", Title, "Yes;No", "w") then
-            return true
-          end
-        end
-        PleaseWait()
       end
     end,
     data.recurse and "FRS_RECUR" or 0)
+
+  if userbreak then
+    far.Message("User break. No changes were made.", Title)
+    return
+  end
+
+  data.dest_path = far.ConvertPath(data.dest_path, "CPM_FULL") -- necessary for far3
+  local YesToAll = false
+
+  -- 2-nd stage: process collected files
+  obj:PleaseWait()
+  for _, item in ipairs(Files) do
+    local mod, act = obj:ReplaceInFile(item, data, YesToAll)
+    obj.n_total = obj.n_total + 1
+    if mod then
+      obj.n_changed = obj.n_changed + 1
+    end
+    if act == "cancel" then
+      return true
+    elseif act == "all" then
+      YesToAll = true
+    end
+
+    if obj:CheckForEscape() then
+      break
+    end
+  end
 
   if data.finalfunc then
     data.finalfunc()
@@ -469,7 +511,7 @@ local function main()
 
   panel.RedrawPanel(nil,0)
   panel.RedrawPanel(nil,1)
-  local msg = ("%d files processed\n%d files modified"):format(n_total, n_changed)
+  local msg = ("%d files processed\n%d files modified"):format(obj.n_total, obj.n_changed)
   far.Message(msg, Title)
 end
 
