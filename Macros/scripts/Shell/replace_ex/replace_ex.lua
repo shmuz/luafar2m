@@ -27,25 +27,30 @@ local function transform_repl(repl)
     end
   end
 
-  repl = repl:gsub("\\(.)", { ["\\"]="\\"; a="\a"; e="\27"; f="\f"; n="\n"; r="\r"; t="\t"; })
+  local rx = regex.new(
+    [[
+      \\ (.)           |
+      \$ \{ (\d+) \}   |
+      \$ (\d+)         |
+      (.)
+    ]],
+    "x")
 
-  while true do
-    local from, to, cap = repl:find("%$(.?)", pos)
-    if from then
-      add_string(repl:sub(pos, from-1))
-      if cap:match("[0-9A-Za-z]") then
-        idx = idx + 1
-        acc[idx] = tonumber(cap, 36) -- 36 corresponds to [0-9A-Za-z]
-        acc.max_bracket = math.max(acc.max_bracket, acc[idx])
-      else
-        add_string(cap)
-      end
-      pos = to + 1
+  local function frepl(c1, c2, c3, c4)
+    if c1 then
+      c1 = c1:gsub(".", { a="\a"; e="\27"; f="\f"; n="\n"; r="\r"; t="\t"; })
+      add_string(c1)
+    elseif c2 or c3 then
+      idx = idx + 1
+      acc[idx] = tonumber(c2 or c3)
+      acc.max_bracket = math.max(acc.max_bracket, acc[idx])
     else
-      add_string(repl:sub(pos))
-      return acc
+      add_string(c4)
     end
   end
+
+  rx:gsub(repl, frepl)
+  return acc
 end
 
 
@@ -189,7 +194,7 @@ local function GetDataFromDialog()
       out.trepl = transform_repl(out.replace)
       local m, n = out.trepl.max_bracket, out.search:bracketscount() - 1
       if m > n or (m == n and m ~= 1) then
-        far.Message("Invalid group number $"..m, "Replace field error", nil, "w")
+        far.Message("Invalid group number "..m, "Replace field error", nil, "w")
         return 0
       end
     end
@@ -495,7 +500,7 @@ local function main()
       obj.n_changed = obj.n_changed + 1
     end
     if act == "cancel" then
-      return true
+      break
     elseif act == "all" then
       YesToAll = true
     end
