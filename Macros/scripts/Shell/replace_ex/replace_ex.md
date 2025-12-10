@@ -257,9 +257,10 @@ return tostring(n)
 - The macro forces the regex search to be wrapped in an extra capturing group when regex mode is used. This makes the whole match available consistently among the capture arguments passed to replacement logic.
 - The replace parser supports `\` escapes and `$n`/`${n}` backreferences. Escapes like `\n` and `\t` are converted to their control characters.
 - In function mode the environment (`setfenv`) contains:
-  - per-file counters and tables (N1, N2, A1, A2)
-  - FN, M, R and item for file context
-  - T table with captures (T[0] = full match, T[1..] = groups) — you can also access captures as the function arguments.
+  - per-run counters and tables (`N1`, `N2`, `A1`, `A2`)
+  - per-file counters and tables (`n1`, `n2`, `a1`, `a2`)
+  - `FN`, `M`, `R` and `item` for file context
+  - `T` table with captures (T[0] = full match, T[1..] = groups) — you can also access captures as the function arguments.
 - The macro checks for Escape key periodically (configured delta 0.2 sec) and prompts for abort to allow the user to stop long operations.
 
 ---
