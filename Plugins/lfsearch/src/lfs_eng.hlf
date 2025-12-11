@@ -1325,8 +1325,9 @@ pcre(3).
 @SyntaxReplace
 $ #Syntax of Replace pattern#
  If Regular Expression option is checked then:
-    *  #$1#-#$9# and #$A#-#$Z# are used for specifying submatches (groups).
-       #$0# stands for the whole match.
+    *  #$N# or #${N}# are used for specifying submatches (groups).
+       #$0# or #${0}# stand for the whole match.
+       (N is a non-negative decimal number).
     *  #${name}# is used for specifying named groups
        (supported only with Oniguruma and PCRE libraries).
     *  Literal dollar signs (#$#) and backslashes (#\#) must be escaped
