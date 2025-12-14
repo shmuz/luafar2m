@@ -304,6 +304,11 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
       searchstart = maxno + 3, -- required for correct work of ellipsis
     }, items)
 
+  function list:OnGetItemText(item)
+    local s = string.gsub(item.text, "%z", " ") -- replace null bytes with spaces
+    return fmt:format(item.lineno, s)
+  end
+
   function list:onlistchange (hDlg, key, item)
     SelectItemInEditor(item)
     ShowAll_ChangeState(hDlg, item, false)
