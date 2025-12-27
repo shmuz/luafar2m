@@ -2,14 +2,14 @@
 -- luacheck: globals _Plugin
 
 far.ReloadDefaultScript = true
-package.loaded["far2.custommenu"] = nil
+package.loaded["far2.custommenu2"] = nil
 package.loaded["lfh_config"] = nil
 
 local SETTINGS_KEY  = nil
 local SETTINGS_NAME = "settings"
 
 local IniFile    = require "inifile"
-local Custommenu = require "far2.custommenu"
+local Custommenu = require "far2.custommenu2"
 local Utils      = require "far2.utils"
 local Sett       = require "far2.settings"
 local Config     = require "lfh_config"

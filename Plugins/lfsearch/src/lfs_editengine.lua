@@ -5,7 +5,7 @@ local M          = require "lfs_message"
 local Common     = require "lfs_common"
 
 local CustomMessage = require "far2.message"
-local CustomMenu = require "far2.custommenu"
+local CustomMenu = require "far2.custommenu2"
 
 local F = far.Flags
 local floor, ceil, min, max = math.floor, math.ceil, math.min, math.max
