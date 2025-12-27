@@ -66,3 +66,18 @@ function export.ProcessPanelEvent (object, handle, Event, Param)
     -- panel.RedrawPanel(handle)
   end
 end
+
+-- utf8.reformat appeared in LuaFAR build 825 (approx. Far 3.0.6315).
+-- Make the plugin compatible with earlier Far/LuaFAR versions.
+--
+utf8.reformat = function(patt, ...) -- luacheck: ignore 122 (setting read-only field)
+  local args = { ... }
+  local function Subst (i, m, f)
+    i = tonumber(i)
+    f = f:match('[^s]')
+    return args[i] and ('%' .. m .. (f or 's')):format(f and args[i] or tostring(args[i])) or ''
+  end
+
+  patt = patt:gsub('%f[%%{]{(%d+):?(%-?%d*%.?%d*)([A-Za-z]?)}', Subst):gsub('%%{', '{')
+  return patt:format(...)
+end
