@@ -1,7 +1,9 @@
 -- rclone_panel.lua
 -- Rclone remotes integration for Far Manager
+-- Original project: https://github.com/phanex/farclone/
 
 local osWin = package.config:sub(1,1) == "\\"
+local F = far.Flags
 
 -- Configuration (use \\ for paths in Windows)
 local RclonePath =  -- Path to rclone.exe
@@ -15,15 +17,15 @@ local ServPort = 2022
 local ServPass = "rclone"
 local RCPort = 5572
 
+-- luacheck: ignore 112 113 (non-standard/undefined global variable G)
 _G.G = _G.G or {}
 G.rclone_server = G.rclone_server or { running = false, remote = nil }
 
 local function executeRclone(args)
   local configArg = ConfigPath ~= ""
-    and string.format('--config "%s"', ConfigPath)
-    or ""
+    and ('--config "%s"'):format(ConfigPath) or ""
 
-  local command = string.format('"%s" %s %s', RclonePath, configArg, args)
+  local command = ('"%s" %s %s'):format(RclonePath, configArg, args)
   local handle = io.popen(command)
   local output = {}
   if handle then
@@ -60,10 +62,11 @@ end
 
 local function stopServer()
   if not G.rclone_server.running then
-    return true
+    return
   end
 
-  local cmd = string.format('curl -X POST http://127.0.0.1:%d/core/quit 2>nul', RCPort)
+  local nul = osWin and 'nul' or '/dev/null'
+  local cmd = ('curl -X POST http://127.0.0.1:%d/core/quit 2>%s'):format(RCPort, nul)
   os.execute(cmd)
 
   local maxWait = 10
@@ -75,28 +78,24 @@ local function stopServer()
 
   G.rclone_server.running = false
   G.rclone_server.remote = nil
-
-  return true
 end
 
 local function openNetBox(remoteName)
   -- Use remote name as username so NetBox shows "remoteName@127.0.0.1"
-  local url = string.format("sftp://%s:%s@127.0.0.1:%d/", remoteName, ServPass, ServPort)
+  local url = ("sftp://%s:%s@127.0.0.1:%d/"):format(remoteName, ServPass, ServPort)
 
   mf.postmacro(function()
     Keys("Esc")
     print(url)
     Keys("Enter")
   end)
-
-  return true
 end
 
 local function startServer(remoteName)
   if G.rclone_server.running and G.rclone_server.remote == remoteName then
     -- Server already running for this remote, ask to stop
     local result = far.Message(
-      string.format("Server already running for: %s\n\nStop server?", remoteName),
+      ("Server already running for: %s\n\nStop server?"):format(remoteName),
       "Rclone",
       ";YesNo",
       "w"
@@ -111,7 +110,7 @@ local function startServer(remoteName)
 
   if G.rclone_server.running then
     local result = far.Message(
-      string.format("Server running for: %s\n\nReconnect to: %s ?\n\n(Server will restart)",
+      ("Server running for: %s\n\nReconnect to: %s ?\n\n(Server will restart)"):format(
         G.rclone_server.remote, remoteName),
       "Switch Remote",
       ";YesNo",
@@ -127,29 +126,26 @@ local function startServer(remoteName)
   end
 
   if isPortInUse(ServPort) or isPortInUse(RCPort) then
-    far.Message(string.format("Ports %d or %d still in use!\n\nWait a moment and try again.",
-      ServPort, RCPort), "Port Conflict", "OK", "w")
+    far.Message(("Ports %d or %d still in use!\n\nWait a moment and try again."):
+      format(ServPort, RCPort), "Port Conflict", "OK", "w")
     return false
   end
 
   local configArg = ConfigPath ~= ""
-    and string.format('--config "%s"', ConfigPath)
-    or ""
+    and ('--config "%s"'):format(ConfigPath) or ""
 
   -- Use remote name as SFTP username for better identification in NetBox
   local fmt = '"%s" %s serve sftp %s: --addr 127.0.0.1:%d --user %s --pass %s --rc'..
               ' --rc-addr 127.0.0.1:%d --rc-no-auth --vfs-cache-mode writes --timeout %dm'
-  local cmd
+
   if osWin then
-    fmt = 'start /MIN "rclone_%s"'..fmt
-    cmd = fmt:format(remoteName, RclonePath, configArg, remoteName, ServPort,
-                     remoteName, ServPass, RCPort, Timeout)
+    fmt = ('start /MIN "rclone_%s" %s'):format(remoteName, fmt)
   else
-    fmt = fmt.." &"
-    cmd = fmt:format(RclonePath, configArg, remoteName, ServPort, remoteName, ServPass, RCPort, Timeout)
-    far.CopyToClipboard(cmd)
+    fmt = fmt..' &'
   end
 
+  local cmd = fmt:format(RclonePath, configArg, remoteName, ServPort,
+                         remoteName, ServPass, RCPort, Timeout)
   os.execute(cmd)
   win.Sleep(1500)
 
@@ -178,40 +174,11 @@ end
 
 local function openRcloneConfig()
   local configArg = ConfigPath ~= ""
-    and string.format('--config "%s"', ConfigPath)
-    or ""
+    and ('--config "%s"'):format(ConfigPath) or ""
 
   local fmt = osWin and 'start "Rclone Config" "%s" %s config' or '"%s" %s config &'
   os.execute(fmt:format(RclonePath, configArg))
 end
-
-Macro {
-  id = "692846CB-53D8-43B2-A3C0-D180E65246B9",
-  area = "Shell Info QView Tree",
-  key = "LAltF1",
-  description = "Rclone: Open left panel disk menu",
-  priority = 60,
-  action = function()
-    if not APanel.Left then
-      Keys("Tab")
-    end
-    Keys("AltF1")
-  end
-}
-
-Macro {
-  id = "B72092ED-1431-4747-9F9A-D9851D2CEF78",
-  area = "Shell Info QView Tree",
-  key = "LAltF2",
-  description = "Rclone: Open right panel disk menu",
-  priority = 60,
-  action = function()
-    if APanel.Left then
-      Keys("Tab")
-    end
-    Keys("AltF2")
-  end
-}
 
 MenuItem {
   menu = "Disks",
@@ -230,10 +197,9 @@ MenuItem {
     for i, remote in ipairs(remotes) do
       local hotkey = makeHotkey(i)
       local marker = (G.rclone_server.running and G.rclone_server.remote == remote)
-        and " [running]"
-        or ""
+        and " [running]" or ""
       table.insert(items, {
-        text = string.format("&%s. %s%s", hotkey, remote, marker),
+        text = ("&%s. %s%s"):format(hotkey, remote, marker),
         remote = remote
       })
     end
@@ -246,18 +212,15 @@ MenuItem {
     local menuProps = {
       Title = "Select Rclone Remote",
       Bottom = bottomHint,
-      Flags = far.Flags.FMENU_WRAPMODE
+      Flags = F.FMENU_WRAPMODE
     }
 
-    local breakKeys = {
-      { BreakKey = "SHIFTF4" },
-      { BreakKey = "F8" },
-    }
+    local breakKeys = "ShiftF4 F8"
 
     local result = far.Menu(menuProps, items, breakKeys)
 
     if result then
-      if result.BreakKey == "SHIFTF4" then
+      if result.BreakKey == "ShiftF4" then
         openRcloneConfig()
       elseif result.BreakKey == "F8" then
         if G.rclone_server.running then
@@ -288,19 +251,11 @@ MenuItem {
 }
 
 Event {
-  description = "Stop Rclone server when leaving NetBox",
-  group = "ShellEvent",
-  action = function(Event, Param)
-    if G.rclone_server.running and not APanel.Plugin then
-      stopServer()
-    end
-  end
-}
-
-Event {
   description = "Stop Rclone server on Far exit",
   group = "ExitFAR",
-  action = function()
-    stopServer()
+  action = function(reload)
+    if not reload then
+      stopServer()
+    end
   end
 }
