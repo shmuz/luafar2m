@@ -93,18 +93,7 @@ end
 
 local function startServer(remoteName)
   if G.rclone_server.running and G.rclone_server.remote == remoteName then
-    -- Server already running for this remote, ask to stop
-    local result = far.Message(
-      ("Server already running for: %s\n\nStop server?"):format(remoteName),
-      "Rclone",
-      ";YesNo",
-      "w"
-    )
-
-    if result == 1 then
-      stopServer()
-      -- NetBox will show disconnection, no need for extra message
-    end
+    openNetBox(remoteName)
     return true
   end
 
