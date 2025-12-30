@@ -69,11 +69,11 @@ local function stopServer()
   local cmd = ('curl -X POST http://127.0.0.1:%d/core/quit 2>%s'):format(RCPort, nul)
   os.execute(cmd)
 
-  local maxWait = 10
+  local maxWait = 5000 -- msec
   local waited = 0
   while (isPortInUse(ServPort) or isPortInUse(RCPort)) and waited < maxWait do
-    win.Sleep(500)
-    waited = waited + 1
+    win.Sleep(100)
+    waited = waited + 100
   end
 
   G.rclone_server.running = false
@@ -176,86 +176,91 @@ local function openRcloneConfig()
   local configArg = ConfigPath ~= ""
     and ('--config "%s"'):format(ConfigPath) or ""
 
-  local fmt = osWin and 'start "Rclone Config" "%s" %s config' or '"%s" %s config &'
-  os.execute(fmt:format(RclonePath, configArg))
+  if osWin then
+    local cmd = ('start "Rclone Config" "%s" %s config'):format(RclonePath, configArg)
+    os.execute(cmd)
+  else
+    local cmd = ('"%s" %s config'):format(RclonePath, configArg)
+    far.Execute(cmd)
+  end
 end
 
-MenuItem {
-  menu = "Disks",
-  guid = "51E74971-6C9A-469D-93CF-95B9B1E059AF",
-  text = "Rclone Remotes",
-  action = function(OpenFrom, Item)
-    local remotes = getRemotes()
+local function Main()
+  local remotes = getRemotes()
 
-    if #remotes == 0 then
-      far.Message("No remotes found!", "Error", "OK", "w")
-      return
-    end
-
-    -- Build menu items with hotkeys and [running] marker
-    local items = {}
-    for i, remote in ipairs(remotes) do
-      local hotkey = makeHotkey(i)
-      local marker = (G.rclone_server.running and G.rclone_server.remote == remote)
-        and " [running]" or ""
-      table.insert(items, {
-        text = ("&%s. %s%s"):format(hotkey, remote, marker),
-        remote = remote
-      })
-    end
-
-    -- Bottom hint - show F8 only when server is running
-    local bottomHint = G.rclone_server.running
-      and "Shift+F4: Config  F8: Serv Stop"
-      or "Shift+F4: Config"
-
-    local menuProps = {
-      Title = "Select Rclone Remote",
-      Bottom = bottomHint,
-      Flags = F.FMENU_WRAPMODE
-    }
-
-    local breakKeys = "ShiftF4 F8"
-
-    local result = far.Menu(menuProps, items, breakKeys)
-
-    if result then
-      if result.BreakKey == "ShiftF4" then
-        openRcloneConfig()
-      elseif result.BreakKey == "F8" then
-        if G.rclone_server.running then
-          stopServer()
-          -- NetBox will show disconnection, no extra message needed
-        end
-      else
-        startServer(result.remote)
-      end
-    end
+  if #remotes == 0 then
+    far.Message("No remotes found!", "Error", "OK", "w")
+    return
   end
-}
 
-MenuItem {
-  menu = "Plugins",
-  area = "Shell",
-  guid = "61F74971-7C9A-469D-93CF-95B9B1E059AF",
-  text = "Stop Rclone Server",
-  action = function()
-    if G.rclone_server.running then
+  -- Show the top-level menu only if the server is running
+  if G.rclone_server.running then
+    local _,pos = far.Menu({Title="Rclone"}, {{text="&Remotes"}, {text="&Stop Server"}})
+    if pos == nil then
+      return
+    elseif pos == 2 then
       local remote = G.rclone_server.remote
       stopServer()
       far.Message("Server stopped:\n" .. remote, "Rclone", "OK")
-    else
-      far.Message("No server running", "Rclone", "OK")
+      return
     end
   end
+
+  -- Build menu items with hotkeys and [running] marker
+  local items = {}
+  for i, remote in ipairs(remotes) do
+    local hotkey = makeHotkey(i)
+    local marker = (G.rclone_server.running and G.rclone_server.remote == remote)
+      and " [running]" or ""
+    table.insert(items, {
+      text = ("&%s. %s%s"):format(hotkey, remote, marker),
+      remote = remote
+    })
+  end
+
+  -- Bottom hint - show F8 only when server is running
+  local bottomHint = G.rclone_server.running
+    and "Shift+F4: Config  F8: Stop Server"
+    or "Shift+F4: Config"
+
+  local menuProps = {
+    Title = "Select Rclone Remote",
+    Bottom = bottomHint,
+    Flags = F.FMENU_WRAPMODE
+  }
+
+  local breakKeys = "ShiftF4 F8"
+
+  local result = far.Menu(menuProps, items, breakKeys)
+
+  if result then
+    if result.BreakKey == "ShiftF4" then
+      openRcloneConfig()
+    elseif result.BreakKey == "F8" then
+      if G.rclone_server.running then
+        stopServer()
+        -- NetBox will show disconnection, no extra message needed
+      end
+    else
+      startServer(result.remote)
+    end
+  end
+end
+
+MenuItem {
+  menu = "Plugins";
+  area = "Shell";
+  guid = "51E74971-6C9A-469D-93CF-95B9B1E059AF";
+  text = "farclone";
+  action = Main;
 }
 
 Event {
-  description = "Stop Rclone server on Far exit",
-  group = "ExitFAR",
+  description = "Stop Rclone server on Far exit";
+  group = "ExitFAR";
   action = function(reload)
     if not reload then
       stopServer()
     end
-  end
+  end;
 }
