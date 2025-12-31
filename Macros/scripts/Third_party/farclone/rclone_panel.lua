@@ -4,10 +4,11 @@
 
 local osWin = package.config:sub(1,1) == "\\"
 local F = far.Flags
+local NetboxGuid = win.Uuid("42E4AEB1-A230-44F4-B33C-F195BB654931")
 
--- Configuration (use \\ for paths in Windows)
+-- Configuration
 local RclonePath =  -- Path to rclone.exe
-    osWin and "C:\\Applications\\Utils\\rclone\\rclone.exe"
+    osWin and "rclone" -- may be full path, e.g. "C:\\Applications\\Utils\\rclone\\rclone.exe"
     or "rclone"
 local ConfigPath = ""  -- Empty = use default rclone config location
 local Timeout = 10  -- Server timeout in minutes
@@ -21,10 +22,12 @@ local RCPort = 5572
 _G.G = _G.G or {}
 G.rclone_server = G.rclone_server or { running = false, remote = nil }
 
-local function executeRclone(args)
-  local configArg = ConfigPath ~= ""
-    and ('--config "%s"'):format(ConfigPath) or ""
+local function makeConfigArg()
+  return ConfigPath == "" and "" or ('--config "%s"'):format(ConfigPath)
+end
 
+local function executeRclone(args)
+  local configArg = makeConfigArg()
   local command = ('"%s" %s %s'):format(RclonePath, configArg, args)
   local handle = io.popen(command)
   local output = {}
@@ -91,22 +94,58 @@ local function openNetBox(remoteName)
   end)
 end
 
+local function makeStartServerCommand(remoteName)
+  -- Use remote name as SFTP username for better identification in NetBox
+  local args = {
+    ('"%s"'):format(RclonePath),
+    makeConfigArg(),
+    "serve",
+    "sftp",
+    ("%s:"):format(remoteName),
+    "--addr", ("127.0.0.1:%d"):format(ServPort),
+    "--user", remoteName,
+    "--pass", ServPass,
+    "--rc",
+    "--rc-addr", ("127.0.0.1:%d"):format(RCPort),
+    "--rc-no-auth",
+    "--vfs-cache-mode",
+    "writes",
+    "--timeout", ("%dm"):format(Timeout)
+  }
+  local cmd = table.concat(args, " ")
+
+  if osWin then
+    cmd = ('start /MIN "rclone_%s" %s'):format(remoteName, cmd)
+  else
+    cmd = cmd..' &'
+  end
+
+  return cmd
+end
+
 local function startServer(remoteName)
   if G.rclone_server.running and G.rclone_server.remote == remoteName then
-    openNetBox(remoteName)
+    if osWin then
+      local info = panel.GetPanelInfo(nil,1)
+      if info.OwnerGuid == NetboxGuid then
+        local msg = ("Server already running for: %s\n\nStop server?"):format(remoteName)
+        if 1 == far.Message(msg, "Rclone", ";YesNo", "w") then
+          stopServer()
+          -- NetBox will show disconnection, no need for extra message
+        end
+      else
+        openNetBox(remoteName)
+      end
+    else
+      openNetBox(remoteName)
+    end
     return true
   end
 
   if G.rclone_server.running then
-    local result = far.Message(
-      ("Server running for: %s\n\nReconnect to: %s ?\n\n(Server will restart)"):format(
-        G.rclone_server.remote, remoteName),
-      "Switch Remote",
-      ";YesNo",
-      "w"
-    )
-
-    if result == 1 then
+    local msg = ("Server running for: %s\n\nReconnect to: %s ?\n\n(Server will restart)")
+        : format(G.rclone_server.remote, remoteName)
+    if 1 == far.Message(msg, "Switch Remote", ";YesNo", "w") then
       stopServer()
       win.Sleep(500)
     else
@@ -115,26 +154,13 @@ local function startServer(remoteName)
   end
 
   if isPortInUse(ServPort) or isPortInUse(RCPort) then
-    far.Message(("Ports %d or %d still in use!\n\nWait a moment and try again."):
-      format(ServPort, RCPort), "Port Conflict", "OK", "w")
+    local msg = ("Ports %d or %d still in use!\n\nWait a moment and try again.")
+        : format(ServPort, RCPort)
+    far.Message(msg, "Port Conflict", "OK", "w")
     return false
   end
 
-  local configArg = ConfigPath ~= ""
-    and ('--config "%s"'):format(ConfigPath) or ""
-
-  -- Use remote name as SFTP username for better identification in NetBox
-  local fmt = '"%s" %s serve sftp %s: --addr 127.0.0.1:%d --user %s --pass %s --rc'..
-              ' --rc-addr 127.0.0.1:%d --rc-no-auth --vfs-cache-mode writes --timeout %dm'
-
-  if osWin then
-    fmt = ('start /MIN "rclone_%s" %s'):format(remoteName, fmt)
-  else
-    fmt = fmt..' &'
-  end
-
-  local cmd = fmt:format(RclonePath, configArg, remoteName, ServPort,
-                         remoteName, ServPass, RCPort, Timeout)
+  local cmd = makeStartServerCommand(remoteName)
   os.execute(cmd)
   win.Sleep(1500)
 
@@ -162,15 +188,14 @@ local function makeHotkey(index)
 end
 
 local function openRcloneConfig()
-  local configArg = ConfigPath ~= ""
-    and ('--config "%s"'):format(ConfigPath) or ""
+  local configArg = makeConfigArg()
 
   if osWin then
     local cmd = ('start "Rclone Config" "%s" %s config'):format(RclonePath, configArg)
     os.execute(cmd)
   else
     local cmd = ('"%s" %s config'):format(RclonePath, configArg)
-    far.Execute(cmd)
+    far.Execute(cmd) -- luacheck:ignore 143 (accessing undefined field)
   end
 end
 
