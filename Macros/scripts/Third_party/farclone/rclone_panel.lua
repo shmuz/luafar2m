@@ -18,7 +18,7 @@ local ServPort = 2022
 local ServPass = "rclone"
 local RCPort = 5572
 
--- luacheck: ignore 112 113 (non-standard/undefined global variable G)
+-- luacheck: new globals G (non-standard/undefined global variable G)
 _G.G = _G.G or {}
 G.rclone_server = G.rclone_server or { running = false, remote = nil }
 
@@ -195,7 +195,7 @@ local function openRcloneConfig()
     os.execute(cmd)
   else
     local cmd = ('"%s" %s config'):format(RclonePath, configArg)
-    far.Execute(cmd) -- luacheck:ignore 143 (accessing undefined field)
+    far.Execute(cmd) -- luacheck: ignore (accessing undefined field)
   end
 end
 
