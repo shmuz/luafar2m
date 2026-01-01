@@ -84,15 +84,11 @@ local function stopServer()
   G.rclone_server.remote = nil
 end
 
-local function openNetBox(remoteName)
+local function openNetPlugin(remoteName)
   -- Use remote name as username so NetBox shows "remoteName@127.0.0.1"
   local url = ("sftp://%s:%s@127.0.0.1:%d/"):format(remoteName, ServPass, ServPort)
-
-  mf.postmacro(function()
-    Keys("Esc")
-    print(url)
-    Keys("Enter")
-  end)
+  local id = osWin and NetBoxGuid or NetRocksID
+  mf.postmacro(Plugin.Command, id, url)
 end
 
 local function makeStartServerCommand(remoteName)
@@ -132,7 +128,7 @@ local function startServer(remoteName)
     end
 
     if action == "open" then
-      openNetBox(remoteName)
+      openNetPlugin(remoteName)
     elseif action == "stop" then
       stopServer() -- NetBox will show disconnection, no need for extra message
     end
@@ -170,7 +166,7 @@ local function startServer(remoteName)
   G.rclone_server.running = true
   G.rclone_server.remote = remoteName
 
-  openNetBox(remoteName)
+  openNetPlugin(remoteName)
 
   return true
 end
