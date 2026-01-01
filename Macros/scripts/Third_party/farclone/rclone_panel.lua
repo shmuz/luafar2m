@@ -87,7 +87,7 @@ end
 local function openNetPlugin(remoteName)
   -- Use remote name as username so NetBox shows "remoteName@127.0.0.1"
   local url = ("sftp://%s:%s@127.0.0.1:%d/"):format(remoteName, ServPass, ServPort)
-  local id = osWin and NetBoxGuid or NetRocksID
+  local id = osWin and win.Uuid(NetBoxGuid) or NetRocksID
   mf.postmacro(Plugin.Command, id, url)
 end
 
