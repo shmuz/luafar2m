@@ -4,7 +4,8 @@
 
 local osWin = package.config:sub(1,1) == "\\"
 local F = far.Flags
-local NetboxGuid = win.Uuid("42E4AEB1-A230-44F4-B33C-F195BB654931")
+local NetBoxGuid = win.Uuid("42E4AEB1-A230-44F4-B33C-F195BB654931")
+local NetRocksID = 0xAE8CE351
 
 -- Configuration
 local RclonePath =  -- Path to rclone.exe
@@ -99,18 +100,15 @@ local function makeStartServerCommand(remoteName)
   local args = {
     ('"%s"'):format(RclonePath),
     makeConfigArg(),
-    "serve",
-    "sftp",
-    ("%s:"):format(remoteName),
-    "--addr", ("127.0.0.1:%d"):format(ServPort),
+    ("serve sftp %s:"):format(remoteName),
+    ("--addr 127.0.0.1:%d"):format(ServPort),
     "--user", remoteName,
     "--pass", ServPass,
-    "--rc",
-    "--rc-addr", ("127.0.0.1:%d"):format(RCPort),
+    "--rc", -- stands for "remote control"
+    ("--rc-addr 127.0.0.1:%d"):format(RCPort),
     "--rc-no-auth",
-    "--vfs-cache-mode",
-    "writes",
-    "--timeout", ("%dm"):format(Timeout)
+    "--vfs-cache-mode writes",
+    ("--timeout %dm"):format(Timeout)
   }
   local cmd = table.concat(args, " ")
 
@@ -125,20 +123,20 @@ end
 
 local function startServer(remoteName)
   if G.rclone_server.running and G.rclone_server.remote == remoteName then
-    if osWin then
-      local info = panel.GetPanelInfo(nil,1)
-      if info.OwnerGuid == NetboxGuid then
-        local msg = ("Server already running for: %s\n\nStop server?"):format(remoteName)
-        if 1 == far.Message(msg, "Rclone", ";YesNo", "w") then
-          stopServer()
-          -- NetBox will show disconnection, no need for extra message
-        end
-      else
-        openNetBox(remoteName)
-      end
-    else
-      openNetBox(remoteName)
+    local action = "open"
+
+    local info = panel.GetPanelInfo(nil, 1)
+    if (info.OwnerGuid == NetBoxGuid) or (info.OwnerID == NetRocksID) then
+      local msg = ("Server already running for: %s\n\nStop server?"):format(remoteName)
+      action = far.Message(msg, "Rclone", ";YesNo", "w") == 1 and "stop" or "none"
     end
+
+    if action == "open" then
+      openNetBox(remoteName)
+    elseif action == "stop" then
+      stopServer() -- NetBox will show disconnection, no need for extra message
+    end
+
     return true
   end
 
