@@ -1,4 +1,5 @@
-﻿-------------------------------------------------------------------------------
+﻿-- luacheck: no max line length
+-------------------------------------------------------------------------------
 --           Работа мышкой с выделением в редакторе. © SimSU
 -------------------------------------------------------------------------------
 -- Умеет:
@@ -45,7 +46,6 @@ return{
 -- Конец файла Profile\SimSU\Editor_MouseSelect.cfg
 end
 
-local function lang() return win.GetEnv("farlang") end
 -- Встроенные языки / Built-in languages
 local function Messages()
 --if lang()=="Russian" then
