@@ -13,6 +13,7 @@ Macro {
   id="D36B2FE9-93A9-4105-965D-FAC25C1733C5";
   description="Save and run script from editor";
   area="Editor"; key="CtrlF12";
+  filemask="*.lua;*.moon";
   action=function()
     local info = editor.GetInfo()
     if bit64.band(info.CurState, F.ECSTATE_SAVED) == 0 then
