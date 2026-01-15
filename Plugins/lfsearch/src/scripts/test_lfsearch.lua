@@ -4,18 +4,10 @@
 
 local DIRSEP = string.sub(package.config, 1, 1)
 local OS_WIN = (DIRSEP == "\\")
-local TMPDIR, GetHistory, SetHistory
+local TMPDIR = OS_WIN and assert(win.GetEnv("Temp")) or far.InMyTemp()
 
-if OS_WIN then
-  GetHistory = function(s1,s2) return _Plugin.History:field(s1)[s2] end
-  SetHistory = function(s1,s2,val) _Plugin.History:setfield(s1.."."..s2, val) end
-  ----------------------------------------------------------------
-  TMPDIR = assert(win.GetEnv("Temp"))
-else
-  GetHistory = function(s1,s2) return _Plugin.History[s1][s2] end
-  SetHistory = function(s1,s2,val) _Plugin.History[s1][s2] = val end
-  TMPDIR = far.InMyTemp()
-end
+local GetHistory = function(s1,s2) return _Plugin.History[s1][s2] end
+local SetHistory = function(s1,s2,val) _Plugin.History[s1][s2] = val end
 
 local selftest = {} -- this module
 
@@ -992,8 +984,8 @@ local function test_one_mask (mask, files, num_cs, num_notcs)
   for _,f in ipairs(files) do AddFile(nil, f) end
   PrAssert(panel.SetPanelDirectory(nil, 1, TestDir))
   local dt = { sFileMask = mask, sSearchArea = "OnlyCurrFolder" }
-  for k=1,2 do
-    local cs = (k == 1)
+  for k=1, OS_WIN and 1 or 2 do
+    local cs = (k == 2)
     dt.bCaseSensFileMask = cs
     local arr = lfsearch.SearchFromPanel(dt)
     PrAssert(arr)
