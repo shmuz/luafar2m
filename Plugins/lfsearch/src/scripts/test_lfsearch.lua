@@ -269,6 +269,16 @@ local function test_Replace (lib)
       end
     end
 
+    -- test inserting new lines and preserving missing EOL of the starting line
+    dt = { sSearchPat=".*", bRegExpr=true, sOrigin="cursor", bSearchBack = (k==1) }
+    for aa = 1,3 do for bb = 1,2 do
+      dt.sReplacePat = (aa == 1) and "$0\n" or (aa == 2) and "$0\r" or "$0\r\n"
+      dt.sOrigin = (bb == 1) and "scope" or "cursor"
+      SetEditorText("")
+      RunEditorAction(lib, "test:replace", dt, 1, 1)
+      AssertEditorText("\n")
+    end end
+
     -- test submatches (captures)
     local function makerep(fmt)
       local s = ""
