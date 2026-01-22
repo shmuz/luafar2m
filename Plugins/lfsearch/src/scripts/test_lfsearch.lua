@@ -45,6 +45,7 @@ local function GetEditorText()
 end
 
 local function SetEditorText(str)
+  editor.SetParam(nil, F.ESPT_EXPANDTABS, F.EXPAND_NOTABS)
   editor.SetParam(nil, F.ESPT_AUTOINDENT, false)
   editor.SetPosition(nil,1,1)
   for _=1, editor.GetInfo().TotalLines do
