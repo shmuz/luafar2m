@@ -454,8 +454,13 @@ local function get_history (aConfig, aData)
       local lines = ini:GetString(aConfig.FarHistoryType, aKey)
       if lines then
         lines = lines:gsub("\\(.)", { ["\\"]="\\"; n="\n"; t="\t"; })
-        for text in lines:gmatch("[^\n]+") do
-          table.insert(aTarget, text)
+        local pos = 1
+        while true do -- example: [2]ab
+          local from,to,len = lines:find("^%[(%d+)%]", pos)
+          if from == nil then break end
+          len = tonumber(len)
+          table.insert(aTarget, lines:sub(to+1, to+len))
+          pos = to + len + 1
         end
       end
     end
