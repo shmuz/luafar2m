@@ -1,6 +1,8 @@
-﻿-------------------------------------------------------------------------------
--- Завершение слова в редакторе. © SimSU
 -------------------------------------------------------------------------------
+-- Завершение слова в редакторе. © SimSU
+-- Portability: far3 and far2m. © Shmuel Zeigerman
+-------------------------------------------------------------------------------
+-- luacheck: no max line length
 
 ---- Настройки
 local function Settings()
@@ -19,6 +21,8 @@ return{
 }
 -- Конец файла Profile\SimSU\Editor_WordComplete.cfg
 end
+
+local far2m = package.config:sub(1,1) == "/"
 
 ---- Локализация
 local function lang() return win.GetEnv("farlang") end
@@ -40,9 +44,8 @@ return{
 -- End of file Profile\SimSU\Editor_WordCompleteEnglish.lng
 end end
 
-local S=(loadfile(win.GetEnv("FARLOCALPROFILE").."\\SimSU\\Editor_WordComplete.cfg") or loadfile(win.GetEnv("FARPROFILE").."\\SimSU\\Editor_WordComplete.cfg") or Settings)()
-local L=(loadfile(win.GetEnv("FARPROFILE").."\\SimSU\\Editor_WordComplete"..lang()..".lng") or Messages)
-local M=L()
+local M=Messages()
+local S=Settings()
 -------------------------------------------------------------------------------
 local F=far.Flags
 S.ThatWord      = S.ThatWord     ==nil and Settings().ThatWord      or          S.ThatWord
@@ -123,17 +126,18 @@ local function Complete(Rec)
           CP=far.AdvControl(F.ACTL_GETCURSORPOS)
           mf.postmacro(
             far.Dialog,
-            '',CP.X,CP.Y,CP.X+Comp:len(),CP.Y,nil,
+            '',CP.X,CP.Y,CP.X+Comp:len()+1,CP.Y,nil,
             --       01 02 03          04 05 06 07 08 09    10 11
             {{F.DI_TEXT, 1, 0, Comp:len(), 0, 0, 0, 0, 0, Comp, 0}},
             bor(F.FDLG_NODRAWSHADOW,F.FDLG_SMALLDIALOG,F.FDLG_NODRAWPANEL),
             function(hDlg, Msg, _ , Param2)
               if Msg == F.DN_INITDIALOG then
                 hTimer = far.Timer(S.MaxTime*1000, function(h) h:Close() if hDlg then hDlg:send(F.DM_CLOSE); Comp=nil end end)
-              elseif Msg == F.DN_CONTROLINPUT then
+              elseif (far2m and Msg == F.DN_KEY) or (not far2m and Msg == F.DN_CONTROLINPUT) then
+                local Key = (far.KeyToName or far.InputRecordToName)(Param2) -- luacheck: ignore
+                if far2m and (not Key or Key == "Ctrl" or Key == "Alt" or Key == "Shift") then return end
                 if hTimer then hTimer:Close() end
                 hDlg:send(F.DM_CLOSE)
-                local Key = far.InputRecordToName(Param2)
                 if Key and Key:len()==1 then Comp=nil end
                 mf.postmacro(function(key) if mf.eval(key,2)==-2 then Keys(key) end end, Key)
               end
@@ -152,16 +156,24 @@ local function List()
   local Id=EdInf.EditorID
   local First=math.max(EdInf.CurLine-S.MaxLines,1               )
   local Last =math.min(EdInf.CurLine+S.MaxLines,EdInf.TotalLines)
-  local Items={}; local s
+  local Items={}
   local w,b_  = GetWord()
   local W,b,e = GetWord(EdInf.CurLine,b_,false)
+  local set = {}
   for i=First,Last do
-    s=editor.GetString(nil,i,3)
-    for w_ in s:gmatch(S.ThatWord) do if w_~=W then Items[#Items+1]=w_ end end
+    local s = editor.GetString(nil,i,3)
+    for w_ in s:gmatch(S.ThatWord) do
+      if w_ ~= W and set[w_] == nil then
+        Items[#Items+1] = w_
+        set[w_] = true
+      end
+    end
   end
+  table.sort(Items, function(a1,a2) return utf8.ncasecmp(a1,a2) < 0 end)
   if W then editor.Select(Id,1,0,b,e-b+1,1) else w="" end
-  Items=Menu.Show(table.concat(Items,"\n"),nil,0x3+0x10+0x20+0x40+0x100,w)
-  if Items~="" then
+  mf.postmacro(function() Keys("CtrlAltF"); mf.print(w) end)
+  Items=far.Menu({Title=""; Flags="FMENU_SHOWSINGLEBOX FMENU_SHOWSHORTBOX"}, Items)
+  if Items then
     editor.UndoRedo(Id,0); editor.DeleteBlock(Id); mf.print(Items); editor.UndoRedo(Id,1)
     return Items
   else
