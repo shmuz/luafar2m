@@ -58,9 +58,8 @@ S.InsideWords   = S.InsideWords  ==nil and Settings().InsideWords   or          
 S._ThatWord     ="^("..S.ThatWord..")"
 S.ThatWord_     ="("..S.ThatWord..")$"
 
-local _, hTimer
-
-local Comp, CP
+local hTimer
+local Comp
 
 local function NewValue(Switch, Value)
   if Switch == 1 then return true end
@@ -87,30 +86,31 @@ local function EnableInsideWords(Switch)
 end
 
 local function GetWord(Line,Pos,InWord)
-  local EdInf=editor.GetInfo()
-  Line   = Line or EdInf.CurLine
-  Pos    = Pos  or EdInf.CurPos
-  InWord = InWord==nil and S.InsideWords or InWord
-  local s=editor.GetString(nil,Line,3)
+  local EdInf = editor.GetInfo()
+  Line    = Line or EdInf.CurLine
+  Pos     = Pos  or EdInf.CurPos
+  InWord  = InWord==nil and S.InsideWords or InWord
+  local s = editor.GetString(nil,Line,3)
   local b,e,w
   if InWord then
     Pos = Pos-1
   else
-    _,e = s:find(S._ThatWord,Pos); Pos = e or Pos-1
+    b,e = s:find(S._ThatWord,Pos)
+    Pos = b and e or Pos-1
   end
-  b,e,w=s:sub(1,Pos):find(S.ThatWord_)
+  b,e,w = s:sub(1,Pos):find(S.ThatWord_)
   return w,b,e
 end
 
 local function FindNearest(Word,Line)
   local EdInf=editor.GetInfo()
   Line= Line or EdInf.CurLine
-  if not Word then Word = GetWord(Line,EdInf.CurPos) end
-  if not Word then return end
-  local W=Word; local N=W:len()
-  if not S.CaseSensitive then W = W:upper() end
-  local s=editor.GetString(nil,Line,3)
-  local Lines=EdInf.TotalLines
+  local W = Word or GetWord(Line, EdInf.CurPos)
+  if not W then return end
+  local N = W:len()
+  W = S.CaseSensitive and W or W:upper()
+  local s = editor.GetString(nil,Line,3)
+  local Lines = EdInf.TotalLines
   for i=1,S.MaxLines do
     for w in s:gmatch(S.ThatWord) do
       if w:len() > N then
@@ -123,7 +123,7 @@ local function FindNearest(Word,Line)
         if (S.CaseSensitive and w or w:upper()):find(W,1,true) == 1 then return w end
       end
     end
-    s = (Line + i < Lines) and editor.GetString(nil,Line-i,3) or ""
+    s = (Line + i < Lines) and editor.GetString(nil,Line+i,3) or ""
   end
 end
 
@@ -136,14 +136,12 @@ local function Complete(Rec)
       if not e or e+1==Editor.RealPos then
         local W=FindNearest(w)
         if W then
-          Comp=W:sub(w:len()+1)
-          CP=far.AdvControl(F.ACTL_GETCURSORPOS)
+          Comp = W:sub(w:len()+1)
+          local CP = far.AdvControl(F.ACTL_GETCURSORPOS)
+          local items = {{F.DI_TEXT, 1, 0, Comp:len(), 0, 0, 0, 0, 0, Comp}}
+          local flags = bor(F.FDLG_NODRAWSHADOW, F.FDLG_SMALLDIALOG, F.FDLG_NODRAWPANEL)
           mf.postmacro(
-            far.Dialog,
-            '',CP.X,CP.Y,CP.X+Comp:len()+1,CP.Y,nil,
-            --       01 02 03          04 05 06 07 08 09    10 11
-            {{F.DI_TEXT, 1, 0, Comp:len(), 0, 0, 0, 0, 0, Comp, 0}},
-            bor(F.FDLG_NODRAWSHADOW,F.FDLG_SMALLDIALOG,F.FDLG_NODRAWPANEL),
+            far.Dialog, '', CP.X, CP.Y, CP.X+Comp:len()+1, CP.Y, nil, items, flags,
             function(hDlg, Msg, _ , Param2)
               if Msg == F.DN_INITDIALOG then
                 hTimer = far.Timer(S.MaxTime*1000,
@@ -159,8 +157,7 @@ local function Complete(Rec)
                 if Key and Key:len()==1 then Comp=nil end
                 mf.postmacro(function(key) if mf.eval(key,2)==-2 then Keys(key) end end, Key)
               end
-            end
-          )
+            end)
         end
       end
     elseif Comp and KEY~=nil then
@@ -179,7 +176,7 @@ local function List()
   local W,b,e = GetWord(EdInf.CurLine,b_,false)
   local set = {}
   for i=First,Last do
-    local s = editor.GetString(nil,i,3)
+    local s = editor.GetString(Id,i,3)
     for w_ in s:gmatch(S.ThatWord) do
       if set[w_] == nil then
         Items[#Items+1] = w_
@@ -188,9 +185,9 @@ local function List()
     end
   end
   table.sort(Items, function(a1,a2) return utf8.ncasecmp(a1,a2) < 0 end)
-  if W then editor.Select(Id,1,0,b,e-b+1,1) else w="" end
+  if W then editor.Select(Id, F.BTYPE_STREAM, 0, b, e-b+1, 1) else w="" end
   mf.postmacro(function() Keys("CtrlAltF"); mf.print(w) end)
-  Items=far.Menu({Title=""; Flags=F.FMENU_SHOWSINGLEBOX+F.FMENU_SHOWSHORTBOX}, Items)
+  Items = far.Menu({Title=""; Flags=F.FMENU_SHOWSINGLEBOX+F.FMENU_SHOWSHORTBOX}, Items)
   if Items then
     editor.UndoRedo(Id, F.EUR_BEGIN)
     editor.DeleteBlock(Id)
@@ -209,15 +206,17 @@ local function Accept()
     local Pos  = EdInf.CurPos
     local Id   = EdInf.EditorID
     local _,e = editor.GetString(Id,Line,3):find(S._ThatWord,Pos);
-    if e then editor.Select(Id,1,0,Pos,e-Pos+1,1) end
-    editor.UndoRedo(Id,0); editor.DeleteBlock(Id); mf.print(Comp); editor.UndoRedo(Id,1)
+    if e then editor.Select(Id, F.BTYPE_STREAM, 0, Pos, e-Pos+1, 1) end
+    editor.UndoRedo(Id,F.EUR_BEGIN)
+    editor.DeleteBlock(Id)
+    mf.print(Comp)
+    editor.UndoRedo(Id, F.EUR_END)
   else
     mf.print(Comp)
   end
   Comp=nil
 end
 
-_ = hTimer and hTimer:Close()
 -------------------------------------------------------------------------------
 local Editor_WordComplete={
   EnableAuto            = EnableAuto          ;
