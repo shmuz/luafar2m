@@ -2,7 +2,6 @@
 -- Завершение слова в редакторе. © SimSU
 -- Portability: far3 and far2m. © Shmuel Zeigerman
 -------------------------------------------------------------------------------
--- luacheck: no max line length
 
 ---- Настройки
 local function Settings()
@@ -15,7 +14,8 @@ return{
   ThatWord="[%w_]+"; -- Что считается словом.
   MaxLines=500;      -- Число строк для поиска продолжения.
   MaxTime =  4;      -- Время показа и жизни автоматического завершения.
-  Color   = 15;      -- Цвет завершения (текст и фон). Эквивалентные значения:  15 или 0x0F или {Flags=nil; ForegroundColor=15; BackgroundColor=0;}.
+  Color   = 15;      -- Цвет завершения (текст и фон). Эквивалентные значения:  15 или 0x0F
+                     -- или {Flags=nil; ForegroundColor=15; BackgroundColor=0;}.
   CaseSensitive = true; -- Делать ли сравнение регистрозависимым (true) или регистронезависимым (false)
   InsideWords   = true; -- Предлагать дополнение внутри слов (true) или только в конце слова (false)
 }
@@ -38,8 +38,8 @@ return{
 else--if lang()=="English" then
 -- Begin of file Profile\SimSU\Editor_WordCompleteEnglish.lng
 return{
-  Descr="Принять завершение слова. © SimSU";
-  DescrList="Список завершённых слов. © SimSU";
+  Descr="Accept word completion. © SimSU";
+  DescrList="List of completed words. © SimSU";
 }
 -- End of file Profile\SimSU\Editor_WordCompleteEnglish.lng
 end end
@@ -112,10 +112,18 @@ local function FindNearest(Word,Line)
   local s=editor.GetString(nil,Line,3)
   local Lines=EdInf.TotalLines
   for i=1,S.MaxLines do
-    for w in s:gmatch(S.ThatWord) do if w:len()>N and ((S.CaseSensitive and w:find(W,1,true)==1) or (not S.CaseSensitive and w:upper():find(W,1,true)==1)) then return w end end
-    if Line-i>0 then s=editor.GetString(nil,Line-i,3) else s="" end
-    for w in s:gmatch(S.ThatWord) do if w:len()>N and ((S.CaseSensitive and w:find(W,1,true)==1) or (not S.CaseSensitive and w:upper():find(W,1,true)==1)) then return w end end
-    if Line+i<Lines then s=editor.GetString(nil,Line+i,3) else s="" end
+    for w in s:gmatch(S.ThatWord) do
+      if w:len() > N then
+        if (S.CaseSensitive and w or w:upper()):find(W,1,true) == 1 then return w end
+      end
+    end
+    s = (Line - i > 0) and editor.GetString(nil,Line-i,3) or ""
+    for w in s:gmatch(S.ThatWord) do
+      if w:len() > N then
+        if (S.CaseSensitive and w or w:upper()):find(W,1,true) == 1 then return w end
+      end
+    end
+    s = (Line + i < Lines) and editor.GetString(nil,Line-i,3) or ""
   end
 end
 
@@ -138,7 +146,11 @@ local function Complete(Rec)
             bor(F.FDLG_NODRAWSHADOW,F.FDLG_SMALLDIALOG,F.FDLG_NODRAWPANEL),
             function(hDlg, Msg, _ , Param2)
               if Msg == F.DN_INITDIALOG then
-                hTimer = far.Timer(S.MaxTime*1000, function(h) h:Close() if hDlg then hDlg:send(F.DM_CLOSE); Comp=nil end end)
+                hTimer = far.Timer(S.MaxTime*1000,
+                  function(h)
+                    h:Close()
+                    if hDlg then hDlg:send(F.DM_CLOSE); Comp=nil end
+                  end)
               elseif (far2m and Msg == F.DN_KEY) or (not far2m and Msg == F.DN_CONTROLINPUT) then
                 local Key = (far.KeyToName or far.InputRecordToName)(Param2) -- luacheck: ignore
                 if far2m and (not Key or Key == "Ctrl" or Key == "Alt" or Key == "Shift") then return end
@@ -169,7 +181,7 @@ local function List()
   for i=First,Last do
     local s = editor.GetString(nil,i,3)
     for w_ in s:gmatch(S.ThatWord) do
-      if w_ ~= W and set[w_] == nil then
+      if set[w_] == nil then
         Items[#Items+1] = w_
         set[w_] = true
       end
@@ -178,12 +190,15 @@ local function List()
   table.sort(Items, function(a1,a2) return utf8.ncasecmp(a1,a2) < 0 end)
   if W then editor.Select(Id,1,0,b,e-b+1,1) else w="" end
   mf.postmacro(function() Keys("CtrlAltF"); mf.print(w) end)
-  Items=far.Menu({Title=""; Flags="FMENU_SHOWSINGLEBOX FMENU_SHOWSHORTBOX"}, Items)
+  Items=far.Menu({Title=""; Flags=F.FMENU_SHOWSINGLEBOX+F.FMENU_SHOWSHORTBOX}, Items)
   if Items then
-    editor.UndoRedo(Id,0); editor.DeleteBlock(Id); mf.print(Items); editor.UndoRedo(Id,1)
+    editor.UndoRedo(Id, F.EUR_BEGIN)
+    editor.DeleteBlock(Id)
+    mf.print(Items)
+    editor.UndoRedo(Id, F.EUR_END)
     return Items
   else
-    editor.Select(Id,0)
+    editor.Select(Id, F.BTYPE_NONE)
   end
 end
 
