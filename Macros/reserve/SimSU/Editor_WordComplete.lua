@@ -62,21 +62,27 @@ local _, hTimer
 
 local Comp, CP
 
+local function NewValue(Switch, Value)
+  if Switch == 1 then return true end
+  if Switch == -1 then return false end
+  return not Value
+end
+
 local function EnableAuto(Switch)
-  local Prev=S.Auto
-  S.Auto= (Switch==1 and true) or (Switch==-1 and false) or (not S.Auto)
+  local Prev = S.Auto
+  S.Auto = NewValue(Switch, S.Auto)
   return Prev
 end
 
-local function EnableCaseSensetivite(Switch)
-  local Prev=S.CaseSensetivite
-  S.CaseSensetivite= (Switch==1 and true) or (Switch==-1 and false) or (not S.CaseSensetivite)
+local function EnableCaseSensitive(Switch)
+  local Prev = S.CaseSensitive
+  S.CaseSensitive = NewValue(Switch, S.CaseSensitive)
   return Prev
 end
 
 local function EnableInsideWords(Switch)
-  local Prev=S.InsideWords
-  S.InsideWords= (Switch==1 and true) or (Switch==-1 and false) or (not S.InsideWords)
+  local Prev = S.InsideWords
+  S.InsideWords = NewValue(Switch, S.InsideWords)
   return Prev
 end
 
@@ -199,9 +205,9 @@ end
 _ = hTimer and hTimer:Close()
 -------------------------------------------------------------------------------
 local Editor_WordComplete={
-  EnableAuto            = EnableAuto            ;
-  EnableCaseSensetivite = EnableCaseSensetivite ;
-  EnableInsideWords     = EnableInsideWords     ;
+  EnableAuto            = EnableAuto          ;
+  EnableCaseSensitive   = EnableCaseSensitive ;
+  EnableInsideWords     = EnableInsideWords   ;
   GetWord               = GetWord     ;
   FindNearest           = FindNearest ;
   Complete              = Complete    ;
