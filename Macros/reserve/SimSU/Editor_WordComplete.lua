@@ -142,13 +142,15 @@ local function Complete(Rec)
           local flags = bor(F.FDLG_NODRAWSHADOW, F.FDLG_SMALLDIALOG, F.FDLG_NODRAWPANEL)
           mf.postmacro(
             far.Dialog, '', CP.X, CP.Y, CP.X+Comp:len()+1, CP.Y, nil, items, flags,
-            function(hDlg, Msg, _ , Param2)
+            function(hDlg, Msg, Param1, Param2)
               if Msg == F.DN_INITDIALOG then
                 hTimer = far.Timer(S.MaxTime*1000,
                   function(h)
                     h:Close()
                     if hDlg then hDlg:send(F.DM_CLOSE); Comp=nil end
                   end)
+              elseif Msg == F.DN_CTLCOLORDLGITEM then
+                if Param1 == 1 then Param2[1] = S.Color; return Param2; end
               elseif (far2m and Msg == F.DN_KEY) or (not far2m and Msg == F.DN_CONTROLINPUT) then
                 local Key = (far.KeyToName or far.InputRecordToName)(Param2) -- luacheck: ignore
                 if far2m and (not Key or Key == "Ctrl" or Key == "Alt" or Key == "Shift") then return end
