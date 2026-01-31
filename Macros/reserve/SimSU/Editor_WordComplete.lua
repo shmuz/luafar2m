@@ -5,58 +5,40 @@
 
 ---- Настройки
 local function Settings()
--- Начало файла Profile\SimSU\Editor_WordComplete.cfg
-return{
-  Key    ="CtrlSpace";   Prior    =51; --Sort    =51; -- Принять завершение.
-  KeyList="CtrlSpace"; --PriorList=50; --SortList=50; -- Список автозавершения.
-
-  Auto    =true;     -- Автозавершение разрешено.
-  ThatWord="[%w_]+"; -- Что считается словом.
-  MaxLines=500;      -- Число строк для поиска продолжения.
-  MaxTime =  4;      -- Время показа и жизни автоматического завершения.
-  Color   = 15;      -- Цвет завершения (текст и фон). Эквивалентные значения:  15 или 0x0F
-                     -- или {Flags=nil; ForegroundColor=15; BackgroundColor=0;}.
-  CaseSensitive = true; -- Делать ли сравнение регистрозависимым (true) или регистронезависимым (false)
-  InsideWords   = true; -- Предлагать дополнение внутри слов (true) или только в конце слова (false)
-}
--- Конец файла Profile\SimSU\Editor_WordComplete.cfg
+  return {
+  Key      = "CtrlSpace";   Prior    =51; --Sort    =51; -- Принять завершение.
+  KeyList  = "CtrlSpace"; -- PriorList=50; --SortList=50; -- Список автозавершения.
+  Auto     = true;        -- Автозавершение разрешено.
+  ThatWord = "[%w_]+";    -- Что считается словом.
+  MaxLines = 500;         -- Число строк для поиска продолжения.
+  MaxTime  = 4;           -- Время показа и жизни автоматического завершения.
+  Color    = 0xCE;        -- Цвет завершения (текст и фон). Эквивалентные значения:  15 или 0x0F
+                          -- или {Flags=nil; ForegroundColor=15; BackgroundColor=0;}.
+  CaseSensitive = true;   -- Делать ли сравнение регистрозависимым (true) или регистронезависимым (false)
+  InsideWords   = true;   -- Предлагать дополнение внутри слов (true) или только в конце слова (false)
+  }
 end
 
 local far2m = package.config:sub(1,1) == "/"
 
----- Локализация
-local function lang() return win.GetEnv("farlang") end
 -- Встроенные языки / Built-in languages
-local function Messages()
-if lang()=="Russian" then
--- Начало файла Profile\SimSU\Editor_WordCompleteRussian.lng
-return{
+local lang = win.GetEnv("FARLANG")
+local M = (lang == "Russian") and
+{
   Descr="Принять завершение слова. © SimSU";
   DescrList="Список завершённых слов. © SimSU";
 }
--- Конец файла Profile\SimSU\Editor_WordCompleteRussian.lng
-else--if lang()=="English" then
--- Begin of file Profile\SimSU\Editor_WordCompleteEnglish.lng
-return{
+or -- (lang == "English")
+{
   Descr="Accept word completion. © SimSU";
   DescrList="List of completed words. © SimSU";
 }
--- End of file Profile\SimSU\Editor_WordCompleteEnglish.lng
-end end
 
-local M=Messages()
-local S=Settings()
+local S = Settings()
+S._ThatWord  = "^("..S.ThatWord..")"
+S.ThatWord_  = "("..S.ThatWord..")$"
 -------------------------------------------------------------------------------
 local F=far.Flags
-S.ThatWord      = S.ThatWord     ==nil and Settings().ThatWord      or          S.ThatWord
-S.MaxLines      = S.MaxLines     ==nil and Settings().MaxLines      or tonumber(S.MaxLines)
-S.MaxTime       = S.MaxTime      ==nil and Settings().MaxTime       or tonumber(S.MaxTime )
-S.Color         = S.Color        ==nil and Settings().Color         or tonumber(S.Color   )
-S.Auto          = S.Auto         ==nil and Settings().Auto          or          S.Auto
-S.CaseSensitive = S.CaseSensitive==nil and Settings().CaseSensitive or          S.CaseSensitive
-S.InsideWords   = S.InsideWords  ==nil and Settings().InsideWords   or          S.InsideWords
-S._ThatWord     ="^("..S.ThatWord..")"
-S.ThatWord_     ="("..S.ThatWord..")$"
 
 local hTimer
 local Comp
@@ -221,13 +203,13 @@ end
 
 -------------------------------------------------------------------------------
 local Editor_WordComplete={
-  EnableAuto            = EnableAuto          ;
-  EnableCaseSensitive   = EnableCaseSensitive ;
-  EnableInsideWords     = EnableInsideWords   ;
-  GetWord               = GetWord     ;
-  FindNearest           = FindNearest ;
-  Complete              = Complete    ;
-  List                  = List        ;
+  EnableAuto            = EnableAuto;
+  EnableCaseSensitive   = EnableCaseSensitive;
+  EnableInsideWords     = EnableInsideWords;
+  GetWord               = GetWord;
+  FindNearest           = FindNearest;
+  Complete              = Complete;
+  List                  = List;
 }; for k,v in pairs(Editor_WordComplete) do Editor_WordComplete[k:lower()] = v end
 -------------------------------------------------------------------------------
 --Для командной строки John Doe
@@ -247,7 +229,7 @@ end
 if not Macro then return Editor_WordComplete end
 -------------------------------------------------------------------------------
 Event {id="f71a0438-949d-4b65-836f-a70a282bafcd";
-  group="EditorInput";          priority=S.Prior;     sortpriority=S.Sort;     description=M.Descr;
+  group="EditorInput";          priority=S.Prior;                              description=M.Descr;
   condition=function(Rec) return S.Auto and Rec.EventType==F.KEY_EVENT end;
   action=function(Rec) return Complete(Rec) end;
 }
