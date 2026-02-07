@@ -31,6 +31,7 @@ local SetHighlightPattern = libEditors.SetHighlightPattern
 
 local F = far.Flags
 local KEEP_DIALOG_OPEN = 0
+
 local bor, band, bxor = bit64.bor, bit64.band, bit64.bxor
 local clock = os.clock
 local Utf32, Utf8 = win.Utf8ToUtf32, win.Utf32ToUtf8
@@ -50,9 +51,11 @@ local TmpPanelDefaults = {
   PreserveContents         = true,
 }
 
+
 local function MsgCannotOpenFile (name)
   ErrorMsg(M.MCannotOpenFile.."\n"..name)
 end
+
 
 local function SwapEndian (str)
   return (string.gsub(str, "(.)(.)(.)(.)", "%4%3%2%1"))
@@ -75,6 +78,7 @@ local function MaskGenerator (mask, skippath, casesens)
   end
   return false
 end
+
 
 -- Lines iterator: returns a line at a time.
 -- When codepage of the file is 1201 (UTF-16BE), the returned lines are encoded
@@ -158,6 +162,7 @@ local function Lines (aFile, aCodePage, userbreak)
   end
 end
 
+
 local function GetDirFilterFunctions (aData)
   local fDirMask = function() return true end
   local fDirExMask = function() return false end
@@ -172,6 +177,7 @@ local function GetDirFilterFunctions (aData)
   end
   return fDirMask, fDirExMask
 end
+
 
 ----------------------------------------------------------------------------------------------------
 -- @param InitDir       : starting directory to search its contents recursively
@@ -228,6 +234,7 @@ local function RecursiveSearch (sInitDir, UserFunc, Flags, FileFilter,
   tRecurseGuard[realDir] = true
   Recurse(realDir)
 end
+
 
 local BOMs = {
   { codepage=61200; pattern="^\255\254%z%z"; },
@@ -314,6 +321,7 @@ local function ConfigDialog()
 end
 libTmpPanel.Panel.ConfigFunction = ConfigDialog
 
+
 local function GetCodePages (aData)
   local Checked = {}
   if aData.tCheckedCodePages then
@@ -391,6 +399,7 @@ local function GetCodePages (aData)
 
   return items
 end
+
 
 local function DirectoryFilterDialog (aData)
   local Items = {
@@ -630,6 +639,7 @@ end
   end
 end
 
+
 local function MakeItemList (panelInfo, searchArea)
   local itemList, flags = {}, {recurse=true}
   local bRealNames = (band(panelInfo.Flags, F.PFLAGS_REALNAMES) ~= 0)
@@ -683,6 +693,7 @@ local function GetActiveCodePages (aData)
   return { 65001, win.GetOEMCP(), win.GetACP(), 1200, 61200, 1201, 61201, 65000 }
 end
 
+
 local function CheckBoms (str)
   if str then
     for _, item in ipairs(BOMs) do
@@ -693,6 +704,7 @@ local function CheckBoms (str)
     end
   end
 end
+
 
 local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   local tParams
@@ -869,6 +881,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   return tFoundFiles, userbreak.fullcancel
 end
 
+
 local function CreateTmpPanel (tFileList, tData)
   tFileList = tFileList or {}
   local t = {}
@@ -951,33 +964,33 @@ local function CollectAllItems (aData, tParams, fFileMask, fDirMask, fDirExMask,
   local fileList = {}
   local tRecurseGuard = NewRecurseGuard()
   DisplayListState(0)
-  for _, item in ipairs(itemList) do
-    local filedata = win.GetFileInfo(item)
-    -- note: filedata can be nil for root directories
-    local isFile = filedata and not filedata.FileAttributes:find("d")
+  for _, itemFullName in ipairs(itemList) do
+    local itemInfo = win.GetFileInfo(itemFullName)
+    -- note: itemInfo can be nil for root directories
+    local isFile = itemInfo and not itemInfo.FileAttributes:find("d")
     ---------------------------------------------------------------------------
     if isFile then
-      if fFileMask(item) then
-        fileList[#fileList+1] = filedata
-        fileList[#fileList+1] = item
+      if fFileMask(itemFullName) then
+        itemInfo.FullName = itemFullName
+        table.insert(fileList, itemInfo)
       end
     else
       if (area == "FromCurrFolder" or area == "OnlyCurrFolder") and bPlugin then
-        fileList[#fileList+1] = filedata
-        fileList[#fileList+1] = item
+        itemInfo.FullName = itemFullName
+        table.insert(fileList, itemInfo)
       end
       if not (area == "OnlyCurrFolder" and bPlugin) then
-        RecursiveSearch(item,
+        RecursiveSearch(itemFullName,
           function(fdata, fullname)
             if fdata == "display_state" then
-              return DisplayListState(#fileList/2, userbreak)
+              return DisplayListState(#fileList, userbreak)
             end
             if not fdata.FileAttributes:find("d") then
               local n = #fileList
-              fileList[n+1] = fdata
-              fileList[n+2] = fullname
-              if n%20 == 0 then
-                if DisplayListState(n/2, userbreak) then return "break"; end
+              fdata.FullName = fullname
+              table.insert(fileList, fdata)
+              if n % 10 == 0 then
+                if DisplayListState(n, userbreak) then return "break"; end
               end
             end
           end, flags, FileFilter, fFileMask, fDirMask, fDirExMask, tRecurseGuard)
@@ -987,6 +1000,7 @@ local function CollectAllItems (aData, tParams, fFileMask, fDirMask, fDirExMask,
   end
   return fileList
 end
+
 
 local function Replace_CreateOutputFile (fullname, numlines, codepage, bom, userbreak)
   local fOut, tmpname
@@ -1020,6 +1034,7 @@ local function Replace_CreateOutputFile (fullname, numlines, codepage, bom, user
   end
   return fOut, tmpname
 end
+
 
 -- Note: function MultiByteToWideChar, in Windows older than Vista, does not
 --       check UTF-8 characters reliably. That is the reason for using
@@ -1141,19 +1156,10 @@ local function GetReplaceChoice(
   return Choice, clock() - currclock
 end
 
-local function Replace_ProcessFile (fdata, fullname, cdata)
---local ExtendedName = [[\\?\]] .. fullname
-  local ExtendedName = fullname
-  local fp = win.OpenFile(ExtendedName, "r")
-  if not fp then
-    MsgCannotOpenFile(fullname)
-    return
-  end
-  cdata.nFilesProcessed = cdata.nFilesProcessed + 1
-  ---------------------------------------------------------------------------
-  local nCodePageDetected, sBom = GetFileEncoding(fp, ExtendedName)
-  local nCodePage = nCodePageDetected or win.GetACP() -- GetOEMCP() ?
-  ---------------------------------------------------------------------------
+
+local function Replace_ProcessFile(cdata, fdata, ExtendedName, fp)
+  local fullname = fdata.FullName
+  local nCodePage, nCodePageDetected, sBom = fdata.CodePage, fdata.CodePageDetected, fdata.Bom
   local fReplace = cdata.fReplace
   local fChoice = cdata.fUserChoiceFunc or GetReplaceChoice
   local bWideCharRegex, Regex, ufind_method = cdata.bWideCharRegex, cdata.Regex, cdata.ufind_method
@@ -1302,17 +1308,11 @@ local function Replace_ProcessFile (fdata, fullname, cdata)
   end
 end
 
+
 -- cdata.sOp: operation - either "grep" or "count"
-local function Grep_ProcessFile (fdata, fullname, cdata)
-  local fp = win.OpenFile(fullname,"r")
-  if not fp then
-    return -- don't show message (this can be just a broken symlink)
-  end
-  cdata.nFilesProcessed = cdata.nFilesProcessed + 1
-  ---------------------------------------------------------------------------
-  local nCodePageDetected = GetFileEncoding(fp, fullname)
-  local nCodePage = nCodePageDetected or win.GetACP() -- GetOEMCP() ?
-  ---------------------------------------------------------------------------
+local function Grep_ProcessFile(cdata, fdata, ExtendedName, fp)
+  local fullname = fdata.FullName
+  local nCodePage = fdata.CodePage
   local bWideCharRegex, Regex, ufind_method = cdata.bWideCharRegex, cdata.Regex, cdata.ufind_method
   local userbreak = cdata.userbreak
   local nMatches = 0
@@ -1464,9 +1464,8 @@ local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
   userbreak.time = 0
   local sProcessReadonly
   DisplayReplaceState("", 0, 0)
-  for k=1,#fileList,2 do
+  for _,fdata in ipairs(fileList) do
     if userbreak:ConfirmEscape() then break end
-    local fdata, fullname = fileList[k], fileList[k+1]
     local bCanProcess = not IsDevice(fdata)
     if bCanProcess and sOp == "replace" and fdata.FileAttributes:find("r") then
       if sProcessReadonly == "none" then
@@ -1474,7 +1473,7 @@ local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
       elseif sProcessReadonly ~= "all" then
         local currclock = clock()
         local res = far.Message(
-          M.MPanelRO_Readonly..fullname..M.MPanelRO_Question,
+          M.MPanelRO_Readonly..fdata.FullName..M.MPanelRO_Question,
           M.MWarning, M.MPanelRO_Buttons, "w")
         cdata.last_clock = cdata.last_clock + clock() - currclock
         if     res == 2 then sProcessReadonly="all"
@@ -1487,12 +1486,21 @@ local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
     if bCanProcess then
 --local n=cdata.nFilesWithMatches
       cdata.userbreak.cancel = nil
-      DisplayReplaceState(fullname, cdata.nFilesProcessed, 0)
-      if sOp == "replace" then
-        Replace_ProcessFile(fdata, fullname, cdata)
+      DisplayReplaceState(fdata.FullName, cdata.nFilesProcessed, 0)
+
+      local ExtendedName = fdata.FullName
+      local fp = io.open(ExtendedName, "rb")
+      if fp then
+        cdata.nFilesProcessed = cdata.nFilesProcessed + 1
+        local nCodePageDetected, sBom = GetFileEncoding(fp, ExtendedName)
+        local nCodePage = nCodePageDetected or win.GetACP() -- GetOEMCP() ?
+        fdata.CodePage, fdata.CodePageDetected, fdata.Bom = nCodePage, nCodePageDetected, sBom
+        local Func = sOp == "replace" and Replace_ProcessFile or Grep_ProcessFile
+        Func(cdata, fdata, ExtendedName, fp)
       else
-        Grep_ProcessFile(fdata, fullname, cdata)
+        MsgCannotOpenFile(fdata.FullName)
       end
+
       if cdata.bWasError then break end
 --if n==cdata.nFilesWithMatches then far.Message(fullname) end
     end
@@ -1579,9 +1587,11 @@ local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
   end
 end
 
+
 local function ReplaceFromPanel (aData, aWithDialog, aScriptCall)
   far.SudoCRCall(ReplaceOrGrep, "replace", aData, aWithDialog, aScriptCall)
 end
+
 
 local function GrepFromPanel (aData, aWithDialog, aScriptCall)
   far.SudoCRCall(ReplaceOrGrep, "grep", aData, aWithDialog, aScriptCall)
