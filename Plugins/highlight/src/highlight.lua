@@ -723,7 +723,8 @@ local function OnNewEditor (id, ei)
       SetClass(id, FirstLineMap[name], false)
     else
       for _,class in ipairs(Classes) do
-        if far.ProcessName("PN_CMPNAMELIST", class.filemask, ei.FileName, "PN_SKIPPATH") then
+        local FileName = ei.FileName or "Not-a-file"
+        if far.ProcessName("PN_CMPNAMELIST", class.filemask, FileName, "PN_SKIPPATH") then
           SetClass(id, class, false); break
         end
       end
