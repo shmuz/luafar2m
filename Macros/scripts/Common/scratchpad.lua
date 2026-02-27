@@ -2,7 +2,6 @@
 -- Original      :  C++ far2l plugin "Memo" by "stpork" (https://github.com/stpork)
 -- License       :  GNU GPL (as the original plugin)
 -- Far plugin    :  LuaMacro
--- Dependencies  :  Lua module far2.simpledialog
 
 local DB_Key  = "shmuz"
 local DB_Name = "Memo"
@@ -120,28 +119,28 @@ local function OpenMemoDialog()
     screenHeight = screenRect.Bottom - screenRect.Top + 1
   end
 
-  local dlgWidth = screenWidth - 20
-  local dlgHeight = screenHeight - 10
-
-  local content = LoadFileContent(GetMemoFilePath(CurrentMemo))
+  local dlgWidth = screenWidth - 22
+  local dlgHeight = screenHeight - 12
 
   local Items = {
-    width = dlgWidth;
-    { tp="text"; x1=1; y1=0; x2=dlgWidth-2; centertext=1; },
-    { tp="memo"; x1=1; y1=1; x2=dlgWidth-4; y2=dlgHeight-4; text=content; },
-    { tp="text"; x1=1; x2=dlgWidth-2; centertext=1; text=GetIndicator(CurrentMemo); },
+    { F.DI_TEXT,     1, 0, dlgWidth, 0,             nil, nil, nil, F.DIF_CENTERTEXT, ""},
+    { F.DI_MEMOEDIT, 1, 1, dlgWidth-2, dlgHeight-2, nil, nil, nil, nil, ""},
+    { F.DI_TEXT,     1, dlgHeight-1, dlgWidth, 0,   nil, nil, nil, F.DIF_CENTERTEXT, ""},
   }
 
   -- Dialog procedure - handles keyboard and close events
   -- DN_KEY: intercepts keys for memo switching
   -- DN_CLOSE: saves content and state
-  function Items.proc(hDlg, Msg, Param1, Param2)
+  local function DlgProc(hDlg, Msg, Param1, Param2)
     if Msg == F.DN_INITDIALOG then
+      local content = LoadFileContent(GetMemoFilePath(CurrentMemo))
       UpdateTitle(hDlg, CurrentMemo)
+      hDlg:SetText(POS_MEMO, content)
+      hDlg:SetText(POS_INDICATOR, GetIndicator(CurrentMemo))
 
-    elseif Msg == "EVENT_KEY" then
+    elseif Msg == F.DN_KEY then
       if Param1 == POS_MEMO then
-        local key = Param2
+        local key = far.KeyToName(Param2)
 
         -- F2/Shift+F2: Save As
         if key == "F2" or key == "ShiftF2" then
@@ -160,16 +159,14 @@ local function OpenMemoDialog()
         end
       end
 
-    elseif Msg == F.DN_CLOSE or Msg == "EVENT_CANCEL" then
+    elseif Msg == F.DN_CLOSE then
       SaveCurrentMemo(hDlg)
       mf.msave(DB_Key, DB_Name, { LastMemo=CurrentMemo; })
 
     end
   end
 
-  local sd = require "far2.simpledialog"
-  local Dlg = sd.New(Items)
-  Dlg:Run()
+  far.Dialog(nil, -1, -1, dlgWidth, dlgHeight, nil, Items, nil, DlgProc)
 end
 
 Macro {
