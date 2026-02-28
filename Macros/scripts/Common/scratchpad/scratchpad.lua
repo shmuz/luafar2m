@@ -17,8 +17,14 @@ local CurrentMemo -- Current memo index (1-10)
 
 -- Get memo file path: memo-01.txt ... memo-10.txt
 local function GetMemoFilePath(index)
-  local fname = ("memo-%02d.txt"):format(index)
-  return win.JoinPath(MemoDir, fname)
+  local attr = win.GetFileAttr(MemoDir)
+  if attr and attr:find("d") then
+    local fname = ("memo-%02d.txt"):format(index)
+    return win.JoinPath(MemoDir, fname)
+  end
+  local msg = ("Directory \"%s\" does not exist"):format(MemoDir)
+  far.Message(msg, "Error", nil, "w")
+  return nil
 end
 
 -- Load last selected memo index
@@ -44,19 +50,17 @@ end
 
 -- Save file content
 local function SaveFileContent(path, content)
-  local ok = false
   local fp = io.open(path, "w")
   if fp then
     fp:write(content)
-    ok = (fp:seek() == #content)
     fp:close()
   end
-  return ok
 end
 
-local function GetIndicator(index)
-  if index < 1 or index > MEMO_COUNT then index = 1; end
-
+local function UpdateIndicator(hDlg, index)
+  if index < 1 or index > MEMO_COUNT then
+    index = 1
+  end
   local cnt = 1
   local dot = utf8.char(0x2022)
   local indic = (dot.."1"):rep(MEMO_COUNT)..dot
@@ -65,14 +69,16 @@ local function GetIndicator(index)
       cnt = cnt + 1
       return c
     end)
-  return indic
+  hDlg:SetText(POS_INDICATOR, indic)
 end
 
 -- Save current memo content to file
 local function SaveCurrentMemo(hDlg)
   local content = hDlg:GetText(POS_MEMO)
   local filepath = GetMemoFilePath(CurrentMemo)
-  SaveFileContent(filepath, content)
+  if filepath then
+    SaveFileContent(filepath, content)
+  end
 end
 
 -- Update title: "Memo - 1", etc.
@@ -84,12 +90,15 @@ end
 -- Switch to different memo - saves current, loads new, updates UI
 local function SwitchToMemo(hDlg, index)
   if index >= 1 and index <= MEMO_COUNT and index ~= CurrentMemo then
-    SaveCurrentMemo(hDlg)  -- Auto-save before switching
-    CurrentMemo = index
-    UpdateTitle(hDlg, index)
-    local content = LoadFileContent(GetMemoFilePath(index))
-    hDlg:SetText(POS_MEMO, content)
-    hDlg:SetText(POS_INDICATOR, GetIndicator(index))
+    local filepath = GetMemoFilePath(index)
+    if filepath then
+      SaveCurrentMemo(hDlg)  -- Auto-save before switching
+      CurrentMemo = index
+      UpdateTitle(hDlg, index)
+      local content = LoadFileContent(filepath)
+      hDlg:SetText(POS_MEMO, content)
+      UpdateIndicator(hDlg, index)
+    end
   end
 end
 
@@ -101,7 +110,9 @@ local function SaveMemoAs(hDlg)
   local defaultPath = win.JoinPath(far.GetMyHome(), defaultName)
   local destPath = far.InputBox(nil, "Save Memo", "Enter destination path:", "MemoSave",
                                 defaultPath, nil, nil, "FIB_NONE")
-  return destPath and SaveFileContent(destPath, hDlg:GetText(POS_MEMO))
+  if destPath then
+    SaveFileContent(destPath, hDlg:GetText(POS_MEMO))
+  end
 end
 
 -- Create and run the memo dialog
@@ -119,8 +130,8 @@ local function OpenMemoDialog()
     screenHeight = screenRect.Bottom - screenRect.Top + 1
   end
 
-  local dlgWidth = screenWidth - 22
-  local dlgHeight = screenHeight - 12
+  local dlgWidth = math.max(43, screenWidth - 22)
+  local dlgHeight = math.max(5, screenHeight - 12)
 
   local Items = {
     { F.DI_TEXT,     1, 0, dlgWidth, 0,             nil, nil, nil, F.DIF_CENTERTEXT, ""},
@@ -128,15 +139,15 @@ local function OpenMemoDialog()
     { F.DI_TEXT,     1, dlgHeight-1, dlgWidth, 0,   nil, nil, nil, F.DIF_CENTERTEXT, ""},
   }
 
-  -- Dialog procedure - handles keyboard and close events
-  -- DN_KEY: intercepts keys for memo switching
-  -- DN_CLOSE: saves content and state
   local function DlgProc(hDlg, Msg, Param1, Param2)
     if Msg == F.DN_INITDIALOG then
-      local content = LoadFileContent(GetMemoFilePath(CurrentMemo))
+      local filepath = GetMemoFilePath(CurrentMemo)
+      if filepath then
+        local content = LoadFileContent(filepath)
+        hDlg:SetText(POS_MEMO, content)
+      end
       UpdateTitle(hDlg, CurrentMemo)
-      hDlg:SetText(POS_MEMO, content)
-      hDlg:SetText(POS_INDICATOR, GetIndicator(CurrentMemo))
+      UpdateIndicator(hDlg, CurrentMemo)
 
     elseif Msg == F.DN_KEY then
       if Param1 == POS_MEMO then
@@ -145,7 +156,6 @@ local function OpenMemoDialog()
         -- F2/Shift+F2: Save As
         if key == "F2" or key == "ShiftF2" then
           SaveMemoAs(hDlg)
-          return true
         end
 
         -- Ctrl+0-9 or Alt+0-9: switch memo
@@ -154,7 +164,6 @@ local function OpenMemoDialog()
           idx = (idx == 0) and 10 or idx
           if idx <= MEMO_COUNT then
             SwitchToMemo(hDlg, idx)
-            return true
           end
         end
       end
