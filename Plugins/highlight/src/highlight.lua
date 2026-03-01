@@ -178,6 +178,7 @@ element: #%d]]):format(msg, filename, classname, numelement)
   Out.pattern = rex.new(table.concat(tPatterns,"|"), "x");
   Out.bracketcolor = tonumber(Syntax.bracketcolor) or 0x1C
   Out.bracketmatch = Syntax.bracketmatch and true
+  Out.defaultcolor = Syntax.defaultcolor or 0x1B -- "aqua on darkblue"
   return Out
 end
 
@@ -227,6 +228,7 @@ local function RedrawSyntax (Syn, ei, GetNextString, Priority, extrapattern, ext
 
   for str, y, need_paint in GetNextString do
     local left = 1
+    editor.AddColor(ID, y, ei.LeftPos, ei.LeftPos+ei.WindowSizeX, acFlags, Syn.defaultcolor, 0, Owner)
     while true do
       if current == nil then -- outside long string or long comment
         local from, to, capts = Syn.pattern:tfindW(str, left)
