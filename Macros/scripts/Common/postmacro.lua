@@ -54,6 +54,7 @@ Preset "global" variables:
   F       = far.Flags
   Message = far.Message
   Show    = far.Show
+  LE      = require "far2.lua_explorer"
   WI      = far.AdvControl("ACTL_GETWINDOWINFO") -- window info
   API     = panel.GetPanelInfo(nil,1)            -- active panel info
   PPI     = panel.GetPanelInfo(nil,0)            -- passive panel info
@@ -179,6 +180,7 @@ local function Execute()
   Env.WI = far.AdvControl("ACTL_GETWINDOWINFO")
   Env.EI = Area.Editor and editor.GetInfo() or nil
   Env.VI = Area.Viewer and viewer.GetInfo() or nil
+  Env.LE = require("far2.lua_explorer")
   if panel.CheckPanelsExist() then Env.API, Env.PPI = GetPanelInfo(1), GetPanelInfo(0) end
 
   mf.postmacro(f, f2())
