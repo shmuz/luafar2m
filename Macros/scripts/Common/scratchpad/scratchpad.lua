@@ -14,12 +14,17 @@ local POS_INDICATOR = 3 -- Page indicator at bottom
 local F = far.Flags
 local MemoDir
 local CurrentMemo -- Current memo index (1-10)
+local EditorId
+
+local function MakeFileName(index)
+  return index <= 5 and ("memo-%02d.txt"):format(index) or ("memo-%02d.lua"):format(index)
+end
 
 -- Get memo file path: memo-01.txt ... memo-10.txt
 local function GetMemoFilePath(index)
   local attr = win.GetFileAttr(MemoDir)
   if attr and attr:find("d") then
-    local fname = ("memo-%02d.txt"):format(index)
+    local fname = MakeFileName(index)
     return win.JoinPath(MemoDir, fname)
   end
   local msg = ("Directory \"%s\" does not exist"):format(MemoDir)
@@ -87,26 +92,11 @@ local function UpdateTitle(hDlg, index)
   hDlg:SetText(POS_TITLE, title)
 end
 
--- Switch to different memo - saves current, loads new, updates UI
-local function SwitchToMemo(hDlg, index)
-  if index >= 1 and index <= MEMO_COUNT and index ~= CurrentMemo then
-    local filepath = GetMemoFilePath(index)
-    if filepath then
-      SaveCurrentMemo(hDlg)  -- Auto-save before switching
-      CurrentMemo = index
-      UpdateTitle(hDlg, index)
-      local content = LoadFileContent(filepath)
-      hDlg:SetText(POS_MEMO, content)
-      UpdateIndicator(hDlg, index)
-    end
-  end
-end
-
 -- Save current memo to external file (F2/Shift+F2)
 local function SaveMemoAs(hDlg)
   -- Default: memo-01.txt ... memo-10.txt in home directory
   local memoNum = CurrentMemo
-  local defaultName = ("memo-%02d.txt"):format(memoNum)
+  local defaultName = MakeFileName(memoNum)
   local defaultPath = win.JoinPath(far.GetMyHome(), defaultName)
   local destPath = far.InputBox(nil, "Save Memo", "Enter destination path:", "MemoSave",
                                 defaultPath, nil, nil, "FIB_NONE")
@@ -138,10 +128,13 @@ local function OpenMemoDialog()
     { F.DI_MEMOEDIT, 1, 1, dlgWidth-2, dlgHeight-2, nil, nil, nil, nil, ""},
     { F.DI_TEXT,     1, dlgHeight-1, dlgWidth, 0,   nil, nil, nil, F.DIF_CENTERTEXT, ""},
   }
+  local switching
 
   local function DlgProc(hDlg, Msg, Param1, Param2)
     if Msg == F.DN_INITDIALOG then
+      EditorId = hDlg:GetMemoEditId(POS_MEMO)
       local filepath = GetMemoFilePath(CurrentMemo)
+      editor.SetVirtualFileName(EditorId, filepath)
       if filepath then
         local content = LoadFileContent(filepath)
         hDlg:SetText(POS_MEMO, content)
@@ -163,24 +156,30 @@ local function OpenMemoDialog()
           local idx = tonumber(key:match("[0-9]"))
           idx = (idx == 0) and 10 or idx
           if idx <= MEMO_COUNT then
-            SwitchToMemo(hDlg, idx)
+            -- Reopen the dialog in order to recreate MemoEdit and make highlighting
+            -- plugins to use the syntax corresponding to the new file extension.
+            switching = idx
+            hDlg:Close()
           end
         end
       end
 
     elseif Msg == F.DN_CLOSE then
       SaveCurrentMemo(hDlg)
-      mf.msave(DB_Key, DB_Name, { LastMemo=CurrentMemo; })
+      mf.msave(DB_Key, DB_Name, { LastMemo = switching or CurrentMemo; })
 
     end
   end
 
   far.Dialog(nil, -1, -1, dlgWidth, dlgHeight, nil, Items, nil, DlgProc)
+  return switching
 end
 
 Macro {
   id="D27C6B7D-0343-42D4-A339-1ACEF32E142C";
   description="A replica of Memo plugin";
   area="Common"; key="CtrlAltM";
-  action=function() OpenMemoDialog() end;
+  action=function()
+    while OpenMemoDialog() do end
+  end;
 }
