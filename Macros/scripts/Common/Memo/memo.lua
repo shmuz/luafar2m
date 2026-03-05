@@ -12,8 +12,23 @@ local POS_TITLE = 1     -- Dialog title
 local POS_MEMO  = 2     -- Main memo editor (DI_MEMOEDIT)
 local POS_INDICATOR = 3 -- Page indicator at bottom
 
+local ThisDir = (...):match(".+/")
 local F = far.Flags
 local Data
+local EditorId
+
+local function CheckFileOverwrite(fname)
+  local attr = win.GetFileAttr(fname)
+  if attr and attr:find("d") then
+    far.Message(("\"%s\" is a directory"):format(fname))
+    return false
+  elseif attr then
+    local msg = ("File \"%s\" already exists. Overwrite?"):format(fname)
+    return 1 == far.Message(msg, "Confirm", "Yes;No", "w")
+  else
+    return true
+  end
+end
 
 local function NormIndex(idx)
   return idx >= 1 and idx <= MEMO_COUNT and idx or 1
@@ -21,6 +36,11 @@ end
 
 local function LoadData()
   Data = mf.mload(DB_Key, DB_Name) or {}
+  for i=1,MEMO_COUNT do
+    local tt = Data[i] or {}
+    tt.FileName = tt.FileName or ("memo-%02d.txt"):format(i)
+    Data[i] = tt
+  end
   -- Validation
   Data.CurIndex = NormIndex(Data.CurIndex or 1)
 end
@@ -29,15 +49,14 @@ local function SaveData()
   mf.msave(DB_Key, DB_Name, Data)
 end
 
-local function MakeFileName(index)
-  return index <= 5 and ("memo-%02d.txt"):format(index) or ("memo-%02d.lua"):format(index)
+local function GetFileName(index)
+  return Data[index].FileName
 end
 
--- Get memo file path: memo-01.txt ... memo-10.txt
 local function GetMemoFilePath(index)
   local attr = win.GetFileAttr(MemoDir)
   if attr and attr:find("d") then
-    local fname = MakeFileName(index)
+    local fname = GetFileName(index)
     return win.JoinPath(MemoDir, fname)
   end
   local msg = ("Directory \"%s\" does not exist"):format(MemoDir)
@@ -80,29 +99,75 @@ end
 
 -- Save current memo content to file
 local function SaveCurrentMemo(hDlg)
-  local content = hDlg:GetText(POS_MEMO)
   local filepath = GetMemoFilePath(Data.CurIndex)
   if filepath then
+    local content = hDlg:GetText(POS_MEMO)
     SaveFileContent(filepath, content)
   end
 end
 
 local function UpdateTitle(hDlg, index)
-  local title = MakeFileName(index)
+  local title = GetFileName(index)
   hDlg:SetText(POS_TITLE, title)
 end
 
--- Save current memo to external file (F2/Shift+F2)
+-- Save current memo to external file
 local function SaveMemoAs(hDlg)
   -- Default: memo-01.txt ... memo-10.txt in home directory
-  local memoNum = Data.CurIndex
-  local defaultName = MakeFileName(memoNum)
-  local defaultPath = win.JoinPath(far.GetMyHome(), defaultName)
+  local Name = GetFileName(Data.CurIndex)
+  local Path = win.JoinPath(far.GetMyHome(), Name)
   local destPath = far.InputBox(nil, "Save Memo", "Enter destination path:", "MemoSave",
-                                defaultPath, nil, nil, "FIB_NONE")
-  if destPath then
+                                Path, nil, nil, "FIB_NONE")
+  if destPath and CheckFileOverwrite(destPath) then
     SaveFileContent(destPath, hDlg:GetText(POS_MEMO))
   end
+end
+
+local function RenameMemo(hDlg)
+  local Name = GetFileName(Data.CurIndex)
+  local DestName = far.InputBox(nil, "Rename Memo", "Enter file name without path:", "MemoRename",
+                                Name, nil, nil, "FIB_NONE")
+  if DestName then
+    local name = DestName:match("[^/]+$")
+    if name then
+      local fullname = win.JoinPath(MemoDir, name)
+      if CheckFileOverwrite(fullname) then
+        local content = hDlg:GetText(POS_MEMO)
+        SaveFileContent(fullname, content)
+        Data[Data.CurIndex].FileName = name
+        return true
+      end
+    end
+  end
+end
+
+local function InitActions(hDlg)
+  local filepath = GetMemoFilePath(Data.CurIndex)
+  if not filepath then
+    return false
+  end
+  EditorId = hDlg:GetMemoEditId(POS_MEMO)
+  editor.SetVirtualFileName(EditorId, filepath)
+
+  local content = LoadFileContent(filepath)
+  hDlg:SetText(POS_MEMO, content)
+  local tt = Data[Data.CurIndex]
+  editor.SetPosition(EditorId, tt.CurLine, tt.CurPos)
+
+  UpdateTitle(hDlg, Data.CurIndex)
+  UpdateIndicator(hDlg, Data.CurIndex)
+  return true
+end
+
+local function CloseActions(hDlg, switching)
+  -- save the memo being left (and its data)
+  local info = editor.GetInfo(EditorId)
+  local tt = Data[Data.CurIndex]
+  tt.CurLine, tt.CurPos = info.CurLine, info.CurPos
+  SaveCurrentMemo(hDlg)
+  -- switch index
+  Data.CurIndex = switching or Data.CurIndex
+  SaveData()
 end
 
 -- Create and run the memo dialog
@@ -127,43 +192,43 @@ local function OpenMemoDialog()
     { F.DI_MEMOEDIT, 1, 1, dlgWidth-2, dlgHeight-2, nil, nil, nil, nil, ""},
     { F.DI_TEXT,     1, dlgHeight-1, dlgWidth, 0,   nil, nil, nil, F.DIF_CENTERTEXT, ""},
   }
+
   local switching
+  local wasError
 
   local function DlgProc(hDlg, Msg, Param1, Param2)
     if Msg == F.DN_INITDIALOG then
-      local editor_id = hDlg:GetMemoEditId(POS_MEMO)
-      local filepath = GetMemoFilePath(Data.CurIndex)
-      editor.SetVirtualFileName(editor_id, filepath)
-      if filepath then
-        local content = LoadFileContent(filepath)
-        hDlg:SetText(POS_MEMO, content)
+      if not InitActions(hDlg) then
+        wasError = true; hDlg:Close(); return
       end
-      UpdateTitle(hDlg, Data.CurIndex)
-      UpdateIndicator(hDlg, Data.CurIndex)
 
     elseif Msg == F.DN_KEY then
       if Param1 == POS_MEMO then
         local key = far.KeyToName(Param2)
 
-        -- F2/Shift+F2: Save As
-        if key == "F2" or key == "ShiftF2" then
+        if key == "F1" then
+          far.ShowHelp(ThisDir, "Contents", F.FHELP_CUSTOMPATH)
+
+        elseif key == "ShiftF2" then -- Save As
           SaveMemoAs(hDlg)
-        end
+
+        elseif key == "F6" then -- Rename
+          if RenameMemo(hDlg) then
+            switching = Data.CurIndex
+            hDlg:Close() -- update highlighting as the extension may have changed
+          end
 
         -- Ctrl+0-9 or Alt+0-9: switch memo
-        if key:match("^Ctrl[0-9]$") or key:match("^Alt[0-9]$") then
+        elseif key:match("^Ctrl[0-9]$") or key:match("^Alt[0-9]$") then
           local idx = tonumber(key:match("[0-9]"))
           switching = (idx == 0) and 10 or idx
-          -- Reopen the dialog in order to recreate MemoEdit and make highlighting
-          -- plugins to use the syntax corresponding to the new file extension.
-          hDlg:Close()
+          hDlg:Close() -- update highlighting as the extension may have changed
+
         end
       end
 
     elseif Msg == F.DN_CLOSE then
-      SaveCurrentMemo(hDlg)
-      Data.CurIndex = switching or Data.CurIndex
-      SaveData()
+      if not wasError then CloseActions(hDlg, switching) end
 
     end
   end
