@@ -55,5 +55,7 @@ Macro {
 Event {
   description="Save menu positions";
   group="ExitFAR";
-  action=function() mf.msave("shmuz", "FarMenuPositions", data) end;
+  action=function(reload)
+    if not reload then mf.msave("shmuz", "FarMenuPositions", data) end
+  end;
 }

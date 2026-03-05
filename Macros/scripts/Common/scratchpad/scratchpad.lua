@@ -5,6 +5,7 @@
 
 local DB_Key  = "shmuz"
 local DB_Name = "Memo"
+local MemoDir = far.InMyConfig("plugins/luafar/memo_files")
 
 local MEMO_COUNT  = 10
 local POS_TITLE = 1     -- Dialog title
@@ -12,9 +13,21 @@ local POS_MEMO  = 2     -- Main memo editor (DI_MEMOEDIT)
 local POS_INDICATOR = 3 -- Page indicator at bottom
 
 local F = far.Flags
-local MemoDir
-local CurrentMemo -- Current memo index (1-10)
-local EditorId
+local Data
+
+local function NormIndex(idx)
+  return idx >= 1 and idx <= MEMO_COUNT and idx or 1
+end
+
+local function LoadData()
+  Data = mf.mload(DB_Key, DB_Name) or {}
+  -- Validation
+  Data.CurIndex = NormIndex(Data.CurIndex or 1)
+end
+
+local function SaveData()
+  mf.msave(DB_Key, DB_Name, Data)
+end
 
 local function MakeFileName(index)
   return index <= 5 and ("memo-%02d.txt"):format(index) or ("memo-%02d.lua"):format(index)
@@ -30,16 +43,6 @@ local function GetMemoFilePath(index)
   local msg = ("Directory \"%s\" does not exist"):format(MemoDir)
   far.Message(msg, "Error", nil, "w")
   return nil
-end
-
--- Load last selected memo index
-local function LoadLastMemoIndex()
-  local data = mf.mload(DB_Key, DB_Name) or {}
-  CurrentMemo = data.LastMemo or 1
-  if CurrentMemo < 1 or CurrentMemo > MEMO_COUNT then
-    CurrentMemo = 1
-  end
-  return CurrentMemo
 end
 
 -- Load file content
@@ -63,9 +66,7 @@ local function SaveFileContent(path, content)
 end
 
 local function UpdateIndicator(hDlg, index)
-  if index < 1 or index > MEMO_COUNT then
-    index = 1
-  end
+  index = NormIndex(index)
   local cnt = 1
   local dot = utf8.char(0x2022)
   local indic = (dot.."1"):rep(MEMO_COUNT)..dot
@@ -80,22 +81,21 @@ end
 -- Save current memo content to file
 local function SaveCurrentMemo(hDlg)
   local content = hDlg:GetText(POS_MEMO)
-  local filepath = GetMemoFilePath(CurrentMemo)
+  local filepath = GetMemoFilePath(Data.CurIndex)
   if filepath then
     SaveFileContent(filepath, content)
   end
 end
 
--- Update title: "Memo - 1", etc.
 local function UpdateTitle(hDlg, index)
-  local title = ("[ Memo - %d ]"):format(index)
+  local title = MakeFileName(index)
   hDlg:SetText(POS_TITLE, title)
 end
 
 -- Save current memo to external file (F2/Shift+F2)
 local function SaveMemoAs(hDlg)
   -- Default: memo-01.txt ... memo-10.txt in home directory
-  local memoNum = CurrentMemo
+  local memoNum = Data.CurIndex
   local defaultName = MakeFileName(memoNum)
   local defaultPath = win.JoinPath(far.GetMyHome(), defaultName)
   local destPath = far.InputBox(nil, "Save Memo", "Enter destination path:", "MemoSave",
@@ -107,9 +107,8 @@ end
 
 -- Create and run the memo dialog
 local function OpenMemoDialog()
-  MemoDir = far.InMyConfig("plugins/luafar/memo_files")
   win.CreateDir(MemoDir)
-  CurrentMemo = LoadLastMemoIndex()
+  LoadData()
 
   -- Get console size for dialog dimensions
   local screenRect = actl.GetFarRect()
@@ -132,15 +131,15 @@ local function OpenMemoDialog()
 
   local function DlgProc(hDlg, Msg, Param1, Param2)
     if Msg == F.DN_INITDIALOG then
-      EditorId = hDlg:GetMemoEditId(POS_MEMO)
-      local filepath = GetMemoFilePath(CurrentMemo)
-      editor.SetVirtualFileName(EditorId, filepath)
+      local editor_id = hDlg:GetMemoEditId(POS_MEMO)
+      local filepath = GetMemoFilePath(Data.CurIndex)
+      editor.SetVirtualFileName(editor_id, filepath)
       if filepath then
         local content = LoadFileContent(filepath)
         hDlg:SetText(POS_MEMO, content)
       end
-      UpdateTitle(hDlg, CurrentMemo)
-      UpdateIndicator(hDlg, CurrentMemo)
+      UpdateTitle(hDlg, Data.CurIndex)
+      UpdateIndicator(hDlg, Data.CurIndex)
 
     elseif Msg == F.DN_KEY then
       if Param1 == POS_MEMO then
@@ -154,19 +153,17 @@ local function OpenMemoDialog()
         -- Ctrl+0-9 or Alt+0-9: switch memo
         if key:match("^Ctrl[0-9]$") or key:match("^Alt[0-9]$") then
           local idx = tonumber(key:match("[0-9]"))
-          idx = (idx == 0) and 10 or idx
-          if idx <= MEMO_COUNT then
-            -- Reopen the dialog in order to recreate MemoEdit and make highlighting
-            -- plugins to use the syntax corresponding to the new file extension.
-            switching = idx
-            hDlg:Close()
-          end
+          switching = (idx == 0) and 10 or idx
+          -- Reopen the dialog in order to recreate MemoEdit and make highlighting
+          -- plugins to use the syntax corresponding to the new file extension.
+          hDlg:Close()
         end
       end
 
     elseif Msg == F.DN_CLOSE then
       SaveCurrentMemo(hDlg)
-      mf.msave(DB_Key, DB_Name, { LastMemo = switching or CurrentMemo; })
+      Data.CurIndex = switching or Data.CurIndex
+      SaveData()
 
     end
   end
