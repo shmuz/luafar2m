@@ -4,10 +4,11 @@
 @Contents
 $^#Memo#
  #The following keys may be used:#
-     #Esc#        :  exit
-     #Alt0-Alt9#  :  switch to another memo (also #Ctrl0-Ctrl9#)
-     #ShiftF2#    :  save as... (the path may be changed)
-     #F6#         :  rename the current memo (no path change)
+     #Esc#            :  exit
+     #Alt+0 - Alt+9#  :  switch to another memo (also #Ctrl+0 - Ctrl+9#)
+     #Shift+F2#       :  save as... (the path may be changed)
+     #Shift+F6#       :  rename the current memo (no path change)
 
  #Note:#
-   Exiting and switching between memos automatically saves the current memo.
+   Exiting and switching between memos automatically save the current memo
+   if it was modified.

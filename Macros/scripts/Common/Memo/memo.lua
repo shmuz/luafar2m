@@ -107,7 +107,7 @@ local function SaveCurrentMemo(hDlg)
 end
 
 local function UpdateTitle(hDlg, index)
-  local title = GetFileName(index)
+  local title = ("[%d] %s"):format(index, GetFileName(index))
   hDlg:SetText(POS_TITLE, title)
 end
 
@@ -151,6 +151,7 @@ local function InitActions(hDlg)
 
   local content = LoadFileContent(filepath)
   hDlg:SetText(POS_MEMO, content)
+  editor.SetSavedState(EditorId, true)
   local tt = Data[Data.CurIndex]
   editor.SetPosition(EditorId, tt.CurLine, tt.CurPos)
 
@@ -164,7 +165,9 @@ local function CloseActions(hDlg, switching)
   local info = editor.GetInfo(EditorId)
   local tt = Data[Data.CurIndex]
   tt.CurLine, tt.CurPos = info.CurLine, info.CurPos
-  SaveCurrentMemo(hDlg)
+  if 0 ~= bit64.band(info.CurState, F.ECSTATE_MODIFIED) then
+    SaveCurrentMemo(hDlg)
+  end
   -- switch index
   Data.CurIndex = switching or Data.CurIndex
   SaveData()
@@ -199,7 +202,7 @@ local function OpenMemoDialog()
   local function DlgProc(hDlg, Msg, Param1, Param2)
     if Msg == F.DN_INITDIALOG then
       if not InitActions(hDlg) then
-        wasError = true; hDlg:Close(); return
+        wasError = true; hDlg:Close()
       end
 
     elseif Msg == F.DN_KEY then
@@ -212,7 +215,7 @@ local function OpenMemoDialog()
         elseif key == "ShiftF2" then -- Save As
           SaveMemoAs(hDlg)
 
-        elseif key == "F6" then -- Rename
+        elseif key == "ShiftF6" then -- Rename
           if RenameMemo(hDlg) then
             switching = Data.CurIndex
             hDlg:Close() -- update highlighting as the extension may have changed
