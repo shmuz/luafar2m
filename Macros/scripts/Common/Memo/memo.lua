@@ -245,6 +245,7 @@ Macro {
   description="A replica of Memo plugin";
   area="Common"; key="CtrlAltM";
   action=function()
-    while OpenMemoDialog() do end
+    -- use mf.acall to avoid seeing "P" in the upper left screen corner
+    mf.acall(function() while OpenMemoDialog() do end end)
   end;
 }
