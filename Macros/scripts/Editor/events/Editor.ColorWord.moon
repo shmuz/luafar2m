@@ -8,7 +8,7 @@ OptCaseSensitive=false
 F=far.Flags
 band,bor,lshift,rshift = bit64.band, bit64.bor, bit64.lshift, bit64.rshift
 color = actl.GetColor "COL_EDITORTEXT"
-color = bor lshift(band(color,0xF),4), rshift(color,4)
+color.ForegroundColor, color.BackgroundColor = color.BackgroundColor, color.ForegroundColor
 words={}
 
 Macro

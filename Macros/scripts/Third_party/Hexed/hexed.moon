@@ -104,8 +104,7 @@ ChangeColor=(data)->
         if v.key then data[v.key].Attributes = Colors[v.val]
       return true
 
-    clr = osWindows and far.ColorDialog Colors[sel.val] or
-          (not osWindows) and far.ColorDialog Colors[sel.val], 0x03
+    clr = far.ColorDialog Colors[sel.val], (not osWindows) and 0x03 or nil
     if clr
       if not osWindows then
         clr=clr.Color
