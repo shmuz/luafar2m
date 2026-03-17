@@ -107,7 +107,9 @@ local function SaveCurrentMemo(hDlg)
 end
 
 local function UpdateTitle(hDlg, index)
-  local title = ("[%d] %s"):format(index, GetFileName(index))
+  local ei = editor.GetInfo(EditorId)
+  local mark = (0 == bit64.band(ei.CurState, F.ECSTATE_MODIFIED)) and "" or "*"
+  local title = ("[%s%d] %s"):format(mark, index, GetFileName(index))
   hDlg:SetText(POS_TITLE, title)
 end
 
@@ -191,7 +193,7 @@ local function OpenMemoDialog()
   local dlgHeight = math.max(5, screenHeight - 12)
 
   local Items = {
-    { F.DI_TEXT,     1, 0, dlgWidth, 0,             nil, nil, nil, F.DIF_CENTERTEXT, ""},
+    { F.DI_TEXT,     1, 0, dlgWidth, 0,             nil, nil, nil, nil, ""},
     { F.DI_MEMOEDIT, 1, 1, dlgWidth-2, dlgHeight-2, nil, nil, nil, nil, ""},
     { F.DI_TEXT,     1, dlgHeight-1, dlgWidth, 0,   nil, nil, nil, F.DIF_CENTERTEXT, ""},
   }
@@ -239,6 +241,19 @@ local function OpenMemoDialog()
   far.Dialog(nil, -1, -1, dlgWidth, dlgHeight, nil, Items, nil, DlgProc)
   return switching
 end
+
+Event {
+  group="EditorEvent";
+  description="Memo editor changed";
+  action=function(id, event, param)
+    if id == EditorId and event == F.EE_REDRAW and param == F.EEREDRAW_CHANGE then
+      local wi = actl.GetWindowInfo()
+      if wi and wi.Type == F.WTYPE_DIALOG then
+        UpdateTitle(wi.Id, Data.CurIndex)
+      end
+    end
+  end;
+}
 
 Macro {
   id="D27C6B7D-0343-42D4-A339-1ACEF32E142C";
