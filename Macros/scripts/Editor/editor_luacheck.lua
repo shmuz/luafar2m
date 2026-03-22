@@ -21,7 +21,7 @@ local MenuMaxHeight = 5
 local F = far.Flags
 
 local menuflags = bit64.bor(F.FMENU_SHOWAMPERSAND, F.FMENU_WRAPMODE,
-  F.FMENU_SHOWSHORTBOX or 0, F.FMENU_NODRAWSHADOW or 0)
+  F.FMENU_SHOWSHORTBOX, F.FMENU_NODRAWSHADOW)
 
 local function traverse(path)
   local pattern = ("^(.*SEP).-SEP"):gsub("SEP", dirsep)
