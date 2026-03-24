@@ -51,13 +51,14 @@ local function RunDialog()
   return Dlg:Run()
 end
 
-local ANS_YES, ANS_NO, ANS_ALL, ANS_CANCEL = 1,2,3,4 -- must match the buttons' order
+local ANS_BUTTONS = table.concat({"&OK for file", "&Skip file", "OK for &All files", "&Cancel"}, ";")
+local ANS_YES, ANS_NO, ANS_ALL, ANS_CANCEL = 1,2,3,4 -- must match the ANS_BUTTONS order
 
 local function AskUser(fname, text)
+  fname = (fname:len() <= 80) and fname or ("..."..fname:sub(-77))
   text = text:gsub("^%s+", "")
-  local msg = ("File: %s\nText: %s"):format(fname, text)
-  local ret = far.Message(msg, "Check the converted text",
-      "&OK for file;&Skip file;OK for &All files;&Cancel", "l")
+  local msg = ("File: %s\nText:\n%s"):format(fname, text)
+  local ret = far.Message(msg, "Check the converted text", ANS_BUTTONS, "l")
   return ret >= 1 and ret or ANS_CANCEL
 end
 
@@ -79,7 +80,7 @@ local function ConvertFile(item, path, param)
       local ln2 = ConvertToUtf8(ln, param.CodePage)
       table.insert(lines, ln2)
       if answer ~= ANS_ALL and answer ~= ANS_YES then
-        answer = AskUser(item.FileName, ln2)
+        answer = AskUser(path, ln2)
         param.answer = answer
         if answer == ANS_NO or answer == ANS_CANCEL then
           break
