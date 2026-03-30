@@ -19,6 +19,7 @@ endforeach()
 
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE ${EXPORTS}
+  PRIVATE -DSETPACKAGEPATH
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${FARSOURCE}/far/far2sdk)
