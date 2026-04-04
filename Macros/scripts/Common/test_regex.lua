@@ -9,9 +9,22 @@
 
 local F = far.Flags
 
+local function ConvertSubst(txt)
+  -- Escape % characters
+  txt = txt:gsub("%%", "%%%%")
+  -- Convert replace pattern to LuaFAR (regex.gsub) syntax:
+  --   $3      -> %3
+  --   ${name} -> %{name}
+  --   \$      -> $
+  --   \\      -> \
+  txt = regex.gsub(txt, [[ \$([0-9a-zA-Z])  |  \$(\{[\w ]+\})  |  \\([$\\]) ]],
+      function(a,b,c) return (a and "%"..a) or (b and "%"..b) or c end, nil, "x")
+  return txt
+end
+
 local function DoTest()
   local sd = require "far2.simpledialog"
-  local Width = 76
+  local Width = 80
   local W1 = 3 + Width/2
   local Items = {
     width = Width;
@@ -27,7 +40,7 @@ local function DoTest()
     {tp="text"; text="Result:";  width=W1;                                },
     {tp="edit"; name="result";   width=W1;  readonly=1;                   },
 
-    {tp="listbox"; name="groups"; x1=W1+6; y1=2; width=24; height=10; text="Matches"; list={};
+    {tp="listbox"; name="groups"; x1=W1+6; y1=2; height=10; text="Matches"; list={};
                    listnoclose=1; },
 
     {tp="text"; text="Status:"; width=W1; y1=11;                          },
@@ -65,13 +78,9 @@ local function DoTest()
           hDlg:send(F.DM_LISTADD, Pos.groups, {{Text=txt}})
         end
       end
-
-      local subst = hDlg:send(F.DM_GETTEXT, Pos.subst)
-      -- convert replace pattern to LuaFAR syntax ($3 -> %3, \$ -> $, \\ -> \)
-      subst = subst:gsub("%%", "%%%%")
-      subst = regex.gsub(subst, [[ \$([0-9a-zA-Z]) | \\([$\\]) ]],
-        function(a,b) return a and "%"..a or b end, nil, "x")
-      -- get replace result
+      -- Get replace result
+      local txt = hDlg:send(F.DM_GETTEXT, Pos.subst)
+      local subst = ConvertSubst(txt)
       local result = rex:gsub(subj, subst)
       hDlg:send(F.DM_SETTEXT, Pos.result, result)
       hDlg:send(F.DM_SETTEXT, Pos.status, fr and "Found" or "Not found")
