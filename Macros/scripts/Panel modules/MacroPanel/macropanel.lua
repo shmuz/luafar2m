@@ -206,36 +206,54 @@ end
 
 function mod.Compare (object, handle, Item1, Item2, Mode)
   local r
+  local data1, data2 = Item1.CustomColumnData, Item2.CustomColumnData
+
   if object.type == "macros" then
     if Mode == F.SM_EXT then
-      r = LStricmp(Item1.CustomColumnData[P_AREA], Item2.CustomColumnData[P_AREA])
+      -- SORT BY: Area->Description->Key
+      r = LStricmp(data1[P_AREA], data2[P_AREA])
       if r ~= 0 then return r end
       r = LStricmp(Item1.FileName, Item2.FileName)
       if r ~= 0 then return r end
-      return LStricmp(Item1.CustomColumnData[P_KEY], Item2.CustomColumnData[P_KEY])
+      return LStricmp(data1[P_KEY], data2[P_KEY])
+
     elseif Mode == F.SM_MTIME then
-      r = LStricmp(Item2.CustomColumnData[P_KEY], Item1.CustomColumnData[P_KEY]) -- order changed on purpose
+      -- SORT BY: Key->Description->Area
+      r = LStricmp(data2[P_KEY], data1[P_KEY]) -- order changed on purpose
       if r ~= 0 then return r end
       r = LStricmp(Item2.FileName, Item1.FileName)
       if r ~= 0 then return r end
-      return LStricmp(Item2.CustomColumnData[P_AREA], Item1.CustomColumnData[P_AREA])
+      return LStricmp(data2[P_AREA], data1[P_AREA])
+
+    elseif Mode == F.SM_SIZE then
+      -- SORT BY: Filemask->Description->Area
+      r = LStricmp(data2[P_FILEMASK], data1[P_FILEMASK]) -- order changed on purpose
+      if r ~= 0 then return r end
+      r = LStricmp(Item2.FileName, Item1.FileName)
+      if r ~= 0 then return r end
+      return LStricmp(data2[P_AREA], data1[P_AREA])
+
     else
+      --SORT BY: Description->Area->Key
       r = LStricmp(Item1.FileName, Item2.FileName)
       if r ~= 0 then return r end
-      r = LStricmp(Item1.CustomColumnData[P_AREA], Item2.CustomColumnData[P_AREA])
+      r = LStricmp(data1[P_AREA], data2[P_AREA])
       if r ~= 0 then return r end
-      return LStricmp(Item1.CustomColumnData[P_KEY], Item2.CustomColumnData[P_KEY])
+      return LStricmp(data1[P_KEY], data2[P_KEY])
     end
 
   elseif object.type == "events" then
     if Mode == F.SM_EXT then
-      r = LStricmp(Item1.CustomColumnData[P_GROUP], Item2.CustomColumnData[P_GROUP])
+      --SORT BY: Group->Description
+      r = LStricmp(data1[P_GROUP], data2[P_GROUP])
       if r ~= 0 then return r end
       return LStricmp(Item1.FileName, Item2.FileName)
+
     else
+      --SORT BY: Description->Group
       r = LStricmp(Item1.FileName, Item2.FileName)
       if r ~= 0 then return r end
-      return LStricmp(Item1.CustomColumnData[P_GROUP], Item2.CustomColumnData[P_GROUP])
+      return LStricmp(data1[P_GROUP], data2[P_GROUP])
     end
   end
 
