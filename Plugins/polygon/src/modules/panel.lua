@@ -993,11 +993,7 @@ function mypanel:prepare_panel_info(handle)
   }
   local pm2 = {}
   for k,v in pairs(pm1) do pm2[k]=v; end
-  if OS_WIN then
-    pm2.Flags = F.PMFLAGS_FULLSCREEN
-  else
-    pm2.FullScreen = true
-  end
+  pm2.Flags = F.PMFLAGS_FULLSCREEN
   for k=1,10 do
     info.modes[k] = (k%2==1) and pm2 or pm1
   end

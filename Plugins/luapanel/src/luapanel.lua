@@ -100,7 +100,7 @@ local PanelModes do
     ColumnTitles = { "Key","Value" },
     StatusColumnTypes = "N",
     StatusColumnWidths = "0",
-    FullScreen = false,
+    Flags = 0,
   }
   local m2 = {
     ColumnTypes = "N,C0",
@@ -108,7 +108,7 @@ local PanelModes do
     ColumnTitles = { "Key","Value" },
     StatusColumnTypes = "N",
     StatusColumnWidths = "0",
-    FullScreen = true,
+    Flags = F.PMFLAGS_FULLSCREEN,
   }
   PanelModes = { m2,m1,m2, m1,m2,m1, m2,m1,m2, m1 }
 end

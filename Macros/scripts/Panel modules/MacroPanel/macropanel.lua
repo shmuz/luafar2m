@@ -16,12 +16,14 @@ local SETTINGS_NAME = "MacroPanel"
 
 local Sett = mf -- require "far2.settings"
 
+local dirsep = package.config:sub(1,1)
+local osWin = dirsep == "\\"
 local F = far.Flags
 local Title = "Macro Panel"
 local VK = win.GetVirtualKeys()
 local band, bor = bit64.band, bit64.bor
 local LStricmp = far.LStricmp
-local thisDir = (...):match(".+/")
+local thisDir = (...):match(".+"..dirsep)
 
 local Settings, SaveSettings do
   local function LoadSettings()
@@ -39,7 +41,9 @@ local Settings, SaveSettings do
   LoadSettings()
 end
 
-local OpenPanelInfoFlags = bor(F.OPIF_ADDDOTS, 0)
+local OpenPanelInfoFlags = osWin and bor(F.OPIF_ADDDOTS, F.OPIF_DISABLEFILTER,
+  F.OPIF_DISABLEHIGHLIGHTING, F.OPIF_DISABLESORTGROUPS, F.OPIF_SHORTCUT)
+  or F.OPIF_ADDDOTS
 
 local P_AREA,P_GROUP,P_KEY,P_FILENAME,P_STARTLINE,P_FILEMASK = 1,1,2,3,4,5
 
@@ -50,7 +54,8 @@ local function LocateFile (fname, whatpanel)
   whatpanel = whatpanel or 1
   local attr = win.GetFileAttr(fname)
   if attr and not attr:find"d" then
-    local dir, name = fname:match("^(.*/)([^/]*)$")
+    local patt = ("^(.*%s)([^%s]*)$"):format(dirsep, dirsep)
+    local dir, name = fname:match(patt)
     if panel.SetPanelDirectory(nil, whatpanel, dir) then
       local pinfo = panel.GetPanelInfo(nil, whatpanel)
       for i=1, pinfo.ItemsNumber do
@@ -158,7 +163,7 @@ local MacroPanelModes do
     ColumnTitles = { "Description","Area","Key" },
     StatusColumnTypes = "N",
     StatusColumnWidths = "0",
-    FullScreen = false,
+    Flags = 0,
   }
   local m2 = {
     ColumnTypes = "N,C0,C1,C4",
@@ -166,7 +171,7 @@ local MacroPanelModes do
     ColumnTitles = { "Description","Area","Key","Filemask" },
     StatusColumnTypes = "N",
     StatusColumnWidths = "0",
-    FullScreen = true,
+    Flags = F.PMFLAGS_FULLSCREEN,
   }
   MacroPanelModes = { m2,m1,m2, m1,m2,m1, m2,m1,m2, m1 }
 end
@@ -178,7 +183,7 @@ local EventPanelModes do
     ColumnTitles = { "Description", "Group" },
     StatusColumnTypes = "N",
     StatusColumnWidths = "0",
-    FullScreen = false,
+    Flags = 0,
   }
   local m2 = {
     ColumnTypes = "N,C0,C4",
@@ -186,7 +191,7 @@ local EventPanelModes do
     ColumnTitles = { "Description","Group","Filemask" },
     StatusColumnTypes = "N",
     StatusColumnWidths = "0",
-    FullScreen = true,
+    Flags = F.PMFLAGS_FULLSCREEN,
   }
   EventPanelModes = { m2,m1,m2, m1,m2,m1, m2,m1,m2, m1 }
 end
