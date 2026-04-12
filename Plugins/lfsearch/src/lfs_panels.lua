@@ -919,7 +919,7 @@ local function InitTmpPanel()
     local a,b = hist.StartSorting:match("(%d+)%s*,%s*(%d+)")
     Info.StartSortMode, Info.StartSortOrder = tonumber(a), tonumber(b) -- w/o tonumber() it crashes Far
     for _,mode in pairs(Info.PanelModesArray) do
-      mode.Flags = hist.FullScreenPanel and F.PMFLAGS_FULLSCREEN or 0
+      mode.Flags.PMFLAGS_FULLSCREEN = hist.FullScreenPanel
     end
     return Info
   end

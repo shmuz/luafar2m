@@ -118,7 +118,8 @@ Macro {
       return
     end
     local menuitems = {}
-    far.RecursiveSearch(far.InMyConfig("plugins/python"), "*.py",
+--  far.RecursiveSearch(far.InMyConfig("plugins/python"), "*.py", -- doesn't work with "far2m -u xxx"
+    far.RecursiveSearch(win.GetEnv("HOME").."/.config/far2m/plugins/python", "*.py",
       function(item,path)
         local name = item.FileName:sub(1,-4)
         table.insert(menuitems, {text=name; Name=name;})
