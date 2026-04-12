@@ -5,7 +5,8 @@ far.ReloadDefaultScript = true
 local F = far.Flags
 local Title = "File generator"
 
-local OpenPanelInfoFlags = bit64.bor(F.OPIF_ADDDOTS)
+local OpenPanelInfoFlags = bit64.bor(F.OPIF_ADDDOTS, F.OPIF_DISABLEFILTER,
+  F.OPIF_DISABLEHIGHLIGHTING, F.OPIF_DISABLESORTGROUPS)
 
 function export.GetPluginInfo()
   return {

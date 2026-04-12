@@ -41,9 +41,8 @@ local Settings, SaveSettings do
   LoadSettings()
 end
 
-local OpenPanelInfoFlags = osWin and bor(F.OPIF_ADDDOTS, F.OPIF_DISABLEFILTER,
+local OpenPanelInfoFlags = bor(F.OPIF_ADDDOTS, F.OPIF_DISABLEFILTER,
   F.OPIF_DISABLEHIGHLIGHTING, F.OPIF_DISABLESORTGROUPS, F.OPIF_SHORTCUT)
-  or F.OPIF_ADDDOTS
 
 local P_AREA,P_GROUP,P_KEY,P_FILENAME,P_STARTLINE,P_FILEMASK = 1,1,2,3,4,5
 

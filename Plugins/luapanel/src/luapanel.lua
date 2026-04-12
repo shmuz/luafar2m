@@ -11,13 +11,16 @@ far.ReloadDefaultScript = true
 local F = far.Flags
 local Title = "Lua Panel"
 local VK = win.GetVirtualKeys()
-local band = bit64.band
+local band, bor = bit64.band, bit64.bor
 
 local Settings = {
   LastPanelMode = ("1"):byte();
   LastSortMode  = F.SM_NAME;
   LastSortOrder = 0;
 }
+
+local OpenPanelInfoFlags = bor(F.OPIF_ADDDOTS, F.OPIF_DISABLEFILTER,
+  F.OPIF_DISABLEHIGHLIGHTING, F.OPIF_DISABLESORTGROUPS, F.OPIF_SHORTCUT)
 
 local PluginMenuGuid1 = win.Uuid("8127E2DF-C01C-46B9-8E5D-056EFBB0AAF7")
 
@@ -115,7 +118,7 @@ end
 
 function export.GetOpenPanelInfo (obj, handle)
   return {
-    Flags            = F.OPIF_ADDDOTS,
+    Flags            = OpenPanelInfoFlags,
   --CurDir           = obj.CurDir,
     PanelTitle       = obj.CurDir=="" and Title or Title..": "..obj.CurDir,
     PanelModesArray  = PanelModes,
