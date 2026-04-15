@@ -259,7 +259,7 @@ end
 
 local function CreateObject(filename)
   local bCreateArchive = false
-  if not filename then
+  if not filename then -- ShiftF1 was pressed
     bCreateArchive = true
     filename = GetArchiveFileName()
     if not filename then return false end
@@ -345,11 +345,11 @@ local function CreateObject(filename)
   return obj
 end
 
-function export.Analyse(Info)
-  if Info.FileName == nil then -- ShiftF1
+function export.Analyse(Data)
+  if Data.FileName == nil then -- ShiftF1
     return true
   else
-    return string.find(Info.Buffer,"^SQLite format 3") and CheckAppId(Info.Buffer)
+    return string.find(Data.Buffer,"^SQLite format 3") and CheckAppId(Data.Buffer)
   end
 end
 
@@ -743,7 +743,7 @@ function export.SetDirectory (obj, handle, Dir, OpMode, UserData)
     obj.curdir = cur_id
     local fullpath = GetFullDirPath(obj.db, obj.curdir)
     local opi = obj.openpanelinfo
-    opi.CurDir = fullpath
+    opi.CurDir = (fullpath == "") and "" or (DIRSEP..fullpath) -- FAR expects such logic
     opi.PanelTitle = GetPanelTitle(obj.shorthostname, fullpath)
     opi.IsCached = false
     return true
