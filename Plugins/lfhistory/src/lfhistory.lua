@@ -404,6 +404,7 @@ local function MakeMenuParams (aConfig, aData, aItems)
     xlat          = aData.xlat,
     showdates     = aConfig ~= cfgLocateFile and dateformat,
     dateformat    = dateformat,
+    usevbuf       = true,
   }
   local list = Custommenu.NewList(listProps, aItems)
   list.keyfunction = GetListKeyFunction(aConfig, aData)

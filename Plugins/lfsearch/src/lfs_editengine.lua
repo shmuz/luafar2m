@@ -302,6 +302,7 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
       col_selectedhighlight = 0x4F,
       ellipsis = bForward and 3 or 0, -- position ellipsis at either line end or beginning
       searchstart = maxno + 3, -- required for correct work of ellipsis
+      usevbuf = true,
     }, items)
 
   function list:OnGetItemText(item)
