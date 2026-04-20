@@ -176,3 +176,11 @@ Macro {
     end
   end;
 }
+
+Macro {
+  id="B94485C4-EE3A-49EA-9544-F74F1B822B10";
+  description="Prevent CtrlShift[0-9] from creating folder shortcuts";
+  area="Shell"; key="/[LR]CtrlShift[0-9]/";
+  priority=10;
+}
+

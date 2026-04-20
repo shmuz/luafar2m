@@ -7,7 +7,7 @@
 Macro {
   id="4A83A35D-0508-4ED3-A077-087C4DD9215D";
   description="Duplicate current line";
-  area="Editor"; key="CtrlD";
+  area="Editor MemoEdit"; key="CtrlD";
   action=function()
     local info = editor.GetInfo()
     local line = editor.GetString()

@@ -175,27 +175,37 @@ local function CloseActions(hDlg, switching)
   SaveData()
 end
 
+local function CalcDialogSize()
+  local scrRect = actl.GetFarRect()
+  local scrWidth, scrHeight = 80, 25
+  if scrRect then
+    scrWidth = scrRect.Right - scrRect.Left + 1
+    scrHeight = scrRect.Bottom - scrRect.Top + 1
+  end
+  return { X=math.max(43, scrWidth-22); Y=math.max(5, scrHeight-12); }
+end
+
+local function OnResizeConsole(hDlg)
+  local dlgSize = CalcDialogSize()
+  hDlg:EnableRedraw(false)
+  hDlg:ResizeDialog(nil, dlgSize)
+  hDlg:MoveDialog(1, {X=-1; Y=-1}) -- center on screen
+  hDlg:SetItemPosition(POS_TITLE,     { Left=1; Top=0;           Right=dlgSize.X-2; Bottom=0 })
+  hDlg:SetItemPosition(POS_MEMO,      { Left=1; Top=1;           Right=dlgSize.X-2; Bottom=dlgSize.Y-2 })
+  hDlg:SetItemPosition(POS_INDICATOR, { Left=1; Top=dlgSize.Y-1; Right=dlgSize.X-2; Bottom=dlgSize.Y-1 })
+  hDlg:EnableRedraw(true)
+end
+
 -- Create and run the memo dialog
 local function OpenMemoDialog()
   win.CreateDir(MemoDir)
   LoadData()
 
-  -- Get console size for dialog dimensions
-  local screenRect = actl.GetFarRect()
-  local screenWidth = 80
-  local screenHeight = 25
-  if screenRect then
-    screenWidth = screenRect.Right - screenRect.Left + 1
-    screenHeight = screenRect.Bottom - screenRect.Top + 1
-  end
-
-  local dlgWidth = math.max(43, screenWidth - 22)
-  local dlgHeight = math.max(5, screenHeight - 12)
-
+  local dlgSize = CalcDialogSize()
   local Items = {
-    { F.DI_TEXT,     1, 0, dlgWidth, 0,             nil, nil, nil, nil, ""},
-    { F.DI_MEMOEDIT, 1, 1, dlgWidth-2, dlgHeight-2, nil, nil, nil, nil, ""},
-    { F.DI_TEXT,     1, dlgHeight-1, dlgWidth, 0,   nil, nil, nil, F.DIF_CENTERTEXT, ""},
+    { F.DI_TEXT,     1, 0, dlgSize.X, 0,             nil, nil, nil, nil, ""},
+    { F.DI_MEMOEDIT, 1, 1, dlgSize.X-2, dlgSize.Y-2, nil, nil, nil, nil, ""},
+    { F.DI_TEXT,     1, dlgSize.Y-1, dlgSize.X, 0,   nil, nil, nil, F.DIF_CENTERTEXT, ""},
   }
 
   local switching
@@ -235,10 +245,13 @@ local function OpenMemoDialog()
     elseif Msg == F.DN_CLOSE then
       if not wasError then CloseActions(hDlg, switching) end
 
+    elseif Msg == F.DN_RESIZECONSOLE then
+      OnResizeConsole(hDlg)
+
     end
   end
 
-  far.Dialog(nil, -1, -1, dlgWidth, dlgHeight, nil, Items, nil, DlgProc)
+  far.Dialog(nil, -1, -1, dlgSize.X, dlgSize.Y, nil, Items, nil, DlgProc)
   return switching
 end
 
