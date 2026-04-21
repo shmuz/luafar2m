@@ -233,12 +233,26 @@ local function OpenMemoDialog()
             hDlg:Close() -- update highlighting as the extension may have changed
           end
 
-        -- Ctrl+0-9 or Alt+0-9: switch memo
-        elseif key:match("^Ctrl[0-9]$") or key:match("^Alt[0-9]$") then
+        -- Alt+0-9: switch memo
+        elseif key:match("^Alt[0-9]$") then
           local idx = tonumber(key:match("[0-9]"))
           switching = (idx == 0) and 10 or idx
           hDlg:Close() -- update highlighting as the extension may have changed
 
+        end
+      end
+
+    elseif Msg == F.DN_MOUSECLICK then
+      if Param1 == POS_INDICATOR then
+        local R = hDlg:GetDlgRect()                 -- Dialog rectangle.
+        local DW = R.Right - R.Left + 1             -- Dialog width.
+        local IW = 41                               -- Indicators width.
+        local X = Param2.MousePositionX - R.Left    -- Relative click X position.
+        local X0 = math.floor((DW - IW) / 2)        -- The X of the 1-st indicator left edge.
+        local Which = math.ceil((X - X0) / 4)       -- Each indicator occupies 4 cells.
+        if Which >= 1 and Which <= 10 then
+          switching = Which
+          hDlg:Close() -- update highlighting as the extension may have changed
         end
       end
 
