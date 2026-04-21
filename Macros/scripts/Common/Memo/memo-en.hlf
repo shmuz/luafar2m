@@ -3,13 +3,20 @@
 
 @Contents
 $^#Memo#
- #The following keys may be used:#
-     #Esc#            Exit
-     #Alt+0 - Alt+9#  Switch to another memo
-     #Mouse click on indicator#  Switch to another memo
-     #Shift+F2#       Save as... (the path may be changed)
-     #Shift+F6#       Rename the current memo (no path change)
+ #What is it#
+   A simple memo application, inspired by the Far2l plugin of the same name.
 
- #Note:#
-   Exiting and switching between memos automatically save the current memo
-   if it was modified.
+ #The following keys may be used:#
+
+   #Alt+0 - Alt+9#  Switch to another memo
+   #Mouse click on indicator#  Switch to another memo
+   #Esc#            Exit
+   #F5#             Toggle full screen mode
+   #Shift+F2#       Save as... (the path may be changed)
+   #Shift+F6#       Rename the current memo (no path change)
+
+ #Notes#
+   #—# Exiting and switching between memos automatically saves
+the current memo if it was modified.
+
+   #—# Text highlighting depends on file name extension (as in the Far editor).

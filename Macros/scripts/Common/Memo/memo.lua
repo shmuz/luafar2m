@@ -16,6 +16,7 @@ local ThisDir = (...):match(".+/")
 local F = far.Flags
 local Data
 local EditorId
+local FullScreen
 
 local function CheckFileOverwrite(fname)
   local attr = win.GetFileAttr(fname)
@@ -182,10 +183,13 @@ local function CalcDialogSize()
     scrWidth = scrRect.Right - scrRect.Left + 1
     scrHeight = scrRect.Bottom - scrRect.Top + 1
   end
-  return { X=math.max(43, scrWidth-22); Y=math.max(5, scrHeight-12); }
+  return {
+    X = FullScreen and scrWidth  or math.max(43, scrWidth-22);
+    Y = FullScreen and scrHeight or math.max(5, scrHeight-12);
+  }
 end
 
-local function OnResizeConsole(hDlg)
+local function Resize(hDlg)
   local dlgSize = CalcDialogSize()
   hDlg:EnableRedraw(false)
   hDlg:ResizeDialog(nil, dlgSize)
@@ -233,6 +237,10 @@ local function OpenMemoDialog()
             hDlg:Close() -- update highlighting as the extension may have changed
           end
 
+        elseif key == "F5" then
+          FullScreen = not FullScreen
+          Resize(hDlg)
+
         -- Alt+0-9: switch memo
         elseif key:match("^Alt[0-9]$") then
           local idx = tonumber(key:match("[0-9]"))
@@ -260,7 +268,7 @@ local function OpenMemoDialog()
       if not wasError then CloseActions(hDlg, switching) end
 
     elseif Msg == F.DN_RESIZECONSOLE then
-      OnResizeConsole(hDlg)
+      Resize(hDlg)
 
     end
   end
@@ -288,6 +296,7 @@ Macro {
   area="Common"; key="CtrlAltM";
   action=function()
     -- use mf.acall to avoid seeing "P" in the upper left screen corner
+    FullScreen = false
     mf.acall(function() while OpenMemoDialog() do end end)
   end;
 }
