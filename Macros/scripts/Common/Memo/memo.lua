@@ -109,8 +109,15 @@ end
 
 local function UpdateTitle(hDlg, index)
   local ei = editor.GetInfo(EditorId)
+  local W = ei.WindowSizeX
   local mark = (0 == bit64.band(ei.CurState, F.ECSTATE_MODIFIED)) and "" or "*"
-  local title = ("[%s%d] %s"):format(mark, index, GetFileName(index))
+  local fileinfo = ("[%s%d] %s"):format(mark, index, GetFileName(index))
+  local lineinfo = ("Line %3d/%d | Col %3d"):format(ei.CurLine, ei.TotalLines, ei.CurTabPos)
+  local title = fileinfo
+  local len = fileinfo:len() + lineinfo:len()
+  if len <= W - 2 then
+    title = fileinfo .. (" "):rep(W - 2 - len) .. lineinfo
+  end
   hDlg:SetText(POS_TITLE, title)
 end
 
@@ -197,6 +204,7 @@ local function Resize(hDlg)
   hDlg:SetItemPosition(POS_TITLE,     { Left=1; Top=0;           Right=dlgSize.X-2; Bottom=0 })
   hDlg:SetItemPosition(POS_MEMO,      { Left=1; Top=1;           Right=dlgSize.X-2; Bottom=dlgSize.Y-2 })
   hDlg:SetItemPosition(POS_INDICATOR, { Left=1; Top=dlgSize.Y-1; Right=dlgSize.X-2; Bottom=dlgSize.Y-1 })
+  UpdateTitle(hDlg, Data.CurIndex)
   hDlg:EnableRedraw(true)
 end
 
@@ -240,9 +248,10 @@ local function OpenMemoDialog()
         elseif key == "F5" then
           FullScreen = not FullScreen
           Resize(hDlg)
+          return true -- for not toggling the ShowWhiteSpace option caused by F5
 
         -- Alt+0-9: switch memo
-        elseif key:match("^Alt[0-9]$") then
+        elseif key:match("^AltShift[0-9]$") then
           local idx = tonumber(key:match("[0-9]"))
           switching = (idx == 0) and 10 or idx
           hDlg:Close() -- update highlighting as the extension may have changed
@@ -273,15 +282,16 @@ local function OpenMemoDialog()
     end
   end
 
-  far.Dialog(nil, -1, -1, dlgSize.X, dlgSize.Y, nil, Items, nil, DlgProc)
+  local Flags = F.FDLG_KEEPCONSOLETITLE
+  far.Dialog(nil, -1, -1, dlgSize.X, dlgSize.Y, nil, Items, Flags, DlgProc)
   return switching
 end
 
 Event {
   group="EditorEvent";
-  description="Memo editor changed";
+  description="Memo editor: update title";
   action=function(id, event, param)
-    if id == EditorId and event == F.EE_REDRAW and param == F.EEREDRAW_CHANGE then
+    if id == EditorId and event == F.EE_REDRAW then
       local wi = actl.GetWindowInfo()
       if wi and wi.Type == F.WTYPE_DIALOG then
         UpdateTitle(wi.Id, Data.CurIndex)
