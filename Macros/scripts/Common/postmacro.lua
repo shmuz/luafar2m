@@ -178,7 +178,7 @@ local function Execute()
   Env.Message = far.Message
   Env.Show = far.Show
   Env.WI = far.AdvControl("ACTL_GETWINDOWINFO")
-  Env.EI = Area.Editor and editor.GetInfo() or nil
+  Env.EI = (Area.Editor or (not osWindows and Area.MemoEdit)) and editor.GetInfo() or nil
   Env.VI = Area.Viewer and viewer.GetInfo() or nil
   Env.LE = require("far2.lua_explorer")
   if panel.CheckPanelsExist() then Env.API, Env.PPI = GetPanelInfo(1), GetPanelInfo(0) end

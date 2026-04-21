@@ -235,16 +235,16 @@ local function GetRegexLib (lib_name)
 end
 
 -- If cursor is right after the word pick up the word too.
-local function GetWordUnderCursor (select)
-  local line = editor.GetString()
-  local pos = editor.GetInfo().CurPos
+local function GetWordUnderCursor (edID, select)
+  local line = editor.GetString(edID)
+  local pos = editor.GetInfo(edID).CurPos
   local r = regex.new("(\\w+)")
   local offset = r:find(line.StringText:sub(pos==1 and pos or pos-1, pos))
   if offset then
     local _, last = r:find(line.StringText, pos==1 and pos or (pos+offset-2))
     local from, to, word = r:find(line.StringText:reverse(), line.StringLength-last+1)
     if select then
-      editor.Select(nil, "BTYPE_STREAM", nil, line.StringLength-to+1, to-from+1, 1)
+      editor.Select(edID, "BTYPE_STREAM", nil, line.StringLength-to+1, to-from+1, 1)
     end
     return word:reverse()
   end
@@ -467,8 +467,8 @@ local SRFrame = {}
 SRFrame.Libs = {"far", "oniguruma", "pcre"}
 local SRFrameMeta = {__index = SRFrame}
 
-local function CreateSRFrame (Items, aData, bInEditor, bScriptCall)
-  local self = {Items=Items, Data=aData, bInEditor=bInEditor, bScriptCall=bScriptCall}
+local function CreateSRFrame (Items, aData, EditorID, bScriptCall)
+  local self = {Items=Items, Data=aData, EditorID=EditorID, bScriptCall=bScriptCall}
   return setmetatable(self, SRFrameMeta)
 end
 
@@ -573,7 +573,7 @@ end
 
 function SRFrame:CheckWrapAround (hDlg)
   local Pos = self.Pos
-  if self.bInEditor and Pos.bWrapAround then
+  if self.EditorID and Pos.bWrapAround then
     local bEnab = hDlg:send("DM_GETCHECK", Pos.rScopeGlobal)==1 and hDlg:send("DM_GETCHECK", Pos.rOriginCursor)==1
     hDlg:send("DM_ENABLE", Pos.bWrapAround, bEnab and 1 or 0)
   end
@@ -582,16 +582,16 @@ end
 function SRFrame:OnDataLoaded (aData)
   local Pos = self.Pos
   local Items = self.Items
-  local bInEditor = self.bInEditor
+  local EditorID = self.EditorID
 
   if not self.bScriptCall then
-    if bInEditor then
+    if EditorID then
       local config = _Plugin.History["config"]
       if config.rPickNowhere then
         Items[Pos.sSearchPat].val = ""
         if Pos.sReplacePat then Items[Pos.sReplacePat].val = ""; end
       elseif config.rPickEditor then
-        Items[Pos.sSearchPat].val = GetWordUnderCursor() or ""
+        Items[Pos.sSearchPat].val = GetWordUnderCursor(EditorID) or ""
       end
     else
       Items[Pos.sSearchPat].val = aData.sSearchPat or ""
@@ -607,12 +607,13 @@ end
 
 
 function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
+  local EditorID = self.EditorID
   local Pos = self.Pos
   local bScript = self.bScriptCall or LoadFromPreset
 
-  if self.bInEditor then
+  if EditorID then
     -- Set scope
-    local EI = editor.GetInfo()
+    local EI = editor.GetInfo(EditorID)
     if EI.BlockType == F.BTYPE_NONE then
       hDlg:send("DM_SETCHECK", Pos.rScopeGlobal, 1)
       hDlg:send("DM_ENABLE", Pos.rScopeBlock, 0)
@@ -622,7 +623,7 @@ function SRFrame:CompleteLoadData (hDlg, Data, LoadFromPreset)
       if bScript or not bForceBlock then
         bScopeBlock = (Data.sScope == "block")
       else
-        local line = editor.GetString(nil,EI.BlockStartLine+1) -- test the 2-nd selected line
+        local line = editor.GetString(EditorID, EI.BlockStartLine+1) -- test the 2-nd selected line
         bScopeBlock = line and line.SelStart>0
       end
       hDlg:send("DM_SETCHECK", Pos[bScopeBlock and "rScopeBlock" or "rScopeGlobal"], 1)
@@ -648,7 +649,7 @@ function SRFrame:SaveDataDyn (hDlg, Data)
   ------------------------------------------------------------------------
   for k,v in pairs(state) do Data[k]=v end
   ------------------------------------------------------------------------
-  if self.bInEditor then
+  if self.EditorID then
     Data.sScope = state.rScopeGlobal and "global" or "block"
     Data.sOrigin = state.rOriginCursor and "cursor" or "scope"
 
@@ -670,7 +671,7 @@ end
 
 function SRFrame:DlgProc (hDlg, msg, param1, param2)
   local Pos = self.Pos
-  local Data, bInEditor = self.Data, self.bInEditor
+  local Data, EditorID = self.Data, self.EditorID
   local bReplace = Pos.sReplacePat
   ----------------------------------------------------------------------------
   if msg == F.DN_INITDIALOG then
@@ -688,7 +689,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
     if param1==Pos.bRegExpr then
       self:CheckRegexChange(hDlg)
     else
-      if bInEditor then
+      if EditorID then
         self:CheckWrapAround(hDlg)
       end
       if Pos.bAdvanced and param1==Pos.bAdvanced then
@@ -711,7 +712,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
        Pos.btnCount   and param1 == Pos.btnCount    or
        Pos.btnShowAll and param1 == Pos.btnShowAll
     then
-      if bInEditor then
+      if EditorID then
         if hDlg:send("DM_GETTEXT", Pos.sSearchPat) == "" then
           ErrorMsg(M.MSearchFieldEmpty)
           GotoEditField(hDlg, Pos.sSearchPat)
@@ -722,7 +723,7 @@ function SRFrame:DlgProc (hDlg, msg, param1, param2)
       for k,v in pairs(Data) do tmpdata[k]=v end
       self:SaveDataDyn(hDlg, tmpdata)
       local bSkip = Pos.sSkipPat and tmpdata.sSkipPat ~= ""
-      self.close_params, key = ProcessDialogData(tmpdata, bReplace, bInEditor, Pos.bMultiPatterns, bSkip)
+      self.close_params, key = ProcessDialogData(tmpdata, bReplace, EditorID, Pos.bMultiPatterns, bSkip)
       if self.close_params then
         for k,v in pairs(tmpdata) do Data[k]=v end
         hDlg:send("DM_ADDHISTORY", Pos.sSearchPat, Data.sSearchPat)

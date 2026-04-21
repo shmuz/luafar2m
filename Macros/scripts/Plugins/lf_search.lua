@@ -11,7 +11,7 @@ local function LFS_Exist() return Plugin.Exist(Guid) end
 Macro {
   id="252A4DE0-1FFB-4409-9691-15A874BF7ADD";
   description="LF Search: Editor Find";
-  area="Editor"; key="F3";
+  area="Editor MemoEdit"; key="F3";
   condition=LFS_Exist;
   action = function() LFS_Editor "search" end;
 }
@@ -19,7 +19,7 @@ Macro {
 Macro {
   id="F2176F24-61A1-4180-A3E9-7D93957DF991";
   description="LF Search: Editor Replace";
-  area="Editor"; key="CtrlF3";
+  area="Editor MemoEdit"; key="CtrlF3";
   condition=LFS_Exist;
   action = function() LFS_Editor "replace" end;
 }
@@ -27,7 +27,7 @@ Macro {
 Macro {
   id="70DEB965-DB0F-40C7-B3AC-0BE52AD06BE6";
   description="LF Search: Editor Repeat";
-  area="Editor"; key="ShiftF3";
+  area="Editor MemoEdit"; key="ShiftF3";
   condition=LFS_Exist;
   action = function() LFS_Editor "repeat" end;
 }
@@ -35,7 +35,7 @@ Macro {
 Macro {
   id="2EA68553-569E-434B-8294-94A8451EA6FB";
   description="LF Search: Editor Repeat reverse";
-  area="Editor"; key="AltF3";
+  area="Editor MemoEdit"; key="AltF3";
   condition=LFS_Exist;
   action = function() LFS_Editor "repeat_rev" end;
 }
@@ -43,7 +43,7 @@ Macro {
 Macro {
   id="3973E1B8-A5DE-479D-910C-12997C7E129F";
   description="LF Search: Editor search word";
-  area="Editor"; key="Alt6";
+  area="Editor MemoEdit"; key="Alt6";
   condition=LFS_Exist;
   action = function() LFS_Editor "searchword" end
 }
@@ -51,7 +51,7 @@ Macro {
 Macro {
   id="43F80CC7-7496-4815-8714-A9FF73A2DA78";
   description="LF Search: Editor search word reverse";
-  area="Editor"; key="Alt5";
+  area="Editor MemoEdit"; key="Alt5";
   condition=LFS_Exist;
   action = function() LFS_Editor "searchword_rev" end;
 }
@@ -59,7 +59,7 @@ Macro {
 Macro {
   id="FC4DED58-C741-46FF-9070-F3A0CB6C9EC7";
   description="LF Search: Editor Multi-line replace";
-  area="Editor"; key="CtrlShiftF3";
+  area="Editor MemoEdit"; key="CtrlShiftF3";
   condition=LFS_Exist;
   action = function() LFS_Editor "mreplace" end;
 }

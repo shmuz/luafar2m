@@ -252,7 +252,7 @@ local function DoOpenFromMacro (args, commandTable)
     data.fUserChoiceFunc = nil
 
     if Where=="editor" then
-      if area == F.MACROAREA_EDITOR then
+      if area == F.MACROAREA_EDITOR or area == F.MACROAREA_MEMOEDIT then
         if Cmd=="search" or Cmd=="searchword" or Cmd=="searchword_rev" or Cmd=="replace" or Cmd=="config" then
           return EditMain.EditorAction(Cmd, data, false) and true
         elseif Cmd=="repeat" or Cmd=="repeat_rev" then

@@ -50,6 +50,6 @@ local syntax_shell =
 
 Class {
   name = "Shell script";
-  filemask = "*.sh";
+  filemask = "*.sh;*.bash";
   syntax = syntax_shell;
 }
