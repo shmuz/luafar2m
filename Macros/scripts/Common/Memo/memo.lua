@@ -23,6 +23,10 @@ local mData
 local mEditorId
 local mFullScreen
 
+local function ErrMsg(fmt, ...)
+  far.Message(fmt:format(...), "Error", nil, "w")
+end
+
 local SwitchKeyList = {
   { Text= "Alt+0...9"        ; pattern= "^Alt[0-9]$"; },
   { Text= "Ctrl+0...9"       ; pattern= "^Ctrl[0-9]$"; },
@@ -92,18 +96,17 @@ local function GetMemoFilePath()
     local fname = GetFileName()
     return win.JoinPath(MemoDir, fname)
   end
-  local msg = ("Directory \"%s\" does not exist"):format(MemoDir)
-  far.Message(msg, "Error", nil, "w")
+  ErrMsg("Directory \"%s\" does not exist", MemoDir)
   return nil
 end
 
 local function LoadFileContent(path)
   local fp = io.open(path)
   if fp then
-    if fp:read(3) ~= "\239\187\191" then -- skip UTF-8 BOM
+    if fp:read(3) ~= "\239\187\191" then -- UTF-8 BOM
       fp:seek("set", 0)
     end
-    local content = fp:read("*all")
+    local content = fp:read("*all") or ""
     fp:close()
     return content
   end
@@ -111,11 +114,24 @@ local function LoadFileContent(path)
 end
 
 local function SaveFileContent(path, content)
-  local fp = io.open(path, "w")
-  if fp then
-    fp:write(content)
-    fp:close()
+  local tmp = path .. ".tmp"
+  local fp, err = io.open(tmp, "wb")
+  if not fp then
+    ErrMsg("Can't write \"%s\": %s", tmp, tostring(err))
+    return false
   end
+
+  fp:write(content)
+  fp:close()
+
+  -- Atomic replace on most filesystems
+  local ok, renErr = win.MoveFile(tmp, path, "r") -- "r"==MOVEFILE_REPLACE_EXISTING
+  if not ok then
+    win.DeleteFile(tmp)
+    ErrMsg("Can't replace \"%s\": %s", path, tostring(renErr))
+    return false
+  end
+  return true
 end
 
 local function UpdateIndicator(hDlg)
@@ -123,7 +139,7 @@ local function UpdateIndicator(hDlg)
   local dot = utf8.char(0x2022)
   local indic = (dot.."1"):rep(MEMO_COUNT)..dot
   indic = indic:gsub("1", function()
-      local c = (cnt == mData[CURIDX] and "[&%d]" or " %d "):format(cnt % MEMO_COUNT)
+      local c = (cnt == mData[CURIDX] and "[&%d]" or " %d "):format(cnt % 10)
       cnt = cnt + 1
       return c
     end)
@@ -324,11 +340,11 @@ local function OpenMemoDialog()
       if Param1 == POS_INDICATOR then
         local R = hDlg:GetDlgRect()                 -- Dialog rectangle.
         local DW = R.Right - R.Left + 1             -- Dialog width.
-        local IW = 41                               -- Indicators width.
+        local IW = MEMO_COUNT*4 + 1                 -- Indicators width.
         local X = Param2.MousePositionX - R.Left    -- Relative click X position.
         local X0 = math.floor((DW - IW) / 2)        -- The X of the 1-st indicator left edge.
         local index = math.ceil((X - X0) / 4)       -- Each indicator occupies 4 cells.
-        if index >= 1 and index <= 10 then
+        if index >= 1 and index <= MEMO_COUNT then
           newIndex = index
           hDlg:Close() -- update highlighting as the extension may have changed
         end
