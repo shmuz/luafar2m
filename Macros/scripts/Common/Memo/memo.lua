@@ -12,11 +12,27 @@ local POS_TITLE = 1     -- Dialog title
 local POS_MEMO  = 2     -- Main memo editor (DI_MEMOEDIT)
 local POS_INDICATOR = 3 -- Page indicator at bottom
 
+-- These are used as keys in saved data
+local CURIDX = "CurIndex"
+local SWK    = "SwitchKeys"
+
 local ThisDir = (...):match(".+/")
 local F = far.Flags
 local Data
 local EditorId
 local FullScreen
+
+local SwitchKeys = {
+  { Text= "Alt  + 0...9"         ;  pattern= "^Alt[0-9]$"; },
+  { Text= "Ctrl + 0...9"         ;  pattern= "^Ctrl[0-9]$"; },
+  { Text= "Alt  + Shift + 0...9" ;  pattern= "^AltShift[0-9]$"; },
+  { Text= "Ctrl + Shift + 0...9" ;  pattern= "^CtrlShift[0-9]$"; },
+  { Text= "Ctrl + Alt   + 0...9" ;  pattern= "^CtrlAlt[0-9]$"; },
+}
+
+local function MatchSwitchPattern(key)
+  return key:match(SwitchKeys[Data[SWK]].pattern)
+end
 
 local function CheckFileOverwrite(fname)
   local attr = win.GetFileAttr(fname)
@@ -36,28 +52,34 @@ local function NormIndex(idx)
 end
 
 local function LoadData()
-  Data = mf.mload(DB_Key, DB_Name) or {}
+  local data = mf.mload(DB_Key, DB_Name) or {}
   for i=1,MEMO_COUNT do
-    local tt = Data[i] or {}
+    local tt = data[i] or {}
     tt.FileName = tt.FileName or ("memo-%02d.txt"):format(i)
-    Data[i] = tt
+    data[i] = tt
   end
   -- Validation
-  Data.CurIndex = NormIndex(Data.CurIndex or 1)
+  data[CURIDX] = NormIndex(data[CURIDX] or 1)
+  -- Validation
+  local idx = math.floor(tonumber(data[SWK]) or 1)
+  data[SWK] = (idx >= 1 and idx <= #SwitchKeys) and idx or 1
+
+  return data
 end
 
-local function SaveData()
-  mf.msave(DB_Key, DB_Name, Data)
+local function SaveData(data)
+  mf.msave(DB_Key, DB_Name, data)
 end
 
-local function GetFileName(index)
+local function GetFileName()
+  local index = Data[CURIDX]
   return Data[index].FileName
 end
 
-local function GetMemoFilePath(index)
+local function GetMemoFilePath()
   local attr = win.GetFileAttr(MemoDir)
   if attr and attr:find("d") then
-    local fname = GetFileName(index)
+    local fname = GetFileName()
     return win.JoinPath(MemoDir, fname)
   end
   local msg = ("Directory \"%s\" does not exist"):format(MemoDir)
@@ -85,8 +107,8 @@ local function SaveFileContent(path, content)
   end
 end
 
-local function UpdateIndicator(hDlg, index)
-  index = NormIndex(index)
+local function UpdateIndicator(hDlg)
+  local index = NormIndex(Data[CURIDX])
   local cnt = 1
   local dot = utf8.char(0x2022)
   local indic = (dot.."1"):rep(MEMO_COUNT)..dot
@@ -100,18 +122,18 @@ end
 
 -- Save current memo content to file
 local function SaveCurrentMemo(hDlg)
-  local filepath = GetMemoFilePath(Data.CurIndex)
+  local filepath = GetMemoFilePath()
   if filepath then
     local content = hDlg:GetText(POS_MEMO)
     SaveFileContent(filepath, content)
   end
 end
 
-local function UpdateTitle(hDlg, index)
+local function UpdateTitle(hDlg)
   local ei = editor.GetInfo(EditorId)
   local W = ei.WindowSizeX
   local mark = (0 == bit64.band(ei.CurState, F.ECSTATE_MODIFIED)) and "" or "*"
-  local fileinfo = ("[%s%d] %s"):format(mark, index, GetFileName(index))
+  local fileinfo = ("[%s%d] %s"):format(mark, Data[CURIDX], GetFileName())
   local lineinfo = ("Line %3d/%d | Col %3d"):format(ei.CurLine, ei.TotalLines, ei.CurTabPos)
   local title = fileinfo
   local len = fileinfo:len() + lineinfo:len()
@@ -124,7 +146,7 @@ end
 -- Save current memo to external file
 local function SaveMemoAs(hDlg)
   -- Default: memo-01.txt ... memo-10.txt in home directory
-  local Name = GetFileName(Data.CurIndex)
+  local Name = GetFileName()
   local Path = win.JoinPath(far.GetMyHome(), Name)
   local destPath = far.InputBox(nil, "Save Memo", "Enter destination path:", "MemoSave",
                                 Path, nil, nil, "FIB_NONE")
@@ -134,7 +156,7 @@ local function SaveMemoAs(hDlg)
 end
 
 local function RenameMemo(hDlg)
-  local Name = GetFileName(Data.CurIndex)
+  local Name = GetFileName()
   local DestName = far.InputBox(nil, "Rename Memo", "Enter file name without path:", "MemoRename",
                                 Name, nil, nil, "FIB_NONE")
   if DestName then
@@ -144,7 +166,8 @@ local function RenameMemo(hDlg)
       if CheckFileOverwrite(fullname) then
         local content = hDlg:GetText(POS_MEMO)
         SaveFileContent(fullname, content)
-        Data[Data.CurIndex].FileName = name
+        local index = Data[CURIDX]
+        Data[index].FileName = name
         return true
       end
     end
@@ -152,7 +175,7 @@ local function RenameMemo(hDlg)
 end
 
 local function InitActions(hDlg)
-  local filepath = GetMemoFilePath(Data.CurIndex)
+  local filepath = GetMemoFilePath()
   if not filepath then
     return false
   end
@@ -162,25 +185,27 @@ local function InitActions(hDlg)
   local content = LoadFileContent(filepath)
   hDlg:SetText(POS_MEMO, content)
   editor.SetSavedState(EditorId, true)
-  local tt = Data[Data.CurIndex]
+  local index = Data[CURIDX]
+  local tt = Data[index]
   editor.SetPosition(EditorId, tt.CurLine, tt.CurPos)
 
-  UpdateTitle(hDlg, Data.CurIndex)
-  UpdateIndicator(hDlg, Data.CurIndex)
+  UpdateTitle(hDlg)
+  UpdateIndicator(hDlg)
   return true
 end
 
 local function CloseActions(hDlg, switching)
   -- save the memo being left (and its data)
   local info = editor.GetInfo(EditorId)
-  local tt = Data[Data.CurIndex]
+  local index = Data[CURIDX]
+  local tt = Data[index]
   tt.CurLine, tt.CurPos = info.CurLine, info.CurPos
   if 0 ~= bit64.band(info.CurState, F.ECSTATE_MODIFIED) then
     SaveCurrentMemo(hDlg)
   end
   -- switch index
-  Data.CurIndex = switching or Data.CurIndex
-  SaveData()
+  Data[CURIDX] = switching or Data[CURIDX]
+  SaveData(Data)
 end
 
 local function CalcDialogSize()
@@ -204,14 +229,32 @@ local function Resize(hDlg)
   hDlg:SetItemPosition(POS_TITLE,     { Left=1; Top=0;           Right=dlgSize.X-2; Bottom=0 })
   hDlg:SetItemPosition(POS_MEMO,      { Left=1; Top=1;           Right=dlgSize.X-2; Bottom=dlgSize.Y-2 })
   hDlg:SetItemPosition(POS_INDICATOR, { Left=1; Top=dlgSize.Y-1; Right=dlgSize.X-2; Bottom=dlgSize.Y-1 })
-  UpdateTitle(hDlg, Data.CurIndex)
+  UpdateTitle(hDlg)
   hDlg:EnableRedraw(true)
+end
+
+local function OpenConfigDialog()
+  local sd = require "far2.simpledialog"
+  local Items = {
+    { tp="dbox"; text="Configuration"; },
+    { tp="text"; text="Keys for memo selection:"; },
+    { tp="combobox"; list=SwitchKeys; dropdown=1; name=SWK; val=Data[SWK]; },
+    { tp="sep"; },
+    { tp="butt"; default=1; centergroup=1; text="OK"; },
+    { tp="butt"; cancel=1; centergroup=1; text="Cancel"; },
+  }
+  local Dlg = sd.New(Items)
+  local Out = Dlg:Run()
+  if Out then
+    Data[SWK] = Out[SWK]
+    SaveData(Data)
+  end
 end
 
 -- Create and run the memo dialog
 local function OpenMemoDialog()
   win.CreateDir(MemoDir)
-  LoadData()
+  Data = LoadData()
 
   local dlgSize = CalcDialogSize()
   local Items = {
@@ -233,15 +276,12 @@ local function OpenMemoDialog()
       if Param1 == POS_MEMO then
         local key = far.KeyToName(Param2)
 
-        if key == "F1" then
-          far.ShowHelp(ThisDir, "Contents", F.FHELP_CUSTOMPATH)
-
-        elseif key == "ShiftF2" then -- Save As
+        if key == "ShiftF2" then -- Save As
           SaveMemoAs(hDlg)
 
         elseif key == "ShiftF6" then -- Rename
           if RenameMemo(hDlg) then
-            switching = Data.CurIndex
+            switching = Data[CURIDX]
             hDlg:Close() -- update highlighting as the extension may have changed
           end
 
@@ -250,8 +290,12 @@ local function OpenMemoDialog()
           Resize(hDlg)
           return true -- for not toggling the ShowWhiteSpace option caused by F5
 
-        -- Alt+0-9: switch memo
-        elseif key:match("^AltShift[0-9]$") then
+        elseif key == "F9" or key == "AltShiftF9" then
+          OpenConfigDialog()
+          return true
+
+        -- Switch memo
+        elseif MatchSwitchPattern(key) then
           local idx = tonumber(key:match("[0-9]"))
           switching = (idx == 0) and 10 or idx
           hDlg:Close() -- update highlighting as the extension may have changed
@@ -283,7 +327,8 @@ local function OpenMemoDialog()
   end
 
   local Flags = F.FDLG_KEEPCONSOLETITLE
-  far.Dialog(nil, -1, -1, dlgSize.X, dlgSize.Y, nil, Items, Flags, DlgProc)
+  local HelpTopic = "<"..ThisDir..">Contents"
+  far.Dialog(nil, -1, -1, dlgSize.X, dlgSize.Y, HelpTopic, Items, Flags, DlgProc)
   return switching
 end
 
@@ -294,7 +339,7 @@ Event {
     if id == EditorId and event == F.EE_REDRAW then
       local wi = actl.GetWindowInfo()
       if wi and wi.Type == F.WTYPE_DIALOG then
-        UpdateTitle(wi.Id, Data.CurIndex)
+        UpdateTitle(wi.Id)
       end
     end
   end;
@@ -302,11 +347,14 @@ Event {
 
 Macro {
   id="D27C6B7D-0343-42D4-A339-1ACEF32E142C";
-  description="A replica of Memo plugin";
+  description="Memo application";
   area="Common"; key="CtrlAltM";
   action=function()
     -- use mf.acall to avoid seeing "P" in the upper left screen corner
     FullScreen = false
-    mf.acall(function() while OpenMemoDialog() do end end)
+    mf.acall(
+      function()
+        while OpenMemoDialog() do end
+      end)
   end;
 }

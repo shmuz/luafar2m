@@ -1,4 +1,5 @@
 .Language=English,English
+.PluginContents=Memo application
 .Options CtrlStartPosChar=^<wrap>
 
 @Contents
@@ -8,12 +9,13 @@ $^#Memo#
 
  #The following keys may be used:#
 
-   #Alt+Shift+0...9#  Switch to another memo
+   #Alt+0...9#         Switch to another memo (can be changed via Configuration dialog)
    #Mouse click on indicator#  Switch to another memo
-   #Esc#              Exit
-   #F5#               Toggle full screen mode
-   #Shift+F2#         Save as... (the path may be changed)
-   #Shift+F6#         Rename the current memo (no path change)
+   #Esc#               Exit
+   #F5#                Toggle full screen mode
+   #F9, Alt+Shift+F9#  Configuration dialog
+   #Shift+F2#          Save as... (the path may be changed)
+   #Shift+F6#          Rename the current memo (no path change)
 
  #Notes#
    #—# Exiting and switching between memos automatically save
