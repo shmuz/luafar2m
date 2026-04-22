@@ -9,13 +9,15 @@ $^#Memo#
 
  #The following keys may be used:#
 
-   #Alt+0...9#         Switch to another memo (can be changed via Configuration dialog)
+   #Alt+0...9#         Switch to another memo #(*)#
    #Mouse click on indicator#  Switch to another memo
    #Esc#               Exit
-   #F5#                Toggle full screen mode
+   #F5#                Toggle full screen mode #(*)#
    #F9, Alt+Shift+F9#  Configuration dialog
    #Shift+F2#          Save as... (the path may be changed)
    #Shift+F6#          Rename the current memo (no path change)
+
+   #(*)# the setting can be changed via Configuration dialog.
 
  #Notes#
    #—# Exiting and switching between memos automatically save

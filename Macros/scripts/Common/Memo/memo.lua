@@ -1,37 +1,48 @@
 -- Start date    :  2026-02-27
 -- Original      :  C++ far2l plugin "Memo" by "stpork" (https://github.com/stpork)
 -- License       :  GNU GPL (as the original plugin)
--- Far plugin    :  LuaMacro
+-- Far2m plugin  :  LuaMacro
 
 local DB_Key  = "shmuz"
 local DB_Name = "Memo"
 local MemoDir = far.InMyConfig("plugins/luafar/memo_files")
 
-local MEMO_COUNT  = 10
+local MEMO_COUNT = 10
 local POS_TITLE = 1     -- Dialog title
 local POS_MEMO  = 2     -- Main memo editor (DI_MEMOEDIT)
 local POS_INDICATOR = 3 -- Page indicator at bottom
 
 -- These are used as keys in saved data
-local CURIDX = "CurIndex"
-local SWK    = "SwitchKeys"
+local CURIDX  = "CurIndex"
+local SWITCHK = "SwitchKeys"
+local FULLSCR = "FullScreenKeys"
 
 local ThisDir = (...):match(".+/")
 local F = far.Flags
-local Data
-local EditorId
-local FullScreen
+local mData
+local mEditorId
+local mFullScreen
 
-local SwitchKeys = {
-  { Text= "Alt  + 0...9"         ;  pattern= "^Alt[0-9]$"; },
-  { Text= "Ctrl + 0...9"         ;  pattern= "^Ctrl[0-9]$"; },
-  { Text= "Alt  + Shift + 0...9" ;  pattern= "^AltShift[0-9]$"; },
-  { Text= "Ctrl + Shift + 0...9" ;  pattern= "^CtrlShift[0-9]$"; },
-  { Text= "Ctrl + Alt   + 0...9" ;  pattern= "^CtrlAlt[0-9]$"; },
+local SwitchKeyList = {
+  { Text= "Alt+0...9"        ; pattern= "^Alt[0-9]$"; },
+  { Text= "Ctrl+0...9"       ; pattern= "^Ctrl[0-9]$"; },
+  { Text= "Alt+Shift+0...9"  ; pattern= "^AltShift[0-9]$"; },
+  { Text= "Ctrl+Shift+0...9" ; pattern= "^CtrlShift[0-9]$"; },
+  { Text= "Ctrl+Alt+0...9"   ; pattern= "^CtrlAlt[0-9]$"; },
 }
 
-local function MatchSwitchPattern(key)
-  return key:match(SwitchKeys[Data[SWK]].pattern)
+local function MatchSwitchMemoPattern(key)
+  return key:match(SwitchKeyList[mData[SWITCHK]].pattern)
+end
+
+local FullScreenKeyList = {
+  { Text= "F5"       ; key= "F5"; },
+  { Text= "Alt+F5"   ; key= "AltF5"; },
+  { Text= "Shift+F5" ; key= "ShiftF5"; },
+}
+
+local function MatchFullScreenPattern(key)
+  return key == FullScreenKeyList[mData[FULLSCR]].key
 end
 
 local function CheckFileOverwrite(fname)
@@ -47,8 +58,9 @@ local function CheckFileOverwrite(fname)
   end
 end
 
-local function NormIndex(idx)
-  return idx >= 1 and idx <= MEMO_COUNT and idx or 1
+local function Normalize(val, low, high, default)
+  val = math.floor(tonumber(val) or default)
+  return val >= low and val <= high and val or default
 end
 
 local function LoadData()
@@ -58,12 +70,10 @@ local function LoadData()
     tt.FileName = tt.FileName or ("memo-%02d.txt"):format(i)
     data[i] = tt
   end
-  -- Validation
-  data[CURIDX] = NormIndex(data[CURIDX] or 1)
-  -- Validation
-  local idx = math.floor(tonumber(data[SWK]) or 1)
-  data[SWK] = (idx >= 1 and idx <= #SwitchKeys) and idx or 1
-
+  -- Normalization
+  data[CURIDX]  = Normalize(data[CURIDX],  1, MEMO_COUNT, 1)
+  data[SWITCHK] = Normalize(data[SWITCHK], 1, #SwitchKeyList, 1)
+  data[FULLSCR] = Normalize(data[FULLSCR], 1, #FullScreenKeyList, 1)
   return data
 end
 
@@ -72,8 +82,8 @@ local function SaveData(data)
 end
 
 local function GetFileName()
-  local index = Data[CURIDX]
-  return Data[index].FileName
+  local index = mData[CURIDX]
+  return mData[index].FileName
 end
 
 local function GetMemoFilePath()
@@ -87,10 +97,12 @@ local function GetMemoFilePath()
   return nil
 end
 
--- Load file content
 local function LoadFileContent(path)
   local fp = io.open(path)
   if fp then
+    if fp:read(3) ~= "\239\187\191" then -- skip UTF-8 BOM
+      fp:seek("set", 0)
+    end
     local content = fp:read("*all")
     fp:close()
     return content
@@ -98,7 +110,6 @@ local function LoadFileContent(path)
   return ""
 end
 
--- Save file content
 local function SaveFileContent(path, content)
   local fp = io.open(path, "w")
   if fp then
@@ -108,12 +119,11 @@ local function SaveFileContent(path, content)
 end
 
 local function UpdateIndicator(hDlg)
-  local index = NormIndex(Data[CURIDX])
   local cnt = 1
   local dot = utf8.char(0x2022)
   local indic = (dot.."1"):rep(MEMO_COUNT)..dot
   indic = indic:gsub("1", function()
-      local c = (cnt == index and "[&%d]" or " %d "):format(cnt % MEMO_COUNT)
+      local c = (cnt == mData[CURIDX] and "[&%d]" or " %d "):format(cnt % MEMO_COUNT)
       cnt = cnt + 1
       return c
     end)
@@ -130,10 +140,10 @@ local function SaveCurrentMemo(hDlg)
 end
 
 local function UpdateTitle(hDlg)
-  local ei = editor.GetInfo(EditorId)
+  local ei = editor.GetInfo(mEditorId)
   local W = ei.WindowSizeX
   local mark = (0 == bit64.band(ei.CurState, F.ECSTATE_MODIFIED)) and "" or "*"
-  local fileinfo = ("[%s%d] %s"):format(mark, Data[CURIDX], GetFileName())
+  local fileinfo = ("[%s%d] %s"):format(mark, mData[CURIDX], GetFileName())
   local lineinfo = ("Line %3d/%d | Col %3d"):format(ei.CurLine, ei.TotalLines, ei.CurTabPos)
   local title = fileinfo
   local len = fileinfo:len() + lineinfo:len()
@@ -166,8 +176,8 @@ local function RenameMemo(hDlg)
       if CheckFileOverwrite(fullname) then
         local content = hDlg:GetText(POS_MEMO)
         SaveFileContent(fullname, content)
-        local index = Data[CURIDX]
-        Data[index].FileName = name
+        local index = mData[CURIDX]
+        mData[index].FileName = name
         return true
       end
     end
@@ -179,33 +189,33 @@ local function InitActions(hDlg)
   if not filepath then
     return false
   end
-  EditorId = hDlg:GetMemoEditId(POS_MEMO)
-  editor.SetVirtualFileName(EditorId, filepath)
+  mEditorId = hDlg:GetMemoEditId(POS_MEMO)
+  editor.SetVirtualFileName(mEditorId, filepath)
 
   local content = LoadFileContent(filepath)
   hDlg:SetText(POS_MEMO, content)
-  editor.SetSavedState(EditorId, true)
-  local index = Data[CURIDX]
-  local tt = Data[index]
-  editor.SetPosition(EditorId, tt.CurLine, tt.CurPos)
+  editor.SetSavedState(mEditorId, true)
+  local index = mData[CURIDX]
+  local tt = mData[index]
+  editor.SetPosition(mEditorId, tt.CurLine, tt.CurPos)
 
   UpdateTitle(hDlg)
   UpdateIndicator(hDlg)
   return true
 end
 
-local function CloseActions(hDlg, switching)
+local function CloseActions(hDlg, newindex)
   -- save the memo being left (and its data)
-  local info = editor.GetInfo(EditorId)
-  local index = Data[CURIDX]
-  local tt = Data[index]
+  local info = editor.GetInfo(mEditorId)
+  local index = mData[CURIDX]
+  local tt = mData[index]
   tt.CurLine, tt.CurPos = info.CurLine, info.CurPos
   if 0 ~= bit64.band(info.CurState, F.ECSTATE_MODIFIED) then
     SaveCurrentMemo(hDlg)
   end
   -- switch index
-  Data[CURIDX] = switching or Data[CURIDX]
-  SaveData(Data)
+  mData[CURIDX] = newindex or mData[CURIDX]
+  SaveData(mData)
 end
 
 local function CalcDialogSize()
@@ -216,8 +226,8 @@ local function CalcDialogSize()
     scrHeight = scrRect.Bottom - scrRect.Top + 1
   end
   return {
-    X = FullScreen and scrWidth  or math.max(43, scrWidth-22);
-    Y = FullScreen and scrHeight or math.max(5, scrHeight-12);
+    X = mFullScreen and scrWidth  or math.max(43, scrWidth-22);
+    Y = mFullScreen and scrHeight or math.max(5, scrHeight-12);
   }
 end
 
@@ -237,8 +247,12 @@ local function OpenConfigDialog()
   local sd = require "far2.simpledialog"
   local Items = {
     { tp="dbox"; text="Configuration"; },
+
     { tp="text"; text="Keys for memo selection:"; },
-    { tp="combobox"; list=SwitchKeys; dropdown=1; name=SWK; val=Data[SWK]; },
+    { tp="combobox"; list=SwitchKeyList; dropdown=1; name=SWITCHK; val=mData[SWITCHK]; },
+    { tp="text"; text="Key for full screen toggling:"; },
+    { tp="combobox"; list=FullScreenKeyList; dropdown=1; name=FULLSCR; val=mData[FULLSCR]; },
+
     { tp="sep"; },
     { tp="butt"; default=1; centergroup=1; text="OK"; },
     { tp="butt"; cancel=1; centergroup=1; text="Cancel"; },
@@ -246,15 +260,16 @@ local function OpenConfigDialog()
   local Dlg = sd.New(Items)
   local Out = Dlg:Run()
   if Out then
-    Data[SWK] = Out[SWK]
-    SaveData(Data)
+    mData[SWITCHK] = Out[SWITCHK]
+    mData[FULLSCR] = Out[FULLSCR]
+    SaveData(mData)
   end
 end
 
 -- Create and run the memo dialog
 local function OpenMemoDialog()
   win.CreateDir(MemoDir)
-  Data = LoadData()
+  mData = LoadData()
 
   local dlgSize = CalcDialogSize()
   local Items = {
@@ -263,7 +278,7 @@ local function OpenMemoDialog()
     { F.DI_TEXT,     1, dlgSize.Y-1, dlgSize.X, 0,   nil, nil, nil, F.DIF_CENTERTEXT, ""},
   }
 
-  local switching
+  local newIndex
   local wasError
 
   local function DlgProc(hDlg, Msg, Param1, Param2)
@@ -281,26 +296,28 @@ local function OpenMemoDialog()
 
         elseif key == "ShiftF6" then -- Rename
           if RenameMemo(hDlg) then
-            switching = Data[CURIDX]
+            newIndex = mData[CURIDX]
             hDlg:Close() -- update highlighting as the extension may have changed
           end
 
-        elseif key == "F5" then
-          FullScreen = not FullScreen
-          Resize(hDlg)
-          return true -- for not toggling the ShowWhiteSpace option caused by F5
-
         elseif key == "F9" or key == "AltShiftF9" then
           OpenConfigDialog()
-          return true
+
+        elseif MatchFullScreenPattern(key) then
+          mFullScreen = not mFullScreen
+          Resize(hDlg)
 
         -- Switch memo
-        elseif MatchSwitchPattern(key) then
+        elseif MatchSwitchMemoPattern(key) then
           local idx = tonumber(key:match("[0-9]"))
-          switching = (idx == 0) and 10 or idx
+          newIndex = (idx == 0) and 10 or idx
           hDlg:Close() -- update highlighting as the extension may have changed
 
+        else
+          return nil -- tell Far the key wasn't processed
+
         end
+        return true -- tell Far the key was processed
       end
 
     elseif Msg == F.DN_MOUSECLICK then
@@ -310,15 +327,15 @@ local function OpenMemoDialog()
         local IW = 41                               -- Indicators width.
         local X = Param2.MousePositionX - R.Left    -- Relative click X position.
         local X0 = math.floor((DW - IW) / 2)        -- The X of the 1-st indicator left edge.
-        local Which = math.ceil((X - X0) / 4)       -- Each indicator occupies 4 cells.
-        if Which >= 1 and Which <= 10 then
-          switching = Which
+        local index = math.ceil((X - X0) / 4)       -- Each indicator occupies 4 cells.
+        if index >= 1 and index <= 10 then
+          newIndex = index
           hDlg:Close() -- update highlighting as the extension may have changed
         end
       end
 
     elseif Msg == F.DN_CLOSE then
-      if not wasError then CloseActions(hDlg, switching) end
+      if not wasError then CloseActions(hDlg, newIndex) end
 
     elseif Msg == F.DN_RESIZECONSOLE then
       Resize(hDlg)
@@ -329,14 +346,14 @@ local function OpenMemoDialog()
   local Flags = F.FDLG_KEEPCONSOLETITLE
   local HelpTopic = "<"..ThisDir..">Contents"
   far.Dialog(nil, -1, -1, dlgSize.X, dlgSize.Y, HelpTopic, Items, Flags, DlgProc)
-  return switching
+  return newIndex
 end
 
 Event {
   group="EditorEvent";
   description="Memo editor: update title";
   action=function(id, event, param)
-    if id == EditorId and event == F.EE_REDRAW then
+    if id == mEditorId and event == F.EE_REDRAW then
       local wi = actl.GetWindowInfo()
       if wi and wi.Type == F.WTYPE_DIALOG then
         UpdateTitle(wi.Id)
@@ -351,7 +368,7 @@ Macro {
   area="Common"; key="CtrlAltM";
   action=function()
     -- use mf.acall to avoid seeing "P" in the upper left screen corner
-    FullScreen = false
+    mFullScreen = false
     mf.acall(
       function()
         while OpenMemoDialog() do end
