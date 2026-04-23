@@ -27,6 +27,7 @@ local mData
 local mEditorId
 local mFullScreen
 local mUseBom
+local m_hDlg
 
 local function ErrMsg(fmt, ...)
   far.Message(fmt:format(...), "Error", nil, "w")
@@ -137,14 +138,11 @@ local function SaveFileContent(path, content)
 end
 
 local function UpdateIndicator(hDlg)
-  local cnt = 1
   local dot = utf8.char(0x2022)
-  local indic = (dot.."1"):rep(MEMO_COUNT)..dot
-  indic = indic:gsub("1", function()
-      local c = (cnt == mData[CURIDX] and "[&%d]" or " %d "):format(cnt % 10)
-      cnt = cnt + 1
-      return c
-    end)
+  local indic = dot
+  for k=1,MEMO_COUNT do
+    indic = (k == mData[CURIDX] and "%s[&%d]%s" or "%s %d %s"):format(indic, k % 10, dot)
+  end
   hDlg:SetText(POS_INDICATOR, indic)
 end
 
@@ -377,7 +375,11 @@ local function OpenMemoDialog()
 
   local Flags = F.FDLG_KEEPCONSOLETITLE
   local HelpTopic = "<"..ThisDir..">Contents"
-  far.Dialog(win.Uuid(MainDialogId), -1, -1, dlgSize.X, dlgSize.Y, HelpTopic, Items, Flags, DlgProc)
+  local hDlg = far.DialogInit(win.Uuid(MainDialogId), -1, -1, dlgSize.X, dlgSize.Y,
+                              HelpTopic, Items, Flags, DlgProc)
+  m_hDlg = hDlg
+  far.DialogRun(hDlg)
+  far.DialogFree(hDlg)
   return newIndex
 end
 
@@ -386,10 +388,7 @@ Event {
   description="Memo editor: update title";
   action=function(id, event, param)
     if id == mEditorId and event == F.EE_REDRAW then
-      local wi = actl.GetWindowInfo()
-      if wi and wi.Type == F.WTYPE_DIALOG then
-        UpdateTitle(wi.Id)
-      end
+      UpdateTitle(m_hDlg)
     end
   end;
 }

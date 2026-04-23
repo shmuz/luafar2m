@@ -1,9 +1,9 @@
 Macro {
   id="A4956445-6F20-48A0-956E-E6BAA86F6646";
   description="Show dialog/menu ID";
-  area="Dialog Menu Disks UserMenu";  key="CtrlG";
+  area="Dialog Menu Disks UserMenu MemoEdit";  key="CtrlG";
   action=function()
-    local Id = Area.Dialog and Dlg.Id or Menu.Id
+    local Id = (Area.Dialog or Area.MemoEdit) and Dlg.Id or Menu.Id
     local quotId = '"' .. Id .. '"'
     local fullname, text
     for name,guid in pairs(far.Guids or {}) do
