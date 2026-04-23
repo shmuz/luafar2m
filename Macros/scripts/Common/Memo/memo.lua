@@ -6,6 +6,8 @@
 local DB_Key  = "shmuz"
 local DB_Name = "Memo"
 local MemoDir = far.InMyConfig("plugins/luafar/memo_files")
+local MainDialogId = "37316E1D-A58E-40CE-9593-15E86984930C"
+local ConfigDialogId = "F2912E1A-64E7-49D4-83D4-D3093E4D91E2"
 
 local MEMO_COUNT = 10
 local POS_TITLE = 1     -- Dialog title
@@ -221,22 +223,23 @@ local function InitActions(hDlg)
   return true
 end
 
-local function CloseActions(hDlg, newindex)
-  -- save the memo being left (and its data)
+local function CloseActions(hDlg, newIndex)
   local info = editor.GetInfo(mEditorId)
   if 0 ~= bit64.band(info.CurState, F.ECSTATE_MODIFIED) then
     if not SaveCurrentMemo(hDlg) then
-      if 1 == far.Message("Error occurred. Continue anyway?", "Error", "&No;&Yes", "w")
-        then return false
+      if 2 ~= far.Message("Error occurred. Continue anyway?", "Error", "&No;&Yes", "w") then
+        return false
       end
     end
   end
-  -- refresh the current file data
+  -- get params of the current memo
   local index = mData[CURIDX]
-  local tt = mData[index]
-  tt.CurLine, tt.CurPos = info.CurLine, info.CurPos
-  -- switch the index
-  mData[CURIDX] = newindex or mData[CURIDX]
+  local item = mData[index]
+  item.CurLine, item.CurPos = info.CurLine, info.CurPos
+  -- update the index
+  if newIndex then
+    mData[CURIDX] = newIndex
+  end
   SaveData(mData)
   return true
 end
@@ -269,6 +272,7 @@ end
 local function OpenConfigDialog()
   local sd = require "far2.simpledialog"
   local Items = {
+    guid = ConfigDialogId;
     { tp="dbox"; text="Configuration"; },
 
     { tp="text"; text="Keys for memo selection:"; },
@@ -332,7 +336,7 @@ local function OpenMemoDialog()
           mFullScreen = not mFullScreen
           Resize(hDlg)
 
-        -- Switch memo
+        -- Switch memo by a key combination
         elseif MatchSwitchMemoPattern(key) then
           local idx = tonumber(key:match("[0-9]"))
           newIndex = (idx == 0) and 10 or idx
@@ -345,6 +349,7 @@ local function OpenMemoDialog()
         return true -- tell Far the key was processed
       end
 
+    -- Switch memo by a mouse click
     elseif Msg == F.DN_MOUSECLICK then
       if Param1 == POS_INDICATOR then
         local R = hDlg:GetDlgRect()                 -- Dialog rectangle.
@@ -360,8 +365,14 @@ local function OpenMemoDialog()
       end
 
     elseif Msg == F.DN_CLOSE then
-      if wasError or CloseActions(hDlg,newIndex) then return nil end -- allow to close the dialog
-      return 0 -- don't close
+      if wasError then -- allow to close the dialog
+        newIndex = nil
+      elseif CloseActions(hDlg, newIndex) then
+        newIndex = newIndex -- for luacheck
+      else
+        newIndex = nil
+        return 0 -- don't close the dialog
+      end
 
     elseif Msg == F.DN_RESIZECONSOLE then
       Resize(hDlg)
@@ -371,7 +382,7 @@ local function OpenMemoDialog()
 
   local Flags = F.FDLG_KEEPCONSOLETITLE
   local HelpTopic = "<"..ThisDir..">Contents"
-  far.Dialog(nil, -1, -1, dlgSize.X, dlgSize.Y, HelpTopic, Items, Flags, DlgProc)
+  far.Dialog(win.Uuid(MainDialogId), -1, -1, dlgSize.X, dlgSize.Y, HelpTopic, Items, Flags, DlgProc)
   return newIndex
 end
 
@@ -391,11 +402,13 @@ Event {
 Macro {
   id="D27C6B7D-0343-42D4-A339-1ACEF32E142C";
   description="Memo application";
-  area="Common"; key="CtrlAltM";
+  area="Common"; key="AltShiftM";
+  condition=function() -- prevent opening multiple instances
+    return Dlg.Id ~= MainDialogId and Dlg.Id ~= ConfigDialogId
+  end;
   action=function()
-    -- use mf.acall to avoid seeing "P" in the upper left screen corner
     mFullScreen = false
-    mf.acall(
+    mf.acall(    -- use mf.acall to avoid seeing "P" in the upper left screen corner
       function()
         while OpenMemoDialog() do end
       end)
