@@ -20,10 +20,13 @@ local SWITCHK = "SwitchKeys"
 local FULLSCR = "FullScreenKeys"
 
 local ThisDir = (...):match(".+/")
+local BOM = "\239\187\191" -- UTF-8 BOM
 local F = far.Flags
+
 local mData
 local mEditorId
 local mFullScreen
+local mUseBom
 
 local function ErrMsg(fmt, ...)
   far.Message(fmt:format(...), "Error", nil, "w")
@@ -97,9 +100,11 @@ local function GetCurFilePath()
 end
 
 local function LoadFileContent(path)
+  mUseBom = false
   local fp = io.open(path)
   if fp then
-    if fp:read(3) ~= "\239\187\191" then -- UTF-8 BOM
+    mUseBom = (fp:read(#BOM) == BOM)
+    if not mUseBom then
       fp:seek("set", 0)
     end
     local content = fp:read("*all") or ""
@@ -117,6 +122,7 @@ local function SaveFileContent(path, content)
     return false
   end
 
+  if mUseBom then fp:write(BOM) end
   fp:write(content)
   fp:close()
 
@@ -205,9 +211,6 @@ end
 
 local function InitActions(hDlg)
   local filepath = GetCurFilePath()
-  if not filepath then
-    return false
-  end
   mEditorId = hDlg:GetMemoEditId(POS_MEMO)
   editor.SetVirtualFileName(mEditorId, filepath)
 
@@ -220,7 +223,6 @@ local function InitActions(hDlg)
 
   UpdateTitle(hDlg)
   UpdateIndicator(hDlg)
-  return true
 end
 
 local function CloseActions(hDlg, newIndex)
@@ -308,13 +310,10 @@ local function OpenMemoDialog()
   }
 
   local newIndex
-  local wasError
 
   local function DlgProc(hDlg, Msg, Param1, Param2)
     if Msg == F.DN_INITDIALOG then
-      if not InitActions(hDlg) then
-        wasError = true; hDlg:Close()
-      end
+      InitActions(hDlg)
 
     elseif Msg == F.DN_KEY then
       if Param1 == POS_MEMO then
@@ -365,11 +364,7 @@ local function OpenMemoDialog()
       end
 
     elseif Msg == F.DN_CLOSE then
-      if wasError then -- allow to close the dialog
-        newIndex = nil
-      elseif CloseActions(hDlg, newIndex) then
-        newIndex = newIndex -- for luacheck
-      else
+      if not CloseActions(hDlg, newIndex) then
         newIndex = nil
         return 0 -- don't close the dialog
       end
