@@ -1,7 +1,8 @@
 -- Start date    :  2026-02-27
 -- Original      :  C++ far2l plugin "Memo" by "stpork" (https://github.com/stpork)
 -- License       :  GNU GPL (as the original plugin)
--- Far2m plugin  :  LuaMacro
+-- Portability   :  far2m, Linux only
+-- Far plugin    :  LuaMacro
 
 local DB_Key  = "shmuz"
 local DB_Name = "Memo"
@@ -13,6 +14,7 @@ local MEMO_COUNT = 10
 local POS_TITLE = 1     -- Dialog title
 local POS_MEMO  = 2     -- Main memo editor (DI_MEMOEDIT)
 local POS_INDICATOR = 3 -- Page indicator at bottom
+local QUIT = "quit"
 
 -- These are used as keys in saved data
 local CURIDX  = "CurIndex"
@@ -58,7 +60,7 @@ end
 local function CheckFileOverwrite(fname)
   local attr = win.GetFileAttr(fname)
   if attr and attr:find("d") then
-    far.Message(("\"%s\" is a directory"):format(fname))
+    ErrMsg("\"%s\" is a directory", fname)
     return false
   elseif attr then
     local msg = ("File \"%s\" already exists. Overwrite?"):format(fname)
@@ -154,17 +156,21 @@ local function SaveCurrentMemo(hDlg)
 end
 
 local function UpdateTitle(hDlg)
-  local ei = editor.GetInfo(mEditorId)
-  local W = ei.WindowSizeX
-  local mark = (0 == bit64.band(ei.CurState, F.ECSTATE_MODIFIED)) and "" or "*"
-  local fileinfo = ("[%s%d] %s"):format(mark, mData[CURIDX], GetCurFileName())
-  local lineinfo = ("Line %3d/%d | Col %3d"):format(ei.CurLine, ei.TotalLines, ei.CurTabPos)
-  local title = fileinfo
-  local len = fileinfo:len() + lineinfo:len()
-  if len <= W - 2 then
-    title = fileinfo .. (" "):rep(W - 2 - len) .. lineinfo
+  local EI = editor.GetInfo(mEditorId)
+  if EI then
+    local W = EI.WindowSizeX
+    local mark = (0 == bit64.band(EI.CurState, F.ECSTATE_MODIFIED)) and "" or "*"
+    local fileinfo = ("[%s%d] %s"):format(mark, mData[CURIDX], GetCurFileName())
+    local lineinfo = ("Line %3d/%d | Col %3d"):format(EI.CurLine, EI.TotalLines, EI.CurTabPos)
+    local title = fileinfo
+    local len = fileinfo:len() + lineinfo:len()
+    if len <= W - 2 then
+      title = fileinfo .. (" "):rep(W - 2 - len) .. lineinfo
+    end
+    hDlg:SetText(POS_TITLE, title)
+  else
+    hDlg:SetText(POS_TITLE, "Error: could not retrieve editor info")
   end
-  hDlg:SetText(POS_TITLE, title)
 end
 
 -- Save current memo to external file
@@ -225,6 +231,11 @@ end
 
 local function CloseActions(hDlg, newIndex)
   local info = editor.GetInfo(mEditorId)
+  if not info then
+    ErrMsg("Could not retrieve editor info. Exiting.")
+    return QUIT
+  end
+
   if 0 ~= bit64.band(info.CurState, F.ECSTATE_MODIFIED) then
     if not SaveCurrentMemo(hDlg) then
       if 2 ~= far.Message("Error occurred. Continue anyway?", "Error", "&No;&Yes", "w") then
@@ -293,7 +304,6 @@ local function OpenConfigDialog()
   end
 end
 
--- Create and run the memo dialog
 local function OpenMemoDialog()
   local ok, msg = win.CreateDir(MemoDir, true)
   if not ok then ErrMsg("%s", msg); return; end
@@ -362,7 +372,10 @@ local function OpenMemoDialog()
       end
 
     elseif Msg == F.DN_CLOSE then
-      if not CloseActions(hDlg, newIndex) then
+      local ret = CloseActions(hDlg, newIndex)
+      if ret == QUIT then
+        newIndex = nil
+      elseif not ret then
         newIndex = nil
         return 0 -- don't close the dialog
       end
@@ -396,10 +409,7 @@ Event {
 Macro {
   id="D27C6B7D-0343-42D4-A339-1ACEF32E142C";
   description="Memo application";
-  area="Common"; key="AltShiftM";
-  condition=function() -- prevent opening multiple instances
-    return Dlg.Id ~= MainDialogId and Dlg.Id ~= ConfigDialogId
-  end;
+  area="Shell QView Info Tree Editor Viewer"; key="AltShiftM";
   action=function()
     mFullScreen = false
     mf.acall(    -- use mf.acall to avoid seeing "P" in the upper left screen corner

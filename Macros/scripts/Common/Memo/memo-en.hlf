@@ -5,22 +5,26 @@
 @Contents
 $^#Memo#
  #What is it#
-   A simple memo application, inspired by the Far2l plugin of the same name.
+   A memo application, inspired by the Far2l plugin of the same name.
 
- #The following keys may be used:#
+ #Keys#
+   #Alt+0...9#                 Switch to another memo #(*)#
+   #Mouse click on indicator#  Switch to another memo (status line)
+   #Esc#                       Exit
 
-   #Alt+0...9#         Switch to another memo #(*)#
-   #Mouse click on indicator#  Switch to another memo
-   #Esc#               Exit
-   #F5#                Toggle full screen mode #(*)#
-   #F9, Alt+Shift+F9#  Configuration dialog
-   #Shift+F2#          Save as... (the path may be changed)
-   #Shift+F6#          Rename the current memo (no path change)
+   #Shift+F2#                  Save as... (choose a different path/name)
+   #Shift+F6#                  Rename the current memo (name only; path unchanged)
 
-   #(*)# the setting can be changed via Configuration dialog.
+   #F5#                        Toggle fullscreen mode #(*)#
+   #F9, Alt+Shift+F9#          Configuration dialog
+
+   #(*)# This setting can be changed in the Configuration dialog.
 
  #Notes#
-   #—# Exiting and switching between memos automatically save
-the current memo if it was modified.
+   #—# When you exit or switch memos, the current memo is saved automatically
+   if it was modified.
 
-   #—# Text highlighting depends on file name extension (as in the Far editor).
+   #—# Text highlighting depends on the file name extension (as in the Far editor).
+
+   #—# Memo storage directory:
+   #far.InMyConfig("plugins/luafar/memo_files")#
