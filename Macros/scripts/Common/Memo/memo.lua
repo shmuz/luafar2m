@@ -85,19 +85,13 @@ local function SaveData(data)
   mf.msave(DB_Key, DB_Name, data)
 end
 
-local function GetFileName()
+local function GetCurFileName()
   local index = mData[CURIDX]
   return mData[index].FileName
 end
 
-local function GetMemoFilePath()
-  local attr = win.GetFileAttr(MemoDir)
-  if attr and attr:find("d") then
-    local fname = GetFileName()
-    return win.JoinPath(MemoDir, fname)
-  end
-  ErrMsg("Directory \"%s\" does not exist", MemoDir)
-  return nil
+local function GetCurFilePath()
+  return win.JoinPath(MemoDir, GetCurFileName())
 end
 
 local function LoadFileContent(path)
@@ -148,18 +142,16 @@ end
 
 -- Save current memo content to file
 local function SaveCurrentMemo(hDlg)
-  local filepath = GetMemoFilePath()
-  if filepath then
-    local content = hDlg:GetText(POS_MEMO)
-    SaveFileContent(filepath, content)
-  end
+  local filepath = GetCurFilePath()
+  local content = hDlg:GetText(POS_MEMO)
+  return SaveFileContent(filepath, content)
 end
 
 local function UpdateTitle(hDlg)
   local ei = editor.GetInfo(mEditorId)
   local W = ei.WindowSizeX
   local mark = (0 == bit64.band(ei.CurState, F.ECSTATE_MODIFIED)) and "" or "*"
-  local fileinfo = ("[%s%d] %s"):format(mark, mData[CURIDX], GetFileName())
+  local fileinfo = ("[%s%d] %s"):format(mark, mData[CURIDX], GetCurFileName())
   local lineinfo = ("Line %3d/%d | Col %3d"):format(ei.CurLine, ei.TotalLines, ei.CurTabPos)
   local title = fileinfo
   local len = fileinfo:len() + lineinfo:len()
@@ -172,7 +164,7 @@ end
 -- Save current memo to external file
 local function SaveMemoAs(hDlg)
   -- Default: memo-01.txt ... memo-10.txt in home directory
-  local Name = GetFileName()
+  local Name = GetCurFileName()
   local Path = win.JoinPath(far.GetMyHome(), Name)
   local destPath = far.InputBox(nil, "Save Memo", "Enter destination path:", "MemoSave",
                                 Path, nil, nil, "FIB_NONE")
@@ -182,26 +174,35 @@ local function SaveMemoAs(hDlg)
 end
 
 local function RenameMemo(hDlg)
-  local Name = GetFileName()
-  local DestName = far.InputBox(nil, "Rename Memo", "Enter file name without path:", "MemoRename",
-                                Name, nil, nil, "FIB_NONE")
-  if DestName then
-    local name = DestName:match("[^/]+$")
-    if name then
-      local fullname = win.JoinPath(MemoDir, name)
-      if CheckFileOverwrite(fullname) then
-        local content = hDlg:GetText(POS_MEMO)
-        SaveFileContent(fullname, content)
-        local index = mData[CURIDX]
-        mData[index].FileName = name
-        return true
-      end
-    end
+  local DestName = far.InputBox(nil,
+      "Rename Memo",                   -- title
+      "Enter file name without path:", -- prompt
+      "MemoRename",                    -- history name
+      GetCurFileName(),                -- initial input text
+      nil, nil, "FIB_NONE")            -- maxlength, helptopic, flags
+
+  if not DestName then return false end
+
+  if DestName:find("/") then
+    ErrMsg("Only file name may be entered here, no path allowed")
+    return false
   end
+
+  local src = GetCurFilePath()
+  local trg = win.JoinPath(MemoDir, DestName)
+  local ok, err = win.MoveFile(src, trg)
+  if not ok then
+    ErrMsg("Can't rename \"%s\": %s", src, tostring(err))
+    return false
+  end
+
+  local index = mData[CURIDX]
+  mData[index].FileName = DestName
+  return true
 end
 
 local function InitActions(hDlg)
-  local filepath = GetMemoFilePath()
+  local filepath = GetCurFilePath()
   if not filepath then
     return false
   end
@@ -223,15 +224,21 @@ end
 local function CloseActions(hDlg, newindex)
   -- save the memo being left (and its data)
   local info = editor.GetInfo(mEditorId)
+  if 0 ~= bit64.band(info.CurState, F.ECSTATE_MODIFIED) then
+    if not SaveCurrentMemo(hDlg) then
+      if 1 == far.Message("Error occurred. Continue anyway?", "Error", "&No;&Yes", "w")
+        then return false
+      end
+    end
+  end
+  -- refresh the current file data
   local index = mData[CURIDX]
   local tt = mData[index]
   tt.CurLine, tt.CurPos = info.CurLine, info.CurPos
-  if 0 ~= bit64.band(info.CurState, F.ECSTATE_MODIFIED) then
-    SaveCurrentMemo(hDlg)
-  end
-  -- switch index
+  -- switch the index
   mData[CURIDX] = newindex or mData[CURIDX]
   SaveData(mData)
+  return true
 end
 
 local function CalcDialogSize()
@@ -284,7 +291,9 @@ end
 
 -- Create and run the memo dialog
 local function OpenMemoDialog()
-  win.CreateDir(MemoDir)
+  local ok, msg = win.CreateDir(MemoDir, true)
+  if not ok then ErrMsg("%s", msg); return; end
+
   mData = LoadData()
 
   local dlgSize = CalcDialogSize()
@@ -351,7 +360,8 @@ local function OpenMemoDialog()
       end
 
     elseif Msg == F.DN_CLOSE then
-      if not wasError then CloseActions(hDlg, newIndex) end
+      if wasError or CloseActions() then return nil end -- allow to close the dialog
+      return 0 -- don't close
 
     elseif Msg == F.DN_RESIZECONSOLE then
       Resize(hDlg)
