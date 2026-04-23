@@ -360,7 +360,7 @@ local function OpenMemoDialog()
       end
 
     elseif Msg == F.DN_CLOSE then
-      if wasError or CloseActions(hDlg,newindex) then return nil end -- allow to close the dialog
+      if wasError or CloseActions(hDlg,newIndex) then return nil end -- allow to close the dialog
       return 0 -- don't close
 
     elseif Msg == F.DN_RESIZECONSOLE then
