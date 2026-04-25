@@ -31,7 +31,9 @@ class Panel
       @Action=.Action
     @Special=false
   __eq: (a,b)->
-    cmp=(a,b)->(dirsep..'*'==a.Name\sub -2,-1) and (a.Name\sub 1,-3)==b.Name\sub 1,a.Name\len!-2
+    cmp=(a,b)->
+      parent=a.Name\match('(.*)'..dirsep..'%*$')
+      parent and parent==b.Name\sub 1,parent\len!
     (a.Name==b.Name or (cmp a,b) or (cmp b,a)) and a.Param==b.Param and a.PluginId==b.PluginId and a.File==b.File
 
 active,passive=1,0
@@ -81,9 +83,11 @@ process=(idx,current)->
     current.Special=true
   setpanelstate idx,sort,order
   last[idx]=current
-  if found and 'function'==type found.Action
-    found.Action idx,{Name:current.Name,Param:current.Param,PluginId:current.PluginId,File:current.File}
+  func=found and found.Action or not found and folders.Action
+  if 'function'==type func
+    func idx,{Name:current.Name,Param:current.Param,PluginId:current.PluginId,File:current.File}
 
+folders.Action=init.Action
 for folder in *init
   switch type folder
     when 'string'
