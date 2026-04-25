@@ -1,38 +1,64 @@
-﻿res,init=pcall require,"customfolderstate_user"
+-- Author           : Vadim Yegorov (zg)
+-- Original URL     : https://github.com/trexinc/evil-programmers/tree/master/LuaCustomFolderState
+-- Modifications by : Shmuel Zeigerman
+-- Portable         : far3 and far2m
+
+res,init=pcall require,"customfolderstate_user"
 if not res then init={}
 F=far.Flags
 insert=table.insert
-expandrnv=(str)->str\gsub "%%(.-)%%",win.GetEnv
+
+dirsep=package.config\sub 1,1
+osWin=dirsep=='\\'
+zeroId=osWin and (string.rep '\0',16) or 0
+
+normPluginId=(id)->
+  if osWin then id and (36==id\len!) and (win.Uuid id) or zeroId
+  else id or zeroId
+
+expandrnv=(str)->
+  str\gsub (osWin and "%%(.-)%%" or "%$%((.-)%)"),win.GetEnv
+
 class Panel
   new: (panel)=>
     with panel
-      @Name=.Name\lower!
+      @Name=osWin and .Name\lower! or .Name
       @Param=.Param
       @PluginId=.PluginId
-      @File=.File\lower!
+      @File=osWin and .File\lower! or .File
       @Sort=.Sort
       @Order=.Order
       @Action=.Action
     @Special=false
   __eq: (a,b)->
-    cmp=(a,b)->('\\*'==a.Name\sub -2,-1) and (a.Name\sub 1,-3)==b.Name\sub 1,a.Name\len!-2
+    cmp=(a,b)->(dirsep..'*'==a.Name\sub -2,-1) and (a.Name\sub 1,-3)==b.Name\sub 1,a.Name\len!-2
     (a.Name==b.Name or (cmp a,b) or (cmp b,a)) and a.Param==b.Param and a.PluginId==b.PluginId and a.File==b.File
+
 active,passive=1,0
 empty={Name:'',File:''}
-panels=()->{[active]:(Panel panel.GetPanelDirectory nil,active),[passive]:Panel panel.GetPanelDirectory nil,passive}
+
+panels=()->
+  {[active]:(Panel panel.GetPanelDirectory nil,active),[passive]:Panel panel.GetPanelDirectory nil,passive}
+
 last=
   [active]:Panel empty
   [passive]:Panel empty
 folders={}
+
 setpanelstate=(idx,sort,order)->
   info=panel.GetPanelInfo nil,idx
   top=info and info.TopPanelItem
-  panel.SetSortMode nil,idx,sort
-  panel.SetSortOrder nil,idx,order
+  if (type sort)=="number" and sort>=F.SM_USER
+    -- use _G, as the name "Panel" is taken by this script
+    _G.Panel.SetCustomSortMode sort,1-idx,sort==info.SortMode and "current" or "auto"
+  else
+    panel.SetSortMode nil,idx,sort
+    panel.SetSortOrder nil,idx,order
   if top
     info=panel.GetPanelInfo nil,idx
     if info and info.CurrentItem
       panel.RedrawPanel nil,idx,{CurrentItem:info.CurrentItem,TopPanelItem:top}
+
 process=(idx,current)->
   found=false
   for folder in *folders
@@ -55,13 +81,15 @@ process=(idx,current)->
     current.Special=true
   setpanelstate idx,sort,order
   last[idx]=current
-  if found and 'function'==type found.Action then found.Action idx,{Name:current.Name,Param:current.Param,PluginId:current.PluginId,File:current.File}
+  if found and 'function'==type found.Action
+    found.Action idx,{Name:current.Name,Param:current.Param,PluginId:current.PluginId,File:current.File}
+
 for folder in *init
   switch type folder
     when 'string'
       folder=
         Name:folder
-        PluginId:string.rep '\0',16
+        PluginId:zeroId
     when 'table'
       nil
     else
@@ -71,11 +99,12 @@ for folder in *init
       isset=(v,d)->if nil==v then d else v
       .Name=expandrnv .Name
       .Param=.Param or ''
-      .PluginId=.PluginId and (36==.PluginId\len!) and (win.Uuid .PluginId) or (string.rep '\0',16)
+      .PluginId=normPluginId .PluginId
       .File=.File or ''
       .Sort=isset .Sort,init.Sort
       .Order=isset .Order,init.Order
       insert folders,Panel folder
+
 main=()->
   current=panels!
   if current[active]==last[passive] and current[passive]==last[active]
