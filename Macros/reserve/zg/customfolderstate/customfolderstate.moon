@@ -17,7 +17,7 @@ normPluginId=(id)->
   else id or zeroId
 
 expandrnv=(str)->
-  str\gsub (osWin and "%%(.-)%%" or "%$%((.-)%)"),win.GetEnv
+  str\gsub (osWin and "%%(.-)%%" or "%$%{(.-)%}"),win.GetEnv
 
 class Panel
   new: (panel)=>
@@ -104,7 +104,7 @@ for folder in *init
       .Name=expandrnv .Name
       .Param=.Param or ''
       .PluginId=normPluginId .PluginId
-      .File=.File or ''
+      .File=expandrnv (.File or '')
       .Sort=isset .Sort,init.Sort
       .Order=isset .Order,init.Order
       insert folders,Panel folder
