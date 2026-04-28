@@ -6,7 +6,7 @@
 local dbKey = "named folders"
 local dbEntries = "entries"
 local dbShowDir = "showdir"
-local Title = "Named Folders Lua Edition"
+local Title = "Named Folders"
 local MacroKey = "CtrlD"
 
 local osWindows = package.config:sub(1,1) == "\\"
@@ -100,6 +100,7 @@ end
 
 local function NewEntry(aEntry)
   local sd = require "far2.simpledialog"
+  local Entries
 
   local alias_name, target_name
   if aEntry then
@@ -122,22 +123,39 @@ local function NewEntry(aEntry)
     {tp="butt", centergroup=1, default=1; text="Ok"},
     {tp="butt", centergroup=1, cancel=1; text="Cancel"}
   }
+
+  local function insert_item(out)
+    Entries = Entries or LoadEntries()
+    for i,v in ipairs(Entries) do
+      if v.alias:lower() == out.alias:lower() then
+        if not aEntry then -- inserting a new record
+          local text = ("The alias \"%s\" is already in use. Overwrite?"):format(v.alias)
+          if 1 ~= far.Message(text, Title, "&Yes;&No", "w") then
+            return false
+          end
+        end
+        table.remove(Entries, i)
+        break
+      end
+    end
+    table.insert(Entries, {alias=out.alias; path=out.path})
+    SaveEntries(Entries)
+    return true
+  end
+
   items.proc = function(hDlg, msg, par1, par2)
     if msg == F.DN_CLOSE then
       if par2.alias == "" or par2.path == "" then
-        far.Message("Empty fields are not allowed", nil, ";Ok", "w")
+        far.Message("Empty fields are not allowed", Title, ";Ok", "w")
+        return 0
+      end
+      if not insert_item(par2) then
         return 0
       end
     end
   end
 
-  -- Not checking if the alias already exists as multiple entries having the same alias is a feature
-  local out = sd.New(items):Run()
-  if out then
-    local entries = LoadEntries()
-    table.insert(entries, {alias=out.alias; path=out.path})
-    SaveEntries(entries)
-  end
+  sd.New(items):Run()
 end
 
 local function RemoveEntry(entry)
