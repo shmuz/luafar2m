@@ -82,7 +82,8 @@ process=(idx,current)->
       order=.Order
     current.Special=true
   setpanelstate idx,sort,order
-  last[idx]=current
+  if current.Special or current.PluginId == zeroId
+    last[idx]=current
   func=found and found.Action or not found and folders.Action
   if 'function'==type func
     func idx,{Name:current.Name,Param:current.Param,PluginId:current.PluginId,File:current.File}
