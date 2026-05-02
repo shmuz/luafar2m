@@ -327,7 +327,10 @@ local function OpenMemoDialog()
       if Param1 == POS_MEMO then
         local key = far.KeyToName(Param2)
 
-        if key == "ShiftF2" then -- Save As
+        if key == "Tab" then
+          editor.ProcessKey(mEditorId, Param2)
+
+        elseif key == "ShiftF2" then -- Save As
           SaveMemoAs(hDlg)
 
         elseif key == "ShiftF6" then -- Rename
