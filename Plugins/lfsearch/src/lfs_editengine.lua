@@ -8,22 +8,29 @@ local CustomMessage = require "far2.message"
 local CustomMenu = require "far2.custommenu"
 
 local F = far.Flags
+local editor = editor
 local floor, ceil, min, max = math.floor, math.ceil, math.min, math.max
 local lenW = win.lenW
 
 local EdtId
 local IsMemoEdit
 
+-- Use editlib.xxx rather than editor.xxx (then the 1-st argument EdtId must be omitted).
+local editlib = {}
+editlib.__index = function(_, name)
+  return function(...) return editor[name](EdtId, ...) end
+end
+setmetatable(editlib, editlib)
 
 -- This function is that long because FAR API does not supply needed
 -- information directly.
 local function GetSelectionInfo ()
-  local GetString = editor.GetString
+  local GetString = editlib.GetString
 
-  local Info = editor.GetInfo(EdtId)
+  local Info = editlib.GetInfo()
   if Info.BlockType == F.BTYPE_NONE then return end
 
-  local egs = GetString(EdtId, Info.BlockStartLine, 1)
+  local egs = GetString(Info.BlockStartLine, 1)
   if not egs then return end
 
   local out = {
@@ -32,8 +39,8 @@ local function GetSelectionInfo ()
     StartPos = egs.SelStart;
   }
   if Info.BlockType == F.BTYPE_COLUMN then
-    out.TabStartPos = editor.RealToTab(EdtId, Info.BlockStartLine, egs.SelStart)
-    out.TabEndPos = editor.RealToTab(EdtId, Info.BlockStartLine, egs.SelEnd+1) - 1
+    out.TabStartPos = editlib.RealToTab(Info.BlockStartLine, egs.SelStart)
+    out.TabEndPos = editlib.RealToTab(Info.BlockStartLine, egs.SelEnd+1) - 1
   end
 
   -- binary search for a non-block line
@@ -41,7 +48,7 @@ local function GetSelectionInfo ()
   local from = Info.BlockStartLine
   local to = from + h
   while to <= Info.TotalLines do
-    egs = GetString(EdtId, to, 1)
+    egs = GetString(to, 1)
     if not egs then return end
     if egs.SelStart < 1 or egs.SelEnd == 0 then break end
     h = h * 2
@@ -52,7 +59,7 @@ local function GetSelectionInfo ()
   -- binary search for the last block line
   while from ~= to do
     local curr = floor((from + to + 1) / 2)
-    egs = GetString(EdtId, curr, 1)
+    egs = GetString(curr, 1)
     if not egs then return end
     if egs.SelStart < 1 or egs.SelEnd == 0 then
       if curr == to then break end
@@ -62,14 +69,14 @@ local function GetSelectionInfo ()
     end
   end
 
-  egs = GetString(EdtId, from, 1)
+  egs = GetString(from, 1)
   if not egs then return end
 
   out.EndLine = from
   out.EndPos = egs.SelEnd
 
   -- restore current position, since FastGetString() changed it
-  editor.SetPosition(EdtId, Info)
+  editlib.SetPosition(Info)
   return out
 end
 
@@ -101,9 +108,9 @@ local function EditorSelect (b)
   if b then
     local startPos = b.TabStartPos or b.StartPos
     local endPos = b.TabEndPos or b.EndPos
-    editor.Select(EdtId, b.BlockType, b.StartLine, startPos, endPos-startPos+1, b.EndLine-b.StartLine+1)
+    editlib.Select(b.BlockType, b.StartLine, startPos, endPos-startPos+1, b.EndLine-b.StartLine+1)
   else
-    editor.Select(EdtId, "BTYPE_NONE")
+    editlib.Select("BTYPE_NONE")
   end
 end
 
@@ -179,7 +186,7 @@ end
 -- @param scroll      extra number of lines to scroll; "none"=no scroll; "lazy"=only if necessary;
 --------------------------------------------------------------------------------
 local function ScrollToPosition (row, pos, from, to, scroll)
-  local Info = editor.GetInfo(EdtId)
+  local Info = editlib.GetInfo()
   local LeftPos = 1
   -- left-most (or right-most) char is not visible
   if to > Info.WindowSizeX then
@@ -204,7 +211,7 @@ local function ScrollToPosition (row, pos, from, to, scroll)
     TopScreenLine = max(1, row - scroll)
   end
 
-  editor.SetPosition(EdtId, {
+  editlib.SetPosition({
     CurLine = row,
     TopScreenLine = TopScreenLine,
     LeftPos = LeftPos,
@@ -217,9 +224,9 @@ local function SelectItemInEditor (item)
   local offset = item.seloffset - item.offset
   local fr, to = item.fr + offset, item.to + offset
   ScrollToPosition(item.lineno, to+1, fr, to, -10)
-  editor.Select(EdtId, "BTYPE_STREAM", item.lineno, fr, to<=fr and 1 or to-fr+1, 1)
+  editlib.Select("BTYPE_STREAM", item.lineno, fr, to<=fr and 1 or to-fr+1, 1)
   if not IsMemoEdit then
-    actl.RedrawAll() -- editor.Redraw doesn't work from the dialog
+    actl.RedrawAll() -- editlib.Redraw doesn't work from the dialog
   end
 end
 
@@ -266,7 +273,7 @@ end
 
 
 local function ShowAll_ChangeState (hDlg, item, force_dock)
-  local EI = editor.GetInfo(EdtId)
+  local EI = editlib.GetInfo()
   local rect = hDlg:send("DM_GETDLGRECT")
   local scrline = item.lineno - EI.TopScreenLine + 1
   if force_dock or (scrline >= rect.Top and scrline <= rect.Bottom) then
@@ -275,16 +282,16 @@ local function ShowAll_ChangeState (hDlg, item, force_dock)
     hDlg:send("DM_MOVEDIALOG", 1, {X=X, Y=Y})
   end
 
-  -- This additional editor.Redraw() is a workaround due to a bug in FAR
+  -- This additional editlib.Redraw() is a workaround due to a bug in FAR
   -- that makes selection invisible in modal editors.
-  editor.Redraw(EdtId)
+  editlib.Redraw()
 end
 
 
 local function ShowCollectedLines (items, title, bForward, tBlockInfo)
   if #items == 0 then return end
 
-  local Info = editor.GetInfo(EdtId)
+  local Info = editlib.GetInfo()
 
   local timing = NewTiming()
   local maxno = #tostring(items.maxline)
@@ -323,7 +330,7 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
   local newsearch = false
   function list:keyfunction (hDlg, key, item)
     if regex.match(key, "^R?Ctrl(?:Up|Down|Home|End|Num[1278])$") then
-      editor.ProcessKey(EdtId, far.NameToKey(key))
+      editlib.ProcessKey(far.NameToKey(key))
       actl.RedrawAll()
       hDlg:send("DM_REDRAW")
       return "done"
@@ -357,9 +364,9 @@ local function ShowCollectedLines (items, title, bForward, tBlockInfo)
   if item and not newsearch then
     SelectItemInEditor(item)
   else
-    editor.SetPosition(EdtId, Info)
+    editlib.SetPosition(Info)
     EditorSelect(tBlockInfo) -- if tBlockInfo is false then selection is reset;
-    editor.Redraw(EdtId)
+    editlib.Redraw()
   end
   return newsearch
 end
@@ -367,8 +374,8 @@ end
 local function GetInvariantTable (tRegex)
   local is_wide = tRegex.ufindW and true
   return {
-    EditorGetString = is_wide and editor.GetStringW  or editor.GetString,
-    EditorSetString = is_wide and editor.SetStringW  or editor.SetString,
+    EditorGetString = is_wide and editlib.GetStringW  or editlib.GetString,
+    EditorSetString = is_wide and editlib.SetStringW  or editlib.SetString,
     empty           = is_wide and win.Utf8ToUtf32""  or "",
     find            = is_wide and regex.findW        or regex.find,
     gmatch          = is_wide and regex.gmatchW      or regex.gmatch,
@@ -380,7 +387,7 @@ end
 
 local function make_update_info (aScriptCall)
   return aScriptCall and function() end
-    or function(nFound, y) editor.SetTitle(EdtId, M.MCurrentlyFound .. nFound) end
+    or function(nFound, y) editlib.SetTitle(M.MCurrentlyFound .. nFound) end
 end
 
 local function NeedWrapTheSearch (bForward, timing)
@@ -421,7 +428,7 @@ local function DoSearch (
 
   local sChoice = bFirstSearch and "all" or "initial"
   local nFound, nLine = 0, 0
-  local tInfo, tStartPos = editor.GetInfo(EdtId), editor.GetInfo(EdtId)
+  local tInfo, tStartPos = editlib.GetInfo(), editlib.GetInfo()
 
   local tBlockInfo = bScopeIsBlock and assert(GetSelectionInfo() or nil, "no selection")
 
@@ -449,7 +456,7 @@ local function DoSearch (
   local x, y, egs, part1
 
   local function SetStartBlockParam (yy)
-    egs = TT.EditorGetString(nil, yy, 0)
+    egs = TT.EditorGetString(yy, 0)
     part1 = TT.sub(egs.StringText, 1, egs.SelStart-1)
     if egs.SelEnd == -1 then
       set_sLine(TT.sub(egs.StringText, egs.SelStart))
@@ -465,7 +472,7 @@ local function DoSearch (
       x = bForward and 1 or sLineLen+1
     else
       y = bForward and 1 or tInfo.TotalLines
-      set_sLine(TT.EditorGetString(nil, y, 3))
+      set_sLine(TT.EditorGetString(y, 3))
       x = bForward and 1 or sLineLen+1
       part1 = TT.empty
     end
@@ -484,7 +491,7 @@ local function DoSearch (
       end
     else
       y = tInfo.CurLine
-      set_sLine(TT.EditorGetString(nil, y, 3))
+      set_sLine(TT.EditorGetString(y, 3))
 
       if sOperation == "searchword" then
         x = min(bForward and tInfo.CurPos+1 or tInfo.CurPos, sLineLen+1)
@@ -511,7 +518,7 @@ local function DoSearch (
       if tBlockInfo then
         SetStartBlockParam(y)
       else
-        set_sLine(TT.EditorGetString(nil, y, 3))
+        set_sLine(TT.EditorGetString(y, 3))
       end
       x = bForward and 1 or sLineLen+1
       bAllowEmpty = true
@@ -522,10 +529,10 @@ local function DoSearch (
     local p1 = part1:len()
     ScrollToPosition (y, p1+xx, fr, to, scroll)
     if _Plugin.History.config.bSelectFound then
-      editor.Select(EdtId, "BTYPE_STREAM", y, p1+fr, to<=fr and 1 or to-fr+1, 1)
+      editlib.Select("BTYPE_STREAM", y, p1+fr, to<=fr and 1 or to-fr+1, 1)
     end
-    editor.Redraw(EdtId)
-    tStartPos = editor.GetInfo(EdtId)
+    editlib.Redraw()
+    tStartPos = editlib.GetInfo()
   end
   -------------------------------------------------------------------
 
@@ -624,13 +631,13 @@ local function DoSearch (
     end -- Iteration on lines
   end -- for pass = 1, bWrapAround and 2 or 1 do
   --===========================================================================
-  editor.SetPosition(EdtId, tStartPos)
+  editlib.SetPosition(tStartPos)
   if tBlockInfo then
     EditorSelect(tBlockInfo)
   end
   local elapsedTime = timing:GetElapsedTime()
   if nFound > 0 then
-    editor.Redraw(EdtId)
+    editlib.Redraw()
     update_info(nFound, nil)
     if sOperation=="showall" then
       local newsearch = ShowCollectedLines(
@@ -673,7 +680,7 @@ local function DoReplace (
   local TT = GetInvariantTable(tRegex)
   local ufind_method = tRegex.ufindW or tRegex.ufind
   local EditorSetCurString = function(text, eol)
-    if not TT.EditorSetString(nil, nil, text, eol) then error("EditorSetString failed") end
+    if not TT.EditorSetString(nil, text, eol) then error("EditorSetString failed") end
   end
   -----------------------------------------------------------------------------
   local sTitle = M.MTitleReplace
@@ -684,14 +691,14 @@ local function DoReplace (
 
   local sChoice = bFirstSearch and not bConfirmReplace and "all" or "initial"
   local nFound, nReps, nLine = 0, 0, 0
-  local tInfo, tStartPos = editor.GetInfo(EdtId), editor.GetInfo(EdtId)
+  local tInfo, tStartPos = editlib.GetInfo(), editlib.GetInfo()
   local acc, acc_started
-  local sFileName = editor.GetFileName(EdtId)
+  local sFileName = editlib.GetFileName()
   local Eur_Begin_Done
 
   local function BeginUndoRedo()
     if not Eur_Begin_Done then
-      editor.UndoRedo(EdtId,"EUR_BEGIN")
+      editlib.UndoRedo("EUR_BEGIN")
       Eur_Begin_Done = true
     end
   end
@@ -719,7 +726,7 @@ local function DoReplace (
   local x, y, egs, part1, part3, x1, x2, y1, y2
 
   local function SetStartBlockParam (yy)
-    egs = TT.EditorGetString(nil, yy, 0)
+    egs = TT.EditorGetString(yy, 0)
     part1 = TT.sub(egs.StringText, 1, egs.SelStart-1)
     if egs.SelEnd == -1 then
       set_sLine(TT.sub(egs.StringText, egs.SelStart))
@@ -737,7 +744,7 @@ local function DoReplace (
       x = bForward and 1 or sLineLen+1
     else
       y = bForward and 1 or tInfo.TotalLines
-      set_sLine(TT.EditorGetString(nil, y, 3))
+      set_sLine(TT.EditorGetString(y, 3))
       x = bForward and 1 or sLineLen+1
       part1, part3 = TT.empty, TT.empty
     end
@@ -756,7 +763,7 @@ local function DoReplace (
       end
     else
       y = tInfo.CurLine
-      set_sLine(TT.EditorGetString(nil, y, 3))
+      set_sLine(TT.EditorGetString(y, 3))
 
       if not bScriptCall and
          tRepeat.bSearchBack ~= bSearchBack and
@@ -781,7 +788,7 @@ local function DoReplace (
       if tBlockInfo then
         SetStartBlockParam(y)
       else
-        set_sLine(TT.EditorGetString(nil, y, 3))
+        set_sLine(TT.EditorGetString(y, 3))
       end
       x = bForward and 1 or sLineLen+1
       bAllowEmpty = true
@@ -791,9 +798,9 @@ local function DoReplace (
   local function ShowFound (xx, fr, to, scroll)
     local p1 = part1:len()
     ScrollToPosition (y, p1+xx, fr, to, scroll)
-    editor.Select(EdtId, "BTYPE_STREAM", y, p1+fr, to<=fr and 1 or to-fr+1, 1)
-    editor.Redraw(EdtId)
-    tStartPos = editor.GetInfo(EdtId)
+    editlib.Select("BTYPE_STREAM", y, p1+fr, to<=fr and 1 or to-fr+1, 1)
+    editlib.Redraw()
+    tStartPos = editlib.GetInfo()
   end
   -------------------------------------------------------------------
   local function Replace (fr, to, sRep)
@@ -803,7 +810,7 @@ local function DoReplace (
     local nAddedLines, nDeletedLines = 0, 0
     local before, after = TT.sub(sLine, 1, fr-1), TT.sub(sLine, to+1)
     -----------------------------------------------------------------
-    editor.SetPosition(EdtId, y)
+    editlib.SetPosition(y)
     for txt, nl in TT.gmatch(sRep, "([^\r\n]*)(\r?\n?)") do
         if nAddedLines == 0 then
             local sStartLine = before..txt
@@ -811,7 +818,7 @@ local function DoReplace (
                 set_sLine(sStartLine..after, sLineEol)
                 local line = part1..sLine..part3
                 if line==TT.empty and bDelEmptyLine then
-                    editor.DeleteString(EdtId)
+                    editlib.DeleteString()
                     nDeletedLines = nDeletedLines + 1
                 else
                     EditorSetCurString(line, sLineEol)
@@ -827,8 +834,8 @@ local function DoReplace (
                     x1, y1 = 1, y
                 else
                     EditorSetCurString(line, nl)
-                    editor.SetPosition(EdtId, nil, TT.len(line)+1)
-                    editor.InsertString(EdtId)
+                    editlib.SetPosition(nil, TT.len(line)+1)
+                    editlib.InsertString()
                     if not bForward then set_sLine(sStartLine, sLineEol) end
                     x1, y1 = fr, y
                 end
@@ -846,8 +853,8 @@ local function DoReplace (
                 break
             else
                 EditorSetCurString(txt, nl)
-                editor.SetPosition(EdtId, nil, TT.len(txt)+1)
-                editor.InsertString(EdtId)
+                editlib.SetPosition(nil, TT.len(txt)+1)
+                editlib.InsertString()
                 nAddedLines = nAddedLines + 1
             end
         end
@@ -872,8 +879,8 @@ local function DoReplace (
         tInfo.TotalLines = tInfo.TotalLines + nAddedLines - nDeletedLines
     end
 
-    if sChoice == "yes" then editor.Redraw(EdtId) end
-    tStartPos = editor.GetInfo(EdtId) -- save position (time consuming)
+    if sChoice == "yes" then editlib.Redraw() end
+    tStartPos = editlib.GetInfo() -- save position (time consuming)
 
     return (nDeletedLines > 0)
   end
@@ -885,12 +892,12 @@ local function DoReplace (
       and (tBlockInfo.BlockType == F.BTYPE_STREAM)
       and (tBlockInfo.EndLine == y) and (tBlockInfo.EndPos ~= -1)
 
-    editor.SetPosition(EdtId, y)
-    editor.DeleteString(EdtId)
+    editlib.SetPosition(y)
+    editlib.DeleteString()
 
     if not bForward then
       x = 1
-      editor.SetPosition(EdtId, y, x)
+      editlib.SetPosition(y, x)
     end
 
     if tBlockInfo then
@@ -903,15 +910,15 @@ local function DoReplace (
       if y < tInfo.CurLine then tInfo.CurLine = tInfo.CurLine - 1; end
     end
 
-    if sChoice == "yes" then editor.Redraw(EdtId) end
-    tStartPos = editor.GetInfo(EdtId) -- save position (time consuming)
+    if sChoice == "yes" then editlib.Redraw() end
+    tStartPos = editlib.GetInfo() -- save position (time consuming)
 
     return true
   end
   -------------------------------------------------------------------
 
   local function ProcessReplaceQuery (fr, to, sRepFinal)
-    local EI = editor.GetInfo(EdtId)
+    local EI = editlib.GetInfo()
     local s_found = TT.U8(TT.sub(sLine, fr, to))
     local s_rep = sRepFinal==true or TT.U8(sRepFinal)
 
@@ -1119,7 +1126,7 @@ local function DoReplace (
     end -- Iteration on lines
   end -- for pass = 1, bWrapAround and 2 or 1 do
   --===========================================================================
-  editor.SetPosition(EdtId, tStartPos)
+  editlib.SetPosition(tStartPos)
   if nReps==0 and tBlockInfo then -- it works incorrectly anyway
     EditorSelect(tBlockInfo)
   else
@@ -1128,13 +1135,13 @@ local function DoReplace (
       if bSelectFound and x2 then
         if not is_wide then
           -- Convert byte-wise offsets to character-wise ones
-          local str1 = editor.GetString(EdtId, y1, 2)
-          local str2 = (y2 == y1) and str1 or editor.GetString(EdtId, y2, 2)
+          local str1 = editlib.GetString(y1, 2)
+          local str2 = (y2 == y1) and str1 or editlib.GetString(y2, 2)
           x1, x2 = TT.sub(str1,1,x1):len(), TT.sub(str2,1,x2):len()
         end
-        editor.Select(EdtId, "BTYPE_STREAM", y1, x1, x2-x1+1, y2-y1+1)
+        editlib.Select("BTYPE_STREAM", y1, x1, x2-x1+1, y2-y1+1)
       else
-        editor.Select(EdtId, "BTYPE_NONE")
+        editlib.Select("BTYPE_NONE")
       end
 
     elseif acc then
@@ -1142,8 +1149,8 @@ local function DoReplace (
       local lastSubst = acc[indexLS]
       local fr, to = TT.find(lastSubst, "[\r\n][^\r\n]*$")
       if fr then -- the last substitution was multi-line
-        editor.Select(EdtId, "BTYPE_NONE")
-        editor.SetPosition(EdtId, nil, bForward and to-fr+1 or TT.len(acc[1])+TT.len(acc[2]))
+        editlib.Select("BTYPE_NONE")
+        editlib.SetPosition(nil, bForward and to-fr+1 or TT.len(acc[1])+TT.len(acc[2]))
       else -- the last substitution was single-line
         if lastSubst ~= TT.empty then
           -- Convert byte-wise offsets to character-wise ones if needed
@@ -1152,26 +1159,26 @@ local function DoReplace (
           local x1 = 1
           for i=1,indexLS-1 do x1 = x1 + len(acc[i]) end
           if bSelectFound then
-            editor.Select(EdtId, "BTYPE_STREAM", y1, x1, width, 1)
+            editlib.Select("BTYPE_STREAM", y1, x1, width, 1)
           else
-            editor.Select(EdtId, "BTYPE_NONE")
+            editlib.Select("BTYPE_NONE")
           end
-          editor.SetPosition(EdtId, nil, bForward and x1+width or x1)
+          editlib.SetPosition(nil, bForward and x1+width or x1)
         else
-          editor.Select(EdtId, "BTYPE_NONE")
+          editlib.Select("BTYPE_NONE")
         end
       end
 
     else
-      editor.Select(EdtId, "BTYPE_NONE")
+      editlib.Select("BTYPE_NONE")
     end
   end
   local elapsedTime = timing:GetElapsedTime()
   if nFound > 0 then
-    editor.Redraw(EdtId)
+    editlib.Redraw()
     update_info(nFound, nil)
   end
-  if Eur_Begin_Done then editor.UndoRedo(EdtId,"EUR_END") end
+  if Eur_Begin_Done then editlib.UndoRedo("EUR_END") end
   return nFound, nReps, sChoice, elapsedTime
 end
 
