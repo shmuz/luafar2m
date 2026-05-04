@@ -31,6 +31,7 @@ local SetHighlightPattern = libEditors.SetHighlightPattern
 
 local F = far.Flags
 local KEEP_DIALOG_OPEN = 0
+local CP_UTF8 = 65001
 
 local bor, band, bxor = bit64.bor, bit64.band, bit64.bxor
 local clock = os.clock
@@ -119,8 +120,8 @@ local function Lines (aFile, aCodePage, userbreak)
     local line, eol, tb
     aFile:seek("set", posInner)
     while chunk do
-      local to
-      to, line, eol = select(2, find(chunk, aPattern, start))
+      local fr, to -- luacheck:ignore ('fr' is never accessed)
+      fr, to, line, eol = find(chunk, aPattern, start)
       if eol ~= EMPTY then
         if eol == CR and to == #chunk/CHARSIZE then
           chunk = read(CHARSIZE)
@@ -237,12 +238,12 @@ end
 
 
 local BOMs = {
-  { codepage=61200; pattern="^\255\254%z%z"; },
-  { codepage= 1200; pattern="^\255\254";     }, -- 1200 must be tested after 61200 as the first 2 bytes are the same
-  { codepage=61201; pattern="^%z%z\254\255"; },
-  { codepage= 1201; pattern="^\254\255";     },
-  { codepage=65001; pattern="^\239\187\191"; },
-  { codepage=65000; pattern="^%+/v[89+/]";   },
+  { codepage=61200;   pattern="^\255\254%z%z"; },
+  { codepage= 1200;   pattern="^\255\254";     }, -- 1200 must be tested after 61200 as the first 2 bytes are the same
+  { codepage=61201;   pattern="^%z%z\254\255"; },
+  { codepage= 1201;   pattern="^\254\255";     },
+  { codepage=CP_UTF8; pattern="^\239\187\191"; },
+  { codepage=65000;   pattern="^%+/v[89+/]";   },
 }
 
 local function GetFileEncoding (fp, fname)
@@ -250,7 +251,7 @@ local function GetFileEncoding (fp, fname)
   fp:seek("set", 0)
   local sTemp = fp:read(8)
   if sTemp then
-    for _, item in ipairs(BOMs) do
+    for _,item in ipairs(BOMs) do
       local bom = string.match(sTemp, item.pattern)
       if bom then
         fp:seek("set", #bom)
@@ -258,10 +259,11 @@ local function GetFileEncoding (fp, fname)
       end
     end
   end
+
   -- Try far.DetectCodePage (that uses uchardet)
   fp:seek("set", 0)
-  local cp = far.DetectCodePage(fname) or 20127 -- US-ASCII
-  return cp, nil
+  local nCodePage = far.DetectCodePage(fname) or 20127 -- US-ASCII
+  return nCodePage, nil
 end
 
 
@@ -351,7 +353,7 @@ local function GetCodePages (aData)
     { CodePage = 61200; Text = makeline(61200, "UTF-32 (little endian)" ); },
     { CodePage = 61201; Text = makeline(61201, "UTF-32 (big endian)"    ); },
     { CodePage = 65000; },
-    { CodePage = 65001; },
+    { CodePage = CP_UTF8; },
     ---------------------------------------------------------------------------
     { Text = M.MOtherCodePages,   Flags = F.LIF_SEPARATOR },
   }
@@ -690,7 +692,7 @@ local function GetActiveCodePages (aData)
       if t and t[1] then return t end
     end
   end
-  return { 65001, win.GetOEMCP(), win.GetACP(), 1200, 61200, 1201, 61201, 65000 }
+  return { CP_UTF8, win.GetOEMCP(), win.GetACP(), 1200, 61200, 1201, 61201, 65000 }
 end
 
 
@@ -774,17 +776,17 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
         return userbreak.fullcancel and "break"
       end
       for _, cp in ipairs(currCodePages) do
-        local s = (cp == 61200 or cp == 65001) and str or
+        local s = (cp == 61200 or cp == CP_UTF8) and str or
                   (cp == 61201) and SwapEndian(str) or
                   MultiByteToWideChar(str, cp)
         if s then
           if Regex.ufindW then
-            if cp == 65001 then
+            if cp == CP_UTF8 then
               local ok, s2 = pcall(Utf32, s) -- may throw on Windows XP and Wine
               s = ok and s2
             end
           else
-            if cp ~= 65001 then s = Utf8(s) end
+            if cp ~= CP_UTF8 then s = Utf8(s) end
           end
           if s then
             local ok, start
@@ -841,7 +843,7 @@ local function SearchFromPanel (aData, aWithDialog, aScriptCall)
   do -- was: "Search_ProcessAllItems (aData, userbreak, Search_ProcessFile)"
     local FileFilter = tParams.FileFilter
     if FileFilter then FileFilter:StartingToFilter() end
-    local panelInfo = panel.GetPanelInfo(nil,1)
+    local panelInfo = panel.GetPanelInfo(nil, 1)
     local bPlugin = (band(panelInfo.Flags, F.PFLAGS_PLUGIN) ~= 0)
     local itemList, flags = MakeItemList(panelInfo, area)
     if aData.bSearchSymLinks then
@@ -953,7 +955,7 @@ local function CollectAllItems (aData, tParams, fFileMask, fDirMask, fDirExMask,
   local FileFilter = tParams.FileFilter
   if FileFilter then FileFilter:StartingToFilter() end
 
-  local panelInfo = panel.GetPanelInfo(nil,1)
+  local panelInfo = panel.GetPanelInfo(nil, 1)
   local bPlugin = (band(panelInfo.Flags, F.PFLAGS_PLUGIN) ~= 0)
   local area = CheckSearchArea(aData.sSearchArea)
   local itemList, flags = MakeItemList(panelInfo, area)
@@ -1048,7 +1050,7 @@ local function Replace_GetConvertors (bWideCharRegex, nCodePage)
     elseif nCodePage == 61201 then
       Convert, Reconvert = Identical, SwapEndian
     else
-      if nCodePage == 65001 then
+      if nCodePage == CP_UTF8 then
         Convert = function(str) return str:isvalid() and MultiByteToWideChar(str, nCodePage, "e") end
       else
         Convert = function(str) return MultiByteToWideChar(str, nCodePage, "e") end
@@ -1056,7 +1058,7 @@ local function Replace_GetConvertors (bWideCharRegex, nCodePage)
       Reconvert = function(str) return (WideCharToMultiByte(str, nCodePage)) end
     end
   else
-    if nCodePage == 65001 then
+    if nCodePage == CP_UTF8 then
       Convert = function(str) return str:isvalid() and str end
       Reconvert = Identical
     elseif nCodePage == 61200 then
@@ -1573,7 +1575,7 @@ local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
     if fp then
       fp:close()
       local flags = {EF_DELETEONLYFILEONCLOSE=1,EF_NONMODAL=1,EF_IMMEDIATERETURN=1,EF_DISABLEHISTORY=1}
-      if editor.Editor(fname,nil,nil,nil,nil,nil,flags,nil,nil,65001) == F.EEC_MODIFIED then
+      if editor.Editor(fname,nil,nil,nil,nil,nil,flags,nil,nil,CP_UTF8) == F.EEC_MODIFIED then
         if aData.bGrepHighlight then
           SetHighlightPattern(tParams.Regex, true, aData.bGrepShowLineNumbers, tParams.bSkip)
           ActivateHighlight(true)
