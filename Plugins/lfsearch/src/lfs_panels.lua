@@ -1320,7 +1320,7 @@ local function Grep_ProcessFile(cdata, fdata, ExtendedName, fp)
   local nMatches = 0
   local numline = 0
 
-  local len = bWideCharRegex and win.lenW or string.len
+  local len = bWideCharRegex and win.lenW or utf8.len
   local grepBefore, grepAfter = cdata.tGrep.nBefore, cdata.tGrep.nAfter
   local grepInverse = not not cdata.tGrep.bInverse -- convert to boolean
   local tGrep, qLinesBefore, numline_match
@@ -1491,7 +1491,7 @@ local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
       DisplayReplaceState(fdata.FullName, cdata.nFilesProcessed, 0)
 
       local ExtendedName = fdata.FullName
-      local fp = io.open(ExtendedName, "rb")
+      local fp = win.OpenFile(ExtendedName, "rb")
       if fp then
         cdata.nFilesProcessed = cdata.nFilesProcessed + 1
         local nCodePageDetected, sBom = GetFileEncoding(fp, ExtendedName)
