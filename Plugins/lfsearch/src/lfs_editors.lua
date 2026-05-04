@@ -10,18 +10,6 @@ local Editors do
   _Plugin.Editors = Editors
 end
 
--- Same as tfind, but all input and output offsets are in characters rather than bytes.
-local function WrapTfindMethod (tfind)
-  local usub, ssub = ("").sub, string.sub
-  local ulen = ("").len
-  return function(patt, s, init)
-    init = init and #(usub(s, 1, init-1)) + 1
-    local from, to, t = tfind(patt, s, init)
-    if from == nil then return nil end
-    return ulen(ssub(s, 1, from-1)) + 1, ulen(ssub(s, 1, to)), t
-  end
-end
-
 local function ToggleHighlight()
   local info = editor.GetInfo()
   if info then
@@ -63,12 +51,15 @@ local function IsHighlightGrep()
   return state and state.is_grep
 end
 
-local function MakeGetString (ymin, ymax)
-  ymin = ymin - 1
+local function MakeGetString (Info)
+  local ID = Info.EditorID
+  local ymin = Info.TopScreenLine - 1
+  local ymax = math.min(Info.TopScreenLine + Info.WindowSizeY - 1, Info.TotalLines)
+
   return function()
     if ymin < ymax then
       ymin = ymin + 1
-      return editor.GetString(nil,ymin), ymin
+      return editor.GetStringW(ID, ymin), ymin
     end
   end
 end
@@ -84,34 +75,32 @@ local function RedrawHighlightPattern (EI, Pattern, Priority, ProcessLineNumbers
   local config = _Plugin.History.config
   local Color = config.EditorHighlightColor
   local ID = EI.EditorID
-  local GetNextString = MakeGetString(EI.TopScreenLine,
-    math.min(EI.TopScreenLine+EI.WindowSizeY-1, EI.TotalLines))
-  local ufind = Pattern.ufind or Pattern.ufindW
+  local ufind = Pattern.ufindW or Pattern.ufind
 
   local prefixPattern = regex.new("^(\\d+([:\\-]))") -- (grep) 123: matched_line; 123- context_line
   local filenamePattern = regex.new("^\\[\\d+\\]")   -- (grep) [123] c:\dir1\dir2\filename
+  local wideSC = win.Utf8ToUtf32(":")
 
-  for str, y in GetNextString do
+  for str, y in MakeGetString(EI) do
     local filename_line -- reliable detection is possible only when ProcessLineNumbers is true
     local offset, text = 0, str.StringText
     if ProcessLineNumbers then
-      local prefix, char = prefixPattern:match(text)
+      local prefix, char = prefixPattern:matchW(text)
       if prefix then
-        offset = prefix:len()
-        text = text:sub(offset+1)
-        local prColor = char==":" and config.GrepLineNumMatchColor or config.GrepLineNumContextColor
+        offset = win.lenW(prefix)
+        text = win.subW(text, offset+1)
+        local prColor = char==wideSC and config.GrepLineNumMatchColor or config.GrepLineNumContextColor
         editor.AddColor(ID, y, 1, offset, ColorFlags, prColor, Priority, ColorOwner)
       else
-        filename_line = filenamePattern:match(text)
+        filename_line = filenamePattern:matchW(text)
       end
     end
 
     if not filename_line then
+      text = Pattern.ufindW and text or win.Utf32ToUtf8(text)
       local start = 1
       local RealLeftPos = editor.TabToReal(ID, y, EI.LeftPos)
       local maxstart = math.min(str.StringLength+1, RealLeftPos+EI.WindowSizeX-1) - offset
-
-      if not Pattern.ufind then text=win.Utf8ToUtf32(text) end
 
       while start <= maxstart do
         local from, to, collect = ufind(Pattern, text, start)
@@ -152,5 +141,4 @@ return {
   ProcessEditorEvent = ProcessEditorEvent,
   SetHighlightPattern = SetHighlightPattern,
   ToggleHighlight = ToggleHighlight,
-  WrapTfindMethod = WrapTfindMethod,
 }
