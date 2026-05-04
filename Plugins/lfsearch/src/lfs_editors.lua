@@ -10,6 +10,18 @@ local Editors do
   _Plugin.Editors = Editors
 end
 
+-- Same as tfind, but all input and output offsets are in characters rather than bytes.
+local function WrapTfindMethod (tfind)
+  local usub, ssub = ("").sub, string.sub
+  local ulen = ("").len
+  return function(patt, s, init)
+    init = init and #(usub(s, 1, init-1)) + 1
+    local from, to, t = tfind(patt, s, init)
+    if from == nil then return nil end
+    return ulen(ssub(s, 1, from-1)) + 1, ulen(ssub(s, 1, to)), t
+  end
+end
+
 local function ToggleHighlight()
   local info = editor.GetInfo()
   if info then
@@ -140,4 +152,5 @@ return {
   ProcessEditorEvent = ProcessEditorEvent,
   SetHighlightPattern = SetHighlightPattern,
   ToggleHighlight = ToggleHighlight,
+  WrapTfindMethod = WrapTfindMethod,
 }

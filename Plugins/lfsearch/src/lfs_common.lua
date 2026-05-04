@@ -2,6 +2,7 @@
 -- luacheck: globals _Plugin
 
 local M       = require "lfs_message"
+local Editors = require "lfs_editors"
 local RepLib  = require "lfs_replib"
 local sdialog = require "far2.simpledialog"
 local Sett    = require "far2.settings"
@@ -158,19 +159,6 @@ local function GetSearchAreas(aData)
 end
 
 
--- Same as tfind, but all input and output offsets are in characters rather than bytes.
-local function WrapTfindMethod (tfind)
-  local usub, ssub = ("").sub, string.sub
-  local ulen = ("").len
-  return function(patt, s, init)
-    init = init and #(usub(s, 1, init-1)) + 1
-    local from, to, t = tfind(patt, s, init)
-    if from == nil then return nil end
-    return ulen(ssub(s, 1, from-1)) + 1, ulen(ssub(s, 1, to)), t
-  end
-end
-
-
 --------------------------------------------------------------------------------
 -- @param lib_name
 --    Either of ("far", "pcre", "oniguruma").
@@ -210,7 +198,7 @@ local function GetRegexLib (lib_name)
       return base.new (pat, cflags)
     end
     local tb_methods = getmetatable(base.new(".")).__index
-    tb_methods.ufind = WrapTfindMethod(tb_methods.tfind)
+    tb_methods.ufind = Editors.WrapTfindMethod(tb_methods.tfind)
     tb_methods.gsub = function(patt, subj, rep) return base.gsub(subj, patt, rep) end
     tb_methods.capturecount = function(patt) return patt:fullinfo().CAPTURECOUNT end
   -----------------------------------------------------------------------------
