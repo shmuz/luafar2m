@@ -223,7 +223,12 @@ local function InitActions(hDlg)
   editor.SetSavedState(mEditorId, true)
   local index = mData[CURIDX]
   local tt = mData[index]
-  editor.SetPosition(mEditorId, tt.CurLine, tt.CurPos)
+
+  -- Direct call of editor.SetPosition() or editor.Redraw() during DN_INITDIALOG
+  -- result in drawing the editor content on the window below (e.g. on panels, editor, etc.)
+  -- *** It can be seen when dragging the Memo dialog by mouse or by CtrlF5.
+  -- *** mf.postmacro solves that problem.
+  mf.postmacro(editor.SetPosition, mEditorId, tt.CurLine, tt.CurPos)
 
   UpdateTitle(hDlg)
   UpdateIndicator(hDlg)
