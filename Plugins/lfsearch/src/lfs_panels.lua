@@ -1478,10 +1478,11 @@ local function ReplaceOrGrep (aOp, aData, aWithDialog, aScriptCall)
           M.MPanelRO_Readonly..fdata.FullName..M.MPanelRO_Question,
           M.MWarning, M.MPanelRO_Buttons, "w")
         cdata.last_clock = cdata.last_clock + clock() - currclock
-        if     res == 2 then sProcessReadonly="all"
+        if     res == 1 then -- luacheck:ignore
+        elseif res == 2 then sProcessReadonly="all"
         elseif res == 3 then bCanProcess=false
         elseif res == 4 then bCanProcess=false; sProcessReadonly="none"
-        elseif res ~= 1 then bCanProcess=false; userbreak.fullcancel=true
+        else                 bCanProcess=false; userbreak.fullcancel=true
         end
       end
     end
