@@ -371,6 +371,14 @@ local function OpenMemoDialog()
         if index >= 1 and index <= MEMO_COUNT then
           newIndex = index
           hDlg:Close() -- update highlighting as the extension may have changed
+          return true
+        end
+
+      elseif Param1 == POS_TITLE then
+        if Param2.EventFlags == F.DOUBLE_CLICK then
+          mFullScreen = not mFullScreen
+          Resize(hDlg)
+          return true
         end
       end
 
