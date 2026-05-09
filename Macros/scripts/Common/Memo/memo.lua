@@ -119,7 +119,7 @@ local function LoadFileContent(path)
   return content
 end
 
-local function SaveFileContent(path, content)
+local function SaveFileContent(path, content, useBom)
   local tmp = path .. ".tmp"
   local fp, err = io.open(tmp, "wb")
   if not fp then
@@ -127,7 +127,7 @@ local function SaveFileContent(path, content)
     return false
   end
 
-  if mUseBom then fp:write(BOM) end
+  if useBom then fp:write(BOM) end
   fp:write(content)
   fp:close()
 
@@ -154,7 +154,7 @@ end
 local function SaveCurrentMemo(hDlg)
   local filepath = GetCurFilePath()
   local content = hDlg:GetText(POS_MEMO)
-  return SaveFileContent(filepath, content)
+  return SaveFileContent(filepath, content, mUseBom)
 end
 
 local function UpdateTitle(hDlg)
@@ -183,7 +183,7 @@ local function SaveMemoAs(hDlg)
   local destPath = far.InputBox(nil, "Save Memo", "Enter destination path:", "MemoSave",
                                 Path, nil, nil, "FIB_NONE")
   if destPath and CheckFileOverwrite(destPath) then
-    SaveFileContent(destPath, hDlg:GetText(POS_MEMO))
+    SaveFileContent(destPath, hDlg:GetText(POS_MEMO), mUseBom)
   end
 end
 
