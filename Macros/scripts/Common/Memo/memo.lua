@@ -234,7 +234,7 @@ end
 
 local function CloseActions(hDlg, newIndex)
   local info = editor.GetInfo(mEditorId)
-  if not info or 0 ~= bit64.band(info.CurState, F.ECSTATE_MODIFIED) then
+  if 0 ~= bit64.band(info.CurState, F.ECSTATE_MODIFIED) then
     if not SaveCurrentMemo(hDlg) then
       local msg = "Cannot save the current memo. Continue anyway?"
       if 2 ~= far.Message(msg, "Error", "&No;&Yes", "w") then
