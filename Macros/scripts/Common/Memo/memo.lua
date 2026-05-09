@@ -9,6 +9,7 @@ local DB_Name = "Memo"
 local MemoDir = far.InMyConfig("plugins/luafar/memo_files")
 local MainDialogId = "37316E1D-A58E-40CE-9593-15E86984930C"
 local ConfigDialogId = "F2912E1A-64E7-49D4-83D4-D3093E4D91E2"
+local DirSep = package.config:sub(1,1)
 
 local MEMO_COUNT = 10
 local POS_TITLE, POS_MEMO, POS_INDICATOR = 1,2,3 -- dialog item positions
@@ -18,7 +19,7 @@ local CURIDX  = "CurIndex"
 local SWITCHK = "SwitchKeys"
 local FULLSCR = "FullScreenKeys"
 
-local HelpTopic = ("<%s>Contents"):format((...):match(".+/")) -- (...) is full pathname of this script
+local HelpTopic = ("<%s>Contents"):format((...):match(".+"..DirSep)) -- (...) is pathname of this script
 local BOM = "\239\187\191" -- UTF-8 BOM
 local F = far.Flags
 
@@ -102,16 +103,15 @@ end
 local function LoadFileContent(path)
   mUseBom = false
   local fp = io.open(path)
-  if fp then
-    mUseBom = (fp:read(#BOM) == BOM)
-    if not mUseBom then
-      fp:seek("set", 0)
-    end
-    local content = fp:read("*all") or ""
-    fp:close()
-    return content
+  if not fp then return "" end
+
+  mUseBom = (fp:read(#BOM) == BOM)
+  if not mUseBom then
+    fp:seek("set", 0)
   end
-  return ""
+  local content = fp:read("*all") or ""
+  fp:close()
+  return content
 end
 
 local function SaveFileContent(path, content)
@@ -192,7 +192,7 @@ local function RenameMemo(hDlg)
 
   if not DestName then return end
 
-  if DestName:find("/") then
+  if DestName:find(DirSep) then
     ErrMsg("Only file name may be entered here, no path allowed")
     return
   end
@@ -201,7 +201,7 @@ local function RenameMemo(hDlg)
   local trg = win.JoinPath(MemoDir, DestName)
   local ok, err = win.MoveFile(src, trg)
   if not ok then
-    ErrMsg("Can't rename \"%s\": %s", src, tostring(err))
+    ErrMsg("Can't rename \"%s\": %s", GetCurFileName(), tostring(err))
     return
   end
 
@@ -216,7 +216,6 @@ end
 local function InitActions(hDlg)
   local filepath = GetCurFilePath()
   editor.SetVirtualFileName(mEditorId, filepath)
-
   local content = LoadFileContent(filepath)
   hDlg:SetText(POS_MEMO, content)
   editor.SetSavedState(mEditorId, true)
@@ -234,17 +233,11 @@ local function InitActions(hDlg)
 end
 
 local function CloseActions(hDlg, newIndex)
-  newIndex = newIndex or mData[CURIDX]
-
   local info = editor.GetInfo(mEditorId)
-  if not info then
-    ErrMsg("Could not retrieve editor info. Exiting.")
-    return true
-  end
-
-  if 0 ~= bit64.band(info.CurState, F.ECSTATE_MODIFIED) then
+  if not info or 0 ~= bit64.band(info.CurState, F.ECSTATE_MODIFIED) then
     if not SaveCurrentMemo(hDlg) then
-      if 2 ~= far.Message("Error occurred. Continue anyway?", "Error", "&No;&Yes", "w") then
+      local msg = "Cannot save the current memo. Continue anyway?"
+      if 2 ~= far.Message(msg, "Error", "&No;&Yes", "w") then
         return false
       end
     end
@@ -254,18 +247,14 @@ local function CloseActions(hDlg, newIndex)
   local item = mData[index]
   item.CurLine, item.CurPos = info.CurLine, info.CurPos
   -- update the index
-  if newIndex then
-    mData[CURIDX] = newIndex
-  end
+  mData[CURIDX] = newIndex
   SaveData(mData)
   return true
 end
 
 local function SwitchTo(hDlg, newindex)
-  if newindex == mData[CURIDX] then
-    return
-  end
-  CloseActions(hDlg, newindex)
+  if newindex == mData[CURIDX] then return end
+  if not CloseActions(hDlg, newindex) then return end
   InitActions(hDlg)
   editor.Reparse(mEditorId)
 end
@@ -388,7 +377,7 @@ local function OpenMemoDialog()
       end
 
     elseif Msg == F.DN_CLOSE then
-      if not CloseActions(hDlg) then
+      if not CloseActions(hDlg, mData[CURIDX]) then
         return 0 -- don't close the dialog
       end
 
