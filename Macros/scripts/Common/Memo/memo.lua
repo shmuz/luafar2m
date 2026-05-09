@@ -11,17 +11,14 @@ local MainDialogId = "37316E1D-A58E-40CE-9593-15E86984930C"
 local ConfigDialogId = "F2912E1A-64E7-49D4-83D4-D3093E4D91E2"
 
 local MEMO_COUNT = 10
-local POS_TITLE = 1     -- Dialog title
-local POS_MEMO  = 2     -- Main memo editor (DI_MEMOEDIT)
-local POS_INDICATOR = 3 -- Page indicator at bottom
-local QUIT = "quit"
+local POS_TITLE, POS_MEMO, POS_INDICATOR = 1,2,3 -- dialog item positions
 
 -- These are used as keys in saved data
 local CURIDX  = "CurIndex"
 local SWITCHK = "SwitchKeys"
 local FULLSCR = "FullScreenKeys"
 
-local ThisDir = (...):match(".+/")
+local HelpTopic = ("<%s>Contents"):format((...):match(".+/")) -- (...) is full pathname of this script
 local BOM = "\239\187\191" -- UTF-8 BOM
 local F = far.Flags
 
@@ -193,11 +190,11 @@ local function RenameMemo(hDlg)
       GetCurFileName(),                -- initial input text
       nil, nil, "FIB_NONE")            -- maxlength, helptopic, flags
 
-  if not DestName then return false end
+  if not DestName then return end
 
   if DestName:find("/") then
     ErrMsg("Only file name may be entered here, no path allowed")
-    return false
+    return
   end
 
   local src = GetCurFilePath()
@@ -205,17 +202,19 @@ local function RenameMemo(hDlg)
   local ok, err = win.MoveFile(src, trg)
   if not ok then
     ErrMsg("Can't rename \"%s\": %s", src, tostring(err))
-    return false
+    return
   end
 
   local index = mData[CURIDX]
   mData[index].FileName = DestName
-  return true
+  SaveData(mData)
+  editor.SetVirtualFileName(mEditorId, GetCurFilePath())
+  editor.Reparse(mEditorId)
+  editor.Redraw()
 end
 
 local function InitActions(hDlg)
   local filepath = GetCurFilePath()
-  mEditorId = hDlg:GetMemoEditId(POS_MEMO)
   editor.SetVirtualFileName(mEditorId, filepath)
 
   local content = LoadFileContent(filepath)
@@ -235,10 +234,12 @@ local function InitActions(hDlg)
 end
 
 local function CloseActions(hDlg, newIndex)
+  newIndex = newIndex or mData[CURIDX]
+
   local info = editor.GetInfo(mEditorId)
   if not info then
     ErrMsg("Could not retrieve editor info. Exiting.")
-    return QUIT
+    return true
   end
 
   if 0 ~= bit64.band(info.CurState, F.ECSTATE_MODIFIED) then
@@ -258,6 +259,15 @@ local function CloseActions(hDlg, newIndex)
   end
   SaveData(mData)
   return true
+end
+
+local function SwitchTo(hDlg, newindex)
+  if newindex == mData[CURIDX] then
+    return
+  end
+  CloseActions(hDlg, newindex)
+  InitActions(hDlg)
+  editor.Reparse(mEditorId)
 end
 
 local function CalcDialogSize()
@@ -310,11 +320,6 @@ local function OpenConfigDialog()
 end
 
 local function OpenMemoDialog()
-  local ok, msg = win.CreateDir(MemoDir, true)
-  if not ok then ErrMsg("%s", msg); return; end
-
-  mData = LoadData()
-
   local dlgSize = CalcDialogSize()
   local Items = {
     { F.DI_TEXT,     1, 0, dlgSize.X, 0,             nil, nil, nil, nil, ""},
@@ -322,10 +327,9 @@ local function OpenMemoDialog()
     { F.DI_TEXT,     1, dlgSize.Y-1, dlgSize.X, 0,   nil, nil, nil, F.DIF_CENTERTEXT, ""},
   }
 
-  local newIndex
-
   local function DlgProc(hDlg, Msg, Param1, Param2)
     if Msg == F.DN_INITDIALOG then
+      mEditorId = hDlg:GetMemoEditId(POS_MEMO)
       InitActions(hDlg)
 
     elseif Msg == F.DN_KEY then
@@ -339,10 +343,7 @@ local function OpenMemoDialog()
           SaveMemoAs(hDlg)
 
         elseif key == "ShiftF6" then -- Rename
-          if RenameMemo(hDlg) then
-            newIndex = mData[CURIDX]
-            hDlg:Close() -- update highlighting as the extension may have changed
-          end
+          RenameMemo(hDlg)
 
         elseif key == "F9" or key == "AltShiftF9" then
           OpenConfigDialog()
@@ -353,9 +354,9 @@ local function OpenMemoDialog()
 
         -- Switch memo by a key combination
         elseif MatchSwitchMemoPattern(key) then
-          local idx = tonumber(key:match("[0-9]"))
-          newIndex = (idx == 0) and 10 or idx
-          hDlg:Close() -- update highlighting as the extension may have changed
+          local index = tonumber(key:match("[0-9]"))
+          if index == 0 then index = 10 end
+          SwitchTo(hDlg, index)
 
         else
           return nil -- tell Far the key wasn't processed
@@ -374,8 +375,7 @@ local function OpenMemoDialog()
         local X0 = math.floor((DW - IW) / 2)        -- The X of the 1-st indicator left edge.
         local index = math.ceil((X - X0) / 4)       -- Each indicator occupies 4 cells.
         if index >= 1 and index <= MEMO_COUNT then
-          newIndex = index
-          hDlg:Close() -- update highlighting as the extension may have changed
+          SwitchTo(hDlg, index)
           return true
         end
 
@@ -388,11 +388,7 @@ local function OpenMemoDialog()
       end
 
     elseif Msg == F.DN_CLOSE then
-      local ret = CloseActions(hDlg, newIndex)
-      if ret == QUIT then
-        newIndex = nil
-      elseif not ret then
-        newIndex = nil
+      if not CloseActions(hDlg) then
         return 0 -- don't close the dialog
       end
 
@@ -402,14 +398,17 @@ local function OpenMemoDialog()
     end
   end
 
-  local Flags = F.FDLG_KEEPCONSOLETITLE
-  local HelpTopic = "<"..ThisDir..">Contents"
-  local hDlg = far.DialogInit(win.Uuid(MainDialogId), -1, -1, dlgSize.X, dlgSize.Y,
-                              HelpTopic, Items, Flags, DlgProc)
-  m_hDlg = hDlg
-  far.DialogRun(hDlg)
-  far.DialogFree(hDlg)
-  return newIndex
+  local ok, msg = win.CreateDir(MemoDir, true)
+  if not ok then
+    ErrMsg("%s", msg); return
+  end
+
+  mData = LoadData()
+  m_hDlg =
+      far.DialogInit(win.Uuid(MainDialogId), -1, -1, dlgSize.X, dlgSize.Y, HelpTopic, Items,
+      F.FDLG_KEEPCONSOLETITLE, DlgProc)
+  far.DialogRun(m_hDlg)
+  far.DialogFree(m_hDlg)
 end
 
 Event {
@@ -428,9 +427,6 @@ Macro {
   area="Shell QView Info Tree Editor Viewer"; key="AltShiftM";
   action=function()
     mFullScreen = false
-    mf.acall(    -- use mf.acall to avoid seeing "P" in the upper left screen corner
-      function()
-        while OpenMemoDialog() do end
-      end)
+    mf.acall(OpenMemoDialog) -- use mf.acall to avoid seeing "P" in the upper left screen corner
   end;
 }
