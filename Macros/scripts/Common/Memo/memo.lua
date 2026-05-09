@@ -102,8 +102,13 @@ end
 
 local function LoadFileContent(path)
   mUseBom = false
-  local fp = io.open(path)
-  if not fp then return "" end
+  local fp, err = io.open(path)
+  if not fp then
+    if win.GetFileAttr(path) then
+      ErrMsg("Can't read \"%s\": %s", path, tostring(err))
+    end
+    return ""
+  end
 
   mUseBom = (fp:read(#BOM) == BOM)
   if not mUseBom then
