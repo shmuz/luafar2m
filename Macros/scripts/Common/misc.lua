@@ -45,7 +45,7 @@ Macro {
 Macro {
   -- original: "Макросы для редактора Журко"
   id="4244A0FA-CFD6-4905-B266-D5235AD81990";
-  key='ShiftBS'; area='Common';
+  key='ShiftBS'; area='Shell Editor Dialog';
   description='XLat: QWERTY-ЙЦУКЕН выделения или слова и смена языка ввода ОС';
   action=function()
     if not Object.Selected then Keys('SelWord') end

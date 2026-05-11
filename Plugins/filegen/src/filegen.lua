@@ -18,7 +18,7 @@ end
 function export.Open(OpenFrom, Guid, text)
   if OpenFrom == F.OPEN_COMMANDLINE then
     local out = {}
-    local args =  { far.SplitCmdLine(text) }
+    local args =  far.SplitCmdLine(text)
     for k,v in ipairs(args) do
       local key, val = v:match("^%s*(%w+)%s*=(.+)$")
       if key == "fnum" or key == "dnum" then out[key] = tonumber(val)

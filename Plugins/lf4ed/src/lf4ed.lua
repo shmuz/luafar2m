@@ -565,7 +565,7 @@ local function OpenCommandLine (command)
     local env = setmetatable({}, {__index=_G})
     setfenv(f,env)()
   else
-    local args = { far.SplitCmdLine(command) }
+    local args = far.SplitCmdLine(command)
     ProcessCommand(args, "panels")
   end
 end
