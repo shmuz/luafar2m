@@ -40,6 +40,7 @@ typedef struct {
   size_t overlap; // number of CHUNKs in overlap (this value does not change after initialization)
   size_t top;     // number of CHUNKs currently read
   char *data;     // allocated memory buffer
+  int firstread;  // first read
 } TReader;
 
 static int NewReader (lua_State *L)
@@ -47,10 +48,13 @@ static int NewReader (lua_State *L)
   TReader* ud = (TReader*)lua_newuserdata(L, sizeof(TReader));
   memset(ud, 0, sizeof(TReader));
   ud->fp = INVALID_HANDLE_VALUE;
+
   ud->overlap = luaL_checkinteger(L, 1) / 2 / CHUNK;
   if (ud->overlap == 0) ud->overlap = 1;
+
   ud->data = (char*) malloc(ud->overlap * 2 * CHUNK);
   if (ud->data == NULL) return 0;
+
   luaL_getmetatable(L, ReaderType);
   lua_setmetatable(L, -2);
   return 1;
@@ -80,21 +84,19 @@ static TReader* CheckReaderWithFile (lua_State *L, int pos)
 static int Reader_getnextchunk (lua_State *L)
 {
   TReader *ud = CheckReaderWithFile(L, 1);
-  size_t M = ud->overlap;
-  size_t N = M * 2;
+  const size_t M = ud->overlap;
+  const size_t N = M * 2;
   size_t top = ud->top;
   DWORD tail = 0;
-  LONGLONG offset;
-  BOOL firstread;
 
-  if (!GetFileOffset(ud->fp, &offset))
-    return 0;
-  firstread = (0 == offset);
+  const int was_firstread = ud->firstread;
+  ud->firstread = 0;
 
   if (top == N) {
     memcpy(ud->data, ud->data + M*CHUNK, M*CHUNK);
     ud->top = top = M;
   }
+
   while (top < N) {
     BOOL Ok = WINPORT(ReadFile)(ud->fp, ud->data + top*CHUNK, CHUNK, &tail, NULL);
     if (!Ok)
@@ -106,15 +108,20 @@ static int Reader_getnextchunk (lua_State *L)
     else
       break;
   }
+
   if (top == ud->top && tail == 0)
   {
-    if (firstread)
-      { lua_pushstring(L, ""); return 1; }
+    if (was_firstread)
+      lua_pushstring(L, "");
     else
-      return 0;
+      lua_pushnil(L);
   }
-  ud->top = top;
-  lua_pushlstring(L, ud->data, ud->top * CHUNK + tail);
+  else
+  {
+    ud->top = top;
+    lua_pushlstring(L, ud->data, ud->top * CHUNK + tail);
+  }
+
   return 1;
 }
 
@@ -156,8 +163,9 @@ static int Reader_closefile (lua_State *L)
 
 static int Reader_openfile (lua_State *L)
 {
-  int ret = 0;
   TReader *ud = CheckReader(L, 1);
+  ud->top = 0;
+  ud->firstread = 1;
 
   if (ud->fp != INVALID_HANDLE_VALUE)
     WINPORT(CloseHandle)(ud->fp);
@@ -171,11 +179,7 @@ static int Reader_openfile (lua_State *L)
     FILE_FLAG_SEQUENTIAL_SCAN,
     NULL);
 
-  if (ud->fp != INVALID_HANDLE_VALUE) {
-    ud->top = 0;
-    ret = 1;
-  }
-  lua_pushboolean(L, ret);
+  lua_pushboolean(L, ud->fp != INVALID_HANDLE_VALUE);
   return 1;
 }
 
