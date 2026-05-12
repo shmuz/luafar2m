@@ -97,7 +97,7 @@ static int Reader_getnextchunk (lua_State *L)
   }
   while (top < N) {
     BOOL Ok = WINPORT(ReadFile)(ud->fp, ud->data + top*CHUNK, CHUNK, &tail, NULL);
-    if (!Ok || tail == 0)
+    if (!Ok)
       return 0;
     else if (tail == CHUNK) {
       tail = 0;
