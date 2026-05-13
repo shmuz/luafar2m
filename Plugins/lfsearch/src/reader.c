@@ -36,11 +36,11 @@ static BOOL GetFileOffset(HANDLE fp, LONGLONG *offset)
 }
 
 typedef struct {
-  HANDLE fp;      // FILE object
-  size_t overlap; // number of CHUNKs in overlap (this value does not change after initialization)
-  size_t top;     // number of CHUNKs currently read
-  char *data;     // allocated memory buffer
-  int firstread;  // first read
+  HANDLE  fp;      // file object
+  size_t  overlap; // number of CHUNKs in overlap (this value does not change after initialization)
+  size_t  top;     // number of CHUNKs currently read
+  char*   data;    // allocated memory buffer
+  int     done;    // either the entire file was read or an error occured
 } TReader;
 
 static int NewReader (lua_State *L)
@@ -84,37 +84,37 @@ static TReader* CheckReaderWithFile (lua_State *L, int pos)
 static int Reader_getnextchunk (lua_State *L)
 {
   TReader *ud = CheckReaderWithFile(L, 1);
+
+  lua_pushnil(L); // prepare to return nil from any place in the function
+  if (ud->done)
+    return 1;
+
   const size_t M = ud->overlap;
   const size_t N = M * 2;
-  size_t top = ud->top;
+  size_t top;
   DWORD tail = 0;
+  const int firstread = (ud->top == 0);
 
-  const int was_firstread = ud->firstread;
-  ud->firstread = 0;
-
-  if (top == N) {
+  if (ud->top == N) {
     memcpy(ud->data, ud->data + M*CHUNK, M*CHUNK);
-    ud->top = top = M;
+    ud->top = M;
   }
 
-  while (top < N) {
-    BOOL Ok = WINPORT(ReadFile)(ud->fp, ud->data + top*CHUNK, CHUNK, &tail, NULL);
-    if (!Ok)
-      return 0;
-    else if (tail == CHUNK) {
-      tail = 0;
-      ++top;
+  for (top = ud->top;  top < N;  top++, tail = 0) {
+    if (!WINPORT(ReadFile)(ud->fp, ud->data + top*CHUNK, CHUNK, &tail, NULL)) {
+      ud->done = 1;
+      return 1;
     }
-    else
+    if (tail != CHUNK) {
+      ud->done = 1;
       break;
+    }
   }
 
   if (top == ud->top && tail == 0)
   {
-    if (was_firstread)
+    if (firstread)
       lua_pushstring(L, "");
-    else
-      lua_pushnil(L);
   }
   else
   {
@@ -165,7 +165,7 @@ static int Reader_openfile (lua_State *L)
 {
   TReader *ud = CheckReader(L, 1);
   ud->top = 0;
-  ud->firstread = 1;
+  ud->done = 0;
 
   if (ud->fp != INVALID_HANDLE_VALUE)
     WINPORT(CloseHandle)(ud->fp);
