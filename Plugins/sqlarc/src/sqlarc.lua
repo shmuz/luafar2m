@@ -31,11 +31,17 @@ local DIRSEP = package.config:sub(1, 1)
 local osWin = (DIRSEP == "\\")
 local F = far.Flags
 local band, bor, bnot, bnew = bit64.band, bit64.bor, bit64.bnot, bit64.new
-local OpenFile
+local CreateDir, OpenFile
 local Title
 
+--------------------------------------------------------------------------------
 if osWin then
-  OpenFile = function(fname, mode) -- allows opening files that end with a dot, etc.
+  CreateDir = function(dir, mode)
+    if not dir:find("^\\") then dir = [[\\?\]]..dir end
+    return win.CreateDir(dir, mode)
+  end
+
+  OpenFile = function(fname, mode) -- open even files that end with a dot, etc.
     if not fname:find("^\\") then fname = [[\\?\]]..fname end
     return io.open(fname, mode or "rb")
   end
@@ -46,9 +52,11 @@ if osWin then
   far.FileTimeResolution(2)                -- luacheck: ignore
 
 else
+  CreateDir = win.CreateDir                -- luacheck: ignore
   OpenFile = win.OpenFile                  -- luacheck: ignore
   Title = far.GetPluginGlobalInfo().Title  -- luacheck: ignore
 end
+--------------------------------------------------------------------------------
 
 local sql3 = require "lsqlite3"
 local SimpleDialog = require "far2.simpledialog"
@@ -646,7 +654,7 @@ end
 local function ExtractTree(state, parent_id, tree_name, DestPath, Move)
   local db = state.db
   local path = JoinPath(DestPath, tree_name)
-  local result = win.CreateDir(path, "t")
+  local result = CreateDir(path, "t")
   if result then
     local t_query = ("SELECT * FROM sqlarc_files WHERE isdir=1 AND parent=%d AND name=%s"):
       format(parent_id, Norm(tree_name))
@@ -691,7 +699,7 @@ function export.GetFiles(obj, handle, PanelItems, Move, DestPath, OpMode)
     end
   end
 
-  if not win.CreateDir(DestPath, "t") then
+  if not CreateDir(DestPath, "t") then
     if not silent_mode then
       CommonErrMsg(("Invalid destination path:\n\"%s\""):format(DestPath))
     end
