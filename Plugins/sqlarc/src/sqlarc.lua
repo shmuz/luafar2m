@@ -31,20 +31,27 @@ local DIRSEP = package.config:sub(1, 1)
 local osWin = (DIRSEP == "\\")
 local F = far.Flags
 local band, bor, bnot, bnew = bit64.band, bit64.bor, bit64.bnot, bit64.new
-local OpenFile = osWin and io.open or win.OpenFile
+local OpenFile
+local Title
 
 if osWin then
+  OpenFile = function(fname, mode) -- allows opening files that end with a dot, etc.
+    if not fname:find("^\\") then fname = [[\\?\]]..fname end
+    return io.open(fname, mode or "rb")
+  end
+
+  Title = export.GetGlobalInfo().Title     -- luacheck: ignore
+
   -- set 100ns file resolution
-  far.FileTimeResolution(2) -- luacheck: ignore
+  far.FileTimeResolution(2)                -- luacheck: ignore
+
+else
+  OpenFile = win.OpenFile                  -- luacheck: ignore
+  Title = far.GetPluginGlobalInfo().Title  -- luacheck: ignore
 end
 
 local sql3 = require "lsqlite3"
 local SimpleDialog = require "far2.simpledialog"
-
-local Title do
-  local info = osWin and export.GetGlobalInfo() or far.GetPluginGlobalInfo() -- luacheck: ignore
-  Title = info.Title
-end
 
 local QCreateFiles = [[
 CREATE TABLE sqlarc_files (
