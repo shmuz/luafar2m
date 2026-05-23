@@ -64,6 +64,15 @@ Macro {
 }
 
 Macro {
+  description="Equation Solver";
+  area="Common"; key="AltShiftF5";
+  action=function()
+    local eq = require "far2.equation"
+    eq.dialog()
+  end
+}
+
+Macro {
   id="D4CFCC5C-ABD3-4C25-8245-621990382224";
   description="Lua Calculator";
   area="Common"; key="CtrlShiftF4";

@@ -356,6 +356,7 @@ local function CreateObject(filename)
     StartSortOrder = nil; -- 0;
     Flags = bor(F.OPIF_ADDDOTS, osWin and F.OPIF_SHORTCUT or 0);
     IsCached = false; -- caching must be reset after any change on this table
+    Format = "Sqlarc";
   }
   return obj
 end

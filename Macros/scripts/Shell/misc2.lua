@@ -20,7 +20,6 @@ local Repos = {
   { dir="luafar2m";     spr=48; },
   { dir="luafar-far2l"; spr=47; },
   { dir="scite-config"; spr=46; },
-  { dir="mactest";      spr=45; },
 }
 
 for _,repo in ipairs(Repos) do

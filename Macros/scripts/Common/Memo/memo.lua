@@ -15,9 +15,9 @@ local MEMO_COUNT = 10
 local POS_TITLE, POS_MEMO, POS_INDICATOR = 1,2,3 -- dialog item positions
 
 -- These are used as keys in saved data
-local CURIDX  = "CurIndex"
-local SWITCHK = "SwitchKeys"
-local FULLSCR = "FullScreenKeys"
+local KEY_CURIDX  = "CurIndex"
+local KEY_SWITCH  = "SwitchKeys"
+local KEY_FULLSCR = "FullScreenKeys"
 
 local HelpTopic = ("<%s>Contents"):format((...):match(".+"..DirSep)) -- (...) is pathname of this script
 local BOM = "\239\187\191" -- UTF-8 BOM
@@ -42,7 +42,7 @@ local SwitchKeyList = {
 }
 
 local function MatchSwitchMemoPattern(key)
-  return key:match(SwitchKeyList[mData[SWITCHK]].pattern)
+  return key:match(SwitchKeyList[mData[KEY_SWITCH]].pattern)
 end
 
 local FullScreenKeyList = {
@@ -52,7 +52,7 @@ local FullScreenKeyList = {
 }
 
 local function MatchFullScreenPattern(key)
-  return key == FullScreenKeyList[mData[FULLSCR]].key
+  return key == FullScreenKeyList[mData[KEY_FULLSCR]].key
 end
 
 local function CheckFileOverwrite(fname)
@@ -81,9 +81,9 @@ local function LoadData()
     data[i] = tt
   end
   -- Normalization
-  data[CURIDX]  = Normalize(data[CURIDX],  1, MEMO_COUNT, 1)
-  data[SWITCHK] = Normalize(data[SWITCHK], 1, #SwitchKeyList, 1)
-  data[FULLSCR] = Normalize(data[FULLSCR], 1, #FullScreenKeyList, 1)
+  data[KEY_CURIDX]  = Normalize(data[KEY_CURIDX],  1, MEMO_COUNT, 1)
+  data[KEY_SWITCH]  = Normalize(data[KEY_SWITCH], 1, #SwitchKeyList, 1)
+  data[KEY_FULLSCR] = Normalize(data[KEY_FULLSCR], 1, #FullScreenKeyList, 1)
   return data
 end
 
@@ -92,7 +92,7 @@ local function SaveData(data)
 end
 
 local function GetCurFileName()
-  local index = mData[CURIDX]
+  local index = mData[KEY_CURIDX]
   return mData[index].FileName
 end
 
@@ -145,7 +145,7 @@ local function UpdateIndicator(hDlg)
   local dot = utf8.char(0x2022)
   local indic = dot
   for k=1,MEMO_COUNT do
-    indic = (k == mData[CURIDX] and "%s[&%d]%s" or "%s %d %s"):format(indic, k % 10, dot)
+    indic = (k == mData[KEY_CURIDX] and "%s[&%d]%s" or "%s %d %s"):format(indic, k % 10, dot)
   end
   hDlg:SetText(POS_INDICATOR, indic)
 end
@@ -162,7 +162,7 @@ local function UpdateTitle(hDlg)
   if EI then
     local W = EI.WindowSizeX
     local mark = (0 == bit64.band(EI.CurState, F.ECSTATE_MODIFIED)) and "" or "*"
-    local fileinfo = ("[%s%d] %s"):format(mark, mData[CURIDX], GetCurFileName())
+    local fileinfo = ("[%s%d] %s"):format(mark, mData[KEY_CURIDX], GetCurFileName())
     local lineinfo = ("Line %3d/%d | Col %3d"):format(EI.CurLine, EI.TotalLines, EI.CurTabPos)
     local title = fileinfo
     local len = fileinfo:len() + lineinfo:len()
@@ -210,7 +210,7 @@ local function RenameMemo(hDlg)
     return
   end
 
-  local index = mData[CURIDX]
+  local index = mData[KEY_CURIDX]
   mData[index].FileName = DestName
   SaveData(mData)
   editor.SetVirtualFileName(mEditorId, GetCurFilePath())
@@ -224,7 +224,7 @@ local function InitActions(hDlg)
   local content = LoadFileContent(filepath)
   hDlg:SetText(POS_MEMO, content)
   editor.SetSavedState(mEditorId, true)
-  local index = mData[CURIDX]
+  local index = mData[KEY_CURIDX]
   local tt = mData[index]
 
   -- Direct call of editor.SetPosition() or editor.Redraw() during DN_INITDIALOG
@@ -248,17 +248,17 @@ local function CloseActions(hDlg, newIndex)
     end
   end
   -- get params of the current memo
-  local index = mData[CURIDX]
+  local index = mData[KEY_CURIDX]
   local item = mData[index]
   item.CurLine, item.CurPos = info.CurLine, info.CurPos
   -- update the index
-  mData[CURIDX] = newIndex
+  mData[KEY_CURIDX] = newIndex
   SaveData(mData)
   return true
 end
 
 local function SwitchTo(hDlg, newindex)
-  if newindex == mData[CURIDX] then return end
+  if newindex == mData[KEY_CURIDX] then return end
   if not CloseActions(hDlg, newindex) then return end
   InitActions(hDlg)
   editor.Reparse(mEditorId)
@@ -296,9 +296,9 @@ local function OpenConfigDialog()
     { tp="dbox"; text="Configuration"; },
 
     { tp="text"; text="Keys for memo selection:"; },
-    { tp="combobox"; list=SwitchKeyList; dropdown=1; name=SWITCHK; val=mData[SWITCHK]; },
+    { tp="combobox"; list=SwitchKeyList; dropdown=1; name=KEY_SWITCH; val=mData[KEY_SWITCH]; },
     { tp="text"; text="Key for full screen toggling:"; },
-    { tp="combobox"; list=FullScreenKeyList; dropdown=1; name=FULLSCR; val=mData[FULLSCR]; },
+    { tp="combobox"; list=FullScreenKeyList; dropdown=1; name=KEY_FULLSCR; val=mData[KEY_FULLSCR]; },
 
     { tp="sep"; },
     { tp="butt"; default=1; centergroup=1; text="OK"; },
@@ -307,8 +307,8 @@ local function OpenConfigDialog()
   local Dlg = sd.New(Items)
   local Out = Dlg:Run()
   if Out then
-    mData[SWITCHK] = Out[SWITCHK]
-    mData[FULLSCR] = Out[FULLSCR]
+    mData[KEY_SWITCH] = Out[KEY_SWITCH]
+    mData[KEY_FULLSCR] = Out[KEY_FULLSCR]
     SaveData(mData)
   end
 end
@@ -382,7 +382,7 @@ local function OpenMemoDialog()
       end
 
     elseif Msg == F.DN_CLOSE then
-      if not CloseActions(hDlg, mData[CURIDX]) then
+      if not CloseActions(hDlg, mData[KEY_CURIDX]) then
         return 0 -- don't close the dialog
       end
 
