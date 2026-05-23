@@ -14,7 +14,9 @@ rex = rex
 Editors = Editors or {}
 
 if not rex then
-  rex = require "rex_onig"
+  local ok
+  ok, rex = pcall(require, "rex_onig")
+  if not ok then return end
   local Utf8ToUtf32 = win.Utf8ToUtf32
   local orig_new = rex.new
   rex.new = function (pat, cf, syn)
