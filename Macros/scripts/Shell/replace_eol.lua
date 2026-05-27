@@ -14,7 +14,6 @@ local osWindows = package.config:sub(1,1) == "\\"
 local OpenFile = osWindows and io.open or win.OpenFile
 
 local F = far.Flags
-local sd = require "far2.simpledialog"
 local Recurse
 
 local Items = {
@@ -35,6 +34,7 @@ local Items = {
 }
 
 local function GetData()
+  local sd = require "far2.simpledialog"
   local Dlg = sd.New(Items)
   local Pos, Elem = Dlg:Indexes()
   Elem.recurse.val = Recurse

@@ -8,7 +8,6 @@ local Clock = win.Clock or function() return far.FarClock()/1e6 end --luacheck:i
 local DirSep = package.config:sub(1,1)
 
 local F = far.Flags
-local sd = require "far2.simpledialog"
 local sett = mf or require "far2.settings"
 local libMessage = require "far2.message"
 local set_key, set_name = "temp", "Replace_EX"
@@ -55,6 +54,7 @@ end
 
 
 local function GetDataFromDialog()
+  local sd = require "far2.simpledialog"
   local W = 35
   local Items = {
     guid = "E2661CE3-04DA-4106-A496-250C3924A331";
