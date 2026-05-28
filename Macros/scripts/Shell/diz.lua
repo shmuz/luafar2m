@@ -49,13 +49,16 @@ local function GetDiz(fname, diz)
 end
 
 local function GetString(Fp, CodePage)
-  local DoConvert = CodePage == win.GetACP() or CodePage == win.GetOEMCP()
+  local DoConvert = false
+  if CodePage ~= 65001 then
+    local Info = win.GetCPInfo(CodePage)
+    DoConvert = Info and Info.MaxCharSize == 1
+  end
   return function()
     local line = Fp:read("*l")
-    if line == nil then return nil end
-    if DoConvert then
+    if line and DoConvert then
       line = win.MultiByteToWideChar(line, CodePage)
-      return win.WideCharToMultiByte(line, 65001)
+      line = win.WideCharToMultiByte(line, 65001)
     end
     return line
   end
