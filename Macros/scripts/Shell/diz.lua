@@ -4,7 +4,7 @@
 local MacroKey = "CtrlShiftZ"
 -- local F = far.Flags
 
-local OP_WRITE, OP_DELETE = 1,2
+local OP_WRITE, OP_DELETE, OP_SKIP = 1,2,3
 local Utf8Bom = "\239\187\191"
 
 local DizList = {}
@@ -30,18 +30,25 @@ local function GetDiz(fname, diz)
     { tp="memo"; height=5; val=diz; name="memo"; },
     { tp="sep" },
     { tp="butt"; centergroup=1; text="&1 Write";  name="write";  default=1; },
-    { tp="butt"; centergroup=1; text="&2 Delete"; name="delete"; },
-    { tp="butt"; centergroup=1; text="&3 Cancel"; cancel=1; },
+    { tp="butt"; centergroup=1; text="&2 Skip";   name="skip"; },
+    { tp="butt"; centergroup=1; text="&3 Delete"; name="delete"; },
+    { tp="butt"; centergroup=1; text="&4 Cancel"; cancel=1; },
   }
 
   local Dlg = sd.New(Items)
   local Pos = Dlg:Indexes()
 
   local out, pos = Dlg:Run()
-  if pos == Pos.write or pos == Pos.delete then
-    if pos == Pos.write and out.memo:find("%S") then
-      return OP_WRITE, out.memo
-    else
+  if out then
+    if pos == Pos.write then
+      if out.memo:find("%S") then
+        return OP_WRITE, out.memo
+      else
+        return OP_DELETE
+      end
+    elseif pos == Pos.skip then
+      return OP_SKIP
+    elseif pos == Pos.delete then
       return OP_DELETE
     end
   end
@@ -93,9 +100,9 @@ function DizList:Read()
   end
 
   for line in GetString(Fp, CodePage) do
-    local fname, diz             = line:match('^"([^"]+)"%s+(.*)')
-    if not fname then fname, diz = line:match('^(%S+)%s+(.*)') end
-    if not fname then diz        = line:match('^%s+(%S.*)') end
+    local fname, diz             = line:match('^"([^"]+)"%s?(.*)')
+    if not fname then fname, diz = line:match('^(%S+)%s?(.*)') end
+    if not fname then diz        = line:match('^%s(.*)') end
 
     if fname then
       Record = nil
@@ -135,8 +142,9 @@ function DizList:Flush()
         fname = '"' ..obj.FileName.. '"'
       end
       fp:write(fname)
-      for line in obj.Diz:gmatch("[^\n]+") do
-        fp:write("  ", line, "\n")
+      for line, eol in obj.Diz:gmatch("([^\n]*)(\n?)") do
+        fp:write(" ", line, "\n")
+        if eol == "" then break end
       end
     end
   end
@@ -165,8 +173,10 @@ function DizList:DescribeFiles()
       self.Map[obj.FileName] = nil
       obj.Deleted = true
       self:Flush()
-    else -- canceled
-      break
+    elseif op == OP_SKIP then -- luacheck:ignore
+      -- empty if branch
+    else
+      break -- canceled
     end
   end
 end
