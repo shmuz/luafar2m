@@ -3,6 +3,9 @@
 -- Purpose:      "Describe files" functionality with a multi-line dialog editor
 -- Portability:  far2m (only)
 -- Plugin:       LuaMacro (only)
+-- Note:         This script doesn't update file decriptions on copy/move/delete operations.
+--               It means that it cannot coexist with the native Far description processing.
+--               Consider it a prototype for possible changes in Far.
 
 local MacroKey = "CtrlShiftZ"
 
