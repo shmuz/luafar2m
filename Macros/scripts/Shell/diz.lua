@@ -34,6 +34,27 @@ local M = Eng
 local OP_WRITE, OP_DELETE, OP_SKIP = 1,2,3
 local Utf8Bom = "\239\187\191"
 
+local function EscapeFileName(name)
+  return name:find( "[%s\"]" )
+    and '"' .. name:gsub("[\"\\]", "\\%0") .. '"' or name
+end
+
+local SplitPatt = [[
+  ^(?:
+      " ( (?: \\ | \" | [^"] )+ ) "
+      |
+      ( \S+ )
+   )
+   \s?
+   ( .* )
+]]
+
+local function SplitDizLine(str)
+  local c1, c2, c3 = regex.match(str, SplitPatt, 1, "x")
+  c1 = c1 and c1:gsub("\\([\"\\])", "%1")
+  return c1 or c2, c3
+end
+
 local DizList = {}
 local DizListMeta = { __index=DizList }
 
@@ -135,9 +156,8 @@ function DizList:Read()
   end
 
   for line in GetString(Fp, CodePage) do
-    local fname, diz             = line:match('^"([^"]+)"%s?(.*)')
-    if not fname then fname, diz = line:match('^(%S+)%s?(.*)') end
-    if not fname then diz        = line:match('^%s(.*)') end
+    local fname, diz = SplitDizLine(line)
+    if not fname then diz = line:match('^%s(.*)') end
 
     if fname then
       Record = nil
@@ -172,10 +192,7 @@ function DizList:Flush()
   fp:write(Utf8Bom)
   for _,obj in ipairs(self.DizData) do
     if not obj.Deleted and obj.Diz:find("%S") then
-      local fname = obj.FileName
-      if fname:find("%s") then
-        fname = '"' ..obj.FileName.. '"'
-      end
+      local fname = EscapeFileName(obj.FileName)
       fp:write(fname)
       for line, eol in obj.Diz:gmatch("([^\n]*)(\n?)") do
         fp:write(" ", line, "\n")
