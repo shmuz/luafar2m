@@ -1,11 +1,29 @@
+-- Keys for running the macros
 local MacroKeys = { "CtrlShiftF12", "RCtrlShiftF12" }
 local CommonKey = MacroKeys[1]
 
+-- Required libraries
+local Libs = {
+  simpledialog = "far2.simpledialog";
+  macrotest    = "far2.test.macrotest";
+  test_polygon = "far2.test.test_polygon";
+  test_sqlarc  = "far2.test.test_sqlarc";
+  test_hexed   = "far2.test.test_hexed";
+}
+
 local F = far.Flags
-local State
+local TestSet
+
+local function PleaseWait(title)
+  far.Message("Please wait...", title, "")
+end
+
+local function PassMessage(title)
+  far.Message("PASS", title)
+end
 
 local function select_tests(mod)
-  local sd = require "far2.simpledialog"
+  local sd = require(Libs.simpledialog)
   local items = {
     width=45;
     {tp="dbox"; text="Macro tests"; },
@@ -19,7 +37,7 @@ local function select_tests(mod)
   end
   table.sort(t, function(a,b) return utf8.ncasecmp(a,b) < 0 end)
   for _, nm in ipairs(t) do
-    local it = { tp="chbox"; text=nm; name=nm; val=State and State[nm]; }
+    local it = { tp="chbox"; text=nm; name=nm; val=TestSet and TestSet[nm]; }
     table.insert(items, it)
   end
 
@@ -36,7 +54,7 @@ local function select_tests(mod)
       if p1 == Pos.clear or p1 == Pos.invert then
         local flag = (p1 == Pos.clear) and F.BSTATE_UNCHECKED or F.BSTATE_TOGGLE
         for i=1,#items do
-          if items[i].tp == "chbox" then hDlg:SetCheck(i,  flag); end
+          if items[i].tp == "chbox" then hDlg:SetCheck(i, flag); end
         end
         hDlg:SetFocus(Pos.run)
       end
@@ -45,23 +63,23 @@ local function select_tests(mod)
 
   local out = Dlg:Run()
   if out then
-    State = out
-    local t = {}
+    TestSet = out
+    local arr = {}
     for nm in pairs(out) do
-      if out[nm] then t[#t+1] = nm; end
+      if out[nm] then arr[#arr+1] = nm; end
     end
-    table.sort(t)
-    return t
+    table.sort(arr)
+    return arr
   end
 end
 
 local function test_macroengine(interactive, verbose)
-  local WaitMsg = function() far.Message("Please wait...", "Test macro engine", "") end
-  local PassMsg = function() far.Message("PASS", "Macro engine tests") end
+  local WaitMsg = function() PleaseWait("Test macro engine") end
+  local PassMsg = function() PassMessage("Macro engine tests") end
 
   mf.AddExitHandler(panel.SetPanelDirectory, nil, 1, panel.GetPanelDirectory(nil,1))
   Far.DisableHistory(0x0F)
-  local mod = require "far2.test.macrotest"
+  local mod = require(Libs.macrotest)
   mod.SetMacroKeys(unpack(MacroKeys))
   if interactive then
     local tests = select_tests(mod)
@@ -81,53 +99,54 @@ end
 
 local function test_polygon(verbose)
   local guid = 0xD4BC5EA7
-  local libname = "far2.test.test_polygon"
+  local libname = Libs.test_polygon
   assert(Plugin.Exist(guid), "Plugin not found")
-  far.Message("Please wait...", "Test Polygon", "")
+  PleaseWait("Test Polygon")
   Far.DisableHistory(0x0F)
   package.loaded[libname] = nil -- for debug
   require(libname).test_all()
-  if verbose then far.Message("PASS", "Polygon tests"); end
+  if verbose then PassMessage("Polygon tests"); end
   panel.RedrawPanel(nil,0)
   panel.RedrawPanel(nil,1)
 end
 
 local function test_sqlarc(verbose)
   local guid = 0xF309DDDB
-  local libname = "far2.test.test_sqlarc"
+  local libname = Libs.test_sqlarc
   assert(Plugin.Exist(guid), "Plugin not found")
-  far.Message("Please wait...", "Test Sqlarc", "")
+  PleaseWait("Test Sqlarc")
   Far.DisableHistory(0x0F)
   package.loaded[libname] = nil -- for debug
   require(libname).test_all()
-  if verbose then far.Message("PASS", "Sqlarc tests"); end
+  if verbose then PassMessage("Sqlarc tests"); end
 end
 
 local function test_lfsearch(verbose)
   Far.DisableHistory(0x0F)
   local guid = 0x8E11EA75
   assert(Plugin.Exist(guid), "Plugin not found")
-  far.Message("Please wait...", "Test LF Search", "")
+  PleaseWait("Test LF Search")
   Plugin.Command(guid, "test")
   assert(Area.Shell, "LF Search tests failed")
   if verbose then
-    far.Message("PASS", "LF Search tests")
+    PassMessage("LF Search tests")
   end
 end
 
 local function test_hexed(verbose)
-  far.Message("Please wait...", "Test Hex Editor", "")
-  local test = require "far2.test.test_hexed"
+  PleaseWait("Test Hex Editor")
+  local test = require(Libs.test_hexed)
   test("CtrlF4")
   if verbose then
-    far.Message("PASS", "Hex Editor tests")
+    PassMessage("Hex Editor tests")
   end
 end
 
 local function test_farapi_lua(verbose)
-  far.Message("Please wait...", "Test farapi.lua", "")
-  local script  = os.getenv("HOME").."/repos/far2m/luamacro/farapi/make_farapi.lua"
-  local oldfile = os.getenv("HOME").."/repos/far2m/luafar/lua_share/far2/farapi.lua"
+  PleaseWait("Test farapi.lua")
+  local root = os.getenv("HOME") .. "/repos/far2m"
+  local script  = root .. "/luamacro/farapi/make_farapi.lua"
+  local oldfile = root .. "/luafar/lua_share/far2/farapi.lua"
   local newfile = "/tmp/far2m_farapi.lua"
   local fp, strOld, strNew
 
@@ -142,7 +161,7 @@ local function test_farapi_lua(verbose)
   assert(strOld == strNew, "Test farapi.lua failed")
 
   if verbose then
-    far.Message("PASS", "Test farapi.lua")
+    PassMessage("Test farapi.lua")
   end
   for k=0,1 do panel.RedrawPanel(nil,k) end
 end
@@ -217,6 +236,6 @@ Macro {
     test_sqlarc()
     test_farapi_lua()
     if jit then test_hexed() end
-    far.Message("PASS", "ALL tests")
+    PassMessage("ALL tests")
   end;
 }
