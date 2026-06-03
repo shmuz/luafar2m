@@ -85,7 +85,11 @@ local function test_macroengine(interactive, verbose)
     local tests = select_tests(mod)
     if tests then
       WaitMsg()
-      for _,nm in ipairs(tests) do mod[nm]() end
+      for _,nm in ipairs(tests) do
+        local tp = type(mod[nm])
+        local func = tp=="function" and mod[nm] or tp=="table" and mod[nm].test_all
+        func()
+      end
       actl.Commit() -- clear WaitMsg
       if verbose then PassMsg() end
     end
