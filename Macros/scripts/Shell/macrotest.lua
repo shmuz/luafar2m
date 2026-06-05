@@ -1,6 +1,6 @@
 -- Keys for running the macros
-local MacroKeys = { "CtrlShiftF12", "RCtrlShiftF12" }
-local CommonKey = MacroKeys[1]
+local MacroKeys = "CtrlShiftF12 RCtrlShiftF12"
+local CommonKey = MacroKeys:match("%S+")
 
 -- Required libraries
 local Libs = {
@@ -79,8 +79,10 @@ local function test_macroengine(interactive, verbose)
 
   mf.AddExitHandler(panel.SetPanelDirectory, nil, 1, panel.GetPanelDirectory(nil,1))
   Far.DisableHistory(0x0F)
+
   local mod = require(Libs.macrotest)
-  mod.SetMacroKeys(unpack(MacroKeys))
+  mod.SetMacroKeys(MacroKeys)
+
   if interactive then
     local tests = select_tests(mod)
     if tests then
