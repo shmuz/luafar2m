@@ -184,3 +184,14 @@ Macro {
   priority=10;
 }
 
+local CmpLib
+Macro {
+  id="06634D5E-64FC-489A-8CCE-626B63CD8A77";
+  description="Compare panels by hash";
+  area="Shell"; key="CtrlAltC";
+  condition=function()
+    CmpLib = require "far2.compare_by_hash"
+    return CmpLib.CanRun;
+  end;
+  action=function() CmpLib.CompareByHash() end;
+}

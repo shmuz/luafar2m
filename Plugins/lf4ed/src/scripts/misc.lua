@@ -29,9 +29,16 @@ end
 
 local function Calc() require("far2.calc")() end
 
+local function compare_by_hash()
+  local lib = require "far2.compare_by_hash"
+  if lib.CanRun() then lib.CompareByHash() end
+end
+
 AddCommand ("luacalc", Calc)
 AddCommand ("JumpToNonDir", JumpToNonDir)
+AddCommand ("compare_by_hash", compare_by_hash)
 
 AddToMenu ("e", nil, "Home", SmartHome)
 AddToMenu ("e", nil, "Ctrl+F11", InsertNewGuid)
 AddToMenu ("depv", "Lua Calc", nil, Calc)
+
