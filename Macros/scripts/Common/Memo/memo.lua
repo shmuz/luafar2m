@@ -4,6 +4,58 @@
 -- Portability   :  far2m, Linux only
 -- Far plugin    :  LuaMacro
 
+local Eng = {
+  ButtonCancel        = "Cancel";
+  ButtonOk            = "OK";
+  ButtonsNoYes        = "&No;&Yes";
+  CannotRead          = "Can't read";
+  CannotReplace       = "Can't replace";
+  CannotWrite         = "Can't write file";
+  ConfigFullScreenKey = "Key for full screen toggling:";
+  ConfigSelectKeys    = "Keys for memo selection:";
+  ConfigTitle         = "Configuration";
+  ConfirmTitle        = "Confirm";
+  ErrGetEditorInfo    = "Error: could not retrieve editor info";
+  Error               = "Error";
+  ErrSaveContinue     = "Cannot save the current memo. Continue anyway?";
+  IsDirectory         = "is a directory";
+  OverwritePrompt     = "File \"%s\" already exists. Overwrite?";
+  RenameFailMsg       = "Can't rename";
+  RenameNoPath        = "Enter file name only, no path allowed";
+  RenamePrompt        = "Enter file name without path:";
+  RenameTitle         = "Rename Memo";
+  SavePrompt          = "Enter destination path:";
+  SaveTitle           = "Save Memo";
+  StatusColumn        = "Col";
+  StatusLine          = "Line";
+}
+
+local Rus = {
+  ButtonCancel        = "Отменить";
+  ButtonOk            = "Продолжить";
+  ButtonsNoYes        = "&Нет;&Да";
+  CannotRead          = "Не могу прочитать";
+  CannotReplace       = "Не могу заменить";
+  CannotWrite         = "Не могу записать файл";
+  ConfigFullScreenKey = "Ключ для полноэкранного режима:";
+  ConfigSelectKeys    = "Ключи для переключения мемо:";
+  ConfigTitle         = "Конфигурация";
+  ConfirmTitle        = "Подтверждение";
+  ErrGetEditorInfo    = "Ошибка: не могу получить данные редактора";
+  Error               = "Ошибка";
+  ErrSaveContinue     = "Не могу сохранить текущее мемо. Продолжить тем не менее?";
+  IsDirectory         = "является директорией";
+  OverwritePrompt     = "Файл \"%s\" уже существует. Перезаписать?";
+  RenameFailMsg       = "Не могу переименовать";
+  RenameNoPath        = "Введите только имя файла, без пути";
+  RenamePrompt        = "Введите имя файла без пути:";
+  RenameTitle         = "Переименовать Мемо";
+  SavePrompt          = "Введите путь назначения:";
+  SaveTitle           = "Сохранить Мемо";
+  StatusColumn        = "Кол";
+  StatusLine          = "Стр";
+}
+
 local DB_Key  = "shmuz"
 local DB_Name = "Memo"
 local MemoDir = far.InMyConfig("plugins/luafar/memo_files")
@@ -22,6 +74,7 @@ local KEY_FULLSCR = "FullScreenKeys"
 local HelpTopic = ("<%s>Contents"):format((...):match(".+"..DirSep)) -- (...) is pathname of this script
 local BOM = "\239\187\191" -- UTF-8 BOM
 local F = far.Flags
+local M
 
 local mData
 local mEditorId
@@ -30,7 +83,7 @@ local mUseBom
 local m_hDlg
 
 local function ErrMsg(fmt, ...)
-  far.Message(fmt:format(...), "Error", nil, "w")
+  far.Message(fmt:format(...), M.Error, M.ButtonOk, "w")
 end
 
 local SwitchKeyList = {
@@ -58,11 +111,11 @@ end
 local function CheckFileOverwrite(fname)
   local attr = win.GetFileAttr(fname)
   if attr and attr:find("d") then
-    ErrMsg("\"%s\" is a directory", fname)
+    ErrMsg("\"%s\" %s", fname, M.IsDirectory)
     return false
   elseif attr then
-    local msg = ("File \"%s\" already exists. Overwrite?"):format(fname)
-    return 1 == far.Message(msg, "Confirm", "Yes;No", "w")
+    local msg = M.OverwritePrompt:format(fname)
+    return 1 == far.Message(msg, M.ConfirmTitle, ";YesNo", "w")
   else
     return true
   end
@@ -105,7 +158,7 @@ local function LoadFileContent(path)
   local fp, err = io.open(path)
   if not fp then
     if win.GetFileAttr(path) then
-      ErrMsg("Can't read \"%s\": %s", path, tostring(err))
+      ErrMsg("%s \"%s\": %s", M.CannotRead, path, tostring(err))
     end
     return ""
   end
@@ -123,7 +176,7 @@ local function SaveFileContent(path, content, useBom)
   local tmp = path .. ".tmp"
   local fp, err = io.open(tmp, "wb")
   if not fp then
-    ErrMsg("Can't write file: %s", tostring(err))
+    ErrMsg("%s: %s", M.CannotWrite, tostring(err))
     return false
   end
 
@@ -135,7 +188,7 @@ local function SaveFileContent(path, content, useBom)
   local ok, renErr = win.MoveFile(tmp, path, "r") -- "r"==MOVEFILE_REPLACE_EXISTING
   if not ok then
     win.DeleteFile(tmp)
-    ErrMsg("Can't replace \"%s\": %s", path, tostring(renErr))
+    ErrMsg("%s \"%s\": %s", M.CannotReplace, path, tostring(renErr))
     return false
   end
   return true
@@ -163,7 +216,8 @@ local function UpdateTitle(hDlg)
     local W = EI.WindowSizeX
     local mark = (0 == bit64.band(EI.CurState, F.ECSTATE_MODIFIED)) and "" or "*"
     local fileinfo = ("[%s%d] %s"):format(mark, mData[KEY_CURIDX], GetCurFileName())
-    local lineinfo = ("Line %3d/%d | Col %3d"):format(EI.CurLine, EI.TotalLines, EI.CurTabPos)
+    local lineinfo = ("%s %3d/%d | %s %3d")
+        :format(M.StatusLine, EI.CurLine, EI.TotalLines, M.StatusColumn, EI.CurTabPos)
     local title = fileinfo
     local len = fileinfo:len() + lineinfo:len()
     if len <= W - 2 then
@@ -171,7 +225,7 @@ local function UpdateTitle(hDlg)
     end
     hDlg:SetText(POS_TITLE, title)
   else
-    hDlg:SetText(POS_TITLE, "Error: could not retrieve editor info")
+    hDlg:SetText(POS_TITLE, M.ErrGetEditorInfo)
   end
 end
 
@@ -179,7 +233,7 @@ end
 local function SaveMemoAs(hDlg)
   -- Default: memo-01.txt ... memo-10.txt in home directory
   local InitText = win.JoinPath(far.GetMyHome(), GetCurFileName())
-  local Dest = far.InputBox(nil, "Save Memo", "Enter destination path:", "MemoSave",
+  local Dest = far.InputBox(nil, M.SaveTitle, M.SavePrompt, "MemoSave",
                             InitText, nil, nil, "FIB_NONE")
   if Dest then
     local filename = win.ExpandEnv(Dest)
@@ -191,16 +245,16 @@ end
 
 local function RenameMemo(hDlg)
   local DestName = far.InputBox(nil,
-      "Rename Memo",                   -- title
-      "Enter file name without path:", -- prompt
-      "MemoRename",                    -- history name
-      GetCurFileName(),                -- initial input text
-      nil, nil, "FIB_NONE")            -- maxlength, helptopic, flags
+      M.RenameTitle,          -- title
+      M.RenamePrompt,         -- prompt
+      "MemoRename",           -- history name
+      GetCurFileName(),       -- initial input text
+      nil, nil, "FIB_NONE")   -- maxlength, helptopic, flags
 
   if not DestName then return end
 
   if DestName:find(DirSep) then
-    ErrMsg("Only file name may be entered here, no path allowed")
+    ErrMsg(M.RenameNoPath)
     return
   end
 
@@ -208,7 +262,7 @@ local function RenameMemo(hDlg)
   local trg = win.JoinPath(MemoDir, DestName)
   local ok, err = win.MoveFile(src, trg)
   if not ok then
-    ErrMsg("Can't rename \"%s\": %s", GetCurFileName(), tostring(err))
+    ErrMsg("%s \"%s\": %s", M.RenameFailMsg, GetCurFileName(), tostring(err))
     return
   end
 
@@ -243,8 +297,7 @@ local function CloseActions(hDlg, newIndex)
   local info = editor.GetInfo(mEditorId)
   if 0 ~= bit64.band(info.CurState, F.ECSTATE_MODIFIED) then
     if not SaveCurrentMemo(hDlg) then
-      local msg = "Cannot save the current memo. Continue anyway?"
-      if 2 ~= far.Message(msg, "Error", "&No;&Yes", "w") then
+      if 2 ~= far.Message( M.ErrSaveContinue, M.Error, M.ButtonsNoYes, "w") then
         return false
       end
     end
@@ -295,16 +348,16 @@ local function OpenConfigDialog()
   local sd = require "far2.simpledialog"
   local Items = {
     guid = ConfigDialogId;
-    { tp="dbox"; text="Configuration"; },
+    { tp="dbox"; text=M.ConfigTitle; },
 
-    { tp="text"; text="Keys for memo selection:"; },
+    { tp="text"; text=M.ConfigSelectKeys; },
     { tp="combobox"; list=SwitchKeyList; dropdown=1; name=KEY_SWITCH; val=mData[KEY_SWITCH]; },
-    { tp="text"; text="Key for full screen toggling:"; },
+    { tp="text"; text=M.ConfigFullScreenKey; },
     { tp="combobox"; list=FullScreenKeyList; dropdown=1; name=KEY_FULLSCR; val=mData[KEY_FULLSCR]; },
 
     { tp="sep"; },
-    { tp="butt"; default=1; centergroup=1; text="OK"; },
-    { tp="butt"; cancel=1; centergroup=1; text="Cancel"; },
+    { tp="butt"; default=1; centergroup=1; text=M.ButtonOk; },
+    { tp="butt"; cancel=1; centergroup=1; text=M.ButtonCancel; },
   }
   local Dlg = sd.New(Items)
   local Out = Dlg:Run()
@@ -422,6 +475,7 @@ Macro {
   description="Memo application";
   area="Shell QView Info Tree Editor Viewer"; key="AltShiftM";
   action=function()
+    M = win.GetEnv("FARLANG") == "Russian" and Rus or Eng
     mFullScreen = false
     mf.acall(OpenMemoDialog) -- use mf.acall to avoid seeing "P" in the upper left screen corner
   end;
