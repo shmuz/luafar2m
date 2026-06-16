@@ -31,8 +31,8 @@ local Eng = {
 }
 
 local Rus = {
-  ButtonCancel        = "Отменить";
-  ButtonOk            = "Продолжить";
+  ButtonCancel        = "Отмена";
+  ButtonOk            = "OK";
   ButtonsNoYes        = "&Нет;&Да";
   CannotRead          = "Не могу прочитать";
   CannotReplace       = "Не могу заменить";
