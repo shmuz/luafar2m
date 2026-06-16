@@ -123,7 +123,7 @@ local function SaveFileContent(path, content, useBom)
   local tmp = path .. ".tmp"
   local fp, err = io.open(tmp, "wb")
   if not fp then
-    ErrMsg("Can't write \"%s\": %s", tmp, tostring(err))
+    ErrMsg("Can't write file: %s", tostring(err))
     return false
   end
 
@@ -178,12 +178,14 @@ end
 -- Save current memo to external file
 local function SaveMemoAs(hDlg)
   -- Default: memo-01.txt ... memo-10.txt in home directory
-  local Name = GetCurFileName()
-  local Path = win.JoinPath(far.GetMyHome(), Name)
-  local destPath = far.InputBox(nil, "Save Memo", "Enter destination path:", "MemoSave",
-                                Path, nil, nil, "FIB_NONE")
-  if destPath and CheckFileOverwrite(destPath) then
-    SaveFileContent(destPath, hDlg:GetText(POS_MEMO), mUseBom)
+  local InitText = win.JoinPath(far.GetMyHome(), GetCurFileName())
+  local Dest = far.InputBox(nil, "Save Memo", "Enter destination path:", "MemoSave",
+                            InitText, nil, nil, "FIB_NONE")
+  if Dest then
+    local filename = win.ExpandEnv(Dest)
+    if CheckFileOverwrite(filename) then
+      SaveFileContent(filename, hDlg:GetText(POS_MEMO), mUseBom)
+    end
   end
 end
 
