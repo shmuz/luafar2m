@@ -92,11 +92,11 @@ Macro {
 Macro {
   id="4864CDEA-5BD9-459E-9A2C-3DBF73B0E3FA";
   description="Scroll active panel";
-  area="Shell"; key="CtrlShiftDown CtrlShiftUp";
+  area="Shell"; key="CtrlAltDown CtrlAltUp";
   action=function()
     local top, cur
     local info = panel.GetPanelInfo(nil,1)
-    if mf.akey(1)=="CtrlShiftDown" then
+    if mf.akey(1)=="CtrlAltDown" then
       top = info.TopPanelItem + 1
       cur = info.CurrentItem + 1
     else
