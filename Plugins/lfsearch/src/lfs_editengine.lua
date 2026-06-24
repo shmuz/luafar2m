@@ -11,6 +11,7 @@ local F = far.Flags
 local editor = editor
 local floor, ceil, min, max = math.floor, math.ceil, math.min, math.max
 local lenW = win.lenW
+local Utf32 = win.Utf8ToUtf32
 
 local EdtId
 local IsMemoEdit
@@ -526,7 +527,7 @@ local function DoSearch (
   end
   -----------------------------------------------------------------------------
   local function ShowFound (xx, fr, to, scroll)
-    local p1 = part1:len()
+    local p1 = lenW(is_wide and part1 or Utf32(part1))
     ScrollToPosition (y, p1+xx, fr, to, scroll)
     if _Plugin.History.config.bSelectFound then
       editlib.Select("BTYPE_STREAM", y, p1+fr, to<=fr and 1 or to-fr+1, 1)
@@ -796,7 +797,7 @@ local function DoReplace (
   end
   -----------------------------------------------------------------------------
   local function ShowFound (xx, fr, to, scroll)
-    local p1 = part1:len()
+    local p1 = lenW(is_wide and part1 or Utf32(part1))
     ScrollToPosition (y, p1+xx, fr, to, scroll)
     editlib.Select("BTYPE_STREAM", y, p1+fr, to<=fr and 1 or to-fr+1, 1)
     editlib.Redraw()
