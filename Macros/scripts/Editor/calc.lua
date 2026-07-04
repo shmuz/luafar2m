@@ -33,8 +33,9 @@ Macro {
     local min, max
     local n = 0
     local t = {}
+    local patt = [[ \-? \b \d+ (?: \.\d+ )? \b | \b 0x[0-9A-F]+ \b ]]
 
-    for num in regex.gmatch(GetText(), [[ \-? \b \d+ (?: \.\d+ )? \b ]], "x") do
+    for num in regex.gmatch(GetText(), patt, "ix") do
       num = tonumber(num)
       n = n + 1
       t[n] = num
