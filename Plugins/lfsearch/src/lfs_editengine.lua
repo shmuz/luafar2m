@@ -1188,7 +1188,7 @@ local function DoAction (
     ...)
   local Info = editor.GetInfo()
   EdtId = Info.EditorID
-  IsMemoEdit = Info.IsMemoEdit
+  IsMemoEdit = bit64.band(Info.Options, F.EOPT_MEMOEDIT) ~= 0
 
   if sOperation == "replace" then
     return DoReplace(...)
