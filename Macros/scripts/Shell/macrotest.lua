@@ -151,7 +151,7 @@ end
 local function test_farapi_lua(verbose)
   PleaseWait("Test farapi.lua")
   local root = os.getenv("HOME") .. "/repos/far2m"
-  local script  = root .. "/luamacro/farapi/make_farapi.lua"
+  local script  = root .. "/plugins/luamacro/farapi/make_farapi.lua"
   local oldfile = root .. "/luafar/lua_share/far2/farapi.lua"
   local newfile = "/tmp/far2m_farapi.lua"
   local fp, strOld, strNew
