@@ -41,6 +41,11 @@ Macro {
   description="Sync far2m dir with far2l or vice versa";
   area="Shell"; key="CtrlS";
   action=function()
+    local plugPatt =
+    [[ \b ( align | arclite | autowrap | calc | colorer | compare | drawline | editcase |
+      editorcomp | filecase | incsrch | inside | multiarc | NetRocks | OpenWith | python |
+      SimpleIndent | tmppanel ) \b ]]
+
     local common = far.GetMyHome().."/repos"
     local dir = panel.GetPanelDirectory(nil, 1).Name
     if dir == "" then -- TmpPanel ?
@@ -50,17 +55,28 @@ Macro {
     local dir2 = dir
     local far2l = common.."/far2l"
     local far2m = common.."/far2m"
+
     if dir:find("far2l") then
+      if dir2 == dir then
+        dir2 = regex.gsub(dir, plugPatt, "plugins/%1", nil, "x")
+        if dir2 ~= dir then dir2 = dir2:gsub(far2l, far2m) end
+      end
       if dir2 == dir then dir2 = dir:gsub(far2l.."/far2l/", far2m.."/far/") end
       if dir2 == dir then dir2 = dir:gsub(far2l.."/far2l$", far2m.."/far") end
       if dir2 == dir then dir2 = dir:gsub(far2l.."/",       far2m.."/") end
       if dir2 == dir then dir2 = dir:gsub(far2l.."$",       far2m) end
+
     elseif dir:find("far2m") then
+      if dir2 == dir then
+        if regex.find(dir, plugPatt, 1, "x") then dir2 = dir:gsub("/plugins/", "/") end
+        if dir2 ~= dir then dir2 = dir2:gsub(far2m, far2l) end
+      end
       if dir2 == dir then dir2 = dir:gsub(far2m.."/far/",   far2l.."/far2l/") end
       if dir2 == dir then dir2 = dir:gsub(far2m.."/far$",   far2l.."/far2l") end
       if dir2 == dir then dir2 = dir:gsub(far2m.."/",       far2l.."/") end
       if dir2 == dir then dir2 = dir:gsub(far2m.."$",       far2l) end
     end
+
     if dir2 ~= dir and win.GetFileAttr(dir2) then
       panel.SetPanelDirectory(nil, 0, dir2)
       panel.RedrawPanel(nil, 0)
