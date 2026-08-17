@@ -13,7 +13,7 @@ local AppName = function() return M.MDlgMultilineReplace end
 local F=far.Flags
 local KEEP_DIALOG_OPEN = 0
 
-local RegexLibs = {"far", "oniguruma", "pcre"}
+local RegexLibs = {"far", "oniguruma", "pcre", "pcre2"}
 
 local function ReplaceDialog (Data)
   local HIST_INITFUNC   = _Plugin.DialogHistoryPath .. "InitFunc"
@@ -39,7 +39,7 @@ local function ReplaceDialog (Data)
     { tp="chbox"; text=M.MDlgRegExpr; name="bRegExpr"; },
     { tp="text";  text=M.MDlgRegexLib; x1=X2; y1=""; },
     { tp="combobox"; x1=X3; x2=X4; y1="";   name="cmbRegexLib"; dropdown=1; noload=1;
-        list={{Text="Far regex"},{Text="Oniguruma"},{Text="PCRE"}}; },
+        list={{Text="Far regex"},{Text="Oniguruma"},{Text="PCRE"},{Text="PCRE2"}}; },
     { tp="chbox"; text=M.MDlgCaseSens;      name="bCaseSens";                  },
     { tp="chbox"; text=M.MDlgFileAsLine;    name="bFileAsLine"; x1=X2; y1="";  },
     { tp="chbox"; text=M.MDlgWholeWords;    name="bWholeWords";                },

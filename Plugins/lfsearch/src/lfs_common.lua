@@ -173,7 +173,7 @@ end
 
 --------------------------------------------------------------------------------
 -- @param lib_name
---    Either of ("far", "pcre", "oniguruma").
+--    Either of ("far", "pcre", "pcre2", "oniguruma").
 -- @return
 --    A table that "mirrors" the specified library's table (via
 --    metatable.__index) and that may have its own version of function "new".
@@ -213,6 +213,23 @@ local function GetRegexLib (lib_name)
     tb_methods.ufind = WrapTfindMethod(tb_methods.tfind)
     tb_methods.gsub = function(patt, subj, rep) return base.gsub(subj, patt, rep) end
     tb_methods.capturecount = function(patt) return patt:fullinfo().CAPTURECOUNT end
+  -----------------------------------------------------------------------------
+  elseif lib_name == "pcre2" then
+    base = require("rex_pcre2")
+    local ff = base.flags()
+    local CFlags = bor(ff.NEWLINE_ANYCRLF, ff.UTF, ff.UCP)
+    local TF = { i=ff.CASELESS, m=ff.MULTILINE, s=ff.DOTALL, x=ff.EXTENDED, U=ff.UNGREEDY }
+    deriv.new = function (pat, cf)
+      local cflags = CFlags
+      if cf then
+        for c in cf:gmatch(".") do cflags = bor(cflags, TF[c] or 0) end
+      end
+      return base.new (pat, cflags)
+    end
+    local tb_methods = getmetatable(base.new(".")).__index
+    tb_methods.ufind = WrapTfindMethod(tb_methods.tfind)
+    tb_methods.gsub = function(patt, subj, rep) return base.gsub(subj, patt, rep) end
+    tb_methods.capturecount = function(patt) return patt:patterninfo().CAPTURECOUNT end
   -----------------------------------------------------------------------------
   elseif lib_name == "oniguruma" then
     base = require("rex_onig")
@@ -464,7 +481,7 @@ local function ProcessDialogData (aData, bReplace, bInEditor, bUseMultiPatterns,
 end
 
 local SRFrame = {}
-SRFrame.Libs = {"far", "oniguruma", "pcre"}
+SRFrame.Libs = {"far", "oniguruma", "pcre", "pcre2"}
 local SRFrameMeta = {__index = SRFrame}
 
 local function CreateSRFrame (Items, aData, EditorID, bScriptCall)
@@ -517,7 +534,7 @@ function SRFrame:InsertInDialog (aPanelsDialog, aOp)
   insert(Items, { tp="text";                         y1=""; x1=md;     text=M.MDlgRegexLib; })
   local x1 = md + M.MDlgRegexLib:gsub("&",""):len() + 1;
   insert(Items, { tp="combobox"; name="cmbRegexLib"; y1=""; x1=x1; width=14; dropdown=1; noload=1;
-           list = { {Text="Far regex"}, {Text="Oniguruma"}, {Text="PCRE"} };  })
+           list = { {Text="Far regex"}, {Text="Oniguruma"}, {Text="PCRE"}, {Text="PCRE2"} };  })
   ------------------------------------------------------------------------------
   insert(Items, { tp="chbox"; name="bCaseSens";                        text=M.MDlgCaseSens; })
   insert(Items, { tp="chbox"; name="bExtended"; x1=md; y1="";          text=M.MDlgExtended; })
