@@ -1,8 +1,8 @@
 -- Started: on or earlier than 2014-07-30 (the date of initial import to SVN repository).
 
 -- settings --------------------------------------------------------------------
-local Editor_FileName
-local Message_Title
+local lib_md5 = "md5ex"
+local lib_sha1 = "crypto"
 local ProgressBar_MinFileSize = 50e6
 local ProgressBar_Length = 40
 -- /settings -------------------------------------------------------------------
@@ -10,6 +10,8 @@ local ProgressBar_Length = 40
 local F = far.Flags
 local char = ("").char
 local band = bit64.band
+local Editor_FileName
+local Message_Title
 
 local function create_callback(aCurr, aCount, aFname)
   local title = ("%s: %d/%d"):format(Message_Title, aCurr, aCount)
@@ -25,7 +27,7 @@ local function create_callback(aCurr, aCount, aFname)
 end
 
 local function sha1_sum(fname, callback)
-  local crypto = require "crypto"
+  local crypto = require(lib_sha1)
   local fp = assert(io.open(fname, "rb"))
   local chunk = 0x10000 -- must be multiple of 64 bytes
   local state = ""
@@ -73,12 +75,13 @@ local function Work()
   end
   if not filelist[1] then return end
 
-  --local ret = far.Message("Select hash type", "Hash type", "&MD5;&SHA1")
-  local ret = 1
+  local ret = far.Message("Select hash type", "Hash type", "&MD5;&SHA1")
   local hashtype = ret==1 and "md5" or ret==2 and "sha1"
   if hashtype == "md5" then
+    require(lib_md5)
     Editor_FileName, Message_Title = "hashes.md5", "md5 hash"
   elseif hashtype == "sha1" then
+    require(lib_sha1)
     Editor_FileName, Message_Title = "hashes.sha1", "sha1 hash"
   else
     return
@@ -100,7 +103,7 @@ local function Work()
       end
     set_progress(0)
     if hashtype == "md5" then
-      local md5 = require "md5ex"
+      local md5 = require(lib_md5)
       local hash, status = md5.fsum(fname,nil,nil,callback,0x200000) -- call back every 2 MiB
       if status then item.Hash = md5.tohex(hash) end
     else -- "sha1"
