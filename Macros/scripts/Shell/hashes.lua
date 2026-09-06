@@ -2,7 +2,7 @@
 
 -- settings --------------------------------------------------------------------
 local lib_md5 = "md5ex"
-local lib_sha1 = "crypto"
+local lib_crypto = "crypto"
 local ProgressBar_MinFileSize = 50e6
 local ProgressBar_Length = 40
 -- /settings -------------------------------------------------------------------
@@ -27,7 +27,7 @@ local function create_callback(aCurr, aCount, aFname)
 end
 
 local function sha1_sum(fname, callback)
-  local crypto = require(lib_sha1)
+  local crypto = require(lib_crypto)
   local fp = assert(io.open(fname, "rb"))
   local chunk = 0x10000 -- must be multiple of 64 bytes
   local state = ""
@@ -81,7 +81,7 @@ local function Work()
     require(lib_md5)
     Editor_FileName, Message_Title = "hashes.md5", "md5 hash"
   elseif hashtype == "sha1" then
-    require(lib_sha1)
+    require(lib_crypto)
     Editor_FileName, Message_Title = "hashes.sha1", "sha1 hash"
   else
     return
