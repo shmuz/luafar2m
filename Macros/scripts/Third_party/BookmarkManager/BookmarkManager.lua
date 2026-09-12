@@ -546,7 +546,7 @@ end -- BMEdit
 function Config()
   --
   LoadSettings()
-  local TmpColor,ov = S.SeqColor
+  local TmpColor,oldval = S.SeqColor
   --
   local function cDlgProc (hDlg,Msg,Param1,Param2) -- обработка событий диалога
     if Msg==F.DN_HOTKEY and Param1==4 then -- Предпочтительное место хранения закладок?
@@ -554,12 +554,15 @@ function Config()
     elseif Msg==F.DN_BTNCLICK and Param1==7 then -- переключение работы с переменными окружения?
       hDlg:ShowItem(Param1+1,Param2) -- установим видимость зависимого чекбокса
     elseif Msg==F.DN_BTNCLICK and Param1==11 then -- нажали кнопку выбора цвета подсказки?
-      TmpColor = math.fmod(far.ColorDialog(TmpColor) or TmpColor,0x100) -- выберем новый или сохраним старый
+      local color = far.ColorDialog(TmpColor, "FCD_RGB") -- выберем новый или сохраним старый
+      if color then TmpColor = color; hDlg:Redraw(); end
+    elseif Msg==F.DN_CTLCOLORDLGITEM then
+      if Param1 == 24 then Param2[1] = TmpColor; return Param2; end
     elseif Msg==F.DN_GOTFOCUS and (Param1==14 or Param1==16 or Param1==18) then -- вошли в di_edit?
-      ov = hDlg:GetText(Param1) -- запомним старое значение
+      oldval = hDlg:GetText(Param1) -- запомним старое значение
     elseif Msg==F.DN_KILLFOCUS and (Param1==14 or Param1==16 or Param1==18) then -- покидаем di_edit?
-      local nv = tonumber(far.SendDlgMessage(hDlg,"DM_GETTEXT",Param1)) -- новое значение
-      if not nv then hDlg:SetText(Param1,ov) end -- не число - откатим
+      local newval = tonumber(far.SendDlgMessage(hDlg,"DM_GETTEXT",Param1)) -- новое значение
+      if not newval then hDlg:SetText(Param1,oldval) end -- не число - откатим
     elseif (Msg==F.DN_KEY and Param2==F.KEY_F1) or (Msg==F.DN_BTNCLICK and Param1==23) then
       ShowHelp("Config")
     elseif Msg==F.DN_KEY and Param2==F.KEY_SHIFTENTER then -- ShiftEnter
@@ -567,15 +570,9 @@ function Config()
     elseif Msg==F.DN_CLOSE then
       hDlg:SetFocus(2) -- переключимся на чекбокс
     end
-    local rect = hDlg:GetDlgRect() -- окно диалога
-    if TmpColor ~= 0 then
-      far.Text()
-      far.Text(rect.Left+45,rect.Top+9,TmpColor,L.diConf.ColorSample)
-    else
-      hDlg:Redraw()
-    end -- пример подсказки
   end
   --
+  local x1, x2 = 45, 45+L.diConf.ColorSample:len()-1
   local Items = { -- диалог настройки конфигурации
   --[[01]] {F.DI_DOUBLEBOX,   3, 1,74,15,0,0,0,0,L.Hdr},
   --[[02]] OneProfile
@@ -608,6 +605,7 @@ function Config()
   --[[21]] {F.DI_BUTTON,      0,14, 0,14,0,0,0,F.DIF_CENTERGROUP,L.NoSave},
   --[[22]] {F.DI_BUTTON,      0,14, 0,14,0,0,0,F.DIF_CENTERGROUP,L.Cancel},
   --[[23]] {F.DI_BUTTON,      0,14, 0,14,0,0,0,F.DIF_CENTERGROUP+F.DIF_BTNNOCLOSE,L.BHelp},
+  --[[24]] {F.DI_TEXT,       x1, 9,x2, 9,0,0,0,0,L.diConf.ColorSample},
   }
   -- начало кода функции
   local res = far.Dialog(Guids.Config,-1,-1,78,17,nil,Items,nil,cDlgProc) -- вызовем диалог
