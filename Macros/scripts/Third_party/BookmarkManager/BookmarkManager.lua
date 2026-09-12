@@ -153,18 +153,17 @@ L = setmetatable({},{__index=function(_,idx) -- языковые данные, �
 local LoadSettings,SaveSettings,InputSeq,GoToObject,GiveBack,BM2str,BM2tbl,NiceFolder,ReadBM
 local WriteBM,DelBM,ShowHelp,ErrMess,EnumBM
 --
-function LoadSettings(ForceDef) --[[загрузить настройки из БД]]
+function LoadSettings() --[[загрузить настройки из БД]]
   UsedProfile = nfo.options.DefProfile -- запомним профиль
   local data = mf.mload(dbKey, ConfPart, UsedProfile)
   if not data then
-    local otherProfile = (UsedProfile == "local") and "roaming" or "local"
-    data = mf.mload(dbKey, ConfPart, otherProfile)
-    if data then UsedProfile = otherProfile; end
+    local curProfile = (UsedProfile == "local") and "roaming" or "local"
+    data = mf.mload(dbKey, ConfPart, curProfile)
+    if data then UsedProfile = curProfile; end
   end
-  data = data or {}
   S = {}
-  for name in pairs(Def) do
-    if ForceDef then S[name] = Def[name] else S[name] = data[name] end
+  for name,val in pairs(data or Def) do
+    S[name] = val
   end
   if OneProfile then
     S.UseLocal = false
