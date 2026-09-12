@@ -118,7 +118,7 @@ local Guids = {
   diEdit      = win.Uuid("6BDD26FF-1D69-492C-A023-94B9AFF58F0F"),
   Config      = win.Uuid("CF79A927-A0B9-4B13-9DEB-A39E2DAA7CC6"),
 }
-local PathName = debug.getinfo(function()end).source:match("^@?([^@].*)%.[^%.\\]+$") -- путь и имя без расширения
+local PathName = debug.getinfo(function()end).source:match("^@?([^@].*)%.[^%./]+$") -- путь и имя без расширения
 local LMBuild = far.GetPluginInformation(far.FindPlugin(F.PFM_SYSID,Guids.LuaMacro)).GInfo.Version[4] -- запомним версию LuaMacro
 local PanelColor = far.AdvControl(F.ACTL_GETCOLOR,far.Colors.COL_PANELBOX) -- цвет панели
 local Def = { -- настройки по умолчанию
@@ -207,7 +207,8 @@ function GoToObject(folder,delay,trail) --[[перейти в указанную
     if LP and pinfo and pinfo.GInfo.Title==LP.Plugin then LP.id = pinfo.GInfo.SysID end
     if RP and pinfo and pinfo.GInfo.Title==RP.Plugin then RP.id = pinfo.GInfo.SysID end
   end
-  for LR,Pnl in pairs({[0]=LP,[1]=RP}) do -- переберём панели (если есть)
+  for LR = 0,1 do -- переберём панели (если есть)
+    local Pnl = LR==0 and LP or RP
     Top = Pnl.Folder..(trail or "")                     -- запомним,раскроем
     Pnl.Folder = Pnl.Folder:gsub("%%(.-)%%",win.GetEnv) -- запомним,раскроем
     trail = (trail or ""):gsub("%%(.-)%%",win.GetEnv)   -- запомним,раскроем
@@ -246,7 +247,7 @@ function GoToObject(folder,delay,trail) --[[перейти в указанную
                 far.RecursiveSearch(path, '*'..s..'*',AddOne)
               end
               if not ff and win.GetFileAttr(path.."/"..s) then -- поищем, как есть (надо для коротких имён)
-                tmp[#tmp+1] = path.."\\"..s
+                tmp[#tmp+1] = path.."/"..s
               end
             end
           end
@@ -281,7 +282,7 @@ function GoToObject(folder,delay,trail) --[[перейти в указанную
       win.ShellExecute(nil,Pnl.Cmd=="X" and "open" or "edit",Pnl.Folder) return -- запустить/редактировать - передать в систему
     else
       if not Pnl.id and not win.GetFileAttr(Pnl.Folder):match('d') then -- файл? поделим
-        Pnl.Folder,Pnl.FN = Pnl.Folder:match([[^(.-)([^\]*)$]])
+        Pnl.Folder,Pnl.FN = Pnl.Folder:match([[^(.-)([^/]*)$]])
       end
       local AP = APanel.Left and 1-LR or LR -- вычислим признак, для активной или пассивной панели меняем
       local cd = panel.SetPanelDirectory(nil,AP,{PluginId=Pnl.id,File=Pnl.File,Name=Pnl.Folder,Param=Pnl.Param}) -- сменим каталог
@@ -785,7 +786,7 @@ function CLProc(pref,line)
   local trail
 
   if pref=="bm" then -- для перехода формат и содержание строки другие
-    bm,trail = (line or ""):match("^([^\\]*)(.-)$")
+    bm,trail = (line or ""):match("^([^\\]*)(.-)$") --### backslash?
   end
   if OneProfile then p4 = "" end -- для единого профиля нет различия на локальные и глобальные закладки/
 
