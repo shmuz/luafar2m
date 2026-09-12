@@ -634,7 +634,6 @@ if type(nfo)=="table" then nfo.config = Config end
 --[=[Меню закладок]=]
 -- -
 function BMMenu(mask,trail)
-far.Show(S.ShowEnv)
   --
   local function prep_menu(lg) -- подготовить заполнение меню закладками
     local maxlen,l = 0,{} -- наибольшая длина имени, данные для заполнения, профиль, раздел, список имён
@@ -715,7 +714,9 @@ far.Show(S.ShowEnv)
     if res.BreakKey=="F1" then -- F1 - выведем справку
       ShowHelp("Main")
     elseif res.BreakKey=="F4" or res.BreakKey=="F5" then -- редактировать в диалоге?
-      BMEdit(items[pos].bm,items[pos].folder,items[pos].lg,res.BreakKey=="F4") -- отредактируем
+      if pos > 0 then
+        BMEdit(items[pos].bm,items[pos].folder,items[pos].lg,res.BreakKey=="F4") -- отредактируем
+      end
     elseif res.BreakKey=="INSERT" or res.BreakKey=="NUMPAD0" then -- добавить новый?
       if S.UseLocal or S.UseGlobal then -- есть куда?
         local lg = S.UseLocal and S.DefBMProfile=="local" and "local" or S.UseGlobal and "global"
@@ -724,14 +725,23 @@ far.Show(S.ShowEnv)
         ErrMess(L.NoLG,L.Hdr) -- всё выключено!
       end
     elseif res.BreakKey=="DELETE" or res.BreakKey=="DECIMAL" then -- удалить текущий?
-      DelBM(items[pos].bm,items[pos].lg,true) -- удалим
+      if pos > 0 then
+        DelBM(items[pos].bm,items[pos].lg,true) -- удалим
+      end
     elseif res.BreakKey=="F9" then -- конфигурация?
       Config() -- отредактируем
     else -- Enter/CtrlPgDn/ShiftEnter/ShiftF4
-      local cmd = (not res.BreakKey and"O")or(res.BreakKey:match("^C")and"")or(res.BreakKey=="S+RETURN"and"X")or(res.BreakKey=="S+F4"and"E")
-      for _,v in ipairs(items[pos].folder) do v.Cmd = (cmd=="O")and v.Cmd or cmd end
-      GoToObject(items[pos].folder,-1,trail) -- перейдём без задержки на показ новой папки
-      break -- закончим на этом
+      if pos > 0 then
+        local cmd = (not res.BreakKey and "O")
+            or (res.BreakKey:match("^C") and "")
+            or (res.BreakKey=="S+RETURN" and "X")
+            or (res.BreakKey=="S+F4" and "E")
+        for _,v in ipairs(items[pos].folder) do
+          v.Cmd = (cmd=="O") and v.Cmd or cmd
+        end
+        GoToObject(items[pos].folder,-1,trail) -- перейдём без задержки на показ новой папки
+        break -- закончим на этом
+      end
     end
   until false -- конец главного цикла
   return true -- сработали и закончили
