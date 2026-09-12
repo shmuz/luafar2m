@@ -1,0 +1,310 @@
+﻿.Language=English,English
+.PluginContents=Bookmark manager
+.Options CtrlStartPosChar=|
+
+@main
+$^Main menu
+
+^#Purpose#
+
+   Bookmark manager allows you to assign a bookmark to a folder or file and jump to bookmark or to existing folders from environment variables.
+Additionally for element may do two commands from system context menu: open and edit.
+Also it is possible to use ~key combinations~@keys@, ~prefixes~@prefix@ and call script from Far plugin or drive menu.
+For use from drive menu script hides in bookmarks objects, that do not suit (e.g., for passive panel).
+Empty bookmarks are grayed and cannot be used for jumping.
+On starting script from panel drive menu active is panel, for which drive menu was selected.
+Bookmark is a sequence of characters (letters and digits), which mapped one or more folders (files).
+This menu lets you to manage bookmarks interactive.
+And it may be caused when the typed sequence overlaps with an existing bookmark or environment variable.
+
+^#Hotkeys#
+
+  #F1#         - |This help.
+  #Esc#        - |Exit.
+  #Enter#      - |Default action.
+  #CtrlPgDn#   - |Jump to bookmark/environment variable.
+  #ShiftEnter# - |Execute "open" command from system context menu.
+  #ShiftF4#    - |Execute "edit" command from system context menu.
+  #Bookmark#   - |Stay on bookmark. Works with #RCtrl# pressed, as #Alt#-keys in Far panels, or without it.
+Typed sequence is showed left upper on main menu border. With active sequence keys #Up#, #Down#, #Home#, #End# moves on the fitting bookmarks.
+#Esc# cancels sequence processing. Other main menu hotkeys also cancel sequence processing and do its functions.
+
+  #F4#         - |~Edit bookmark~@edit@.
+  #F5#         - |~Copy bookmark~@edit@.
+  #Ins#        - |~New bookmark~@edit@.
+  #Del#        - |Delete bookmark.
+
+  #F9#         - |~Script config.~@config@
+
+@=
+
+ ~Contents~@contents@
+
+@keys
+$^Work in Far panel
+
+^#Purpose#
+
+   In interactive mode may to execute default action for existing bookmark/environment variable or set new bookmark.
+Bookmark names are typed as a sequence of characters (letters and digits), pressed #RCtrl# or #RCtrl# and #Shift#/#RAlt# together.
+Legal for bookmark name symbols are listed in ~edit bookmark help~@edit@. Non-printable characters, #Tab# and #Space# are illegal.
+Cyrillic letters are stored as latin, small letters as big, non-letters characters -as symbols with non-pressed #Shift#.
+At typesetting process in Far window printed ~configurable~@config@ hint of symbols pressed.
+
+^#Hotkeys#
+
+  #CtrlBookmark#      - |Jump to bookmark/environment variable.
+Depending on the ~bookmark value format~@edit@ executes default action for active, passive or both Far panels.
+If typed sequence overlaps with the existing, ~menu~@main@ is displayed to select the desired.
+  #CtrlShiftBookmark# - |Save current folder on active Far panel in local or global Far profile(depend on ~configuration~@config@).
+If this bookmark already exist, prompted about reassign bookmark to new folder.
+  #CtrlAltBookmark#   - |Save current folder on both Far panels in local or global Far profile(depend on ~configuration~@config@).
+If this bookmark already exist, prompted about reassign bookmark to new folders.
+
+@=
+
+ ~Contents~@contents@
+
+@prefix
+$^Command line
+
+^#Purpose#
+
+  At the command prompt you can enter commands that begin with one of the prefixes.
+  Command format: |use bookmark/environment variable: #prefix#:[#sequence#[#addition beginning from '\'#]];
+                  |help call: #prefix#:;
+                  |other: #prefix#:[#sequence# [#value#]].
+#Sequence# is converted, as described in ~bookmark editing help~@edit@.
+
+^#Processed prefixes#
+
+^Jump to bookmark
+
+  #bm#     - |execute default action for bookmark/environment variable.
+If #sequence# overlaps with the existing, ~menu~@main@ is displayed to select the desired.
+If #sequence# absent, full ~menu~@main@ is displayed.
+Because the bookmark names are translated into characters typed while holding down the Ctrl,
+then, for example, #Фильмы# equivalent to #ABKMVS#.
+If #addition# present, it concatenated right to bookmark value.
+For sample, for bookmark #FILMS# may type #bm:films\KungFu\J.Chan#.
+For #addition# works some specifications, as for ~bookmark value~@edit@.
+
+^Create new bookmark
+
+   #Value# must be.
+If bookmark with this name in profile specified already present, rewriting requested.
+
+  #bma#    - |Add bookmark. Storage profile is selected depending on the ~settings~@config@.
+  #bmal#   - |Add local bookmark.
+  #bmag#   - |Add global bookmark.
+
+^Change existing/create new bookmark interactively
+
+   If bookmark with this name in profile specified do not present, a new created interactively.
+Bookmark value is initialized with #value# (if present) or existing bookmark value/empty string (for new bookmark).
+
+  #bme#    - |Edit bookmark in dialog.
+If both local and global bookmarks exist with this name, edited selected depending on the ~settings~@config@.
+  #bmel#   - |Edit local bookmark in dialog.
+  #bmeg#   - |Edit global bookmark in dialog.
+
+^Delete bookmark
+
+   #Value# is ignored.
+
+  #bmr#    - |Delete bookmark.
+If both local and global bookmarks exist with this name, deleted selected depending on the ~settings~@config@.
+  #bmrl#   - |Delete local bookmark.
+  #bmrg#   - |Delete global bookmark.
+
+^Help
+
+  #bmhelp# - |Show script help .
+
+@=
+
+ ~Contents~@contents@
+
+@edit
+$^Create/change/copy bookmark interactively
+
+^#Purpose#
+
+  This dialog is designed for bookmark name/value/location changing, bookmark deleting (simply delete bookmark value) or new bookmark creation.
+Depend on selected operation in first case bookmark may be copied or changed.
+
+^#Bookmark format#
+
+  Bookmark name may contain following characters: #',-./0123456789;=ABCDEFGHIJKLMNOPQRSTUVWXYZ[]`#.
+Illegal symbol, pressed on same key with legal, replaced with this legal or ignored.
+For example, typed in Cyrillic layout bookmark #"Хлам"# will be converted to #'[KFV'#.
+
+  Bookmark value may be in old or new format.
+
+  Old bookmark value format: |[<[#Modifier#]>][#Active panel value#][<[#Modifier#]>#Passive panel value#].
+#Active panel value# changes active Far panel. #Passive panel value# changes passive Far panel.
+  New bookmark value format: |<#Tag#[#Modifier#]>#Value#[<#Tag#[#Modifier#]>#Value#[...]].
+
+  Tag indicates, on which panel folder will be changed. Modifier corrects action for value.
+Value can contain full name of existing folder or file, or mask (including local drive name mask).
+Also depend on ~configuration~@config@, part of full name, do not corresponding to real element, can be interpreted as mask.
+If mask corresponds to several elements, menu is displayed for select a single.
+In this case, an action with an element may be selected, similar to the ~bookmark menu~@main@.
+If value is folder, it is opened in panel.
+If value is file, and modifiers are absent, then action menu is showed.
+Value can contain environment variables.
+
+  There are four tags:   #A# - |active panel;
+                         #P# - |passive panel;
+                         #L# - |left panel;
+                         #R# - |right panel.
+
+  There are three modifiers: #C# - |for folders: when new folders on panels are set, make this panel active.
+                                 |for files: immediately go to file, do not show action menu.
+                             #X# - |do not change panels, open element with OS capabilities.
+                             #E# - |do not change panels, edit element with OS capabilities.
+
+  In case, if for one panel some folders indicate or many tags are followed by modifier, last variant acts.
+
+  Full folder format for any bookmark:
+    [#Plugin#]||[#File-container#]|[#Path in plugin/file-container#]|[#Parameter#], allowable
+    [#Plugin#]||[#Path in plugin#]|[#Parameter#] or
+    [#Plugin#]||[#File#]|[#Path in plugin/file-container#] or
+    [#Plugin#]||[#Path in plugin#] or
+    #Path#,
+  where #Path# - path to file or folder.
+
+^#Hotkeys#
+
+  #Esc#   - |Exit without saving.
+  #Enter# - |Save bookmark and exit.
+  #F1#    - |This help.
+
+  #AltR#  - |Go to bookmark name.
+  #AltF#  - |Go to bookmark value.
+  #AltL#  - |Local bookmark.
+  #AltK#  - |Global bookmark.
+
+@=
+
+ ~Contents~@contents@
+
+@config
+$^Configuration
+
+^#Purpose#
+
+   This dialog allows to change support of local and global bookmarks and environment variables independently,
+and configure script parameters. Changes may be refused or accepted, temporarily or permanently.
+
+^#Hotkeys#
+
+  #Esc#        - |Exit without settings saving.
+  #Enter#      - |Save settings and exit.
+  #ShiftEnter# - |Apply settings temporarily and exit.
+  #F1#         - |This help.
+
+^#Options#
+
+  #Use local bookmarks#                - |Use bookmarks stored in local Far profile. Usually this is computer dependent information.
+  #Use global bookmarks#               - |Use bookmarks stored in global Far profile. Usually this is computer independent information.
+  #Use bookmarks#                      - |This option replaces two previous, if local and global profiles stored in same place.
+  #Mainly use bookmarks:#              - |In which base - local or global - to save bookmarks by default.
+Which bookmark - local or global - to use,  if both are present.
+  #Use environment variables#          - |Use for jump environment variables, which values contain existing paths.
+  #Show environment variables in menu# - |Allows to use environment variables as bookmarks, but do not shows it in ~bookmark menu~@main@.
+  #Extended mask#                      - |If part of full name do not corresponds to real element,
+an attempt is made to interpret it as mask, enclosing in #*#.
+  #Menu for single coincidence#        - |On partially coincidence with bookmark name to out menu, if only one item suits.
+  #Select hint color#                  - |Calls the color setup dialog for a hint at ~interactive use~@keys@.
+If "black on black" color was selected, hint does not printed.
+  #Hint line#                          - |Defines, in which line hint is printed at ~interactive use~@keys@.
+Negative line numbers counted from bottom (-1 - the lowest), non-negative - from top (0 - the highest).
+  #Jump to folder message delay#       - |Time duration, in which message will be displayed after jump to bookmark.
+  #Save bookmark message delay#        - |Time duration, in which message will be displayed after bookmark saving.
+Values allowable:
+                                        #<0# - |message will be not displayed;
+                                         #0# - |message will be displayed until you press any key;
+                                        #>0# - |message will be displayed the specified number of milliseconds or until you press any key.
+  #Save#                               - |Save settings and exit.
+  #Apply until exit#                   - |Apply settings temporarily and exit.
+  #Cancel#                             - |Exit without settings saving.
+  #Help#                               - |This help.
+
+@=
+
+ ~Contents~@contents@
+
+@function
+$^Use script as a function
+
+  Script may be called as a function with two parameters.
+First parameter is ~one of prefixes~@prefix@, second - appropriate to this prefix command line.
+
+^#Sample#
+
+  local BM = loadfile((...):match("^(.*\\)[^\\]*$").."BookmarkManager.lua") -- file must be beside BookmarkManager.lua
+  if not BM then
+    far.Message("BookmarkManager is not found","My macro to call BookmarkManager",";Ok","w")
+  else
+    Macro{
+      area="Shell Info QView Tree";
+      key="LCtrl/";
+      description="BookmarkManager - Go to bookmark in dialog";
+      action=function()
+        local cmd=far.InputBox(nil,'BookmarkManager: jump to bookmark','Input bookmark[\\<trail>]','BookmarkManagerAddonCommand',
+                               nil,nil,nil,{FIB_ENABLEEMPTY=1, FIB_BUTTONS=1})
+        if cmd then BM('bm',cmd) end
+      end
+    }
+  end
+
+@=
+
+ ~Содержание~@contents@
+
+@list
+$^Script macros list
+  #Key#                   |  #Script#
+
+  #RCtrl/#              - |~Bookmark manager main window~@main@.
+  #RCtrlBookmark#       - |~Go to bookmark~@keys@
+  #RCtrlShiftBookmark#  - |~Save active panel folder in bookmark~@keys@
+  #RCtrlAltBookmark#    - |~Save both active and passive panels folders in bookmark~@keys@
+
+@=
+
+ ~Contents~@contents@
+
+@about
+$^About
+
+ Author:       #IgorZ#
+
+ Version:      #3.0.10#
+
+ Net address: ~http://forum.farmanager.com/viewtopic.php?t=8465~@http://forum.farmanager.com/viewtopic.php?t=8465@
+@=‗
+  Based on the idea of Max Rusov.
+
+  This script id designed to assign bookmarks to folders  or files and go to bookmarks, to existing folders from environment variables,
+or to execute it by OS facilities.
+Can be used as ~macro~@list@, ~from command line~@prefix@, and called from Far drives and plugins menu,
+also to be called ~as function~@function@.
+
+@=
+
+ ~Contents~@contents@
+
+@contents
+$^Contents
+
+  ~Main menu~@main@
+  ~Work in Far panel~@keys@
+  ~Command line~@prefix@
+  ~Create/change/copy bookmark interactively~@edit@
+  ~Configuration~@config@
+  ~Programmable using~@function@
+  ~Script macros list~@list@
+
+  ~About~@about@
