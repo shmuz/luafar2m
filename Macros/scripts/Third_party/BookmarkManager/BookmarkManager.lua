@@ -207,6 +207,7 @@ function GoToObject(folder,delay,trail) --[[перейти в указанную
     if LP and pinfo and pinfo.GInfo.Title==LP.Plugin then LP.id = pinfo.GInfo.SysID end
     if RP and pinfo and pinfo.GInfo.Title==RP.Plugin then RP.id = pinfo.GInfo.SysID end
   end
+  if trail then trail = trail:gsub("\\", "/") end -- Linux
   for LR,Pnl in pairs({[0]=LP,[1]=RP}) do -- переберём панели (если есть)
     Top = Pnl.Folder..(trail or "")                     -- запомним,раскроем
     Pnl.Folder = Pnl.Folder:gsub("%%(.-)%%",win.GetEnv) -- запомним,раскроем
@@ -278,7 +279,7 @@ function GoToObject(folder,delay,trail) --[[перейти в указанную
       end
     end -- not Pnl.id
     if Pnl.Cmd:find("[XE]") then
-      win.ShellExecute(nil,Pnl.Cmd=="X" and "open" or "edit",Pnl.Folder) return -- запустить/редактировать - передать в систему
+      far.Execute(Pnl.Folder, "EF_HIDEOUT EF_NOWAIT EF_NOCMDPRINT EF_OPEN")
     else
       if not Pnl.id and not win.GetFileAttr(Pnl.Folder):match('d') then -- файл? поделим
         Pnl.Folder,Pnl.FN = Pnl.Folder:match([[^(.-)([^/]*)$]])
@@ -783,7 +784,7 @@ function CLProc(pref,line)
   local trail
 
   if pref=="bm" then -- для перехода формат и содержание строки другие
-    bm,trail = (line or ""):match("^([^\\]*)(.-)$") --### backslash?
+    bm,trail = (line or ""):match("^([^\\]*)(.-)$") -- consider using forward slash in the future
   end
   if OneProfile then p4 = "" end -- для единого профиля нет различия на локальные и глобальные закладки/
 
