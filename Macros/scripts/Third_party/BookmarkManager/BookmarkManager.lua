@@ -279,15 +279,21 @@ function GoToObject(folder,delay,trail) --[[перейти в указанную
       end
     end -- not Pnl.id
     if Pnl.Cmd:find("[XE]") then
+      -- запустить/редактировать - передать в систему
       far.Execute(Pnl.Folder, "EF_HIDEOUT EF_NOWAIT EF_NOCMDPRINT EF_OPEN")
     else
       if not Pnl.id and not win.GetFileAttr(Pnl.Folder):match('d') then -- файл? поделим
         Pnl.Folder,Pnl.FN = Pnl.Folder:match([[^(.-)([^/]*)$]])
       end
+      local dir = {PluginId=Pnl.id, File=Pnl.File, Name=Pnl.Folder, Param=Pnl.Param}
       local AP = APanel.Left and 1-LR or LR -- вычислим признак, для активной или пассивной панели меняем
-      local cd = panel.SetPanelDirectory(nil,AP,{PluginId=Pnl.id,File=Pnl.File,Name=Pnl.Folder,Param=Pnl.Param}) -- сменим каталог
-      if cd and (Pnl.Cmd=="C") and AP==0 then cd = panel.SetActivePanel(nil,0) end -- если данную пассивную панель надо сделать активной, сделаем
-      if cd and Pnl.FN then Panel.SetPos(Pnl.Cmd=="C" and 0 or 1-AP,Pnl.FN) end -- если надо позиционироваться на файле, сделаем
+      local cd = panel.SetPanelDirectory(nil,AP,dir) -- сменим каталог
+      if cd and (Pnl.Cmd=="C") and AP==0 then -- если данную пассивную панель надо сделать активной, сделаем
+        cd = panel.SetActivePanel(nil,0)
+      end
+      if cd and Pnl.FN then -- если надо позиционироваться на файле, сделаем
+        Panel.SetPos(Pnl.Cmd=="C" and 0 or 1-AP,Pnl.FN)
+      end
     end
   end
   if delay>=0 then -- надо вывести сообщение?
@@ -367,11 +373,11 @@ end
 
 function NiceFolder(folder) --[[Красивая строка папки]]
   return BM2str(BM2tbl(folder))
-    :gsub("([^|<>]*|[^|<>]*|[^|<>]*)|[^|<>]*","%1")
-    :gsub("|*(%b<>)|*","%1")
-    :gsub("^|+","")
-    :gsub("|+$","")
-    :gsub("|+",":")
+    :gsub("([^|<>]*|[^|<>]*|[^|<>]*)|[^|<>]*", "%1")
+    :gsub("|*(%b<>)|*", "%1")
+    :gsub("^|+", "")
+    :gsub("|+$", "")
+    :gsub("|+", ":")
 end
 
 function EnumBM(lg)
