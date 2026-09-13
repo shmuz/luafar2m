@@ -1,8 +1,5 @@
 ﻿-- luacheck: ignore 631 (line is too long)
 
-local dbKey = "Bookmark_manager"
-local LE = require "far2.lua_explorer"
-
 local Info = Info or package.loaded.regscript or function(...) return ... end --luacheck: ignore 113/Info
 local nfo = Info {_filename or ...,
   name          = "Bookmark manager";
@@ -99,8 +96,9 @@ if not nfo then return end
 -- +
 --[[константы]]
 -- -
-local F,KeysPart,ConfPart = far.Flags,"BookmarkManagerData","BookmarkManagerConfig"
-local Author = "IgorZ" -- luacheck: ignore
+local dbKey = "Bookmark_manager"
+local KeysPart,ConfPart = "BookmarkManagerData","BookmarkManagerConfig"
+local F = far.Flags
 local ToCtrl = { [" "]="",["|"]="",["\\"]="", -- таблица замены символов на те, которые вводятся с Ctrl
   ["~"]="`",["!"]="1",["@"]="2",["#"]="3",["№"]="3",["$"]="4",["%"]="5",["^"]="6",["&"]="7",["*"]="8",["("]="9",[")"]="0",["_"]="-",["+"]="=",
   ["{"]="[",["}"]="]",[":"]=";",['"']="'",["<"]=",",[">"]=".",["?"]="/",["Ё"]="`",["Й"]="Q",["Ц"]="W",["У"]="E",["К"]="R",["Е"]="T",["Н"]="Y",
@@ -108,7 +106,6 @@ local ToCtrl = { [" "]="",["|"]="",["\\"]="", -- таблица замены с�
   ["Д"]="L",["Ж"]=";",["Э"]="'",["Я"]="Z",["Ч"]="X",["С"]="C",["М"]="V",["И"]="B",["Т"]="N",["Ь"]="M",["Б"]=",",["Ю"]=".",
 }
 local Guids = {
-  LuaMacro    = far.GetPluginId(); -- guid LuaMacro
   SaveMacro   = "2F17BA22-2438-4D7C-AF5C-A838CD023608",
   GoToMacro   = "97ADF907-40BC-4FF5-945F-ABF69687C848",
   MenuMacro   = "33668CB0-4F8F-4F85-98E4-B47B949E1D4B",
@@ -118,9 +115,9 @@ local Guids = {
   diEdit      = win.Uuid("6BDD26FF-1D69-492C-A023-94B9AFF58F0F"),
   Config      = win.Uuid("CF79A927-A0B9-4B13-9DEB-A39E2DAA7CC6"),
 }
-local PathName = debug.getinfo(function()end).source:match("^@?([^@].*)%.[^%./]+$") -- путь и имя без расширения
-local LMBuild = far.GetPluginInformation(far.FindPlugin(F.PFM_SYSID,Guids.LuaMacro)).GInfo.Version[4] -- запомним версию LuaMacro
-local PanelColor = far.AdvControl(F.ACTL_GETCOLOR,far.Colors.COL_PANELBOX) -- цвет панели
+local PathName = debug.getinfo(1).source:match("^@?([^@].*)%.[^%./]+$") -- путь и имя без расширения
+local PColor = actl.GetColor(far.Colors.COL_PANELBOX) -- цвет панели
+PColor.ForegroundColor, PColor.BackgroundColor = PColor.BackgroundColor, PColor.ForegroundColor -- инвертируем
 local Def = { -- настройки по умолчанию
   UseLocal      = true, -- использовать локальные закладки
   UseGlobal     = true, -- использовать глобальные закладки
@@ -129,7 +126,7 @@ local Def = { -- настройки по умолчанию
   ShowEnv       = true, -- показывать переменные окружения в меню
   ExtMask       = true, -- использовать "слабые совпадения" (дополнять имя папки '*')
   MenuForOne    = true, -- при неполном совпадении имени закладки выводить меню даже для одного элемента
-  SeqColor = band(PanelColor.ForegroundColor,0x0f)*0x10+band(PanelColor.BackgroundColor,0x0f), -- цвет сообщения о набираемой последовательности
+  SeqColor      = PColor, -- цвет сообщения о набираемой последовательности
   SeqLine       = 0,    -- строка сообщения о набираемой последовательности
   GoToMessDelay = 1000, -- длительность показа сообщения о смене папки
   SaveMessDelay = 500,  -- длительность показа сообщения о сохранении закладки
@@ -140,18 +137,30 @@ local OneProfile = false -- win.GetEnv("FARLOCALPROFILE")==win.GetEnv("FARPROFIL
 -- -
 local L,LT,S,InProcess,UsedProfile -- язык, настройки, признак обработки нажатой клавиатурной комбинации, откуда загрузили настройки
 local function _f()
-  return setmetatable({},{__index=_f,__tostring=function() return "TmpPanel: Cannot find language file" end})
+  return setmetatable({},{__index=_f,__tostring=function() return nfo.name..": Cannot find language file" end})
 end -- функция-затычка
 L = setmetatable({},{__index=function(_,idx) -- языковые данные, меняющиеся при смене языка, да ещё с затычкой
-  local FL = Far.GetConfig("Language.Main"):sub(1,3) if LT and LT.Lang==FL then return LT[idx] end  -- язык; совпадает - вернём требуемое
-  local LF = loadfile(PathName..FL..".lng") or loadfile(PathName.."Eng.lng") -- функция, возвращающая содержимое языкового файла
-  if LF then LT = LF() return LT[idx] else return _f() end end}) -- вернём из найденного или затычку
+    local FL = Far.GetConfig("Language.Main"):sub(1,3)
+    if LT and LT.Lang==FL then return LT[idx] end  -- язык; совпадает - вернём требуемое
+    local LF = loadfile(PathName..FL..".lng") -- функция, возвращающая содержимое языкового файла
+            or loadfile(PathName.."Eng.lng")
+    if LF then -- вернём из найденного или затычку
+      LT = LF()
+      return LT[idx]
+    else
+      return _f()
+    end
+  end})
 --------------------------------------------------------------------------------
 -- +
 --[=[вспомогательные функции]=]
 -- -
 local LoadSettings,SaveSettings,InputSeq,GoToObject,GiveBack,BM2str,BM2tbl,NiceFolder,ReadBM
-local WriteBM,DelBM,ShowHelp,ErrMess,EnumBM
+local WriteBM,DelBM,ShowHelp,ErrMess,EnumBM,MakePnlData
+--
+function MakePnlData(Panel,Cmd,Plugin,File,Folder,Param)
+  return { Panel=Panel, Cmd=Cmd, Plugin=Plugin, File=File, Folder=Folder, Param=Param }
+end
 --
 function LoadSettings() --[[загрузить настройки из БД]]
   UsedProfile = nfo.options.DefProfile -- запомним профиль
@@ -176,17 +185,23 @@ function SaveSettings() --[[сохранить настройки в БД]]
 end
 --
 function InputSeq() --[[ввести последовательность клавиш]]
-  local nstr,mod,seq = S.SeqLine<0 and Far.Height+S.SeqLine or S.SeqLine,akey(1,1):match("^(.*)(.)$") -- первый из символов
+  local nstr = S.SeqLine<0 and Far.Height+S.SeqLine or S.SeqLine
+  local mod,seq = akey(1,1):match("^(.*)(.)$") -- первый из символов
   repeat -- Обработаем очередное нажатие
     local key = mf.waitkey(10):sub(mod:len()+1) -- введём клавишу
     if key:len()<2 then -- нормальная клавиша?
       seq = seq..key -- добавим к последовательности
-      if S.SeqColor~=0 then far.Text((Far.Width-seq:len()-L.Seq:len())/2,nstr,S.SeqColor,L.Seq..seq.." ") far.Text() end
+      if S.SeqColor~=0 then
+        far.Text((Far.Width-seq:len()-L.Seq:len())/2, nstr, S.SeqColor, L.Seq..seq.." ")
+        far.Text()
+      end
     else -- нет - считаем, что эту последовательность надо отдать Far-у
       return GiveBack(mod,seq,key) -- вернём клавиши обратно и выйдем
     end
   until band(Mouse.LastCtrlState,0x15)==0 -- повторяем, пока нажаты RCtrl+Shift/RAlt
-  panel.RedrawPanel(nil,1) panel.RedrawPanel(nil,0) return seq,mod
+  panel.RedrawPanel(nil,1)
+  panel.RedrawPanel(nil,0)
+  return seq,mod
 end
 --
 function GoToObject(folder,delay,trail) --[[перейти в указанную папку]]
@@ -215,15 +230,8 @@ function GoToObject(folder,delay,trail) --[[перейти в указанную
     if not Pnl.id then -- реальная файловая панель?
       local List = {} -- главный список вариантов
       for p in Pnl.Folder:gmatch("[^;]+") do -- поделим по ";"
-        local Path,L1,Root,Rest = p..trail,{} -- путь поиска, список результатов одной части, корень пути, всё, кроме корня
-        if Path:match([[^[A-Za-z*]:]]) then -- раскроем корень
-          Root,Rest = Path:upper():match([[^(.):\*(.*)$]]) -- имя диска в стиле Windows? достанем, запомним остаток
-          for d in ("ABCDEFGHIJKLMNOPQRSTUVWXYZ"):gmatch(".") do
-            if d:match(Root) or Root=="*" then
-              L1[#L1+1] = d..[[:\]]
-            end
-          end
-        elseif Path:match([[^\\]]) then -- имя сетевой папки? достанем, запомним остаток
+        local Path,L1,Rest = p..trail,{} -- путь поиска, список результатов одной части, всё, кроме корня пути
+        if Path:match([[^\\]]) then -- имя сетевой папки? достанем, запомним остаток
           L1[1],Rest = Path:match([[^(\\[^\]+\[^\]+\?)(.*)$]])
         elseif Path:match("^/") then -- Linux
           L1[1],Rest = Path:match("(/)(.*)")
@@ -231,7 +239,7 @@ function GoToObject(folder,delay,trail) --[[перейти в указанную
           ErrMess(L.BadBMValue..":\n"..Path,L.Hdr)
           return
         end
-        for s in Rest:gsub([[/+]],[[/]]):gmatch([[[^/]+]]) do -- разберём остаток
+        for s in Rest:gmatch("[^/]+") do -- разберём остаток
           local tmp = {} -- новый список
           for _,path in ipairs(L1) do -- для каждого элемента списка
             if s=='..' then
@@ -255,17 +263,19 @@ function GoToObject(folder,delay,trail) --[[перейти в указанную
         end
         for _,p1 in ipairs(L1) do List[#List+1] = p1 end -- допишем полученные варианты в главный список
       end -- раскроем все варианты
-      if #List==1 and(win.GetFileAttr(List[1]):match("d") or Pnl.Cmd~="") then -- единственный элемент, каталог или действие указано?
+      if #List==1 and (win.GetFileAttr(List[1]):match("d") or Pnl.Cmd~="") then -- единственный элемент, каталог или действие указано?
         Pnl.Folder = List[1] -- просто запомним его
       elseif #List>0 then -- список не пустой
         local items,ff,res,pos = {} -- элементы меню, признак наличия файла в списке, результат вызова меню, позиция элемента в меню
         for _,v in ipairs(List) do
           local d = (win.GetFileAttr(v) or ""):match('d')
           ff = ff or not d
-          items[#items+1] = {text=v,checked=d and "↓"}
+          items[#items+1] = {text=v, checked=d and "↓"}
         end
         table.sort(items,function(a,b) return (a.checked and "D" or "F")..a.text<(b.checked and "D" or "F")..b.text end) -- отсортируем список
-        local Bottom = "Enter, Esc"..(Pnl.Cmd:find("[CE]")and""or", ShiftEnter")..((not ff or Pnl.Cmd:find("[CX]"))and""or", F4")
+        local Bottom = "Enter, Esc"
+            .. (Pnl.Cmd:find("[CE]") and "" or ", ShiftEnter")
+            .. ((not ff or Pnl.Cmd:find("[CX]")) and "" or ", F4")
         local BK = {
           { BreakKey="RETURN", cmd=Pnl.Cmd },
           not Pnl.Cmd:find("[CE]") and { BreakKey="S+RETURN",cmd="X"},
@@ -321,7 +331,11 @@ function BM2str(folder) --[[Преобразовать значение закл
   local s = ""
   for _,f in pairs(folder) do
     local PC = f.Panel:match("<?([^>]*)>?")..f.Cmd
-    s = s..(PC~="" and("<"..PC..">") or f.Panel)..f.Plugin.."|"..f.File.."|"..f.Folder.."|"..f.Param
+    s = s .. (PC~="" and ("<"..PC..">") or f.Panel)
+          .. f.Plugin .. "|"
+          .. f.File   .. "|"
+          .. f.Folder .. "|"
+          .. f.Param
   end
   return s
 end
@@ -361,10 +375,13 @@ function BM2tbl(folder,bm,lg) --[[Преобразовать значение з
     end
   end
   if #e>0 then
-    local s = (L.BadBM1:format((OneProfile or not lg) and L.BMUndef or lg=="local" and L.BMLocal or L.BMGlobal,bm))
+    local fmt = (OneProfile or not lg) and L.BMUndef or (lg=="local" and L.BMLocal) or L.BMGlobal
+    local s = L.BadBM1:format(fmt,bm)
     local sp = (" "):rep(s:len())
     for i,v in ipairs(e) do
-      s = s..(i>1 and sp or "")..L["BadBM"..v.e.."Fmt"]:format(v.f:gsub("<1>",""):gsub("<2>","<>"))..(i<#e and "\n" or "")
+      s = s .. (i>1 and sp or "")
+            .. L["BadBM"..v.e.."Fmt"]:format(v.f:gsub("<1>",""):gsub("<2>","<>"))
+            .. (i<#e and "\n" or "")
     end
     ErrMess(s,L.Hdr)
   end
@@ -407,7 +424,7 @@ end
 function DelBM(bm,lg,confirm)--[=[Удалить закладку]=]
   local data = mf.mload(dbKey, KeysPart, lg) or {}
   local folder = data[bm] -- достанем значение закладки; если нет - отрапортуем (если надо) и уйдём
-  local fmt = (OneProfile or not lg) and L.BMUndef or lg=="local" and L.BMLocal or L.BMGlobal
+  local fmt = (OneProfile or not lg) and L.BMUndef or (lg=="local" and L.BMLocal) or L.BMGlobal
   if not folder and confirm then
     ErrMess(L.BadBM:format(fmt,bm), L.Hdr)
     return
@@ -443,10 +460,11 @@ function BMSave(bm,folder,lg)
       return id~=0 and far.GetPluginInformation(far.FindPlugin(F.PFM_SYSID,id)).GInfo.Title or ""
     end
     local t = panel.GetPanelDirectory(nil,1) -- папка на активной панели
-    folder = {{Panel="<A>",Cmd="",Plugin=PluginByID(t.PluginId),File=t.File,Folder=t.Name,Param=t.Param}}
+    folder = {}
+    folder[1] = MakePnlData("<A>", "", PluginByID(t.PluginId), t.File, t.Name, t.Param)
     if mod=="RCtrlRAlt" then -- RCtrlRAlt?
       t = panel.GetPanelDirectory(nil,0) -- папка на пассивной панели
-      folder[2] = {Panel="<P>",Cmd="",Plugin=PluginByID(t.PluginId),File=t.File,Folder=t.Name,Param=t.Param}
+      folder[2] = MakePnlData("<P>", "", PluginByID(t.PluginId), t.File, t.Name, t.Param)
     end
   end
   lg = lg or (S.UseLocal and S.UseGlobal and S.DefBMProfile or S.UseLocal or S.UseGlobal) -- профиль
@@ -474,7 +492,7 @@ function BMGoTo(sq,pref,trail)
   if S.UseGlobal then fg,err = ReadBM(seq,"roaming") end -- глобальная закладка с этим именем
   if S.UseEnv then -- и переменная окружения
     fe = win.GetEnv(seq)
-    fe = fe and {{Panel="",Cmd="",Plugin="",File="",Folder=fe,Param=""}}
+    fe = fe and { MakePnlData("","","","",fe,"") }
   end
   folder = fl and fg and S.DefBMProfile==S.UseLocal and fl or fg or fl -- выберем правильный каталог
   folder = folder or fe -- если нет закладки, используем переменную окружения
@@ -648,7 +666,7 @@ function BMMenu(mask,trail)
       for n,v in pairs(env) do
         local attr = (v ~= "") and win.GetFileAttr(v)
         if attr and attr:find("d") then
-          l[#l+1] = { Name=n, Value={{Panel="",Cmd="",Plugin="",File="",Folder=v,Param=""}} }
+          l[#l+1] = { Name=n, Value={ MakePnlData("","","","",v,"") } }
         end
       end
     end
@@ -757,7 +775,10 @@ if type(nfo)=="table" then nfo.execute = function() BMMenu() end end
 -- -
 function QSMenu()
   local seq,key = "",(akey(1,1):gsub("^RCtrl","")) -- последовательность символов для закладки,нажатая клавиша
-  local bkeys = {Enter=1,NumEnter=1,CtrlPgDn=1,CtrlNum3=1,ShiftEnter=1,ShiftNumEnter=1,ShiftF4=1,F1=1,F4=1,F5=1,F9=1,Ins=1,Num0=1,Del=1,NumDel=1,Esc=0}
+  local bkeys = {
+    Enter=1, NumEnter=1, CtrlPgDn=1, CtrlNum3=1, ShiftEnter=1, ShiftNumEnter=1, ShiftF4=1,
+    F1=1, F4=1, F5=1, F9=1, Ins=1, Num0=1, Del=1, NumDel=1, Esc=0,
+  }
   repeat -- Обработаем очередное нажатие
     if key=="Home" then
       Menu.Select(seq,1,0) -- перейдём на первый подходящий пункт меню
@@ -771,7 +792,7 @@ function QSMenu()
       seq = seq..key:upper():gsub(".",ToCtrl) -- преобразуем, добавим
       if Menu.Select(seq,1,0)==0 then seq = seq:sub(1,-2) end -- перейдём на подходящий пункт меню
     end
-    far.Text((Far.Width-Object.Width)/2+3,(Far.Height-Object.Height)/2,far.AdvControl(F.ACTL_GETCOLOR,far.Colors.COL_MENUTITLE),"["..seq.."]")
+    far.Text((Far.Width-Object.Width)/2+3,(Far.Height-Object.Height)/2,actl.GetColor(far.Colors.COL_MENUTITLE),"["..seq.."]")
     far.Text() -- перерисуем экран
     key = mf.waitkey(10):gsub("^RCtrl","") -- введём клавишу,отрежем "RCtrl", если есть
   until bkeys[key] -- повторяем, пока не Esc
@@ -827,12 +848,10 @@ if Macro then
 -- +
 --[=[Макросы]=]
 -- -
-  local idkey = (LMBuild < 579 and "u" or "").."id"
-
   Macro {
     area="Shell"; key="/RCtrl(Shift|RAlt)[^\\/]/";
     description=L.SaveDesc;
-    [idkey]=Guids.SaveMacro;
+    id=Guids.SaveMacro;
     condition=function()
       LoadSettings()
       return not InProcess and (S.UseLocal or S.UseGlobal) and 55 end;
@@ -842,7 +861,7 @@ if Macro then
   Macro {
     area="Shell"; key="/RCtrl[^\\/]/";
     description=L.GoToDesc;
-    [idkey]=Guids.GoToMacro;
+    id=Guids.GoToMacro;
     condition=function()
       LoadSettings()
       return not InProcess and (S.UseLocal or S.UseGlobal or S.UseEnv) and 55
@@ -853,14 +872,14 @@ if Macro then
   Macro {
     area="Shell"; key="RCtrl/";
     description=L.MenuDesc;
-    [idkey]=Guids.MenuMacro;
+    id=Guids.MenuMacro;
     condition=function() return not InProcess end;
     action=function() BMMenu() end;
   }
   Macro {
     area="Menu"; key="/(RCtrl)?[^\\/]/";
     description=L.QSMenuDesc;
-    [idkey]=Guids.QSMenuMacro;
+    id=Guids.QSMenuMacro;
     condition=function() return not InProcess and win.Uuid(Menu.Id)==Guids.Menu end;
     action=QSMenu;
   }
