@@ -100,10 +100,12 @@ local dbKey = "Bookmark_manager"
 local KeysPart,ConfPart = "BookmarkManagerData","BookmarkManagerConfig"
 local F = far.Flags
 local ToCtrl = { [" "]="",["|"]="",["\\"]="", -- таблица замены символов на те, которые вводятся с Ctrl
-  ["~"]="`",["!"]="1",["@"]="2",["#"]="3",["№"]="3",["$"]="4",["%"]="5",["^"]="6",["&"]="7",["*"]="8",["("]="9",[")"]="0",["_"]="-",["+"]="=",
-  ["{"]="[",["}"]="]",[":"]=";",['"']="'",["<"]=",",[">"]=".",["?"]="/",["Ё"]="`",["Й"]="Q",["Ц"]="W",["У"]="E",["К"]="R",["Е"]="T",["Н"]="Y",
-  ["Г"]="U",["Ш"]="I",["Щ"]="O",["З"]="P",["Х"]="[",["Ъ"]="]",["Ф"]="A",["Ы"]="S",["В"]="D",["А"]="F",["П"]="G",["Р"]="H",["О"]="J",["Л"]="K",
-  ["Д"]="L",["Ж"]=";",["Э"]="'",["Я"]="Z",["Ч"]="X",["С"]="C",["М"]="V",["И"]="B",["Т"]="N",["Ь"]="M",["Б"]=",",["Ю"]=".",
+  ["~"]="`",["!"]="1",["@"]="2",["#"]="3",["№"]="3",["$"]="4",["%"]="5",["^"]="6",["&"]="7",
+  ["*"]="8",["("]="9",[")"]="0",["_"]="-",["+"]="=",["{"]="[",["}"]="]",[":"]=";",['"']="'",
+  ["<"]=",",[">"]=".",["?"]="/",["Ё"]="`",["Й"]="Q",["Ц"]="W",["У"]="E",["К"]="R",["Е"]="T",
+  ["Н"]="Y",["Г"]="U",["Ш"]="I",["Щ"]="O",["З"]="P",["Х"]="[",["Ъ"]="]",["Ф"]="A",["Ы"]="S",
+  ["В"]="D",["А"]="F",["П"]="G",["Р"]="H",["О"]="J",["Л"]="K",["Д"]="L",["Ж"]=";",["Э"]="'",
+  ["Я"]="Z",["Ч"]="X",["С"]="C",["М"]="V",["И"]="B",["Т"]="N",["Ь"]="M",["Б"]=",",["Ю"]=".",
 }
 local Guids = {
   SaveMacro   = "2F17BA22-2438-4D7C-AF5C-A838CD023608",
@@ -115,7 +117,7 @@ local Guids = {
   diEdit      = win.Uuid("6BDD26FF-1D69-492C-A023-94B9AFF58F0F"),
   Config      = win.Uuid("CF79A927-A0B9-4B13-9DEB-A39E2DAA7CC6"),
 }
-local PathName = debug.getinfo(1).source:match("^@?([^@].*)%.[^%./]+$") -- путь и имя без расширения
+local PathName = debug.getinfo(1).source:match("^@?(.+)%.") -- путь и имя без расширения
 local PColor = actl.GetColor(far.Colors.COL_PANELBOX) -- цвет панели
 PColor.ForegroundColor, PColor.BackgroundColor = PColor.BackgroundColor, PColor.ForegroundColor -- инвертируем
 local Def = { -- настройки по умолчанию
@@ -191,7 +193,7 @@ function InputSeq() --[[ввести последовательность кла
     local key = mf.waitkey(10):sub(mod:len()+1) -- введём клавишу
     if key:len()<2 then -- нормальная клавиша?
       seq = seq..key -- добавим к последовательности
-      if S.SeqColor~=0 then
+      if S.SeqColor.fg ~= S.SeqColor.bg then
         far.Text((Far.Width-seq:len()-L.Seq:len())/2, nstr, S.SeqColor, L.Seq..seq.." ")
         far.Text()
       end
@@ -266,7 +268,7 @@ function GoToObject(folder,delay,trail) --[[перейти в указанную
       if #List==1 and (win.GetFileAttr(List[1]):match("d") or Pnl.Cmd~="") then -- единственный элемент, каталог или действие указано?
         Pnl.Folder = List[1] -- просто запомним его
       elseif #List>0 then -- список не пустой
-        local items,ff,res,pos = {} -- элементы меню, признак наличия файла в списке, результат вызова меню, позиция элемента в меню
+        local items,ff = {} -- элементы меню, признак наличия файла в списке
         for _,v in ipairs(List) do
           local d = (win.GetFileAttr(v) or ""):match('d')
           ff = ff or not d
@@ -281,7 +283,7 @@ function GoToObject(folder,delay,trail) --[[перейти в указанную
           not Pnl.Cmd:find("[CE]") and { BreakKey="S+RETURN",cmd="X"},
           ff and not Pnl.Cmd:find("[CX]") and {BreakKey="F4",cmd="E"},
         }
-        res,pos = far.Menu({Title=Top,Bottom=Bottom},items,BK) -- спросим
+        local res,pos = far.Menu({Title=Top,Bottom=Bottom},items,BK) -- спросим
         if not pos then return end -- Esc - выйдем
         Pnl.Folder,Pnl.Cmd = items[pos].text,res.cmd
       else -- список пуст
