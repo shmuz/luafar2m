@@ -193,7 +193,7 @@ function InputSeq() --[[ввести последовательность кла
     local key = mf.waitkey(10):sub(mod:len()+1) -- введём клавишу
     if key:len()<2 then -- нормальная клавиша?
       seq = seq..key -- добавим к последовательности
-      if S.SeqColor.fg ~= S.SeqColor.bg then
+      if S.SeqColor.fg == nil or S.SeqColor.fg ~= S.SeqColor.bg then --### "== nil": to be removed later
         far.Text((Far.Width-seq:len()-L.Seq:len())/2, nstr, S.SeqColor, L.Seq..seq.." ")
         far.Text()
       end
