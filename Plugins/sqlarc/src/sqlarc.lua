@@ -435,14 +435,7 @@ function export.Open(OpenFrom, Guid, Data)
   elseif OpenFrom == F.OPEN_SHORTCUT then
     local obj = CreateObject(Data.HostFile)
     if obj then
-      if Data.ShortcutData then
-        obj.curdir = SetDir(obj, Data.ShortcutData)
-      end
-      local fullpath = GetFullDirPath(obj.db, obj.curdir)
-      local opi = obj.openpanelinfo
-      opi.CurDir = fullpath
-      opi.PanelTitle = GetPanelTitle(obj.shorthostname, fullpath)
-      opi.IsCached = false
+      obj.openpanelinfo.IsCached = false
       return obj
     end
 
