@@ -473,12 +473,10 @@ local function get_history (aConfig, aData)
     local times = ini:GetString(aConfig.FarHistoryType, "Times")
     if times then
       local i = 0
-      for a,b,c,d,e,f,g,h in times:gmatch("(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)(%x%x)") do
+      for a1,a2,a3,a4,a5,a6,a7,a8 in times:gmatch(("(%x%x)"):rep(8)) do
         i = i + 1
         if far_lines[i] == nil then break end
-        local low  = tonumber(d..c..b..a, 16)
-        local high = tonumber(h..g..f..e, 16)
-        local time = math.floor((low + 2^32*high) / 10000)
+        local time = bit64.new("0x"..a8..a7..a6..a5..a4..a3..a2..a1) / 10000
         table.insert(far_times, time)
       end
     end
