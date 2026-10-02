@@ -6,12 +6,69 @@
 local dbKey = "named folders"
 local dbEntries = "entries"
 local dbShowDir = "showdir"
-local Title = "Named Folders"
 local MacroKey = "CtrlD"
 
 local osWindows = package.config:sub(1,1) == "\\"
 local F = far.Flags
 local OpSetDir, OpInsert, OpDelete, OpEdit, OpShowDir, OpDontClose = 1,2,3,4,5,6
+local FarManId = osWindows and ("\0"):rep(16) or 0
+local Msg
+
+local Eng = {
+  Cancel          = "Cancel";
+  Confirm         = "Confirm";
+  EmptyFields     = "Empty fields are not allowed";
+  GetPanelDirFail = "Failed to get panel directory data";
+  LabelData       = "&Data:";
+  LabelFile       = "&File:";
+  LabelPath       = "&Path:";
+  LabelTitle      = "&Title:";
+  MenuBottom      = "Ins:insert, Del:delete, F4:edit, Ctrl+L:show/hide path";
+  NamedFolder     = "Named Folder";
+  OK              = "Ok";
+  OverwriteQuery  = "The alias \"%s\" is already in use. Overwrite?";
+  PluginNotFound  = "Plugin not found.";
+  RemoveQuery     = "Remove named folder '%s'\n%s ?";
+  Title           = "Named folders";
+  YesNo           = "&Yes;&No";
+}
+
+local Rus = {
+  Cancel          = "Отмена";
+  Confirm         = "Подтверждение";
+  EmptyFields     = "Пустые поля не разрешены";
+  GetPanelDirFail = "Неудача получения данных папки панели";
+  LabelData       = "&Данные:";
+  LabelFile       = "&Файл:";
+  LabelPath       = "&Путь:";
+  LabelTitle      = "&Заголовок:";
+  MenuBottom      = "Ins:вставить, Del:удалить, F4:редактировать, Ctrl+L:показывать путь";
+  NamedFolder     = "Именованная папка";
+  OK              = "Ok";
+  OverwriteQuery  = "Алиас \"%s\" уже используется. Перезаписать?";
+  PluginNotFound  = "Плагин не найден.";
+  RemoveQuery     = "Удалить именованную папку '%s'\n%s ?";
+  Title           = "Именованные папки";
+  YesNo           = "&Да;&Нет";
+}
+
+local function ErrorMsg(str)
+  far.Message(str, Msg.Title, ";Ok", "w")
+end
+
+local function ExtractFileName(path)
+  return path:match(osWindows and "([^\\]+)\\?$" or "([^/]+)/?$")
+end
+
+local function GetPluginTitle(PluginId)
+  local hnd = far.FindPlugin(osWindows and "PFM_GUID" or "PFM_SYSID", PluginId)
+  if hnd then
+    local info = far.GetPluginInformation(hnd)
+    return info.GInfo.Title
+  else
+    return osWindows and win.Uuid(PluginId) or ("0x%08X"):format(PluginId)
+  end
+end
 
 local ExpandEnv = not osWindows and win.ExpandEnv or -- luacheck: ignore
   function(s)
@@ -64,7 +121,7 @@ local function DoMenu(pattern)
   end
   table.sort(menuitems, function(a,b) return a.entry.alias:lower() < b.entry.alias:lower(); end)
 
-  local brkeys, bottom
+  local brkeys
   if not use_filter then
     brkeys = {
       { BreakKey = "INSERT";  Op = OpInsert;  },
@@ -72,12 +129,12 @@ local function DoMenu(pattern)
       { BreakKey = "F4";      Op = OpEdit;    },
       { BreakKey = "C+L";     Op = OpShowDir; },
     }
-    bottom = "Ins:Insert, Del:Delete, F4:Edit, Ctrl+L:Show/Hide path"
   end
 
   local item, position = far.Menu(
-    { Title = Title;
-      Bottom = bottom;
+    {
+      Title = Msg.Title;
+      Bottom = Msg.MenuBottom;
       Flags = bit64.bor(F.FMENU_AUTOHIGHLIGHT, F.FMENU_WRAPMODE)
     },
     menuitems, brkeys)
@@ -98,39 +155,54 @@ local function DoMenu(pattern)
   end
 end
 
-local function NewEntry(aEntry)
+local function EditEntry(aEntry)
   local sd = require "far2.simpledialog"
   local Entries
 
-  local alias_name, target_name
-  if aEntry then
-    alias_name = aEntry.alias
-    target_name = aEntry.path
-  else
-    local panelDir = panel.GetPanelDirectory(nil, 1).Name
-    alias_name = panelDir:match(osWindows and "([^\\]+)\\?$" or "([^/]+)/?$")
-    target_name = panelDir
+  if not aEntry then
+    local dir = panel.GetPanelDirectory(nil, 1)
+    if dir then
+      aEntry = {
+        File     = dir.File;
+        Param    = dir.Param;
+        PluginId = dir.PluginId;
+        alias    = ExtractFileName(dir.Name);
+        path     = dir.Name;
+      }
+    else
+      ErrorMsg(Msg.GetPanelDirFail)
+      return
+    end
   end
 
-  local items = {
+  local Items = {
     guid="8B0EE808-C5E3-44D8-9429-AAFD8FA04067";
-    {tp="dbox", text="Named Folder"},
-    {tp="text", text="&Alias name:"},
-    {tp="edit", text=alias_name, name="alias"},
-    {tp="text", text="&Target:"},
-    {tp="edit", text=target_name, name="path"},
-    {tp="sep"},
-    {tp="butt", centergroup=1, default=1; text="Ok"},
-    {tp="butt", centergroup=1, cancel=1; text="Cancel"}
   }
+  local function AddItem(t) Items[#Items+1] = t; end
+
+  AddItem {tp="dbox"; text=Msg.NamedFolder}
+  AddItem {tp="text"; text=Msg.LabelTitle}
+  AddItem {tp="edit"; text=aEntry.alias; name="alias"}
+  AddItem {tp="text"; text=Msg.LabelPath}
+  AddItem {tp="edit"; text=aEntry.path; name="path"}
+  if aEntry.PluginId and aEntry.PluginId ~= FarManId then
+    AddItem {tp="sep";  text=GetPluginTitle(aEntry.PluginId) }
+    AddItem {tp="text"; text=Msg.LabelFile}
+    AddItem {tp="edit"; text=aEntry.File; name="File"}
+    AddItem {tp="text"; text=Msg.LabelData}
+    AddItem {tp="edit"; text=aEntry.Param; name="Param"}
+  end
+  AddItem {tp="sep"}
+  AddItem {tp="butt"; text=Msg.OK; centergroup=1; default=1}
+  AddItem {tp="butt"; text=Msg.Cancel; centergroup=1; cancel=1}
 
   local function insert_item(out)
     Entries = Entries or LoadEntries()
     for i,v in ipairs(Entries) do
       if v.alias:lower() == out.alias:lower() then
         if not aEntry then -- inserting a new record
-          local text = ("The alias \"%s\" is already in use. Overwrite?"):format(v.alias)
-          if 1 ~= far.Message(text, Title, "&Yes;&No", "w") then
+          local text = Msg.OverwriteQuery:format(v.alias)
+          if 1 ~= far.Message(text, Msg.Title, Msg.YesNo, "w") then
             return false
           end
         end
@@ -138,15 +210,21 @@ local function NewEntry(aEntry)
         break
       end
     end
-    table.insert(Entries, {alias=out.alias; path=out.path})
+    table.insert(Entries, {
+          File     = out.File;
+          Param    = out.Param;
+          PluginId = aEntry.PluginId;
+          alias    = out.alias;
+          path     = out.path;
+        })
     SaveEntries(Entries)
     return true
   end
 
-  items.proc = function(hDlg, msg, par1, par2)
+  Items.proc = function(hDlg, msg, par1, par2)
     if msg == F.DN_CLOSE then
       if par2.alias == "" or par2.path == "" then
-        far.Message("Empty fields are not allowed", Title, ";Ok", "w")
+        ErrorMsg(Msg.EmptyFields)
         return 0
       end
       if not insert_item(par2) then
@@ -155,13 +233,13 @@ local function NewEntry(aEntry)
     end
   end
 
-  sd.New(items):Run()
+  sd.New(Items):Run()
 end
 
 local function RemoveEntry(entry)
   if entry and entry.alias and entry.path then
-    local msg = ("Remove named folder '%s'\n%s ?"):format(entry.alias, entry.path)
-    local res = far.Message(msg, "Confirm", ";YesNo", "w")
+    local msg = Msg.RemoveQuery:format(entry.alias, entry.path)
+    local res = far.Message(msg, Msg.Confirm, Msg.YesNo, "w")
     if res == 1 then
       local entries = LoadEntries()
       for i, v in ipairs(entries) do
@@ -175,17 +253,43 @@ local function RemoveEntry(entry)
   end
 end
 
+local function SetPanelDir(entry)
+  if osWindows then
+    local dir = {
+      File     = entry.File;
+      Param    = entry.Param;
+      PluginId = entry.PluginId;
+      Name     = ExpandEnv(entry.path);
+    }
+    panel.SetPanelDirectory(nil, 1, dir)
+  else
+    local dir = {
+      HostFile = entry.File;
+      Path     = ExpandEnv(entry.path);
+    }
+    if entry.PluginId and entry.PluginId ~= FarManId then
+      local hnd = far.FindPlugin("PFM_SYSID", entry.PluginId)
+      if not hnd then
+        ErrorMsg(Msg.PluginNotFound)
+        return
+      end
+      local info = far.GetPluginInformation(hnd)
+      dir.PluginName = info.ModuleName
+    end
+    panel.SetPanelLocation(nil, 1, dir)
+  end
+end
+
 local function Main(text)
+  Msg = win.GetEnv("FARLANG") == "Russian" and Rus or Eng
   local op, entry = DoMenu(text)
   while op do
     if op == OpSetDir then
-      if entry.path then
-        panel.SetPanelDirectory(nil, 1, ExpandEnv(entry.path))
-      end
+      SetPanelDir(entry)
       break
-    elseif op == OpInsert  then NewEntry()
+    elseif op == OpInsert  then EditEntry(nil)
     elseif op == OpDelete  then RemoveEntry(entry)
-    elseif op == OpEdit    then NewEntry(entry)
+    elseif op == OpEdit    then EditEntry(entry)
     elseif op == OpShowDir then
       bShowDir = not bShowDir
       mf.msave(dbKey, dbShowDir, bShowDir)
@@ -202,7 +306,7 @@ CommandLine {
 
 Macro {
   id="D812F8E8-4CDC-48AD-8C52-9B905263BAEC";
-  description = Title;
+  description = "Named Folders";
   area="Shell"; key=MacroKey;
   action=function() Main(); end;
 }
