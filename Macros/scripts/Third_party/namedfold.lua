@@ -14,6 +14,9 @@ local OpSetDir, OpInsert, OpDelete, OpEdit, OpShowDir, OpDontClose = 1,2,3,4,5,6
 local FarManId = osWindows and ("\0"):rep(16) or 0
 local Msg
 
+local bShowDir = mf.mload(dbKey, dbShowDir)
+bShowDir = bShowDir == nil or bShowDir -- true by default
+
 local Eng = {
   Cancel          = "Cancel";
   Confirm         = "Confirm";
@@ -83,9 +86,6 @@ end
 local function SaveEntries(ent)
   mf.msave(dbKey, dbEntries, ent)
 end
-
-local bShowDir = mf.mload(dbKey, dbShowDir)
-bShowDir = bShowDir == nil or bShowDir -- true by default
 
 local function Filter(items, pattern)
   local ent = {}
