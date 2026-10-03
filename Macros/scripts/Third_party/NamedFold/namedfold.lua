@@ -12,6 +12,7 @@ local osWindows = package.config:sub(1,1) == "\\"
 local F = far.Flags
 local OpSetDir, OpInsert, OpDelete, OpEdit, OpShowDir = 1,2,3,4,5
 local FarManId = osWindows and ("\0"):rep(16) or 0
+local ThisDir = (...):match(osWindows and ".+\\" or ".+/")
 local Msg
 
 local bShowDir = mf.mload(dbKey, dbShowDir)
@@ -132,9 +133,10 @@ local function DoMenu(pattern, pos, alias)
   end
 
   local props = {
-      Title = Msg.AppTitle;
-      Bottom = use_filter and "" or Msg.MenuBottom;
-      Flags = bit64.bor(F.FMENU_AUTOHIGHLIGHT, F.FMENU_WRAPMODE);
+      Flags       = F.FMENU_AUTOHIGHLIGHT + F.FMENU_WRAPMODE;
+      Title       = Msg.AppTitle;
+      Bottom      = use_filter and "" or Msg.MenuBottom;
+      HelpTopic   = "<"..ThisDir..">";
       SelectIndex = pos;
     }
 
@@ -153,6 +155,7 @@ local function EditEntry(aEntry)
   local sd = require "far2.simpledialog"
   local NewEntry
   local Inserting = not aEntry -- inserting a new record
+  local OldAliasLower = aEntry and aEntry.alias:lower()
 
   if Inserting then
     local dir = panel.GetPanelDirectory(nil, 1)
@@ -172,6 +175,7 @@ local function EditEntry(aEntry)
 
   local Items = {
     guid="8B0EE808-C5E3-44D8-9429-AAFD8FA04067";
+    help=function() far.ShowHelp(ThisDir, "Edit", F.FHELP_CUSTOMPATH) end;
   }
   local function AddItem(t) Items[#Items+1] = t; end
 
@@ -193,20 +197,24 @@ local function EditEntry(aEntry)
 
   local Entries
   local function insert_item(out)
-    -- Check if an entry with the same alias already exists.
-    -- If it exists and a new entry is inserted, ask for overwrite permission.
-    -- Then remove that existing entry.
     Entries = Entries or LoadEntries()
+    local NewAliasLower = out.alias:lower()
+    local this_index, other_index
+
     for i,v in ipairs(Entries) do
-      if v.alias:lower() == out.alias:lower() then
-        if Inserting then
-          local text = Msg.OverwriteQuery:format(v.alias)
-          if 1 ~= far.Message(text, Msg.AppTitle, Msg.BtnYesNo, "w") then
-            return false
-          end
-        end
+      local Cur = v.alias:lower()
+      if Cur == OldAliasLower then this_index  = i end
+      if Cur == NewAliasLower then other_index = i end
+    end
+    if other_index and other_index ~= this_index then
+      local text = Msg.OverwriteQuery:format(Entries[other_index].alias)
+      if 1 ~= far.Message(text, Msg.AppTitle, Msg.BtnYesNo, "w") then
+        return false
+      end
+    end
+    for i=#Entries,1,-1 do
+      if i == this_index or i == other_index then
         table.remove(Entries, i)
-        break
       end
     end
 
@@ -227,7 +235,7 @@ local function EditEntry(aEntry)
 
   Items.proc = function(hDlg, msg, par1, par2)
     if msg == F.DN_CLOSE then
-      if par2.alias == "" or par2.path == "" then
+      if par2.alias:match("%S") == nil then
         ErrorMsg(Msg.EmptyFields)
         return 0 -- don't close
       end

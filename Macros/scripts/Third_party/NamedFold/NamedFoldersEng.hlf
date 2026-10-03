@@ -1,0 +1,67 @@
+.Language=English,English
+.PluginContents=Named Folders
+
+@Contents
+$ #Named Folders#
+  The #Named Folders# macro allows you to save, manage, and quickly jump to bookmarked directory locations (aliases) in Far Manager. It supports both local file system paths and plugin panel locations (e.g., virtual file systems or archives).
+
+  ~How to Run~@Run@
+  ~Menu Navigation & Commands~@Menu@
+  ~Adding & Editing Folders~@Edit@
+
+@Run
+$ #How to Run#
+  You can invoke #Named Folders# in two ways from the file panels:
+
+  1. #Hotkey:#
+     Press #Ctrl+D# in the Shell panel area.
+
+  2. #Command Line Prefix:#
+     Type #cd:[pattern]# on the command line and press Enter. Note the required colon after "cd" (e.g., #cd:proj#), which distinguishes the prefix from the shell's built-in `cd` command.
+
+     * If #[pattern]# matches a single alias prefix (e.g., typing #cd:wo# when only "work" matches), Far Manager immediately changes to that directory without opening the menu.
+     * If #[pattern]# matches multiple aliases, the menu opens filtered to matching entries.
+     * If no pattern is provided (#cd:# alone), the full list of saved folders is displayed.
+
+  ~Contents~@Contents@
+
+@Menu
+$ #Menu Navigation & Commands#
+  The main interface presents a list of your saved folder aliases sorted alphabetically.
+
+  #Controls & Keys:#
+
+  #Enter#
+    Changes the active panel directory to the selected named folder location.
+
+  #Ins#
+    Inserts a new named folder entry. Default values (path, file, plugin parameters) are automatically captured from your current active panel location.
+
+  #F4#
+    Edits the currently selected named folder entry.
+
+  #Del#
+    Deletes the selected named folder entry after confirmation.
+
+  #Ctrl+L#
+    Toggles showing or hiding target directory paths next to alias names in the menu list.
+
+  ~Contents~@Contents@
+
+@Edit
+$ #Adding & Editing Folders#
+  When adding (#Ins#) or editing (#F4#) a named folder, a dialog appears with the following fields:
+
+  #Title:#
+    The alias or shortcut name used to identify the folder (e.g., "proj", "downloads", "temp"). Empty values are not allowed.
+
+  #Path:#
+    The target directory path. System environment variables (e.g., %TEMP%, %USERPROFILE%, or $HOME) are supported and automatically expanded upon navigation.
+
+  #File / Data:# (Plugin locations only)
+    If the folder resides inside a plugin panel (such as an archive, network share, or plugin-driven VFS), additional fields display plugin information, host files, and parameters automatically captured when saving.
+
+  #Overwrite Handling:#
+    If you assign an alias that is already in use by another saved folder, you will be prompted to confirm before overwriting the existing entry.
+
+  ~Contents~@Contents@
