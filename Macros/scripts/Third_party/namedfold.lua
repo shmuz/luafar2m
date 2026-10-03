@@ -10,7 +10,7 @@ local MacroKey = "CtrlD"
 
 local osWindows = package.config:sub(1,1) == "\\"
 local F = far.Flags
-local OpSetDir, OpInsert, OpDelete, OpEdit, OpShowDir, OpDontClose = 1,2,3,4,5,6
+local OpSetDir, OpInsert, OpDelete, OpEdit, OpShowDir = 1,2,3,4,5
 local FarManId = osWindows and ("\0"):rep(16) or 0
 local Msg
 
@@ -97,7 +97,7 @@ local function Filter(items, pattern)
   return ent
 end
 
-local function DoMenu(pattern)
+local function DoMenu(pattern, pos, alias)
   local use_filter = pattern and pattern ~= "" and not pattern:match("%s")
   local all_entries = LoadEntries()
 
@@ -122,42 +122,39 @@ local function DoMenu(pattern)
   end
   table.sort(menuitems, function(a,b) return a.entry.alias:lower() < b.entry.alias:lower(); end)
 
+  if alias then
+    for i,v in ipairs(menuitems) do
+      if v.entry.alias == alias then
+        pos = i
+        break
+      end
+    end
+  end
+
   local props = {
       Title = Msg.AppTitle;
       Bottom = use_filter and "" or Msg.MenuBottom;
-      Flags = bit64.bor(F.FMENU_AUTOHIGHLIGHT, F.FMENU_WRAPMODE)
+      Flags = bit64.bor(F.FMENU_AUTOHIGHLIGHT, F.FMENU_WRAPMODE);
+      SelectIndex = pos;
     }
 
   local brkeys = not use_filter and {
-      { BreakKey = "INSERT";  Op = OpInsert;  },
-      { BreakKey = "DELETE";  Op = OpDelete;  },
+      { BreakKey = "Ins";     Op = OpInsert;  },
+      { BreakKey = "Del";     Op = OpDelete;  },
       { BreakKey = "F4";      Op = OpEdit;    },
-      { BreakKey = "C+L";     Op = OpShowDir; },
+      { BreakKey = "CtrlL";   Op = OpShowDir; },
     }
 
   local item, position = far.Menu(props, menuitems, brkeys)
-
-  if not item then
-    return nil
-  elseif item.Op == OpInsert then
-    return OpInsert
-  elseif position > 0 then
-    local entry = menuitems[position].entry
-    if     item.Op == nil       then return OpSetDir, entry
-    elseif item.Op == OpDelete  then return OpDelete, entry
-    elseif item.Op == OpEdit    then return OpEdit, entry
-    elseif item.Op == OpShowDir then return OpShowDir
-    end
-  else
-    return OpDontClose
-  end
+  return item, position, menuitems
 end
 
 local function EditEntry(aEntry)
   local sd = require "far2.simpledialog"
-  local Entries
+  local NewEntry
+  local Inserting = not aEntry -- inserting a new record
 
-  if not aEntry then
+  if Inserting then
     local dir = panel.GetPanelDirectory(nil, 1)
     if dir then
       aEntry = {
@@ -194,11 +191,15 @@ local function EditEntry(aEntry)
   AddItem {tp="butt"; text=Msg.BtnOK; centergroup=1; default=1}
   AddItem {tp="butt"; text=Msg.BtnCancel; centergroup=1; cancel=1}
 
+  local Entries
   local function insert_item(out)
+    -- Check if an entry with the same alias already exists.
+    -- If it exists and a new entry is inserted, ask for overwrite permission.
+    -- Then remove that existing entry.
     Entries = Entries or LoadEntries()
     for i,v in ipairs(Entries) do
       if v.alias:lower() == out.alias:lower() then
-        if not aEntry then -- inserting a new record
+        if Inserting then
           local text = Msg.OverwriteQuery:format(v.alias)
           if 1 ~= far.Message(text, Msg.AppTitle, Msg.BtnYesNo, "w") then
             return false
@@ -208,13 +209,18 @@ local function EditEntry(aEntry)
         break
       end
     end
-    table.insert(Entries, {
-          File     = out.File;
-          Param    = out.Param;
-          PluginId = aEntry.PluginId;
-          alias    = out.alias;
-          path     = out.path;
-        })
+
+    -- Insert a new entry.
+    NewEntry = {
+        File     = out.File;
+        Param    = out.Param;
+        PluginId = aEntry.PluginId;
+        alias    = out.alias;
+        path     = out.path;
+      }
+
+    -- Save the entries.
+    table.insert(Entries, NewEntry)
     SaveEntries(Entries)
     return true
   end
@@ -223,15 +229,16 @@ local function EditEntry(aEntry)
     if msg == F.DN_CLOSE then
       if par2.alias == "" or par2.path == "" then
         ErrorMsg(Msg.EmptyFields)
-        return 0
+        return 0 -- don't close
       end
       if not insert_item(par2) then
-        return 0
+        return 0 -- don't close
       end
     end
   end
 
   sd.New(Items):Run()
+  return NewEntry
 end
 
 local function RemoveEntry(entry)
@@ -280,19 +287,34 @@ end
 
 local function Main(text)
   Msg = win.GetEnv("FARLANG") == "Russian" and Rus or Eng
-  local op, entry = DoMenu(text)
-  while op do
-    if op == OpSetDir then
-      SetPanelDir(entry)
-      break
-    elseif op == OpInsert  then EditEntry(nil)
-    elseif op == OpDelete  then RemoveEntry(entry)
-    elseif op == OpEdit    then EditEntry(entry)
-    elseif op == OpShowDir then
-      bShowDir = not bShowDir
-      mf.msave(dbKey, dbShowDir, bShowDir)
+
+  -- The values for handling position in the menu during multiple Menu() calls.
+  -- 'alias' has higher priority than 'position'.
+  local position, alias
+
+  while true do
+    local item, pos, items = DoMenu(text, position, alias)
+    if item == nil then break end
+
+    position, alias = pos, nil
+    local entry = pos > 0 and items[pos].entry
+
+    if item.Op == OpInsert then
+      local newentry = EditEntry(nil)
+      alias = newentry and newentry.alias
+    elseif entry then
+      if item.Op == nil then
+        SetPanelDir(entry)
+        break
+      elseif item.Op == OpDelete then
+        RemoveEntry(entry)
+      elseif item.Op == OpEdit then
+        EditEntry(entry)
+      elseif item.Op == OpShowDir then
+        bShowDir = not bShowDir
+        mf.msave(dbKey, dbShowDir, bShowDir)
+      end
     end
-    op, entry = DoMenu(text)
   end
 end
 
