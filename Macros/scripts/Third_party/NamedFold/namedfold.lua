@@ -31,7 +31,7 @@ local Eng = {
   EDialogTitle     = "&Title:";
   EmptyFields      = "Empty fields are not allowed";
   GetPanelDirFail  = "Failed to get panel directory data";
-  MenuBottom       = "Ins:insert, Del:delete, F4:edit, Ctrl+L:show/hide path";
+  MenuBottom       = "Ins, Del, F4, Ctrl+L, Enter";
   OverwriteQuery   = "The alias \"%s\" is already in use. Overwrite?";
   PluginNotFound   = "Plugin not found.";
   RemoveQuery      = "Remove named folder '%s'\n%s ?";
@@ -50,7 +50,7 @@ local Rus = {
   EDialogTitle     = "&Заголовок:";
   EmptyFields      = "Пустые поля не разрешены";
   GetPanelDirFail  = "Неудача получения данных папки панели";
-  MenuBottom       = "Ins:вставить, Del:удалить, F4:редактировать, Ctrl+L:показывать путь";
+  MenuBottom       = "Ins, Del, F4, Ctrl+L, Enter";
   OverwriteQuery   = "Алиас \"%s\" уже используется. Перезаписать?";
   PluginNotFound   = "Плагин не найден.";
   RemoveQuery      = "Удалить именованную папку '%s'\n%s ?";
@@ -90,8 +90,9 @@ end
 
 local function Filter(items, pattern)
   local ent = {}
+  pattern = pattern:lower()
   for _, v in ipairs(items) do -- filter items by pattern
-    if v.alias:lower():match(pattern:lower()) then
+    if v.alias:lower():find(pattern,1,true) == 1 then
       table.insert(ent, v)
     end
   end
@@ -102,17 +103,18 @@ local function DoMenu(pattern, selindex, alias)
   local use_filter = pattern
   local all_entries = LoadEntries()
 
-  local entries
+  local entries = all_entries
   if use_filter then
-    entries = Filter(all_entries, "^" .. pattern)
-    if #entries == 0 then
-      return nil
-    elseif #entries == 1 then
-      local item = { entry=entries[1] }
+    local filtered = Filter(all_entries, pattern)
+    local num = #filtered
+    if num == 1 then
+      local item = { entry=filtered[1] }
       return item, 1, item
+    elseif num == 0 or num == #all_entries then
+      use_filter = false
+    else
+      entries = filtered
     end
-  else
-    entries = all_entries
   end
 
   local space = 0 -- calculate max width alias
@@ -140,7 +142,7 @@ local function DoMenu(pattern, selindex, alias)
       Flags       = F.FMENU_AUTOHIGHLIGHT + F.FMENU_WRAPMODE;
       Title       = Msg.AppTitle;
       Bottom      = use_filter and "" or Msg.MenuBottom;
-      HelpTopic   = "<"..ThisDir..">";
+      HelpTopic   = "<"..ThisDir..">Menu";
       SelectIndex = selindex;
     }
 
@@ -200,6 +202,7 @@ local function EditEntry(aEntry)
   local Entries
   local function insert_item(out)
     Entries = Entries or LoadEntries()
+    out.alias = out.alias:gsub("^%s*(.-)%s*$", "%1") -- trim user's input
     local NewAliasLower = out.alias:lower()
     local this_index, other_index
 
