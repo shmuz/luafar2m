@@ -10,7 +10,7 @@ local MacroKey = "CtrlD"
 
 local osWindows = package.config:sub(1,1) == "\\"
 local F = far.Flags
-local OpSetDir, OpInsert, OpDelete, OpEdit, OpShowDir = 1,2,3,4,5
+local OpInsert, OpDelete, OpEdit, OpShowDir = 1,2,3,4
 local FarManId = osWindows and ("\0"):rep(16) or 0
 local ThisDir = (...):match(osWindows and ".+\\" or ".+/")
 local Msg
@@ -98,15 +98,19 @@ local function Filter(items, pattern)
   return ent
 end
 
-local function DoMenu(pattern, pos, alias)
-  local use_filter = pattern and pattern ~= "" and not pattern:match("%s")
+local function DoMenu(pattern, selindex, alias)
+  local use_filter = pattern
   local all_entries = LoadEntries()
 
   local entries
   if use_filter then
     entries = Filter(all_entries, "^" .. pattern)
-    if #entries == 0 then return nil; end
-    if #entries == 1 then return OpSetDir, entries[1]; end
+    if #entries == 0 then
+      return nil
+    elseif #entries == 1 then
+      local item = { entry=entries[1] }
+      return item, 1, item
+    end
   else
     entries = all_entries
   end
@@ -126,7 +130,7 @@ local function DoMenu(pattern, pos, alias)
   if alias then
     for i,v in ipairs(menuitems) do
       if v.entry.alias == alias then
-        pos = i
+        selindex = i
         break
       end
     end
@@ -137,7 +141,7 @@ local function DoMenu(pattern, pos, alias)
       Title       = Msg.AppTitle;
       Bottom      = use_filter and "" or Msg.MenuBottom;
       HelpTopic   = "<"..ThisDir..">";
-      SelectIndex = pos;
+      SelectIndex = selindex;
     }
 
   local brkeys = not use_filter and {
@@ -147,17 +151,15 @@ local function DoMenu(pattern, pos, alias)
       { BreakKey = "CtrlL";   Op = OpShowDir; },
     }
 
-  local item, position = far.Menu(props, menuitems, brkeys)
-  return item, position, menuitems
+  local item, pos = far.Menu(props, menuitems, brkeys)
+  return item, pos, menuitems[pos]
 end
 
 local function EditEntry(aEntry)
   local sd = require "far2.simpledialog"
-  local NewEntry
-  local Inserting = not aEntry -- inserting a new record
   local OldAliasLower = aEntry and aEntry.alias:lower()
 
-  if Inserting then
+  if not aEntry then -- inserting a new record
     local dir = panel.GetPanelDirectory(nil, 1)
     if dir then
       aEntry = {
@@ -212,14 +214,8 @@ local function EditEntry(aEntry)
         return false
       end
     end
-    for i=#Entries,1,-1 do
-      if i == this_index or i == other_index then
-        table.remove(Entries, i)
-      end
-    end
 
-    -- Insert a new entry.
-    NewEntry = {
+    local entry = {
         File     = out.File;
         Param    = out.Param;
         PluginId = aEntry.PluginId;
@@ -227,26 +223,34 @@ local function EditEntry(aEntry)
         path     = out.path;
       }
 
-    -- Save the entries.
-    table.insert(Entries, NewEntry)
+    if this_index then Entries[this_index] = entry
+    else table.insert(Entries, entry)
+    end
+
+    if other_index and other_index ~= this_index then
+      table.remove(Entries, other_index)
+    end
+
     SaveEntries(Entries)
-    return true
+    return entry.alias
   end
 
+  local NewAlias
   Items.proc = function(hDlg, msg, par1, par2)
     if msg == F.DN_CLOSE then
       if par2.alias:match("%S") == nil then
         ErrorMsg(Msg.EmptyFields)
         return 0 -- don't close
       end
-      if not insert_item(par2) then
+      NewAlias = insert_item(par2)
+      if not NewAlias then
         return 0 -- don't close
       end
     end
   end
 
   sd.New(Items):Run()
-  return NewEntry
+  return NewAlias
 end
 
 local function RemoveEntry(entry)
@@ -301,23 +305,22 @@ local function Main(text)
   local position, alias
 
   while true do
-    local item, pos, items = DoMenu(text, position, alias)
+    local item, pos, positem = DoMenu(text, position, alias)
     if item == nil then break end
 
     position, alias = pos, nil
-    local entry = pos > 0 and items[pos].entry
 
     if item.Op == OpInsert then
-      local newentry = EditEntry(nil)
-      alias = newentry and newentry.alias
-    elseif entry then
+      alias = EditEntry(nil)
+    elseif positem then
+      local entry = positem.entry
       if item.Op == nil then
         SetPanelDir(entry)
         break
       elseif item.Op == OpDelete then
         RemoveEntry(entry)
       elseif item.Op == OpEdit then
-        EditEntry(entry)
+        alias = EditEntry(entry)
       elseif item.Op == OpShowDir then
         bShowDir = not bShowDir
         mf.msave(dbKey, dbShowDir, bShowDir)
