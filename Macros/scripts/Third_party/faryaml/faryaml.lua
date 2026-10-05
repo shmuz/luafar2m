@@ -1953,21 +1953,22 @@ local function edit_entry(obj, handle, node)
   return true
 end
 
-function M.ProcessPanelInput(obj, handle, rec)
-  if not rec or not rec.KeyDown then return false end
-  local key, state = rec.VirtualKeyCode, rec.ControlKeyState or 0
-  local mods = bor(F.LEFT_CTRL_PRESSED or 0, F.RIGHT_CTRL_PRESSED or 0, F.LEFT_ALT_PRESSED or 0, F.RIGHT_ALT_PRESSED or 0, F.SHIFT_PRESSED or 0)
-  if band(state, mods) ~= 0 then return false end
-  if key == 0x70 then
-    local path = M.Info.HelpDir
-    local ok, opened = path and pcall(far.ShowHelp, path, nil, bor(F.FHELP_CUSTOMPATH or 0, F.FHELP_USECONTENTS or 0))
+function M.ProcessKey (obj, handle, key, ControlState)
+  if band(key, F.PKF_PREPROCESS) ~= 0 then return false end
+  if ControlState ~= 0 then return false end
+  local VK = win.GetVirtualKeys()
+  if key == VK.F1 then
+    local path, ok, opened = M.Info.HelpDir, nil, nil
+    if path then
+      ok, opened = pcall(far.ShowHelp, path, nil, bor(F.FHELP_CUSTOMPATH or 0, F.FHELP_USECONTENTS or 0))
+    end
     if not ok or not opened then
       far.Message("FarYaml 0.2.3: Enter open, F3 view, F4 edit, F5 copy.", "FarYaml", "OK", "l")
     end
     return true
   end
-  if key == 0x73 then return edit_entry(obj, handle, selected_node(obj, handle)) end
-  if key ~= 0x72 then return false end
+  if key == VK.F4 then return edit_entry(obj, handle, selected_node(obj, handle)) end
+  if key ~= VK.F3 then return false end
   local node = selected_node(obj, handle)
   if not node then return false end
   if node ~= obj.current and type(node.value) ~= "table" then return false end
@@ -2063,7 +2064,7 @@ CommandLine {
 }
 
 Macro { description = "FarYaml";
-  area = "Shell"; key = "F1";
+  area = "Shell"; key = "";
   id = "550F6769-D6D4-43DC-B12B-A01E2065ED8B";
   action = function()
     Plugin.Menu(guid_luamacro, guid_menuitem)
