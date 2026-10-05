@@ -1,0 +1,190 @@
+.Language=English,English
+.PluginContents=FarYaml
+
+@Contents
+$^#FarYaml: YAML Browser#
+
+ FarYaml is a LuaMacro panel module for browsing YAML files.
+
+   ~Installation~@Install@
+
+   ~Description~@Description@
+
+   ~Panel: columns, names, sorting~@Panel@
+
+   ~Comments~@Comments@
+
+   ~Keyboard commands~@Keyboard@
+
+   ~Editing (F4)~@Edit@
+
+   ~Copy (F5)~@Copy@
+
+   ~Command line~@CmdLine@
+
+   ~Errors in YAML files~@Errors@
+
+   ~Limitations~@Limits@
+
+@Install
+$^#Installation#
+
+ 1. From the #lua# directory, build the bundle:
+
+   #make bundle LUAJIT=C:/Apps/Far3/luajit.exe#
+
+ 2. Copy #faryaml.lua# together with both HLF files
+ to a directory of your choice under #%FARPROFILE%\Macros\scripts\#.
+ Keep all three files together. The bundle includes all Lua modules.
+
+ Reload LuaMacro macros or restart FAR.
+
+@Description
+$^#Description#
+
+ This LuaMacro module shows the contents of a YAML file as an archive. Mappings
+ and sequences are shown as "folders", scalar values as "files".
+
+ Press #Enter# on a file with the .yaml or .yml extension to open it. To
+ leave the document press #Enter# on ".." in its root. The file itself is
+ changed only by ~F4~@Edit@; all other operations are read-only.
+
+ A file with several documents (separated by ---) is shown as a
+ sequence of documents named [0], [1], ...
+
+ You can also open a file from the ~command line~@CmdLine@.
+
+@Panel
+$^#Panel: columns, names, sorting#
+
+ #Columns#
+
+   #Key#          name of the key; list items are named [0], [1], ...
+   #Type#         map, seq, str, int, float, bool or null
+   #Value#        the value of a scalar; {N} for a mapping with N keys,
+                 [N] for a sequence with N items; line breaks are shown
+                 as the pilcrow character, long values are cut
+   #Description#  the ~comment~@Comments@ of the entry
+
+ #Names#
+
+ Names are made valid for file names, so F3, F5 and Quick View work:
+ the characters / \ : are replaced by look-alike Unicode characters,
+ the characters * ? " < > | by _. Equal names get the suffix (2), (3)
+ and so on.
+
+ #Order and sorting#
+
+ The panel opens unsorted, i.e. in the order of the file. Sorting by
+ extension (#Ctrl-F4#) sorts by the #Type# column, sorting by description
+ (#Ctrl-F10#) sorts by the #Description# column. Other sort modes work
+ as usual.
+
+ The panel title shows the file name and the path inside the document.
+
+@Comments
+$^#Comments#
+
+ The comments of the YAML file are shown in the #Description# column:
+
+   - the comment at the end of the line with the key or the list item
+   - the comment lines right above the entry (no blank line between them)
+
+ @-
+  ## Example
+  pylint:
+      jobs: 1  ## one process
+ @+
+
+ Here "Example" is the description of #pylint#, "one process" - of #jobs#.
+
+ The sign ## inside quotes and inside block scalars (| and >) is text,
+ not a comment. F3 and F5 use the original source fragment when its range
+ can be determined; generated YAML may not retain comments or formatting.
+ For entries given through aliases the description can be inexact.
+
+@Keyboard
+$^#Keyboard commands#
+
+ #Enter#     On a .yaml/.yml file: open it. On a section: enter it.
+
+ #F3#        On a section or on "..": view its YAML text (with comments) in
+             the viewer. "..": the whole current section.
+             On a value: view the value.
+
+ #F4#        On a key, section, list item or "..": ~edit~@Edit@ it; the
+             changes are written to the file.
+
+ #F5#        ~Copy~@Copy@ the selected items to a YAML file.
+
+ #Ctrl-F4#   Sort by Type (the Extension sort mode).
+ #Ctrl-F10#  Sort by Description.
+
+ #F1#        Show a brief command summary.
+
+@Edit
+$^#Editing (F4)#
+
+ F4 opens the YAML text of the entry in the FAR editor: the key with
+ its value, comments included. After you save and close the editor the
+ text replaces the entry in the file. The rest of the file stays as it
+ was byte for byte; the encoding (UTF-8, BOM, UTF-16) and line breaks
+ are kept. The panel is updated and you stay in the same section.
+
+ You can rename the key, add neighbour keys or delete the entry (leave
+ the text empty). F4 on ".." edits the whole current section (in the
+ root - the whole file).
+
+ The file is not changed and the dialog "changes were not saved" with
+ the buttons #Edit again# and #Discard# is shown when:
+
+   - the result is not valid YAML (the line is shown);
+   - the file is read-only;
+   - the file was changed on disk after the panel was opened;
+   - you delete the first key of a list item (the dash would be lost).
+
+ F4 is disabled for aliases, merge-derived entries, complex mapping
+ keys, and nodes inside flow collections {...} [...]. The panel shows a
+ message; use F4 on their parent section to edit the source text.
+
+@Copy
+$^#Copy (F5)#
+
+ F5 shows the copy dialog and writes the selected items to a YAML file.
+ The file name is proposed as #key.yaml#; you may enter another file name
+ or a folder. If the file exists you are asked about overwriting. The
+ YAML file being browsed cannot be overwritten.
+
+ Several selected keys of a mapping are written to one file
+ (#section-selection.yaml#), several list items - as a list. Comments are
+ kept. Move and delete do not change the YAML file.
+
+@CmdLine
+$^#Command line#
+
+ The prefix #yaml:# opens any file, not only .yaml/.yml:
+
+ @-
+  #yaml:C:\configs\config.yaml#
+  #yaml:"C:\my configs\a.yml"#
+ @+
+
+@Errors
+$^#Errors in YAML files#
+
+ If you press Enter on a file with invalid YAML, a dialog shows the
+ file name, the line and the message of the parser. The
+ button #Edit# opens the file in the FAR editor at the line of the error.
+
+ Such a file does not open in the FarYaml panel. Use F3 or F4 in the
+ regular FAR file panel to view or edit its source. Search and Quick View
+ do not show the errors.
+
+@Limits
+$^#Limitations#
+
+   - File size is limited to 64 MiB.
+   - Parsing uses the pure Lua Xmake YAML addon parser (v1.0.0); YAML 1.2 is not fully implemented.
+   - UTF-32 files are read-only in FarYaml, but comments remain visible.
+   - F4 does not save flow collections {...} [...], aliases, merged entries, or complex mapping keys.
+   - Complex YAML constructs should be checked against the parser limitations.
