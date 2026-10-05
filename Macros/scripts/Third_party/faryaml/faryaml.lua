@@ -1302,122 +1302,102 @@ end
 return { decode = decode, decode_all = decode_all }
 
 end
+
+--------------------------------------------------------------------------------
+-- Portable File IO for far2m / Far Manager 3.0
+--------------------------------------------------------------------------------
 __modules["far/fileio"] = function()
-local ffi = require("ffi")
-ffi.cdef[[
-typedef void* fy_handle;
-typedef int fy_bool;
-typedef unsigned long fy_dword;
-typedef unsigned short fy_wchar;
-int __stdcall MultiByteToWideChar(unsigned int, fy_dword, const char*, int, fy_wchar*, int);
-fy_handle __stdcall CreateFileW(const fy_wchar*, fy_dword, fy_dword, void*, fy_dword, fy_dword, fy_handle);
-fy_bool __stdcall ReadFile(fy_handle, void*, fy_dword, fy_dword*, void*);
-fy_bool __stdcall WriteFile(fy_handle, const void*, fy_dword, fy_dword*, void*);
-fy_bool __stdcall CloseHandle(fy_handle);
-fy_bool __stdcall FlushFileBuffers(fy_handle);
-fy_dword __stdcall GetLastError(void);
-fy_dword __stdcall GetFileAttributesW(const fy_wchar*);
-fy_bool __stdcall MoveFileExW(const fy_wchar*, const fy_wchar*, fy_dword);
-fy_bool __stdcall ReplaceFileW(const fy_wchar*, const fy_wchar*, const fy_wchar*, fy_dword, void*, void*);
-fy_bool __stdcall DeleteFileW(const fy_wchar*);
-unsigned long __stdcall GetCurrentProcessId(void);
-]]
-local k = ffi.load("kernel32")
-local INVALID = ffi.cast("fy_handle", -1)
-local function wide(text)
-  local n = k.MultiByteToWideChar(65001, 0, text, #text, nil, 0)
-  if n <= 0 then return nil end
-  local out = ffi.new("fy_wchar[?]", n + 1)
-  if k.MultiByteToWideChar(65001, 0, text, #text, out, n) <= 0 then return nil end
-  out[n] = 0
-  return out
-end
-local function open(path, access, share, disposition, attrs)
-  local w = wide(path)
-  if not w then return nil, "invalid UTF-8 path" end
-  local h = k.CreateFileW(w, access, share, nil, disposition, attrs or 0x80, nil)
-  if h == INVALID then return nil, "CreateFileW failed (" .. tostring(tonumber(k.GetLastError())) .. ")" end
-  return h
-end
 local M = {}
+
 function M.remove(path)
-  local w = wide(path)
-  return w ~= nil and k.DeleteFileW(w) ~= 0
+  return os.remove(path) ~= nil
 end
+
 function M.read(path, limit)
-  local h, err = open(path, 0x80000000, 7, 3)
-  if not h then return nil, err end
-  local chunks, total = {}, 0
+  local f, err = io.open(path, "rb")
+  if not f then return nil, err or "Failed to open file" end
+
+  local chunks = {}
+  local total = 0
+  local chunk_size = 65536
+
   while true do
-    local buf, got = ffi.new("uint8_t[65536]"), ffi.new("fy_dword[1]")
-    if k.ReadFile(h, buf, 65536, got, nil) == 0 then k.CloseHandle(h); return nil, "ReadFile failed" end
-    local n = tonumber(got[0])
-    if n == 0 then break end
-    total = total + n
-    if limit and total > limit then k.CloseHandle(h); return nil, "file exceeds size limit" end
-    chunks[#chunks + 1] = ffi.string(buf, n)
+    local read_bytes = limit and math.min(chunk_size, limit - total + 1) or chunk_size
+    if limit and read_bytes <= 0 then break end
+
+    local bytes = f:read(read_bytes)
+    if not bytes or #bytes == 0 then break end
+
+    total = total + #bytes
+    if limit and total > limit then
+      f:close()
+      return nil, "file exceeds size limit"
+    end
+    chunks[#chunks + 1] = bytes
   end
-  k.CloseHandle(h)
+
+  f:close()
   return table.concat(chunks)
 end
+
 function M.write_atomic(path, bytes)
-  local temp = path .. ".faryaml-" .. tostring(k.GetCurrentProcessId()) .. "-" .. tostring(math.random(100000, 999999)) .. ".tmp"
-  local h, err = open(temp, 0x40000000, 0, 2)
-  if not h then return nil, err end
-  local offset = 1
-  while offset <= #bytes do
-    local nwrite = math.min(#bytes - offset + 1, 65536)
-    local wrote = ffi.new("fy_dword[1]")
-    local write_ok = k.WriteFile(h, bytes:sub(offset, offset + nwrite - 1), nwrite, wrote, nil)
-    if write_ok == 0 then
-      local code = tonumber(k.GetLastError())
-      k.CloseHandle(h); M.remove(temp)
-      return nil, "WriteFile failed (" .. tostring(code) .. ")"
-    end
-    if tonumber(wrote[0]) ~= nwrite then
-      k.CloseHandle(h); M.remove(temp)
-      return nil, "WriteFile completed only " .. tostring(tonumber(wrote[0])) .. " of " .. tostring(nwrite) .. " bytes"
-    end
-    offset = offset + nwrite
+  local rand_id = tostring(math.random(100000, 999999))
+  local temp = path .. ".faryaml-" .. rand_id .. ".tmp"
+
+  local f, err = io.open(temp, "wb")
+  if not f then return nil, "Failed to open temp file: " .. tostring(err) end
+
+  local ok, write_err = f:write(bytes)
+  f:flush()
+  f:close()
+
+  if not ok then
+    os.remove(temp)
+    return nil, "Write failed: " .. tostring(write_err)
   end
-  if k.FlushFileBuffers(h) == 0 then
-    local code = tonumber(k.GetLastError())
-    k.CloseHandle(h); M.remove(temp)
-    return nil, "FlushFileBuffers failed (" .. tostring(code) .. ")"
+
+  local ren_ok, ren_err = os.rename(temp, path)
+  if not ren_ok then
+    os.remove(path)
+    ren_ok, ren_err = os.rename(temp, path)
   end
-  k.CloseHandle(h)
-  local src, dst = wide(temp), wide(path)
-  if not src or not dst then M.remove(temp); return nil, "invalid UTF-8 path" end
-  local attr = tonumber(k.GetFileAttributesW(dst))
-  local replaced
-  if attr ~= 0xFFFFFFFF then
-    replaced = k.ReplaceFileW(dst, src, nil, 0x2, nil, nil)
-  else
-    replaced = k.MoveFileExW(src, dst, 0x9)
+
+  if not ren_ok then
+    os.remove(temp)
+    return nil, "Failed to replace file: " .. tostring(ren_err)
   end
-  if replaced == 0 then
-    local code = tonumber(k.GetLastError())
-    M.remove(temp)
-    local operation = attr ~= 0xFFFFFFFF and "ReplaceFileW" or "MoveFileExW"
-    return nil, operation .. " failed (" .. tostring(code) .. ")"
-  end
+
   return true
 end
+
 function M.is_file(path)
-  local w = wide(path)
-  if not w then return false end
-  local attr = tonumber(k.GetFileAttributesW(w))
-  return attr ~= 0xFFFFFFFF and attr % 32 < 16
+  if not path or path == "" then return false end
+  local attr = win and win.GetFileAttr and win.GetFileAttr(path)
+  if attr then
+    return not attr:find("d")
+  end
+  local f = io.open(path, "rb")
+  if f then
+    f:close()
+    return true
+  end
+  return false
 end
+
 function M.readonly(path)
-  local w = wide(path)
-  if not w then return nil end
-  local attr = tonumber(k.GetFileAttributesW(w))
-  if attr == 0xFFFFFFFF then return nil end
-  return attr % 2 == 1
+  local attr = win and win.GetFileAttr and win.GetFileAttr(path)
+  if attr then
+    return attr:find("r") ~= nil
+  end
+  return false
 end
+
 return M
 end
+
+--------------------------------------------------------------------------------
+-- Far Panel Implementation
+--------------------------------------------------------------------------------
 __modules["far/panel"] = function(loader)
 local parser = loader("yaml/parser")
 local types  = loader("yaml/types")
@@ -1425,10 +1405,11 @@ local fileio = loader("far/fileio")
 
 local M = {}
 local F = far.Flags
-local bor = bit64.bor
-local band = bit64.band
-local GUID = win.Uuid"022240C0-253C-42C9-9546-27481F9DD568"
+local bor = bit64 and bit64.bor or bit.bor
+local band = bit64 and bit64.band or bit.band
+local GUID = win.Uuid("022240C0-253C-42C9-9546-27481F9DD568")
 local MAX_BYTES = 64 * 1024 * 1024
+local dirsep = package.config:sub(1,1)
 
 local function file_read(path)
   local text, err = fileio.read(path, MAX_BYTES)
@@ -1504,8 +1485,8 @@ local function encode_host(source, encoding)
 end
 
 local function temp_name(tag)
-  local dir = win.GetEnv("TEMP") or win.GetEnv("TMP") or "."
-  local sep = dir:match("[/\\]$") and "" or "\\"
+  local dir = win.GetEnv("TMPDIR") or win.GetEnv("TEMP") or win.GetEnv("TMP") or "/tmp"
+  local sep = dir:match("[/\\]$") and "" or dirsep
   return dir .. sep .. "faryaml-" .. tag .. "-" .. tostring(math.random(100000, 999999)) .. ".tmp"
 end
 
@@ -1516,11 +1497,11 @@ local function active_panel_directory()
 end
 
 local function join_path(directory, name)
-  return directory .. (directory:match("[/\\]$") and "" or "\\") .. name
+  return directory .. (directory:match("[/\\]$") and "" or dirsep) .. name
 end
 
 local function path_is_absolute(path)
-  return path:match("^%a:[/\\]") ~= nil or path:match("^[/\\][/\\]") ~= nil or path:match("^[/\\]") ~= nil
+  return path:match("^%a:[/\\]") ~= nil or path:match("^[/\\]") ~= nil
 end
 
 local function current_panel_file()
@@ -1615,6 +1596,7 @@ local function safe_name(name, used)
   used[name:lower()] = true
   return name
 end
+
 local function description_for(doc, line_no)
   if not line_no then return "" end
   local lines = {}
@@ -1647,6 +1629,7 @@ local function description_for(doc, line_no)
   if hash then comments[#comments + 1] = code:sub(hash + 1):gsub("^%s+", "") end
   return table.concat(comments, " "):sub(1, 512)
 end
+
 local function children(node)
   if node.children then return node.children end
   node.children = {}
@@ -1673,7 +1656,7 @@ end
 local function path_of(node)
   local parts = {}
   while node and node.parent do table.insert(parts, 1, node.name); node = node.parent end
-  return table.concat(parts, "\\")
+  return table.concat(parts, dirsep)
 end
 
 local function leading_start(source, line_no)
@@ -1683,6 +1666,7 @@ local function leading_start(source, line_no)
   while first > 1 and lines[first - 1] and lines[first - 1]:match("^%s*#") do first = first - 1 end
   return first
 end
+
 local function source_fragment(doc, node)
   local r = node.range
   if not r or not r.line or not r.endLine or r.flow then return scalar(node.value) .. "\n" end
@@ -1694,6 +1678,7 @@ local function source_fragment(doc, node)
   end
   return table.concat(lines, "\n") .. "\n"
 end
+
 local function yaml_quote(text)
   text = text:gsub("\\", "\\\\"):gsub("\"", "\\\""):gsub("\n", "\\n"):gsub("\r", "\\r"):gsub("\t", "\\t")
   return "\"" .. text .. "\""
@@ -1739,6 +1724,7 @@ local function copy_fragment(doc, node)
   end
   return emit_yaml(value) .. "\n"
 end
+
 local function make_panel(doc)
   return { doc = doc, current = { name = "", value = doc.root }, cache = {} }
 end
@@ -1748,8 +1734,8 @@ function M.Analyse(data)
   if not yaml_file(path) then return nil end
   local doc, err, source = load(path)
   if not doc then
-    local background = bit64.bor(F.OPM_FIND or 0, F.OPM_QUICKVIEW or 0, F.OPM_VIEW or 0, F.OPM_EDIT or 0)
-    if bit64.band(data.OpMode or 0, background) == 0 then return { path = path, error = err, source = source } end
+    local background = bor(F.OPM_FIND or 0, F.OPM_QUICKVIEW or 0, F.OPM_VIEW or 0, F.OPM_EDIT or 0)
+    if band(data.OpMode or 0, background) == 0 then return { path = path, error = err, source = source } end
     return nil
   end
   return doc
@@ -1809,7 +1795,7 @@ function M.GetOpenPanelInfo(panel)
   local modes = {}
   for i = 1, 10 do modes[i] = { ColumnTypes = "N,C0,C1,Z", ColumnWidths = "0,5,0,0", ColumnTitles = { "Key", "Type", "Value", "Description" }, StatusColumnTypes = "N", StatusColumnWidths = "0" } end
   return { Flags = bor(F.OPIF_ADDDOTS, F.OPIF_SHOWPRESERVECASE), HostFile = path,
-    CurDir = subpath, Format = "YAML", PanelTitle = " YAML: " .. short .. (subpath ~= "" and "\\" .. subpath or "") .. " ",
+    CurDir = subpath, Format = "YAML", PanelTitle = " YAML: " .. short .. (subpath ~= "" and dirsep .. subpath or "") .. " ",
     PanelModesArray = modes, PanelModesNumber = 10, StartPanelMode = string.byte("3"), StartSortMode = F.SM_UNSORTED, StartSortOrder = 0 }
 end
 
@@ -1832,12 +1818,12 @@ end
 function M.ClosePanel(panel) panel.cache = nil end
 
 M.Info = { Guid = GUID, Title = "FarYaml", Description = "Browse YAML documents", Author = "FarYaml" }
+
 function M.GetFiles(obj, handle, items, count, move, destpath, opmode)
   if type(items) ~= "table" or #items == 0 then return 0 end
-  local F = far.Flags
   local dest = type(destpath) == "string" and destpath or nil
-  local view_mask = bit64.bor(F.OPM_VIEW or 0, F.OPM_QUICKVIEW or 0, F.OPM_EDIT or 0)
-  local is_view = bit64.band(opmode or 0, view_mask) ~= 0 or not dest
+  local view_mask = bor(F.OPM_VIEW or 0, F.OPM_QUICKVIEW or 0, F.OPM_EDIT or 0)
+  local is_view = band(opmode or 0, view_mask) ~= 0 or not dest
   local nodes = {}
   for i = 1, math.min(count or #items, #items) do
     local node = items[i].UserData and items[i].UserData.Data
@@ -1849,7 +1835,7 @@ function M.GetFiles(obj, handle, items, count, move, destpath, opmode)
       local content = type(node.value) == "table" and copy_fragment(obj.doc, node) or scalar(node.value)
       local target
       if dest then
-        target = dest .. (dest:match("[/\\]$") and "" or "\\") .. node.name
+        target = dest .. (dest:match("[/\\]$") and "" or dirsep) .. node.name
       else
         target = temp_name("view")
       end
@@ -1862,7 +1848,7 @@ function M.GetFiles(obj, handle, items, count, move, destpath, opmode)
 
   local dest = dest or (win.GetCurrentDir and win.GetCurrentDir()) or "."
   local base = #nodes == 1 and (nodes[1].name .. ".yaml") or "selection.yaml"
-  local initial = dest .. (dest:match("[/\\]$") and "" or "\\") .. base
+  local initial = dest .. (dest:match("[/\\]$") and "" or dirsep) .. base
   local target = far.InputBox(nil, "Copy", "Copy selected YAML to:", "Copy", initial, nil, nil, F.FIB_ENABLEEMPTY or 0)
   if not target or target == "" then return -1 end
   if target:lower() == obj.doc.path:lower() then
@@ -1879,6 +1865,7 @@ function M.GetFiles(obj, handle, items, count, move, destpath, opmode)
   if not ok then far.Message(tostring(err), "FarYaml", "OK", "w"); return 0 end
   return 1
 end
+
 local function line_offsets(text)
   local offsets = { 1 }
   for i = 1, #text do if text:byte(i) == 10 then offsets[#offsets + 1] = i + 1 end end
@@ -1956,7 +1943,7 @@ local function edit_entry(obj, handle, node)
         local previous = path_of(obj.current)
         obj.doc = updated
         obj.current = { name = "", value = updated.root }
-        if previous ~= "" then M.SetDirectory(obj, handle, "\\" .. previous) end
+        if previous ~= "" then M.SetDirectory(obj, handle, dirsep .. previous) end
         if panel.UpdatePanel then panel.UpdatePanel(handle, 0, true); panel.RedrawPanel(handle, 0) end
       else far.Message(tostring(loaderr), "FarYaml", "OK", "w") end
       break
@@ -1969,16 +1956,17 @@ end
 function M.ProcessPanelInput(obj, handle, rec)
   if not rec or not rec.KeyDown then return false end
   local key, state = rec.VirtualKeyCode, rec.ControlKeyState or 0
-  local mods = bit64.bor(F.LEFT_CTRL_PRESSED or 0, F.RIGHT_CTRL_PRESSED or 0, F.LEFT_ALT_PRESSED or 0, F.RIGHT_ALT_PRESSED or 0, F.SHIFT_PRESSED or 0)
-  if bit64.band(state, mods) ~= 0 then return false end
+  local mods = bor(F.LEFT_CTRL_PRESSED or 0, F.RIGHT_CTRL_PRESSED or 0, F.LEFT_ALT_PRESSED or 0, F.RIGHT_ALT_PRESSED or 0, F.SHIFT_PRESSED or 0)
+  if band(state, mods) ~= 0 then return false end
   if key == 0x70 then
     local path = M.Info.HelpDir
-    local ok, opened = path and pcall(far.ShowHelp, path, nil, bit64.bor(F.FHELP_CUSTOMPATH or 0, F.FHELP_USECONTENTS or 0))
+    local ok, opened = path and pcall(far.ShowHelp, path, nil, bor(F.FHELP_CUSTOMPATH or 0, F.FHELP_USECONTENTS or 0))
     if not ok or not opened then
       far.Message("FarYaml 0.2.3: Enter open, F3 view, F4 edit, F5 copy.", "FarYaml", "OK", "l")
     end
     return true
-  end  if key == 0x73 then return edit_entry(obj, handle, selected_node(obj, handle)) end
+  end
+  if key == 0x73 then return edit_entry(obj, handle, selected_node(obj, handle)) end
   if key ~= 0x72 then return false end
   local node = selected_node(obj, handle)
   if not node then return false end
@@ -1990,6 +1978,7 @@ function M.ProcessPanelInput(obj, handle, rec)
   viewer.Viewer(temp, "YAML", 0, 0, -1, -1, F.VF_DELETEONCLOSE or 0, 65001)
   return true
 end
+
 function M.Compare(obj, handle, item1, item2, mode)
   if mode ~= F.SM_EXT and mode ~= F.SM_DESCR then return -2 end
   local a = item1 and item1.UserData and item1.UserData.Data
@@ -2003,21 +1992,27 @@ function M.Compare(obj, handle, item1, item2, mode)
   elseif (a.index or 0) > (b.index or 0) then return 1 end
   return 0
 end
+
 return M
 end
+
+--------------------------------------------------------------------------------
+-- Bundle / Module Loader Entry Point
+--------------------------------------------------------------------------------
 local function __bundle_load(name)
   if __cached[name] ~= nil then return __cached[name] end
   local result = __modules[name](__bundle_load)
   __cached[name] = result == nil and true or result
   return __cached[name]
 end
+
 local loader = __bundle_load
 local Info = Info or package.loaded.regscript or function(...) return ... end
 local macrofile = ...
 local nfo = Info { _filename or macrofile,
   name        = "FarYaml";
   description = "Browse and edit YAML files in FAR";
-  version     = "0.1"; --https://semver.org/lang/ru/
+  version     = "0.1";
   author      = "FarYaml";
   id          = "0D6DB7B4-F7E3-4646-996C-EA9CC2BA7CFE";
 }
@@ -2026,7 +2021,7 @@ if not nfo or nfo.disabled then return end
 local function script_directory(macrofile)
   local path = Macro and macrofile or _filename or arg and arg[0]
   if not path then return nil end
-  path = far and far.GetReparsePointInfo(path) or path
+  path = far and far.GetReparsePointInfo and far.GetReparsePointInfo(path) or path
   return path:match("^(.*)[\\/][^\\/]+$")
 end
 
@@ -2081,3 +2076,4 @@ MenuItem {
     faryaml()
   end;
 }
+
