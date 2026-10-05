@@ -2050,6 +2050,9 @@ end
 
 PanelModule(panel)
 
+local guid_luamacro = far.GetPluginId()
+local guid_menuitem = "DA9ACFF8-3381-42CC-8692-7F12DE34B8C6"
+
 CommandLine {
   description = "Open a YAML file in FarYaml panel";
   prefixes = "yaml";
@@ -2060,20 +2063,21 @@ CommandLine {
 }
 
 Macro { description = "FarYaml";
-  area = "Common"; key = "";
+  area = "Shell"; key = "F1";
   id = "550F6769-D6D4-43DC-B12B-A01E2065ED8B";
   action = function()
-    faryaml()
+    Plugin.Menu(guid_luamacro, guid_menuitem)
   end;
 }
 
 MenuItem {
-  guid = "DA9ACFF8-3381-42CC-8692-7F12DE34B8C6";
+  guid = guid_menuitem;
   menu = "Plugins";
-  area = "Common";
+  area = "Shell";
   text = function() return "FarYaml" end;
   action = function()
-    faryaml()
+    local obj = faryaml(APanel.Current)
+    if obj then return panel, obj end
   end;
 }
 
