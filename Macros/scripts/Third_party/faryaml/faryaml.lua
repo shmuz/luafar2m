@@ -1508,7 +1508,7 @@ local function current_panel_file()
   if not item or not item.FileName then return nil end
   local name = item.FileName
   if name == "" or name == "." or name == ".." then return nil end
-  local panel_info = panel.GetPanelInfo and panel.GetPanelInfo(nil, 1)
+  local panel_info = panel.GetPanelInfo(nil, 1)
   local plugin_panel = panel_info and panel_info.PluginHandle ~= nil
   local flags = panel_info and panel_info.Flags
   local real_names = type(flags) == "number" and F.PFLAGS_REALNAMES
@@ -1769,11 +1769,11 @@ function M.Open(open_from, guid, info)
   end
 end
 
-function M.GetFindData(panel)
+function M.GetFindData(obj)
   local result = {}
-  for _, node in ipairs(children(panel.current)) do
+  for _, node in ipairs(children(obj.current)) do
     local t = kind(node.value)
-    local desc = node.range and description_for(panel.doc, node.range.line) or ""
+    local desc = node.range and description_for(obj.doc, node.range.line) or ""
     result[#result + 1] = {
       FileName = node.name,
       FileAttributes = (t == "map" or t == "seq") and "d" or "",
@@ -1786,10 +1786,10 @@ function M.GetFindData(panel)
   return result
 end
 
-function M.GetOpenPanelInfo(panel)
-  local path = panel.doc.path
+function M.GetOpenPanelInfo(obj)
+  local path = obj.doc.path
   local short = path:match("[^\\/]+$") or path
-  local subpath = path_of(panel.current)
+  local subpath = path_of(obj.current)
   local modes = {}
   for i = 1, 10 do modes[i] = { ColumnTypes = "N,C0,C1,Z", ColumnWidths = "0,5,0,0", ColumnTitles = { "Key", "Type", "Value", "Description" }, StatusColumnTypes = "N", StatusColumnWidths = "0" } end
   return { Flags = bor(F.OPIF_ADDDOTS, F.OPIF_SHOWPRESERVECASE), HostFile = path,
@@ -1797,9 +1797,9 @@ function M.GetOpenPanelInfo(panel)
     PanelModesArray = modes, PanelModesNumber = 10, StartPanelMode = string.byte("3"), StartSortMode = F.SM_UNSORTED, StartSortOrder = 0 }
 end
 
-function M.SetDirectory(panel, handle, dir)
-  local node, path = panel.current, tostring(dir or "")
-  if path:sub(1, 1) == "\\" or path:sub(1, 1) == "/" then node, path = { name = "", value = panel.doc.root }, path:sub(2) end
+function M.SetDirectory(obj, handle, dir)
+  local node, path = obj.current, tostring(dir or "")
+  if path:sub(1, 1) == "\\" or path:sub(1, 1) == "/" then node, path = { name = "", value = obj.doc.root }, path:sub(2) end
   for part in path:gmatch("[^\\/]+") do
     if part == ".." then if not node.parent then return false end; node = node.parent
     elseif part ~= "." then
@@ -1809,11 +1809,11 @@ function M.SetDirectory(panel, handle, dir)
       node = found
     end
   end
-  panel.current = node
+  obj.current = node
   return true
 end
 
-function M.ClosePanel(panel) panel.cache = nil end
+function M.ClosePanel(obj) obj.cache = nil end
 
 M.Info = { Guid = GUID, Title = "FarYaml", Description = "Browse YAML documents", Author = "FarYaml" }
 
@@ -1883,7 +1883,7 @@ local function splice_source(source, first, last, edited)
 end
 
 local function selected_node(obj, handle)
-  local item = panel.GetCurrentPanelItem and panel.GetCurrentPanelItem(handle, 1)
+  local item = panel.GetCurrentPanelItem(handle, 1)
   local node = item and item.UserData and item.UserData.Data
   if item and item.FileName == ".." then node = obj.current end
   return node
@@ -2037,11 +2037,11 @@ local function getLoader(macrofile)
 end
 
 local loader = loader or getLoader(...)
-local panel = loader("far/panel")
-panel.Info.HelpDir = script_directory(macrofile)
+local mod = loader("far/panel")
+mod.Info.HelpDir = script_directory(macrofile)
 
 local function faryaml(text)
-  return panel.Open(far.Flags.OPEN_COMMANDLINE, panel.Info.Guid, text)
+  return mod.Open(far.Flags.OPEN_COMMANDLINE, mod.Info.Guid, text)
 end
 
 function nfo:execute()
@@ -2052,7 +2052,7 @@ if _filename then
   return faryaml()
 end
 
-PanelModule(panel)
+PanelModule(mod)
 
 local guid_luamacro = far.GetPluginId()
 local guid_menuitem = "DA9ACFF8-3381-42CC-8692-7F12DE34B8C6"
@@ -2062,7 +2062,7 @@ CommandLine {
   prefixes = "yaml";
   action = function(_, text)
     local obj = faryaml(text)
-    if obj then return panel, obj end
+    if obj then return mod, obj end
   end
 }
 
@@ -2081,7 +2081,7 @@ MenuItem {
   text = function() return "FarYaml" end;
   action = function()
     local obj = faryaml(APanel.Current)
-    if obj then return panel, obj end
+    if obj then return mod, obj end
   end;
 }
 
