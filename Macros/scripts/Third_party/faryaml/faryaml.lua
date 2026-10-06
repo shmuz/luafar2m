@@ -1491,7 +1491,6 @@ local function temp_name(tag)
 end
 
 local function active_panel_directory()
-  if not panel or not panel.GetPanelDirectory then return nil end
   local directory = panel.GetPanelDirectory(nil, 1)
   return directory and directory.Name or nil
 end
@@ -1505,7 +1504,6 @@ local function path_is_absolute(path)
 end
 
 local function current_panel_file()
-  if not panel or not panel.GetCurrentPanelItem then return nil end
   local item = panel.GetCurrentPanelItem(nil, 1)
   if not item or not item.FileName then return nil end
   local name = item.FileName
@@ -1944,7 +1942,8 @@ local function edit_entry(obj, handle, node)
         obj.doc = updated
         obj.current = { name = "", value = updated.root }
         if previous ~= "" then M.SetDirectory(obj, handle, dirsep .. previous) end
-        if panel.UpdatePanel then panel.UpdatePanel(handle, 0, true); panel.RedrawPanel(handle, 0) end
+        panel.UpdatePanel(handle, 0, true)
+        panel.RedrawPanel(handle, 0)
       else far.Message(tostring(loaderr), "FarYaml", "OK", "w") end
       break
     end
@@ -1980,11 +1979,17 @@ end
 
 function M.Compare(obj, handle, item1, item2, mode)
   if mode ~= F.SM_EXT and mode ~= F.SM_DESCR then return -2 end
-  local a = item1 and item1.UserData and item1.UserData.Data
-  local b = item2 and item2.UserData and item2.UserData.Data
+  local a = item1.UserData and item1.UserData.Data
+  local b = item2.UserData and item2.UserData.Data
   if not a or not b then return -2 end
-  local av = mode == F.SM_EXT and kind(a.value) or description_for(obj.doc, a.range and a.range.line)
-  local bv = mode == F.SM_EXT and kind(b.value) or description_for(obj.doc, b.range and b.range.line)
+  local av, bv
+  if mode == F.SM_EXT then
+    av = kind(a.value)
+    bv = kind(b.value)
+  else
+    av = description_for(obj.doc, a.range and a.range.line)
+    bv = description_for(obj.doc, b.range and b.range.line)
+  end
   av, bv = tostring(av or ""):lower(), tostring(bv or ""):lower()
   if av < bv then return -1 elseif av > bv then return 1 end
   if (a.index or 0) < (b.index or 0) then return -1
