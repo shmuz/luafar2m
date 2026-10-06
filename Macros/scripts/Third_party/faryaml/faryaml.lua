@@ -1492,8 +1492,8 @@ end
 
 local function active_panel_directory()
   if not panel or not panel.GetPanelDirectory then return nil end
-  local ok, directory = pcall(panel.GetPanelDirectory, nil, 1)
-  return ok and directory and directory.Name or nil
+  local directory = panel.GetPanelDirectory(nil, 1)
+  return directory and directory.Name or nil
 end
 
 local function join_path(directory, name)
@@ -1506,8 +1506,8 @@ end
 
 local function current_panel_file()
   if not panel or not panel.GetCurrentPanelItem then return nil end
-  local ok, item = pcall(panel.GetCurrentPanelItem, nil, 1)
-  if not ok or not item or not item.FileName then return nil end
+  local item = panel.GetCurrentPanelItem(nil, 1)
+  if not item or not item.FileName then return nil end
   local name = item.FileName
   if name == "" or name == "." or name == ".." then return nil end
   local panel_info = panel.GetPanelInfo and panel.GetPanelInfo(nil, 1)
@@ -1819,13 +1819,13 @@ function M.ClosePanel(panel) panel.cache = nil end
 
 M.Info = { Guid = GUID, Title = "FarYaml", Description = "Browse YAML documents", Author = "FarYaml" }
 
-function M.GetFiles(obj, handle, items, count, move, destpath, opmode)
+function M.GetFiles(obj, handle, items, move, destpath, opmode)
   if type(items) ~= "table" or #items == 0 then return 0 end
   local dest = type(destpath) == "string" and destpath or nil
   local view_mask = bor(F.OPM_VIEW or 0, F.OPM_QUICKVIEW or 0, F.OPM_EDIT or 0)
   local is_view = band(opmode or 0, view_mask) ~= 0 or not dest
   local nodes = {}
-  for i = 1, math.min(count or #items, #items) do
+  for i = 1, #items do
     local node = items[i].UserData and items[i].UserData.Data
     if node then nodes[#nodes + 1] = node end
   end
@@ -1958,11 +1958,9 @@ function M.ProcessKey (obj, handle, key, ControlState)
   if ControlState ~= 0 then return false end
   local VK = win.GetVirtualKeys()
   if key == VK.F1 then
-    local path, ok, opened = M.Info.HelpDir, nil, nil
-    if path then
-      ok, opened = pcall(far.ShowHelp, path, nil, bor(F.FHELP_CUSTOMPATH or 0, F.FHELP_USECONTENTS or 0))
-    end
-    if not ok or not opened then
+    if not (M.Info.HelpDir
+        and far.ShowHelp(M.Info.HelpDir, nil, bor(F.FHELP_CUSTOMPATH, F.FHELP_USECONTENTS)))
+    then
       far.Message("FarYaml 0.2.3: Enter open, F3 view, F4 edit, F5 copy.", "FarYaml", "OK", "l")
     end
     return true
