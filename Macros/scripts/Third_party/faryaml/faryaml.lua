@@ -1754,7 +1754,7 @@ function M.Open(open_from, guid, info)
   if open_from == F.OPEN_COMMANDLINE then
     local path = tostring(info or ""):match("^%s*(.-)%s*$")
     path = path:gsub('^"(.*)"$', "%1")
-    if path == "" then
+    if path == "" or path == "." or path == ".." then
       path = current_panel_file()
       if not path then
         far.Message("The active panel item is not a real file.", "FarYaml", "OK", "w")
