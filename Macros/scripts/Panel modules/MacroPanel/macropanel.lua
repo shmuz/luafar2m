@@ -91,7 +91,7 @@ function mod.Open(OpenFrom, _Id, Item)
     end
 
   elseif OpenFrom == F.OPEN_SHORTCUT then
-    return { type=Item.ShortcutData }
+    return { type=Item }
 
   end
 end
