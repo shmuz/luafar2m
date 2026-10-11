@@ -1,7 +1,7 @@
 -- coding: UTF-8
 -- luacheck: globals _Plugin
 
-far.ReloadDefaultScript = true
+far.ReloadDefaultScript = true -- luacheck: ignore
 package.loaded["far2.custommenu"] = nil
 package.loaded["lfh_config"] = nil
 
@@ -451,7 +451,8 @@ local function get_history (aConfig, aData)
   local file = far.InMyConfig("history/" .. aConfig.FarFileName)
   local ini = IniFile.New(file, "nocomment")
   if ini then
-    local function ProcessCfgString (aKey, aTarget)
+    local function ProcessCfgString (aKey)
+      local target = {}
       local lines = ini:GetString(aConfig.FarHistoryType, aKey)
       if lines then
         lines = lines:gsub("\\(.)", { ["\\"]="\\"; n="\n"; t="\t"; })
@@ -460,16 +461,18 @@ local function get_history (aConfig, aData)
           local from,to,len = lines:find("^%[(%d+)%]", pos)
           if from == nil then break end
           len = tonumber(len)
-          table.insert(aTarget, lines:sub(to+1, to+len))
+          table.insert(target, lines:sub(to+1, to+len))
           pos = to + len + 1
         end
       end
+      return target
     end
 
-    local far_lines, far_times, far_extras = {}, {}, {}
-    ProcessCfgString("Lines", far_lines)
-    ProcessCfgString("Extras", far_extras)
+    local far_lines  = ProcessCfgString("Lines")
+    local far_extras = ProcessCfgString("Extras")
+    local far_files  = ProcessCfgString("Files")
 
+    local far_times = {}
     local times = ini:GetString(aConfig.FarHistoryType, "Times")
     if times then
       local i = 0
@@ -478,6 +481,18 @@ local function get_history (aConfig, aData)
         if far_lines[i] == nil then break end
         local time = bit64.new("0x"..a8..a7..a6..a5..a4..a3..a2..a1) / 10000
         table.insert(far_times, time)
+      end
+    end
+
+    local far_plugids = {}
+    local plugids = ini:GetString(aConfig.FarHistoryType, "PluginId")
+    if plugids then
+      local i = 0
+      for a1,a2,a3,a4 in plugids:gmatch(("(%x%x)"):rep(4)) do
+        i = i + 1
+        if far_lines[i] == nil then break end
+        local id = tonumber(a4..a3..a2..a1, 16)
+        table.insert(far_plugids, id)
       end
     end
 
