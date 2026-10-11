@@ -451,66 +451,65 @@ local function get_history (aConfig, aData)
   local file = far.InMyConfig("history/" .. aConfig.FarFileName)
   local ini = IniFile.New(file, "nocomment")
   if ini then
-    local function ProcessCfgString (aKey)
-      local target = {}
-      local lines = ini:GetString(aConfig.FarHistoryType, aKey)
+    local far_items = {}
+
+    local function ProcessCfgString (key_ini, key_out)
+      local lines = ini:GetString(aConfig.FarHistoryType, key_ini)
       if lines then
         lines = lines:gsub("\\(.)", { ["\\"]="\\"; n="\n"; t="\t"; })
         local pos = 1
-        while true do -- example: [2]ab
+        for i=1,math.huge do -- example: [2]ab
           local from,to,len = lines:find("^%[(%d+)%]", pos)
           if from == nil then break end
           len = tonumber(len)
-          table.insert(target, lines:sub(to+1, to+len))
+          local str = lines:sub(to+1, to+len)
+          if key_ini == "Lines" then  far_items[i] = { [key_out] = str }
+          elseif far_items[i] then    far_items[i][key_out] = str
+          else                        break
+          end
           pos = to + len + 1
         end
       end
-      return target
     end
 
-    local far_lines  = ProcessCfgString("Lines")
-    local far_extras = ProcessCfgString("Extras")
-    local far_files  = ProcessCfgString("Files")
+    ProcessCfgString("Lines",  "Name") -- this MUST be the 1-st call
+    ProcessCfgString("Extras", "extra")
+    ProcessCfgString("Files",  "File")
 
-    local far_times = {}
-    local times = ini:GetString(aConfig.FarHistoryType, "Times")
-    if times then
+    local str = ini:GetString(aConfig.FarHistoryType, "Times")
+    if str then
       local i = 0
-      for a1,a2,a3,a4,a5,a6,a7,a8 in times:gmatch(("(%x%x)"):rep(8)) do
+      for a1,a2,a3,a4,a5,a6,a7,a8 in str:gmatch(("(%x%x)"):rep(8)) do
         i = i + 1
-        if far_lines[i] == nil then break end
-        local time = bit64.new("0x"..a8..a7..a6..a5..a4..a3..a2..a1) / 10000
-        table.insert(far_times, time)
+        if far_items[i] == nil then break end
+        far_items[i]["time"] = bit64.new("0x"..a8..a7..a6..a5..a4..a3..a2..a1) / 10000
       end
     end
 
-    local far_plugids = {}
-    local plugids = ini:GetString(aConfig.FarHistoryType, "PluginId")
-    if plugids then
+    str = ini:GetString(aConfig.FarHistoryType, "PluginId")
+    if str then
       local i = 0
-      for a1,a2,a3,a4 in plugids:gmatch(("(%x%x)"):rep(4)) do
+      for a1,a2,a3,a4 in str:gmatch(("(%x%x)"):rep(4)) do
         i = i + 1
-        if far_lines[i] == nil then break end
-        local id = tonumber(a4..a3..a2..a1, 16)
-        table.insert(far_plugids, id)
+        if far_items[i] == nil then break end
+        far_items[i]["PluginId"] = tonumber(a4..a3..a2..a1, 16)
       end
     end
 
-    for i,name in ipairs(far_lines) do
-      local fartime = far_times[i] or 0
-      local extra = far_extras[i]
-      local item = map[name]
+    for _,v in ipairs(far_items) do
+      local fartime = v.time or 0
+      local item = map[v.Name]
       if item then -- an existing item
         if item.time < fartime then
           item.time = fartime
-          item.extra = extra
+          item.extra = v.extra
         end
       else -- a new item
         if fartime >= last_time then -- if this is not a deleted item
-          if not IsExclusion(name) then
-            item = { text=name; time=fartime; extra=extra; }
+          if not IsExclusion(v.Name) then
+            item = { text=v.Name; time=fartime; extra=v.extra; }
             table.insert(menu_items, item)
-            map[name] = item
+            map[v.Name] = item
           end
         end
       end
