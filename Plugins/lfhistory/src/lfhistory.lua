@@ -476,7 +476,7 @@ local function get_history (aConfig, aData)
     local function ProcessCfgString (key_ini, key_out, firstcall)
       local lines = ini:GetString(aConfig.FarHistoryType, key_ini)
       if lines then
-        lines = lines:gsub("\\(.)", { ["\\"]="\\"; n="\n"; t="\t"; })
+        lines = lines:gsub("\\(.)", { ["\\"]="\\"; n="\n"; r="\r"; t="\t"; })
         local pos = 1
         for i=1,math.huge do -- example: [2]ab
           local from,to,len = lines:find("^%[(%d+)%]", pos)
