@@ -453,7 +453,7 @@ local function get_history (aConfig, aData)
   if ini then
     local far_items = {}
 
-    local function ProcessCfgString (key_ini, key_out)
+    local function ProcessCfgString (key_ini, key_out, firstcall)
       local lines = ini:GetString(aConfig.FarHistoryType, key_ini)
       if lines then
         lines = lines:gsub("\\(.)", { ["\\"]="\\"; n="\n"; t="\t"; })
@@ -463,18 +463,20 @@ local function get_history (aConfig, aData)
           if from == nil then break end
           len = tonumber(len)
           local str = lines:sub(to+1, to+len)
-          if key_ini == "Lines" then  far_items[i] = { [key_out] = str }
-          elseif far_items[i] then    far_items[i][key_out] = str
-          else                        break
+
+          if firstcall then far_items[i] = { [key_out] = str }
+          elseif far_items[i] then far_items[i][key_out] = str
+          else break
           end
+
           pos = to + len + 1
         end
       end
     end
 
-    ProcessCfgString("Lines",  "Name") -- this MUST be the 1-st call
-    ProcessCfgString("Extras", "extra")
-    ProcessCfgString("Files",  "File")
+    ProcessCfgString("Lines",  "Name",  true) -- this MUST be the 1-st call
+    ProcessCfgString("Extras", "extra", false)
+    ProcessCfgString("Files",  "File",  false)
 
     local str = ini:GetString(aConfig.FarHistoryType, "Times")
     if str then
