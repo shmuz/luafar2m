@@ -365,8 +365,20 @@ function cfgFolders.CanClose (_list, item, breakkey)
     return true
   end
   ----------------------------------------------------------------------------
-  if panel.SetPanelDirectory(nil, breakkey and 0 or 1, item.text) then
+  local numpanel = breakkey and 0 or 1
+  if item.PluginId and item.PluginId ~= 0 then
+    local dir = {
+      File = item.File or "";
+      Name = item.Name or "";
+      Param = item.extra or "";
+      PluginId = item.PluginId;
+    }
+    panel.SetPanelDirectory(nil, numpanel, dir)
     return true
+  else
+    if panel.SetPanelDirectory(nil, numpanel, item.text) then
+      return true
+    end
   end
   ----------------------------------------------------------------------------
   if GetNextPath(item.text) then -- check before asking user
@@ -419,6 +431,13 @@ local function SaveHistory (hst_name, hst)
   Sett.msave(SETTINGS_KEY, SETTINGS_NAME, _Plugin.Cfg) -- _Plugin.Cfg.bDirectSort
 end
 
+local function ItemToKey(item)
+  if item.PluginId and item.PluginId ~= 0 then
+    return ("%08X:%s:%s"):format(item.PluginId, item.File or "", item.Name or "")
+  end
+  return item.Name or item.text
+end
+
 local function get_history (aConfig, aData)
   local menu_items, map = {}, {}
 
@@ -426,13 +445,14 @@ local function get_history (aConfig, aData)
   local hst = Sett.mload(SETTINGS_KEY, aConfig.PluginHistoryType) or {}
   local plugin_items = Field(hst, "items")
   for _,v in ipairs(plugin_items) do
-    if v.text and not map[v.text] then
+    local key = ItemToKey(v)
+    if not map[key] then
       table.insert(menu_items, v)
-      map[v.text] = v
+      map[key] = v
     end
   end
 
-  -- add Far database items
+  -- process Far database items
   local exclude = {}
   for _,v in ipairs(aData.exclude) do
     if v.text ~= "" then
@@ -498,20 +518,21 @@ local function get_history (aConfig, aData)
       end
     end
 
+    -- add Far database items
     for _,v in ipairs(far_items) do
-      local fartime = v.time or 0
-      local item = map[v.Name]
+      v.time = v.time or 0
+      local key = ItemToKey(v)
+      local item = map[key]
       if item then -- an existing item
-        if item.time < fartime then
-          item.time = fartime
+        if item.time < v.time then -- it was renewed
+          item.time = v.time
           item.extra = v.extra
         end
       else -- a new item
-        if fartime >= last_time then -- if this is not a deleted item
-          if not IsExclusion(v.Name) then
-            item = { text=v.Name; time=fartime; extra=v.extra; }
-            table.insert(menu_items, item)
-            map[v.Name] = item
+        if v.time >= last_time then -- it is not a deleted item
+          if not IsExclusion(v.Name or v.text) then
+            table.insert(menu_items, v)
+            map[key] = v
           end
         end
       end
@@ -520,16 +541,32 @@ local function get_history (aConfig, aData)
 
   aData.last_time = win.GetSystemTimeAsFileTime()
 
+  -- remove excessive items; leave checked items;
   if #menu_items > aData.iSize then
     -- sort menu items: oldest records go first
     table.sort(menu_items, function(a,b) return (a.time or 0) < (b.time or 0) end)
-
-    -- remove excessive items; leave checked items;
-    local i = 1
+     local i = 1
     while (#menu_items >= i) and (#menu_items > aData.iSize) do
       if menu_items[i].checked then i = i+1 -- leave the item
       else table.remove(menu_items, i)      -- remove the item
       end
+    end
+  end
+
+  -- Form text for each item shown in the menu
+  local PlugTitlesCache = {}
+  for _,v in ipairs(menu_items) do
+    if v.PluginId and v.PluginId ~= 0 then
+      local title = PlugTitlesCache[v.PluginId]
+      if not title then
+        local plug = far.FindPlugin("PFM_SYSID", v.PluginId)
+        local info = plug and far.GetPluginInformation(plug)
+        title = info and info.GInfo.Title or ("{%08X}"):format(v.PluginId)
+        PlugTitlesCache[v.PluginId] = title
+      end
+      v.text = ("%s:%s:%s"):format(title, v.File or "", v.Name or "")
+    else
+      v.text = v.text or v.Name
     end
   end
 
