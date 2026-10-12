@@ -274,30 +274,13 @@ local function RemoveEntry(entry)
 end
 
 local function SetPanelDir(entry)
-  if osWindows then
-    local dir = {
-      File     = entry.File;
-      Param    = entry.Param;
-      PluginId = entry.PluginId;
-      Name     = ExpandEnv(entry.path);
-    }
-    panel.SetPanelDirectory(nil, 1, dir)
-  else
-    local dir = {
-      HostFile = entry.File;
-      Path     = ExpandEnv(entry.path);
-    }
-    if entry.PluginId and entry.PluginId ~= FarManId then
-      local hnd = far.FindPlugin("PFM_SYSID", entry.PluginId)
-      if not hnd then
-        ErrorMsg(Msg.PluginNotFound)
-        return
-      end
-      local info = far.GetPluginInformation(hnd)
-      dir.PluginName = info.ModuleName
-    end
-    panel.SetPanelLocation(nil, 1, dir)
-  end
+  local dir = {
+    File     = entry.File;
+    Param    = entry.Param;
+    PluginId = entry.PluginId;
+    Name     = ExpandEnv(entry.path);
+  }
+  panel.SetPanelDirectory(nil, 1, dir)
 end
 
 local function Main(text)
