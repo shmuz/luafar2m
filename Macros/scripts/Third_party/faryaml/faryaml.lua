@@ -260,12 +260,12 @@ local function from_plain(text)
     -- a number? we check the first character to skip the strings quickly
     local c = byte(text)
     if (c >= 48 and c <= 57) or c == 45 or c == 43 or c == 46 then -- 0-9 - + .
-        if find(text, "^[-+]?%d+$") then
-            return tonumber(text)
-        elseif find(text, "^[-+]?%d*%.?%d+[eE][-+]?%d+$") or find(text, "^[-+]?%d*%.%d*$") then
-            return tonumber(text)
-        end
-        -- the based integers, e.g. 0x1f, 0o17, 0b1010
+        if find(text, "^[-+]?%d+$") or find(text, "^[-+]?%d*%.?%d+[eE][-+]?%d+$") or find(text, "^[-+]?%d*%.%d*$") then
+            local val = tonumber(text)
+            if val ~= nil then
+                return val
+            end
+        end        -- the based integers, e.g. 0x1f, 0o17, 0b1010
         local sign, base, digits = text:match("^([-+]?)0([xXoObB])(%w+)$")
         if sign then
             local bases = {x = 16, o = 8, b = 2}
