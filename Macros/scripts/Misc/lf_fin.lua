@@ -12,6 +12,7 @@
 local Pattern = "%s+$"
 local F = far.Flags
 local Send = far.SendDlgMessage
+local str_gsub = string.gsub
 
 local GUIDs = {
   [win.Uuid("fcef11c4-5490-451d-8b4a-62fa03f52759")] = "CopyFilesId",
@@ -35,7 +36,7 @@ local function FIN (Event, FarDialogEvent)
         local FarDialogItem = Send(hDlg, "DM_GETDLGITEM", item)
         if not FarDialogItem then break end
         if FarDialogItem[1] == F.DI_EDIT then
-          local str, n = FarDialogItem[10]:gsub(Pattern, "")
+          local str, n = str_gsub(FarDialogItem[10], Pattern, "")
           if n > 0 then
             Send(hDlg, "DM_SETTEXT", item, str)
           end

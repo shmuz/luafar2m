@@ -524,31 +524,22 @@ local function get_history (aConfig, aData)
   local file = far.InMyConfig("history/" .. aConfig.FarFileName)
   local ini = IniFile.New(file, "nocomment")
   if ini then
-    local far_items
+    local far_items = {}
 
     local function ProcessCfgString (key_ini, key_out, firstcall)
       local lines = ini:GetString(aConfig.FarHistoryType, key_ini)
       if lines then
         lines = string.gsub(lines, "\\(.)", { ["\\"]="\\"; n="\n"; r="\r"; t="\t"; })
-        if firstcall then
-          far_items = GetNames(lines)
-          for i,v in ipairs(far_items) do
-            far_items[i] = { [key_out] = v }
+        for i,v in ipairs(GetNames(lines)) do
+          local trg
+          if firstcall then
+            trg = {}
+            far_items[i] = trg
+          else
+            trg = far_items[i]
           end
-        else
-          local pos = 1
-          for i=1,math.huge do -- example: [2]ab
-            local from,to,len = lines:find("^%[(%d+)%]", pos)
-            if from == nil then break end
-            len = tonumber(len)
-            local str = lines:sub(to+1, to+len)
-
-            if far_items[i] then far_items[i][key_out] = str
-            else break
-            end
-
-            pos = to + len + 1
-          end
+          if not trg then break end
+          trg[key_out] = v
         end
       end
     end
