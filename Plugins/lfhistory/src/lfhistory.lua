@@ -438,6 +438,59 @@ local function ItemToKey(item)
   return item.Name or item.text
 end
 
+-- This function parses "Lines=" that may contain an invalid UTF-8 bytes
+-- each of which counts as 3 characters in [<len>] prefixes.
+local function GetNames(lines)
+  local names = {}
+  local pos = 1
+  local badpos = 1
+  local total = #lines
+
+  while pos <= total do
+    local _, to, prefix = string.find(lines, "^%[(%d+)%]", pos)
+    if not prefix then break end
+
+    local len = tonumber(prefix)
+    pos = to + 1
+    local entry_start = pos
+
+    while len > 0 and pos <= total do
+      -- Update badpos only when pos has caught up to or passed it
+      if badpos and pos >= badpos then
+        badpos = utf8.invalidoffset(lines, pos)
+      end
+
+      -- Fast path: no invalid bytes remain in the entire rest of the file
+      if not badpos then
+        pos = utf8.offset(lines, len + 1, pos) or (total + 1)
+        break
+      end
+
+      if pos == badpos then
+        -- Invalid byte: accounts for 3 units in Far2m's wchar_t count
+        pos = pos + 1
+        len = len - 3
+      else
+        -- Valid UTF-8 span: [pos, badpos - 1]
+        local valid_chars = utf8.len(lines, pos, badpos - 1)
+        if valid_chars <= len then
+          -- Consume the entire valid slice up to badpos
+          pos = badpos
+          len = len - valid_chars
+        else
+          -- Entry ends before badpos; jump directly to the target character
+          pos = utf8.offset(lines, len + 1, pos) or (total + 1)
+          break
+        end
+      end
+    end
+
+    names[#names + 1] = string.sub(lines, entry_start, pos - 1)
+  end
+
+  return names
+end
+
 local function get_history (aConfig, aData)
   local menu_items, map = {}, {}
 
@@ -471,25 +524,31 @@ local function get_history (aConfig, aData)
   local file = far.InMyConfig("history/" .. aConfig.FarFileName)
   local ini = IniFile.New(file, "nocomment")
   if ini then
-    local far_items = {}
+    local far_items
 
     local function ProcessCfgString (key_ini, key_out, firstcall)
       local lines = ini:GetString(aConfig.FarHistoryType, key_ini)
       if lines then
-        lines = lines:gsub("\\(.)", { ["\\"]="\\"; n="\n"; r="\r"; t="\t"; })
-        local pos = 1
-        for i=1,math.huge do -- example: [2]ab
-          local from,to,len = lines:find("^%[(%d+)%]", pos)
-          if from == nil then break end
-          len = tonumber(len)
-          local str = lines:sub(to+1, to+len)
-
-          if firstcall then far_items[i] = { [key_out] = str }
-          elseif far_items[i] then far_items[i][key_out] = str
-          else break
+        lines = string.gsub(lines, "\\(.)", { ["\\"]="\\"; n="\n"; r="\r"; t="\t"; })
+        if firstcall then
+          far_items = GetNames(lines)
+          for i,v in ipairs(far_items) do
+            far_items[i] = { [key_out] = v }
           end
+        else
+          local pos = 1
+          for i=1,math.huge do -- example: [2]ab
+            local from,to,len = lines:find("^%[(%d+)%]", pos)
+            if from == nil then break end
+            len = tonumber(len)
+            local str = lines:sub(to+1, to+len)
 
-          pos = to + len + 1
+            if far_items[i] then far_items[i][key_out] = str
+            else break
+            end
+
+            pos = to + len + 1
+          end
         end
       end
     end
