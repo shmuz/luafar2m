@@ -31,6 +31,7 @@ local DIRSEP = package.config:sub(1, 1)
 local osWin = (DIRSEP == "\\")
 local F = far.Flags
 local band, bor, bnot, bnew = bit64.band, bit64.bor, bit64.bnot, bit64.new
+local str_find, str_match, str_gmatch = string.find, string.match, string.gmatch
 local CreateDir, OpenFile
 local Title
 
@@ -93,7 +94,7 @@ local JoinPath = win.JoinPath or function(s1, s2)
 end
 
 local function extract_name(fullpath)
-  return fullpath:match(osWin and "[^\\:]*$" or "[^/]*$")
+  return str_match(fullpath, osWin and "[^\\:]*$" or "[^/]*$")
 end
 
 local function extract_name_not_empty(fullpath)
@@ -365,7 +366,7 @@ function export.Analyse(Data)
   if Data.FileName == nil then -- ShiftF1
     return true
   else
-    return string.find(Data.Buffer,"^SQLite format 3") and CheckAppId(Data.Buffer)
+    return str_find(Data.Buffer,"^SQLite format 3") and CheckAppId(Data.Buffer)
   end
 end
 
@@ -383,7 +384,7 @@ end
 
 local function CompactPath(path)
   local arr = {}
-  for part in path:gmatch( "[^" ..DIRSEP.. "]+" ) do
+  for part in str_gmatch(path, "[^" ..DIRSEP.. "]+" ) do
     table.insert(arr, part)
   end
 
@@ -404,7 +405,7 @@ local function CompactPath(path)
 end
 
 local function SetDir(obj, path)
-  local IsAbsPath = (path == "") or path:find("^"..DIRSEP)
+  local IsAbsPath = (path == "") or str_find(path, "^"..DIRSEP)
   local arr = CompactPath(path)
   local cur_id = IsAbsPath and 1 or obj.curdir
 
@@ -544,7 +545,8 @@ local DisplaySearchState do
     local newclock = Clock()
     if force or newclock >= lastclock then
       lastclock = newclock + Opt.PrBarUpdatePeriod
-      local len = fullname:len()
+      --local len = fullname:len()
+      local len = far.StrCellsCount(fullname)
       local s = len<=Opt.PrBarMessageWid and fullname..(" "):rep(Opt.PrBarMessageWid-len) or
         fullname:sub(1,Opt.PrBarHeaderWid).. "..." .. fullname:sub(-wTail)
       local text = ("%s\n%s\nFiles %s: %d/%d"):format(s, set_progress(Opt.PrBarMessageWid-4, ratio),

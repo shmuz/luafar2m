@@ -537,8 +537,8 @@ local function get_history (aConfig, aData)
             far_items[i] = trg
           else
             trg = far_items[i]
+            if not trg then break end
           end
-          if not trg then break end
           trg[key_out] = v
         end
       end
