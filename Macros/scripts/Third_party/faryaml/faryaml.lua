@@ -1529,7 +1529,8 @@ local function resolve_active_path(path)
 end
 
 local function yaml_file(path)
-  return type(path) == "string" and path:lower():match("%.ya?ml$") ~= nil
+  local lower, match = string.lower, string.match
+  return type(path) == "string" and match(lower(path), "%.ya?ml$") ~= nil
 end
 
 local function load(path)
