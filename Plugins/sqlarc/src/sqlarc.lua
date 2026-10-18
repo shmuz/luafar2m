@@ -62,11 +62,13 @@ end
 local sql3 = require "lsqlite3"
 local SimpleDialog = require "far2.simpledialog"
 
-local QCreateFiles = [[
+local CollateName = osWin and "COLLATE utf8_ncase" or ""
+
+local QCreateFiles = ([[
 CREATE TABLE sqlarc_files (
   id         INTEGER  PRIMARY KEY NOT NULL,
   parent     INTEGER  NOT NULL REFERENCES sqlarc_files(id) ON DELETE CASCADE ON UPDATE CASCADE,
-  name       TEXT     NOT NULL COLLATE utf8_ncase,
+  name       TEXT     NOT NULL %s,
   attrib     TEXT,
   t_create   INTEGER,
   t_write    INTEGER,
@@ -76,7 +78,7 @@ CREATE TABLE sqlarc_files (
   content    BLOB DEFAULT '',
   -- constraints --
   UNIQUE     (parent,name)
-); ]]
+); ]]):format(CollateName)
 
 local CheckAppId, SetAppId do
   local r1 = string.char(unpack(Opt.Application_id))
@@ -273,6 +275,16 @@ local function GetArchiveFileName()
   return filename and far.ConvertPath(filename)
 end
 
+-- This allows to handle files with UTF-8-invalid names.
+local function SafeUtf8Ncasecmp(s1, s2)
+  local ok, res = pcall(utf8.ncasecmp, s1, s2)
+  if ok and type(res) == "number" then
+    return res
+  end
+  -- Fallback for invalid UTF-8 byte sequences: raw binary comparison
+  return s1 == s2 and 0 or s1 < s2 and -1 or 1
+end
+
 local function CreateObjectImpl(filename, holder)
   local bCreateArchive = false
   if not filename then -- ShiftF1 was pressed
@@ -307,7 +319,7 @@ local function CreateObjectImpl(filename, holder)
     CommonErrMsg("Cannot open file:\n"..filename)
     return false
   end
-  db:create_collation("utf8_ncase", utf8.ncasecmp)
+  db:create_collation("utf8_ncase", SafeUtf8Ncasecmp)
 
   -- sql3.open() won't fail on a non-DB file, let's work around with a statement
   local stmt = db:prepare("SELECT * FROM sqlite_master")
@@ -783,7 +795,9 @@ local function PutDirectory(state, item, parent_id)
   stmt:bind(3, item.FileAttributes)
   stmt:bind(4, tostring(item.CreationTime))
   stmt:bind(5, tostring(item.LastWriteTime))
-  stmt:step()
+  if stmt:step() == sql3.DONE then
+    state.nfiles = state.nfiles + 1
+  end
 end
 
 local function PutFile(state, SrcPath, Item, parent_id)
@@ -932,7 +946,7 @@ local function PutTree(state, SrcPath, dir_item, parent_id)
 end
 
 function export.PutFiles(obj, handle, Items, Move, SrcPath, OpMode)
-  local RET_BREAK, RET_FAIL, RET_SUCCESS_MOVECURSOR, RET_SUCCESS_NOMOVECURSOR = -1, 0, 1, 2
+  local RET_FAIL, RET_SUCCESS_MOVECURSOR = 0, 1
 
   if Items[1].FileName == ".." then
     return RET_FAIL -- bug: Far calls PutFilesW on F5 press when the cursor stands on ".." - even without a dialog
@@ -953,7 +967,6 @@ function export.PutFiles(obj, handle, Items, Move, SrcPath, OpMode)
   }
 
   obj.db:exec("BEGIN TRANSACTION")
-  local result = RET_SUCCESS_MOVECURSOR
   for _,item in ipairs(Items) do
     local OK
     state.cancel = false
@@ -962,10 +975,10 @@ function export.PutFiles(obj, handle, Items, Move, SrcPath, OpMode)
     else
       OK = PutFile(state, SrcPath, item, obj.curdir)
     end
-    if state.fullcancel then result = RET_BREAK; break;
-    elseif state.cancel then result = RET_BREAK;
-    elseif OK           then ClearSelection(item);
-    elseif result ~= RET_BREAK then result = RET_FAIL;
+    if state.fullcancel then
+      break
+    elseif OK and not state.cancel then
+      ClearSelection(item)
     end
   end
   DisplaySearchState("Please wait...", state.nfiles, state.nfiles, 0, "added", true)
@@ -975,7 +988,7 @@ function export.PutFiles(obj, handle, Items, Move, SrcPath, OpMode)
   state.f_stmt:finalize()
   if state.Fp then state.Fp:close(); end
   far.AdvControl("ACTL_REDRAWALL")
-  return result
+  return state.nfiles > 0 and RET_SUCCESS_MOVECURSOR or RET_FAIL
 end
 
 function export.DeleteFiles(obj, handle, PanelItems, OpMode)
