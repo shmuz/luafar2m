@@ -181,7 +181,7 @@ local function FindFile (fname)
 end
 
 local function GetNextPath(s)
-  return s:match("(.*/).+")
+  return string.match(s, "(.*/).+")
 end
 
 local function JumpToNearestFolder(path, whatpanel)

@@ -100,3 +100,26 @@ Macro {
   area="Editor"; key="CtrlG";
   action=function() Keys("AltF8") end;
 }
+
+Macro {
+  id="FA4A16BA-928D-43AE-B612-7EA9FEA61D45";
+  description="git diff from Editor";
+  area="Editor"; key="CtrlShiftF2";
+  action=function(data)
+    local FilePath = editor.GetFileName()
+    local rel_path = FilePath:match(".*/repos/[^/]+/(.+)")
+    if rel_path == nil then
+      far.Message("File path doesn't contain \"/repos/\"", data.description)
+      return
+    end
+    local FileNameExt = FilePath:match("[^/]*$")
+    local tmpdir = far.InMyTemp("fareditor-diffs")
+    local head_path = win.JoinPath(tmpdir, FileNameExt)
+    local gitshow = ( [[git show "HEAD:%s" > %s]] ):format(rel_path, head_path)
+    local meldcmd = ( [[meld "%s" "%s" &]] ):format(head_path, FilePath)
+
+    win.CreateDir(tmpdir)
+    os.execute(gitshow)
+    os.execute(meldcmd)
+  end
+}
