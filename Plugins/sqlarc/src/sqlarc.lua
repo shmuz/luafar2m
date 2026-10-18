@@ -273,7 +273,7 @@ local function GetArchiveFileName()
   return filename and far.ConvertPath(filename)
 end
 
-local function CreateObject(filename)
+local function CreateObjectImpl(filename, holder)
   local bCreateArchive = false
   if not filename then -- ShiftF1 was pressed
     bCreateArchive = true
@@ -302,6 +302,7 @@ local function CreateObject(filename)
   end
 
   local db = sql3.open(filename)
+  holder.db = db
   if not db then
     CommonErrMsg("Cannot open file:\n"..filename)
     return false
@@ -312,7 +313,6 @@ local function CreateObject(filename)
   local stmt = db:prepare("SELECT * FROM sqlite_master")
   if not stmt then
     -- DbErrMsg(db)
-    db:close()
     CommonErrMsg("Probably not an SQLite file:\n"..filename)
     return false
   end
@@ -359,6 +359,19 @@ local function CreateObject(filename)
     IsCached = false; -- caching must be reset after any change on this table
     Format = "Sqlarc";
   }
+  return obj
+end
+
+local function CreateObject(filename)
+  local holder = {}
+  local ok, obj = pcall(CreateObjectImpl, filename, holder)
+
+  if not (ok and obj) and holder.db then
+    holder.db:close()
+  end
+
+  if not ok then error(obj) end
+
   return obj
 end
 
@@ -919,8 +932,10 @@ local function PutTree(state, SrcPath, dir_item, parent_id)
 end
 
 function export.PutFiles(obj, handle, Items, Move, SrcPath, OpMode)
+  local RET_BREAK, RET_FAIL, RET_SUCCESS_MOVECURSOR, RET_SUCCESS_NOMOVECURSOR = -1, 0, 1, 2
+
   if Items[1].FileName == ".." then
-    return 0 -- bug: Far calls PutFilesW on F5 press when the cursor stands on ".." - even without a dialog
+    return RET_FAIL -- bug: Far calls PutFilesW on F5 press when the cursor stands on ".." - even without a dialog
   end
 
   local f_query = [[INSERT INTO sqlarc_files(parent,name,isdir,attrib,size,t_create,t_write,content)
@@ -938,7 +953,7 @@ function export.PutFiles(obj, handle, Items, Move, SrcPath, OpMode)
   }
 
   obj.db:exec("BEGIN TRANSACTION")
-  local result = 1
+  local result = RET_SUCCESS_MOVECURSOR
   for _,item in ipairs(Items) do
     local OK
     state.cancel = false
@@ -947,10 +962,10 @@ function export.PutFiles(obj, handle, Items, Move, SrcPath, OpMode)
     else
       OK = PutFile(state, SrcPath, item, obj.curdir)
     end
-    if state.fullcancel then result = -1; break;
-    elseif state.cancel then result = -1;
+    if state.fullcancel then result = RET_BREAK; break;
+    elseif state.cancel then result = RET_BREAK;
     elseif OK           then ClearSelection(item);
-    elseif result ~= -1 then result = 0;
+    elseif result ~= RET_BREAK then result = RET_FAIL;
     end
   end
   DisplaySearchState("Please wait...", state.nfiles, state.nfiles, 0, "added", true)
