@@ -32,7 +32,7 @@ local osWin = (DIRSEP == "\\")
 local F = far.Flags
 local band, bor, bnot, bnew = bit64.band, bit64.bor, bit64.bnot, bit64.new
 local str_find, str_match, str_gmatch = string.find, string.match, string.gmatch
-local CreateDir, OpenFile
+local CreateDir, OpenFile, CellsCount
 local Title
 
 --------------------------------------------------------------------------------
@@ -48,6 +48,7 @@ if osWin then
   end
 
   Title = export.GetGlobalInfo().Title     -- luacheck: ignore
+  CellsCount = utf8.len                    -- luacheck: ignore
 
   -- set 100ns file resolution
   far.FileTimeResolution(2)                -- luacheck: ignore
@@ -56,6 +57,7 @@ else
   CreateDir = win.CreateDir                -- luacheck: ignore
   OpenFile = win.OpenFile                  -- luacheck: ignore
   Title = far.GetPluginGlobalInfo().Title  -- luacheck: ignore
+  CellsCount = far.StrCellsCount           -- luacheck: ignore
 end
 --------------------------------------------------------------------------------
 
@@ -570,8 +572,7 @@ local DisplaySearchState do
     local newclock = Clock()
     if force or newclock >= lastclock then
       lastclock = newclock + Opt.PrBarUpdatePeriod
-      --local len = fullname:len()
-      local len = far.StrCellsCount(fullname)
+      local len = CellsCount(fullname)
       local s = len<=Opt.PrBarMessageWid and fullname..(" "):rep(Opt.PrBarMessageWid-len) or
         fullname:sub(1,Opt.PrBarHeaderWid).. "..." .. fullname:sub(-wTail)
       local text = ("%s\n%s\nFiles %s: %d/%d"):format(s, set_progress(Opt.PrBarMessageWid-4, ratio),
