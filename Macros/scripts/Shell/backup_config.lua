@@ -15,7 +15,7 @@ local Max_daily = 10
 local ArcLite = 0x65642111
 
 if win.GetHostName() ~= "shmuel-VirtualBox" then return end -- on this computer only
-if not Dir_source:find("/work$") then return end -- this custom config only
+if not Dir_source:find("/work/?$") then return end -- this custom config only
 
 local function ErrMsg(msg, title)
   far.Message(msg, title or "Backup", nil, "w")
@@ -33,7 +33,7 @@ local function Backup(dir_target, name)
       end
       return ret
     else
-      local cmd = ("7z a -mx5 %s %s"):format(target, source)
+      local cmd = ('7z a -mx5 "%s" "%s"'):format(target, source)
       if os.execute(cmd) ~= 0 then
         ErrMsg(dir_target, "7z backup failed")
       end
@@ -64,7 +64,7 @@ local function Daily(dir)
   end
 
   for n=1, #files - Max_daily do
-    win.DeleteFile(files[n])
+    win.DeleteFile(win.JoinPath(dir, files[n]))
   end
 
 end
