@@ -25,7 +25,7 @@ local function FileToObject(FileName)
 end
 
 function mod.Analyse(Data)
-  return Data.FileName and Data.FileName:sub(-5):lower() == ".abcd"
+  return Data.FileName and string.lower(string.sub(Data.FileName, -5)) == ".abcd"
 end
 
 function mod.Open(OpenFrom, _Id, Item)
