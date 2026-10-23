@@ -25,7 +25,7 @@ local WP_IMG_RGB  = 1
 -- ============================================================================
 -- C Declarations: WinPort & Imlib2
 -- ============================================================================
-ffi.cdef[[
+pcall(ffi.cdef, [[
   typedef void* HANDLE;
   typedef int BOOL;
 
@@ -55,7 +55,7 @@ ffi.cdef[[
   Imlib_Image imlib_create_cropped_scaled_image(int src_x, int src_y, int src_w, int src_h, int dst_w, int dst_h);
   DATA32* imlib_image_get_data(void);
   DATA32* imlib_image_get_data_for_reading_only(void);
-]]
+]])
 
 local function load_lib(names)
   for _, name in ipairs(names) do
@@ -240,7 +240,7 @@ local function ShowImage(xpanel)
   local height = inner_h_cells
   local buffer = far.CreateUserControl(width, height)
   local color  = far.AdvControl(F.ACTL_GETCOLOR, K.COL_PANELTEXT)
-  local textel = {Char = 0x20, Attributes = {ForegroundColor = color.BackgroundColor, BackgroundColor = color.BackgroundColor}}
+  local textel = {Char = 0x20, Attributes = color}
   for ii = 1, #buffer do buffer[ii] = textel end
 
   local items = {
@@ -254,8 +254,8 @@ local function ShowImage(xpanel)
   local function DlgProc(dlg, msg, param1, param2)
     local function CloseDialog(check, key)
       if not has_exited then
-        key = key or far.InputRecordToName(param2)
-        if not check or check(key) then
+        key = key or msg == F.DN_KEY and far.KeyToName(param2)
+        if not check or key and check(key) then
           has_exited = true
           if key == "Esc" then
             far.MacroPost([[Keys("Esc")]])
@@ -276,15 +276,14 @@ local function ShowImage(xpanel)
         far.AdvControl(F.ACTL_GETCOLOR, K.COL_PANELTITLE),
         far.AdvControl(F.ACTL_GETCOLOR, K.COL_PANELTEXT)
       }
-    elseif msg == F.DN_INPUT then
-      if param2.EventType == F.MOUSE_EVENT then
-        return not CloseDialog(function(key) return Mouse2[key] or (Mouse3[key] and not PointInRect(param2, pinfo.PanelRect)) end)
+    elseif msg == F.DN_MOUSECLICK then
+      local ff = function(key) return Mouse2[key] or (Mouse3[key] and param1 == -1) end
+      local key = (Mouse.Button % 2 == 1) and "MsLClick" or nil
+      return not CloseDialog(ff, key)
+    elseif msg == F.DN_KEY then
+      if param2 ~= F.KEY_CTRL and param2 ~= F.KEY_RCTRL and param2 ~= F.KEY_ALT and param2 ~= F.KEY_SHIFT then
+        return CloseDialog(function(key) return true end)
       end
-    elseif msg == F.DN_CONTROLINPUT then
-      if param1 == -1 then return true end
-      return CloseDialog(function(key)
-        return ((param2.EventType == F.KEY_EVENT or param2.EventType == F.FARMACRO_KEY_EVENT) and param2.KeyDown) or (param2.EventType == F.MOUSE_EVENT and Mouse1[key])
-      end)
     elseif msg == F.DN_RESIZECONSOLE then
       CloseDialog(nil, "CtrlR")
     end
