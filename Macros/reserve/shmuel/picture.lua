@@ -1,9 +1,9 @@
 -- luacheck: no max line length
 if not jit then return end
 
+local bit = require("bit")
 local ffi = require("ffi")
 local C   = ffi.C
-local bit = require("bit")
 
 local function Set(list)
   local set = {}
@@ -14,7 +14,7 @@ end
 local Refresh = Set{"CtrlLeft","CtrlRight","CtrlUp","CtrlDown","CtrlClear","CtrlNum4","CtrlNum6","CtrlNum2","CtrlNum8"}
 local Mouse1  = Set{"MsWheelDown","MsWheelUp"}
 local Mouse2  = Set{"MsM1Click"}
-local Mouse3  = Set{"MsLClick"}
+local Mouse3  = Set{"MsLClick", "MsRClick"}
 local F       = far.Flags
 local K       = far.Colors
 
@@ -254,14 +254,13 @@ local function ShowImage(xpanel)
   local function DlgProc(dlg, msg, param1, param2)
     local function CloseDialog(check, key)
       if not has_exited then
-        key = key or msg == F.DN_KEY and far.KeyToName(param2)
-        if not check or key and check(key) then
+        key = key or (msg == F.DN_KEY and far.KeyToName(param2))
+        if not check or (key and check(key)) then
           has_exited = true
-          if key == "Esc" then
-            far.MacroPost([[Keys("Esc")]])
-          else
-            if Refresh[key] then key = key .. " CtrlR" end
-            far.MacroPost([[Keys("Esc ]] .. key .. [[")]])
+          mf.postmacro(Keys, "Esc")
+          if key and key ~= "Esc" then
+            mf.postmacro(Keys, key)
+            if Refresh[key] then mf.postmacro(Keys, "CtrlR") end
           end
           return true
         end
@@ -278,7 +277,8 @@ local function ShowImage(xpanel)
       }
     elseif msg == F.DN_MOUSECLICK then
       local ff = function(key) return Mouse2[key] or (Mouse3[key] and param1 == -1) end
-      local key = (Mouse.Button % 2 == 1) and "MsLClick" or nil
+      local key = (Mouse.Button % 4 == 1) and "MsLClick"
+               or (Mouse.Button % 4 == 2) and "MsRClick"
       return not CloseDialog(ff, key)
     elseif msg == F.DN_KEY then
       if param2 ~= F.KEY_CTRL and param2 ~= F.KEY_RCTRL and param2 ~= F.KEY_ALT and param2 ~= F.KEY_SHIFT then
