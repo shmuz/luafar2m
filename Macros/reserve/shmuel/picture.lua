@@ -239,7 +239,7 @@ local function ShowImage(xpanel)
   local width  = inner_w_cells
   local height = inner_h_cells
   local buffer = far.CreateUserControl(width, height)
-  local color  = far.AdvControl(F.ACTL_GETCOLOR, K.COL_PANELTEXT)
+  local color  = actl.GetColor(K.COL_PANELTEXT)
   local textel = {Char = 0x20, Attributes = color}
   for ii = 1, #buffer do buffer[ii] = textel end
 
@@ -268,12 +268,12 @@ local function ShowImage(xpanel)
     end
 
     if msg == F.DN_INITDIALOG then
-      far.SendDlgMessage(dlg, F.DM_SETMOUSEEVENTNOTIFY, 1)
+      dlg:SetMouseEventNotify(1)
     elseif msg == F.DN_CTLCOLORDLGITEM and param1 == 1 then
       return {
-        far.AdvControl(F.ACTL_GETCOLOR, is_cur_panel and K.COL_PANELSELECTEDTITLE or K.COL_PANELTITLE),
-        far.AdvControl(F.ACTL_GETCOLOR, K.COL_PANELTITLE),
-        far.AdvControl(F.ACTL_GETCOLOR, K.COL_PANELTEXT)
+        actl.GetColor(is_cur_panel and K.COL_PANELSELECTEDTITLE or K.COL_PANELTITLE),
+        actl.GetColor(K.COL_PANELTITLE),
+        actl.GetColor(K.COL_PANELTEXT)
       }
     elseif msg == F.DN_MOUSECLICK then
       local ff = function(key) return Mouse2[key] or (Mouse3[key] and param1 == -1) end
@@ -315,7 +315,7 @@ Event
   action = function(id, event, param)
     if event == F.VE_READ then
       local xpanel = 0
-      if far.AdvControl(F.ACTL_GETWINDOWTYPE).Type == F.WTYPE_PANELS then
+      if actl.GetWindowType().Type == F.WTYPE_PANELS then
         if panel.GetPanelInfo(nil, 0).PanelType == F.PTYPE_INFOPANEL then return end
         local type = panel.GetPanelInfo(nil, 1).PanelType
         if type == F.PTYPE_INFOPANEL then return end
