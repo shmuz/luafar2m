@@ -11,12 +11,12 @@ local function Set(list)
   return set
 end
 
-local Refresh = Set{"CtrlLeft","CtrlRight","CtrlUp","CtrlDown","CtrlClear","CtrlNum4","CtrlNum6","CtrlNum2","CtrlNum8"}
-local Mouse1  = Set{"MsWheelDown","MsWheelUp"}
-local Mouse2  = Set{"MsM1Click"}
-local Mouse3  = Set{"MsLClick", "MsRClick"}
-local F       = far.Flags
-local K       = far.Colors
+local F = far.Flags
+local K = far.Colors
+
+local Refresh = Set{"CtrlLeft", "CtrlRight", "CtrlUp", "CtrlDown", "CtrlClear",
+                    "CtrlNum4", "CtrlNum6", "CtrlNum2", "CtrlNum8"}
+local Ignore = Set{F.KEY_CTRL, F.KEY_RCTRL, F.KEY_ALT, F.KEY_SHIFT}
 
 -- From WinPort/WinCompat.h
 local WP_IMG_RGBA = 0
@@ -70,11 +70,6 @@ local imlib2 = load_lib({"Imlib2", "libImlib2.so.1", "libImlib2.so"})
 -- ============================================================================
 -- Helper Functions & RAW/DNG Extractor
 -- ============================================================================
-local function PointInRect(point, rect)
-  return point.MousePositionX >= rect.left and point.MousePositionX <= rect.right
-     and point.MousePositionY >= rect.top  and point.MousePositionY <= rect.bottom
-end
-
 local function getDNG(filename)
   local function intBE(b)
     local result = 0
@@ -250,42 +245,46 @@ local function ShowImage(xpanel)
 
   local is_cur_panel = bit64.band(pinfo.Flags, F.PFLAGS_FOCUS) ~= 0
   local has_exited = false
+  local starttime
 
   local function DlgProc(dlg, msg, param1, param2)
-    local function CloseDialog(check, key)
-      if not has_exited then
-        key = key or (msg == F.DN_KEY and far.KeyToName(param2))
-        if not check or (key and check(key)) then
-          has_exited = true
-          mf.postmacro(Keys, "Esc")
-          if key and key ~= "Esc" then
-            mf.postmacro(Keys, key)
-            if Refresh[key] then mf.postmacro(Keys, "CtrlR") end
-          end
-          return true
+    local function CloseDialog(key)
+      if key and not has_exited then
+        has_exited = true
+        mf.postmacro(Keys, "Esc")
+        if key ~= "Esc" then
+          mf.postmacro(Keys, key)
+          if Refresh[key] then mf.postmacro(Keys, "CtrlR") end
         end
+        return true
       end
     end
 
     if msg == F.DN_INITDIALOG then
+      starttime = Far.UpTime
       dlg:SetMouseEventNotify(1)
+
     elseif msg == F.DN_CTLCOLORDLGITEM and param1 == 1 then
       return {
         actl.GetColor(is_cur_panel and K.COL_PANELSELECTEDTITLE or K.COL_PANELTITLE),
         actl.GetColor(K.COL_PANELTITLE),
         actl.GetColor(K.COL_PANELTEXT)
       }
+
     elseif msg == F.DN_MOUSECLICK then
-      local ff = function(key) return Mouse2[key] or (Mouse3[key] and param1 == -1) end
-      local key = (Mouse.Button % 4 == 1) and "MsLClick"
-               or (Mouse.Button % 4 == 2) and "MsRClick"
-      return not CloseDialog(ff, key)
-    elseif msg == F.DN_KEY then
-      if param2 ~= F.KEY_CTRL and param2 ~= F.KEY_RCTRL and param2 ~= F.KEY_ALT and param2 ~= F.KEY_SHIFT then
-        return CloseDialog(function(key) return true end)
+      if Far.UpTime - starttime >= 100 then -- debounce
+        local bits = Mouse.Button % 8
+        local key = bits == 1 and "MsLClick" or bits == 2 and "MsRClick"
+        return not CloseDialog(key)
       end
+
+    elseif msg == F.DN_KEY then
+      if not Ignore[param2] then
+        return CloseDialog(far.KeyToName(param2))
+      end
+
     elseif msg == F.DN_RESIZECONSOLE then
-      CloseDialog(nil, "CtrlR")
+      CloseDialog("CtrlR")
     end
   end
 
