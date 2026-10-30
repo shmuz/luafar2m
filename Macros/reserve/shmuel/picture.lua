@@ -1,9 +1,11 @@
 -- luacheck: no max line length
 if not jit then return end
 
-local bit = require("bit")
 local ffi = require("ffi")
 local C   = ffi.C
+
+local band, bor, lshift, rshift = bit.band, bit.bor, bit.lshift, bit.rshift
+local floor, min = math.floor, math.min
 
 local function Set(list)
   local set = {}
@@ -186,11 +188,11 @@ local function ShowImage(xpanel)
 
   local dst_w, dst_h
   if asp_dst < asp_src then
-    dst_w = math.min(avail_w, orig_w)
-    dst_h = math.floor(dst_w / asp_src)
+    dst_w = min(avail_w, orig_w)
+    dst_h = floor(dst_w / asp_src)
   else
-    dst_h = math.min(avail_h, orig_h)
-    dst_w = math.floor(asp_src * dst_h)
+    dst_h = min(avail_h, orig_h)
+    dst_w = floor(asp_src * dst_h)
   end
 
   -- Scale image using Imlib2
@@ -210,25 +212,25 @@ local function ShowImage(xpanel)
   local ptr = ffi.cast("uint32_t*", raw_data)
   for i = 0, num_pixels - 1 do
     local c = ptr[i]
-    local a = bit.rshift(c, 24)
-    local r = bit.band(bit.rshift(c, 16), 0xFF)
-    local g = bit.band(bit.rshift(c, 8), 0xFF)
-    local b = bit.band(c, 0xFF)
+    local a = rshift(c, 24)
+    local r = band(rshift(c, 16), 0xFF)
+    local g = band(rshift(c, 8), 0xFF)
+    local b = band(c, 0xFF)
 
     if a < 255 then
       local inv_a = 255 - a
-      r = math.floor((r * a + 255 * inv_a) / 255)
-      g = math.floor((g * a + 255 * inv_a) / 255)
-      b = math.floor((b * a + 255 * inv_a) / 255)
+      r = floor((r * a + 255 * inv_a) / 255)
+      g = floor((g * a + 255 * inv_a) / 255)
+      b = floor((b * a + 255 * inv_a) / 255)
     end
 
     -- Pack as little-endian RGBA (Byte 0: R, Byte 1: G, Byte 2: B, Byte 3: A=255)
-    ptr[i] = bit.bor(0xFF000000, bit.lshift(b, 16), bit.lshift(g, 8), r)
+    ptr[i] = bor(0xFF000000, lshift(b, 16), lshift(g, 8), r)
   end
 
   -- Calculate centered position in character cells
-  local offset_cell_x = math.floor((inner_w_cells - math.floor(dst_w / font_w)) / 2)
-  local offset_cell_y = math.floor((inner_h_cells - math.floor(dst_h / font_h)) / 2)
+  local offset_cell_x = floor((inner_w_cells - floor(dst_w / font_w)) / 2)
+  local offset_cell_y = floor((inner_h_cells - floor(dst_h / font_h)) / 2)
   local pos = ffi.new("COORD", {
     X = inner_x + (offset_cell_x > 0 and offset_cell_x or 0),
     Y = inner_y + (offset_cell_y > 0 and offset_cell_y or 0)
