@@ -205,17 +205,25 @@ local function ShowImage(xpanel)
   imlib2.imlib_context_set_image(scaled_img)
   local raw_data = imlib2.imlib_image_get_data()
 
-  -- Convert Imlib2 DATA32 (BGRA) to RGBA in-place and guarantee 100% opacity
+  -- Convert Imlib2 DATA32 (ARGB) to RGBA in-place, compositing alpha over white
   local num_pixels = dst_w * dst_h
   local ptr = ffi.cast("uint32_t*", raw_data)
   for i = 0, num_pixels - 1 do
     local c = ptr[i]
-    ptr[i] = bit.bor(
-      0xFF000000,                               -- Force Alpha = 255 (Opaque)
-      bit.band(c, 0x0000FF00),                   -- Green
-      bit.rshift(bit.band(c, 0x00FF0000), 16),   -- Red (moved to byte 0)
-      bit.lshift(bit.band(c, 0x000000FF), 16)    -- Blue (moved to byte 2)
-    )
+    local a = bit.rshift(c, 24)
+    local r = bit.band(bit.rshift(c, 16), 0xFF)
+    local g = bit.band(bit.rshift(c, 8), 0xFF)
+    local b = bit.band(c, 0xFF)
+
+    if a < 255 then
+      local inv_a = 255 - a
+      r = math.floor((r * a + 255 * inv_a) / 255)
+      g = math.floor((g * a + 255 * inv_a) / 255)
+      b = math.floor((b * a + 255 * inv_a) / 255)
+    end
+
+    -- Pack as little-endian RGBA (Byte 0: R, Byte 1: G, Byte 2: B, Byte 3: A=255)
+    ptr[i] = bit.bor(0xFF000000, bit.lshift(b, 16), bit.lshift(g, 8), r)
   end
 
   -- Calculate centered position in character cells
