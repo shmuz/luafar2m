@@ -14,9 +14,6 @@ rex = rex
 Editors = Editors or {}
 
 if not rex then
-  local f = win.SetUtf8Conversion -- the function exists since 2026-10-27
-  if f then f(0x2) end -- to avoid "invalid UTF-8 code" error on some binary files
-
   local ok
   ok, rex = pcall(require, "rex_onig")
   if not ok then return end

@@ -835,6 +835,7 @@ do
   if not _Plugin then
     _Plugin = {}
     _Plugin.Cfg = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
+    win.SetUtf8Conversion(0x0) -- use far2m conversions to cope with invalid-UTF-8 names
   end
   FillDefaults(_Plugin.Cfg, DefaultCfg)
   InitConfigModule()
