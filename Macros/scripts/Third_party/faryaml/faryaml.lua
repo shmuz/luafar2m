@@ -265,7 +265,8 @@ local function from_plain(text)
             if val ~= nil then
                 return val
             end
-        end        -- the based integers, e.g. 0x1f, 0o17, 0b1010
+        end
+        -- the based integers, e.g. 0x1f, 0o17, 0b1010
         local sign, base, digits = text:match("^([-+]?)0([xXoObB])(%w+)$")
         if sign then
             local bases = {x = 16, o = 8, b = 2}
@@ -1596,14 +1597,25 @@ local function safe_name(name, used)
   return name
 end
 
+local function get_lines(doc)
+  local lines = doc.lines
+  if not lines then
+    lines = {}
+    for line in (doc.source .. "\n"):gmatch("(.-)\n") do
+      lines[#lines + 1] = line
+    end
+    doc.lines = lines
+  end
+  return lines
+end
+
 local function description_for(doc, line_no)
   if not line_no then return "" end
-  local lines = {}
-  for line in (doc.source .. "\n"):gmatch("(.-)\n") do lines[#lines + 1] = line end
+  local lines = get_lines(doc)
   local comments = {}
   local i = line_no - 1
   while i > 0 do
-    local body = lines[i]:match("^%s*#(.*)$")
+    local body = lines[i] and lines[i]:match("^%s*#(.*)$")
     if not body then break end
     table.insert(comments, 1, (body:gsub("^%s+", "")))
     i = i - 1
@@ -1658,9 +1670,14 @@ local function path_of(node)
   return table.concat(parts, dirsep)
 end
 
-local function leading_start(source, line_no)
-  local lines = {}
-  for line in (source .. "\n"):gmatch("(.-)\n") do lines[#lines + 1] = line end
+local function leading_start(doc_or_source, line_no)
+  local lines
+  if type(doc_or_source) == "table" then
+    lines = get_lines(doc_or_source)
+  else
+    lines = {}
+    for line in (doc_or_source .. "\n"):gmatch("(.-)\n") do lines[#lines + 1] = line end
+  end
   local first = line_no
   while first > 1 and lines[first - 1] and lines[first - 1]:match("^%s*#") do first = first - 1 end
   return first
@@ -1669,13 +1686,13 @@ end
 local function source_fragment(doc, node)
   local r = node.range
   if not r or not r.line or not r.endLine or r.flow then return scalar(node.value) .. "\n" end
-  local lines, n = {}, 0
-  local first = leading_start(doc.source, r.line)
-  for line in (doc.source .. "\n"):gmatch("(.-)\n") do
-    n = n + 1
-    if n >= first and n <= r.endLine then lines[#lines + 1] = line end
+  local lines = get_lines(doc)
+  local first = leading_start(doc, r.line)
+  local out = {}
+  for i = first, math.min(r.endLine, #lines) do
+    out[#out + 1] = lines[i]
   end
-  return table.concat(lines, "\n") .. "\n"
+  return table.concat(out, "\n") .. "\n"
 end
 
 local function yaml_quote(text)
@@ -1865,22 +1882,46 @@ function M.GetFiles(obj, handle, items, move, destpath, opmode)
   return 1
 end
 
-local function line_offsets(text)
-  local offsets = { 1 }
-  for i = 1, #text do if text:byte(i) == 10 then offsets[#offsets + 1] = i + 1 end end
-  return offsets
-end
-
 local function splice_source(source, first, last, edited)
-  local offsets = line_offsets(source)
-  local from = offsets[first]
-  local after = offsets[last + 1] or (#source + 1)
-  if not from or not after then return nil, "source range is outside the file" end
-  local eol = source:find("\r\n", 1, true) and "\r\n" or "\n"
-  edited = edited:gsub("\r\n", "\n"):gsub("\r", "\n")
-  if eol == "\r\n" then edited = edited:gsub("\n", "\r\n") end
-  if edited ~= "" and not edited:match("\n$") then edited = edited .. eol end
-  return source:sub(1, from - 1) .. edited .. source:sub(after)
+  local from, after
+  local line_no = 1
+  local pos = 1
+  local len = string.len(source)
+
+  if first <= 1 then
+    from = 1
+  end
+
+  while pos <= len do
+    -- Bypass utf8 metatable by calling string.find directly
+    local nl = string.find(source, "\n", pos, true)
+    local next_pos = nl and (nl + 1) or (len + 1)
+    line_no = line_no + 1
+
+    if line_no == first then
+      from = next_pos
+    end
+    if line_no == last + 1 then
+      after = next_pos
+      break
+    end
+
+    if not nl then break end
+    pos = next_pos
+  end
+
+  after = after or (len + 1)
+  from = from or 1
+
+  if from > after then return nil, "source range is outside the file" end
+
+  local eol = string.find(source, "\r\n", 1, true) and "\r\n" or "\n"
+  edited = string.gsub(edited, "\r\n", "\n")
+  edited = string.gsub(edited, "\r", "\n")
+  if eol == "\r\n" then edited = string.gsub(edited, "\n", "\r\n") end
+  if edited ~= "" and not string.match(edited, "\n$") then edited = edited .. eol end
+
+  return string.sub(source, 1, from - 1) .. edited .. string.sub(source, after)
 end
 
 local function selected_node(obj, handle)
@@ -1911,22 +1952,31 @@ local function edit_entry(obj, handle, node)
   local temp = temp_name("edit")
   local ok, err = fileio.write_atomic(temp, original)
   if not ok then far.Message(tostring(err), "FarYaml", "OK", "w"); return true end
+
   while true do
     editor.Editor(temp, "FarYaml", -1, -1, -1, -1, F.EF_DISABLEHISTORY or 0, -1, -1, 65001)
+
     local edited, readerr = fileio.read(temp, MAX_BYTES)
     if not edited then far.Message(tostring(readerr), "FarYaml", "OK", "w"); break end
     if edited:sub(1, 3) == "\239\187\191" then edited = edited:sub(4) end
     if edited == original then break end
+
     local current = fileio.read(doc.path, MAX_BYTES)
     if current ~= doc.originalBytes then
       far.Message("Changes were not saved: the file changed on disk after opening the panel.", "FarYaml", "OK", "w")
       break
     end
+
     local candidate, spliceerr
-    if whole then candidate = edited
-    else candidate, spliceerr = splice_source(doc.source, leading_start(doc.source, range.line), range.endLine, edited) end
+    if whole then
+      candidate = edited
+    else
+      candidate, spliceerr = splice_source(doc.source, leading_start(doc, range.line), range.endLine, edited)
+    end
+
     local parsed, parseerr
     if candidate then parsed, parseerr = pcall(parser.decode_all, candidate) end
+
     if not candidate or not parsed then
       local choice = far.Message("Changes were not saved: " .. tostring(spliceerr or parseerr) .. "\nEdit again?", "FarYaml", "Edit again;Discard", "w")
       if choice == 1 then original = edited; fileio.write_atomic(temp, edited) else break end
@@ -1935,8 +1985,10 @@ local function edit_entry(obj, handle, node)
         far.Message("Changes were not saved: removing the first sequence item would remove the list marker.", "FarYaml", "OK", "w")
         break
       end
+
       local saved, why = fileio.write_atomic(doc.path, encode_host(candidate, doc.encoding))
       if not saved then far.Message("Changes were not saved: " .. tostring(why), "FarYaml", "OK", "w"); break end
+
       local updated, loaderr = load(doc.path)
       if updated then
         local previous = path_of(obj.current)
@@ -1945,10 +1997,13 @@ local function edit_entry(obj, handle, node)
         if previous ~= "" then M.SetDirectory(obj, handle, dirsep .. previous) end
         panel.UpdatePanel(handle, 0, true)
         panel.RedrawPanel(handle, 0)
-      else far.Message(tostring(loaderr), "FarYaml", "OK", "w") end
+      else
+        far.Message(tostring(loaderr), "FarYaml", "OK", "w")
+      end
       break
     end
   end
+
   fileio.remove(temp)
   return true
 end
@@ -1988,8 +2043,8 @@ function M.Compare(obj, handle, item1, item2, mode)
     av = kind(a.value)
     bv = kind(b.value)
   else
-    av = description_for(obj.doc, a.range and a.range.line)
-    bv = description_for(obj.doc, b.range and b.range.line)
+    av = item1.Description or description_for(obj.doc, a.range and a.range.line)
+    bv = item2.Description or description_for(obj.doc, b.range and b.range.line)
   end
   av, bv = tostring(av or ""):lower(), tostring(bv or ""):lower()
   if av < bv then return -1 elseif av > bv then return 1 end

@@ -13,6 +13,8 @@ local Dir_daily = Dir_root .. "/Daily"
 local Dir_source = far.InMyConfig()
 local Max_daily = 10
 local ArcLite = 0x65642111
+local MakeNamePattern = "!%Y-%m-%d--%H-%M-%S.7z" -- "!" for UTC time
+local FileMask = [[/^\d\d\d\d-\d\d-\d\d--\d\d-\d\d-\d\d\.7z$/]]
 
 if win.GetHostName() ~= "shmuel-VirtualBox" then return end -- on this computer only
 if not Dir_source:find("/work/?$") then return end -- this custom config only
@@ -43,30 +45,32 @@ local function Backup(dir_target, name)
   end
 end
 
+local function ExtractMonth(fname) return fname:sub(1,7); end
+local function ExtractDay(fname) return fname:sub(1,10); end
+
 local function Monthly(dir)
-  local fname = os.date("!%Y-%m-%d--%H-%M-%S.7z") -- "!" for UTC time
+  local fname = os.date(MakeNamePattern)
   local found = false
-  local mask = fname:sub(1,7) .. "*.7z" -- e.g. "2026-10*.7z"
+  local mask = ExtractMonth(fname) .. "*.7z" -- e.g. "2026-10*.7z"
   far.RecursiveSearch(dir, mask, function() found = true; return true; end)
   if not found then Backup(dir, fname) end
 end
 
 local function Daily(dir)
-  local fname = os.date("!%Y-%m-%d--%H-%M-%S.7z") -- "!" for UTC time
+  local fname = os.date(MakeNamePattern)
   local files = {}
-  far.RecursiveSearch(dir, "*.7z", function(item) files[#files+1]=item.FileName; end)
+  far.RecursiveSearch(dir, FileMask,
+      function(item) files[#files+1] = item.FileName; end)
   table.sort(files) -- older first
-  local backup_needed = files[1] == nil or files[#files]:sub(1,10) ~= fname:sub(1,10)
-  if backup_needed then
+  local newest = files[#files]
+  if newest == nil or ExtractDay(newest) ~= ExtractDay(fname) then
     if Backup(dir, fname) then
-      files[#files] = fname
+      files[#files+1] = fname
+      for n=1, #files - Max_daily do
+        win.DeleteFile(win.JoinPath(dir, files[n]))
+      end
     end
   end
-
-  for n=1, #files - Max_daily do
-    win.DeleteFile(win.JoinPath(dir, files[n]))
-  end
-
 end
 
 Macro {
