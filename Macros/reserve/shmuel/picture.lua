@@ -18,7 +18,7 @@ local K = far.Colors
 
 local Refresh = Set{"CtrlLeft", "CtrlRight", "CtrlUp", "CtrlDown", "CtrlClear",
                     "CtrlNum4", "CtrlNum6", "CtrlNum2", "CtrlNum8"}
-local Ignore = Set{F.KEY_CTRL, F.KEY_RCTRL, F.KEY_ALT, F.KEY_SHIFT}
+local Ignore = Set{"Ctrl", "RCtrl", "Alt", "Shift", "CtrlAlt", "CtrlShift", "AltShift", }
 
 -- From WinPort/WinCompat.h
 local WP_IMG_RGBA = 0
@@ -255,7 +255,6 @@ local function ShowImage(xpanel)
 
   local is_cur_panel = bit64.band(pinfo.Flags, F.PFLAGS_FOCUS) ~= 0
   local has_exited = false
-  local starttime
 
   local function DlgProc(dlg, msg, param1, param2)
     local function CloseDialog(key)
@@ -271,7 +270,6 @@ local function ShowImage(xpanel)
     end
 
     if msg == F.DN_INITDIALOG then
-      starttime = Far.UpTime
       dlg:SetMouseEventNotify(1)
 
     elseif msg == F.DN_CTLCOLORDLGITEM and param1 == 1 then
@@ -282,15 +280,27 @@ local function ShowImage(xpanel)
       }
 
     elseif msg == F.DN_MOUSECLICK then
-      if Far.UpTime - starttime >= 100 then -- debounce
-        local bits = Mouse.Button % 8
-        local key = bits == 1 and "MsLClick" or bits == 2 and "MsRClick"
-        return not CloseDialog(key)
+      local bits = Mouse.Button % 8
+
+      if bits == 1 then -- Left button
+        if Mouse.Y == pinfo.PanelRect.top then
+          CloseDialog("F9")
+        elseif param1 == -1 then
+          CloseDialog("MsLClick")
+        end
+
+      elseif bits == 2 then -- Right button
+        if param1 == -1 then
+          CloseDialog("MsRClick")
+        end
       end
 
+      return true
+
     elseif msg == F.DN_KEY then
-      if not Ignore[param2] then
-        return CloseDialog(far.KeyToName(param2))
+      local name = far.KeyToName(param2)
+      if not Ignore[name] then
+        return CloseDialog(name)
       end
 
     elseif msg == F.DN_RESIZECONSOLE then
@@ -323,15 +333,18 @@ Event
   group = "ViewerEvent";
   action = function(id, event, param)
     if event == F.VE_READ then
-      local xpanel = 0
-      if actl.GetWindowType().Type == F.WTYPE_PANELS then
-        if panel.GetPanelInfo(nil, 0).PanelType == F.PTYPE_INFOPANEL then return end
-        local type = panel.GetPanelInfo(nil, 1).PanelType
-        if type == F.PTYPE_INFOPANEL then return end
-        if type == F.PTYPE_QVIEWPANEL then xpanel = 1 end
-        for ii = 0, 1 do panel.RedrawPanel(nil, ii) end
-      end
-      ShowImage(xpanel)
+      mf.postmacro(
+        function()
+          local xpanel = 0
+          if actl.GetWindowType().Type == F.WTYPE_PANELS then
+            if panel.GetPanelInfo(nil, 0).PanelType == F.PTYPE_INFOPANEL then return end
+            local type = panel.GetPanelInfo(nil, 1).PanelType
+            if type == F.PTYPE_INFOPANEL then return end
+            if type == F.PTYPE_QVIEWPANEL then xpanel = 1 end
+            for ii = 0, 1 do panel.RedrawPanel(nil, ii) end
+          end
+          ShowImage(xpanel)
+        end)
     end
   end
 }
