@@ -5,7 +5,7 @@ local ffi = require("ffi")
 local C   = ffi.C
 
 local band, bor, lshift, rshift = bit.band, bit.bor, bit.lshift, bit.rshift
-local floor, min = math.floor, math.min
+local ceil, floor, min = math.ceil, math.floor, math.min
 
 local function Set(list)
   local set = {}
@@ -32,9 +32,12 @@ pcall(ffi.cdef, [[
   typedef int BOOL;
 
   typedef struct _COORD {
-    short X;
-    short Y;
+    short X, Y;
   } COORD;
+
+  typedef struct _SMALL_RECT {
+    short Left, Top, Right, Bottom;
+  } SMALL_RECT;
 
   typedef struct {
     uint64_t Caps;
@@ -42,7 +45,7 @@ pcall(ffi.cdef, [[
   } WinportGraphicsInfo;
 
   BOOL WINPORT_GetConsoleImageCaps(HANDLE hConsoleOutput, size_t sizeof_wgi, WinportGraphicsInfo *wgi);
-  BOOL WINPORT_SetConsoleImage(HANDLE hConsoleOutput, const char *id, uint64_t flags, COORD pos, uint32_t width, uint32_t height, const void *buffer);
+  BOOL WINPORT_SetConsoleImage(HANDLE hConsoleOutput, const char *id, uint64_t flags, const SMALL_RECT *area, uint32_t width, uint32_t height, const void *buffer);
   BOOL WINPORT_DeleteConsoleImage(HANDLE hConsoleOutput, const char *id);
 
   // Imlib2
@@ -231,14 +234,18 @@ local function ShowImage(xpanel)
   -- Calculate centered position in character cells
   local offset_cell_x = floor((inner_w_cells - floor(dst_w / font_w)) / 2)
   local offset_cell_y = floor((inner_h_cells - floor(dst_h / font_h)) / 2)
-  local pos = ffi.new("COORD", {
-    X = inner_x + (offset_cell_x > 0 and offset_cell_x or 0),
-    Y = inner_y + (offset_cell_y > 0 and offset_cell_y or 0)
+  local start_x = inner_x + (offset_cell_x > 0 and offset_cell_x or 0)
+  local start_y = inner_y + (offset_cell_y > 0 and offset_cell_y or 0)
+  local area = ffi.new("SMALL_RECT", {
+    Left   = start_x,
+    Top    = start_y,
+    Right  = start_x + (ceil(dst_w / font_w) > 0 and ceil(dst_w / font_w) - 1 or 0),
+    Bottom = start_y + (ceil(dst_h / font_h) > 0 and ceil(dst_h / font_h) - 1 or 0)
   })
 
-  -- Register image with far2m's backend (WP_IMG_RGBA = 0)
+  -- Register image with backend (WP_IMG_RGBA = 0)
   local img_id = "far2m_qview_img"
-  C.WINPORT_SetConsoleImage(nil, img_id, WP_IMG_RGBA, pos, dst_w, dst_h, raw_data)
+  C.WINPORT_SetConsoleImage(nil, img_id, WP_IMG_RGBA, area, dst_w, dst_h, raw_data)
 
   -- Build user control and modal dialog container
   local width  = inner_w_cells
@@ -280,10 +287,10 @@ local function ShowImage(xpanel)
       }
 
     elseif msg == F.DN_MOUSECLICK then
-      local bits = Mouse.Button % 8
+      local bits = param2.ButtonState % 8
 
       if bits == 1 then -- Left button
-        if Mouse.Y == pinfo.PanelRect.top then
+        if param2.MousePositionY == pinfo.PanelRect.top then
           CloseDialog("F9")
         elseif param1 == -1 then
           CloseDialog("MsLClick")
