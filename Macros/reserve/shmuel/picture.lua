@@ -64,7 +64,7 @@ pcall(ffi.cdef, [[
 
 local function load_lib(names)
   for _, name in ipairs(names) do
-    local ok, lib = pcall(ffi.load, name)
+    local ok, lib = pcall(ffi.load, name, true)
     if ok then return lib end
   end
   error("Failed to load library: " .. table.concat(names, ", "))
