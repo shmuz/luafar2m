@@ -1487,17 +1487,13 @@ end
 
 local function temp_name(tag)
   local dir = win.GetEnv("TMPDIR") or win.GetEnv("TEMP") or win.GetEnv("TMP") or "/tmp"
-  local sep = dir:match("[/\\]$") and "" or dirsep
-  return dir .. sep .. "faryaml-" .. tag .. "-" .. tostring(math.random(100000, 999999)) .. ".tmp"
+  local name = ("faryaml-%s-%d.tmp"):format(tag, math.random(100000, 999999))
+  return win.JoinPath(dir, name)
 end
 
 local function active_panel_directory()
   local directory = panel.GetPanelDirectory(nil, 1)
-  return directory and directory.Name or nil
-end
-
-local function join_path(directory, name)
-  return directory .. (directory:match("[/\\]$") and "" or dirsep) .. name
+  return directory and directory.Name
 end
 
 local function path_is_absolute(path)
@@ -1516,7 +1512,7 @@ local function current_panel_file()
     and band(flags, F.PFLAGS_REALNAMES) ~= 0
   if plugin_panel and not real_names then return nil end
   local directory = plugin_panel and active_panel_directory() or far.GetCurrentDirectory and far.GetCurrentDirectory()
-  local path = path_is_absolute(name) and name or type(directory) == "string" and join_path(directory, name)
+  local path = path_is_absolute(name) and name or type(directory) == "string" and win.JoinPath(directory, name)
   return path and fileio.is_file(path) and path or nil
 end
 
@@ -1524,7 +1520,7 @@ local function resolve_active_path(path)
   if path_is_absolute(path) then return path end
   local directory = far.GetCurrentDirectory and far.GetCurrentDirectory()
   if type(directory) == "string" and directory ~= "" then
-    return join_path(directory, path)
+    return win.JoinPath(directory, path)
   end
   return path
 end
@@ -1649,7 +1645,13 @@ local function children(node)
   if types.is_array(v) then
     for i, child in ipairs(v) do
       local name = "[" .. (i - 1) .. "]"
-      node.children[#node.children + 1] = { name = name, value = child, parent = node, index = i, range = types.sequence_entry(v, i) }
+      node.children[#node.children + 1] = {
+        name = name,
+        value = child,
+        parent = node,
+        index = i,
+        range = types.sequence_entry(v, i),
+      }
     end
   else
     local entries = types.mapping_entries(v)
@@ -1658,7 +1660,14 @@ local function children(node)
     end
     for i, entry in ipairs(entries) do
       local key = type(entry.key) == "table" and "[complex key]" or tostring(entry.key)
-      node.children[#node.children + 1] = { name = safe_name(key, used), value = entry.value, parent = node, index = i, key = entry.key, range = entry.info }
+      node.children[#node.children + 1] = {
+        name = safe_name(key, used),
+        value = entry.value,
+        parent = node,
+        index = i,
+        key = entry.key,
+        range = entry.info,
+      }
     end
   end
   return node.children
@@ -1666,7 +1675,10 @@ end
 
 local function path_of(node)
   local parts = {}
-  while node and node.parent do table.insert(parts, 1, node.name); node = node.parent end
+  while node and node.parent do
+    table.insert(parts, 1, node.name)
+    node = node.parent
+  end
   return table.concat(parts, dirsep)
 end
 
@@ -1750,8 +1762,10 @@ function M.Analyse(data)
   if not yaml_file(path) then return nil end
   local doc, err, source = load(path)
   if not doc then
-    local background = bor(F.OPM_FIND or 0, F.OPM_QUICKVIEW or 0, F.OPM_VIEW or 0, F.OPM_EDIT or 0)
-    if band(data.OpMode or 0, background) == 0 then return { path = path, error = err, source = source } end
+    local background = bor(F.OPM_FIND, F.OPM_QUICKVIEW, F.OPM_VIEW, F.OPM_EDIT)
+    if band(data.OpMode or 0, background) == 0 then
+      return { path = path, error = err, source = source }
+    end
     return nil
   end
   return doc
@@ -1809,10 +1823,27 @@ function M.GetOpenPanelInfo(obj)
   local short = path:match("[^\\/]+$") or path
   local subpath = path_of(obj.current)
   local modes = {}
-  for i = 1, 10 do modes[i] = { ColumnTypes = "N,C0,C1,Z", ColumnWidths = "0,5,0,0", ColumnTitles = { "Key", "Type", "Value", "Description" }, StatusColumnTypes = "N", StatusColumnWidths = "0" } end
-  return { Flags = bor(F.OPIF_ADDDOTS, F.OPIF_SHOWPRESERVECASE), HostFile = path,
-    CurDir = subpath, Format = "YAML", PanelTitle = " YAML: " .. short .. (subpath ~= "" and dirsep .. subpath or "") .. " ",
-    PanelModesArray = modes, PanelModesNumber = 10, StartPanelMode = string.byte("3"), StartSortMode = F.SM_UNSORTED, StartSortOrder = 0 }
+  for i = 1, 10 do
+    modes[i] = {
+      ColumnTypes = "N,C0,C1,Z",
+      ColumnWidths = "0,5,0,0",
+      ColumnTitles = { "Key", "Type", "Value", "Description" },
+      StatusColumnTypes = "N",
+      StatusColumnWidths = "0",
+    }
+  end
+  return {
+    Flags = bor(F.OPIF_ADDDOTS, F.OPIF_SHOWPRESERVECASE),
+    HostFile = path,
+    CurDir = subpath,
+    Format = "YAML",
+    PanelTitle = " YAML: " .. short .. (subpath ~= "" and dirsep .. subpath or "") .. " ",
+    PanelModesArray = modes,
+    PanelModesNumber = 10,
+    StartPanelMode = string.byte("3"),
+    StartSortMode = F.SM_UNSORTED,
+    StartSortOrder = 0,
+  }
 end
 
 function M.SetDirectory(obj, handle, dir)
@@ -2008,8 +2039,7 @@ local function edit_entry(obj, handle, node)
   return true
 end
 
-function M.ProcessKey (obj, handle, key, ControlState)
-  if band(key, F.PKF_PREPROCESS) ~= 0 then return false end
+local function ProcessKey (obj, handle, key, ControlState)
   if ControlState ~= 0 then return false end
   local VK = win.GetVirtualKeys()
   if key == VK.F1 then
@@ -2031,6 +2061,18 @@ function M.ProcessKey (obj, handle, key, ControlState)
   if not wrote then far.Message(tostring(writeerr), "FarYaml", "OK", "w"); return true end
   viewer.Viewer(temp, "YAML", 0, 0, -1, -1, F.VF_DELETEONCLOSE or 0, 65001)
   return true
+end
+
+-- far2m only
+function M.ProcessKey (obj, handle, key, ControlState)
+  return band(key, F.PKF_PREPROCESS) == 0 and ProcessKey(obj, handle, key, ControlState)
+end
+
+-- far3 only
+function M.ProcessPanelInput (obj, handle, rec)
+  if rec.EventType == F.KEY_EVENT and rec.KeyDown then
+    return ProcessKey(obj, handle, rec.VirtualKeyCode, rec.ControlKeyState)
+  end
 end
 
 function M.Compare(obj, handle, item1, item2, mode)
