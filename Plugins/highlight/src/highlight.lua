@@ -648,9 +648,9 @@ local function HighlightExtra()
       CheckRegexChange (hDlg)
     elseif msg == F.DN_BTNCLICK then
       if param1 == Pos.btColor then
-        local c = far.ColorDialog(extracolor, "FCD_RGB")
-        if c then
-          extracolor = c.Color
+        local color = far.ColorDialog(extracolor, "FCD_RGB")
+        if color then
+          extracolor = color
           hDlg:Redraw()
         end
       else
