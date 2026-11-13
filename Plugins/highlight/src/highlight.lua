@@ -1,10 +1,11 @@
--- Encoding: utf-8
 -- Started: 2014-10-06
 -- Author: Shmuel Zeigerman
 
 -- luacheck: globals rex Editors
 
---local function LOG(fmt,...) win.OutputDebugString(fmt:format(...)) end
+local Sett = require "far2.settings"
+local sd   = require "far2.simpledialog"
+
 local function ErrMsg (msg, title, flags)
   far.Message(msg, title or "[Highlight] Error", nil, (flags or "").."w")
 end
@@ -12,28 +13,6 @@ end
 -- Global variables
 rex = rex
 Editors = Editors or {}
-
-if not rex then
-  local ok
-  ok, rex = pcall(require, "rex_onig")
-  if not ok then return end
-  local Utf8ToUtf32 = win.Utf8ToUtf32
-  local orig_new = rex.new
-  rex.new = function (pat, cf, syn)
-    return orig_new(Utf8ToUtf32(pat), cf, "UTF32_LE", syn or "PERL_NG")
-  end
-
-  local methods = getmetatable(orig_new(".")).__index
-  local sz = 4 -- sizeof(wchar_t)
-  methods.findW = function(r, s, init) -- simplified method: only 1-st capture
-    local from, to, cap = r:find(s, sz*(init-1)+1)
-    if from then return (from-1)/sz+1, to/sz, cap; end
-  end
-  methods.tfindW = function(r, s, init)
-    local from, to, t = r:tfind(s, sz*(init-1)+1)
-    if from then return (from-1)/sz+1, to/sz, t; end
-  end
-end
 
 local function NormalizeFastLines (p)
   p = math.floor(tonumber(p) or 200)
@@ -49,39 +28,35 @@ local function NormalizeColorPriority (p)
   return p
 end
 
-local Sett = require "far2.settings"
-local sd   = require "far2.simpledialog"
-local SETTINGS_KEY  = ("%08X"):format(far.GetPluginId())
-local SETTINGS_NAME = "settings"
-local Field = Sett.field
-
+-- Constants
+local AppTitle = "Highlight"
 local F = far.Flags
 local band, bor, bxor, lshift = bit64.band, bit64.bor, bit64.bxor, bit64.lshift
+local acFlags = bor(F.ECF_TABMARKCURRENT or 0, F.ECF_AUTODELETE) -- luacheck: ignore
+local Owner = far.GetPluginId()
+local PatEndLine
+local SETTINGS_KEY, SETTINGS_NAME = nil, "settings"
 
-local acFlags = F.ECF_AUTODELETE -- bor(F.ECF_TABMARKCURRENT, F.ECF_AUTODELETE)
-local AppTitle
-local Hist, Config, Extra
-local Owner
-local PatEndLine = rex.new("$")
 local Classes = {}
+local Hist, Config, Extra
 
--- initialize AppTitle, Owner, Hist_Config, Config.
-do
-  AppTitle, Owner = "Highlight", far.GetPluginId()
-
+local function LoadConfig()
   Hist = Sett.mload(SETTINGS_KEY, SETTINGS_NAME) or {}
-  Config = Field(Hist, "Config")
-  Extra = Field(Hist, "ExtraData")
-
-  far.ReloadDefaultScript = Config.bDebugMode
+  Config = Sett.field(Hist, "Config")
   Config.nColorPriority = NormalizeColorPriority(Config.nColorPriority)
   Config.nFastLines = NormalizeFastLines(Config.nFastLines)
   if Config.bFastMode==nil then Config.bFastMode=true end -- default=true
   if Config.On==nil then Config.On=true end -- default=true
+  Extra = Sett.field(Hist, "ExtraData")
+  far.ReloadDefaultScript = Config.bDebugMode
+end
+
+local function SaveConfig()
+  Sett.msave(SETTINGS_KEY, SETTINGS_NAME, Hist)
 end
 
 -- NOT USED: IS IT REALLY NEEDED?
-local function toreal(id, y, pos) return editor.TabToReal(id, y, pos) end
+local function toreal(id, y, pos) return editor.TabToReal(id, y, pos) end -- luacheck: ignore
 
 local function template(str, ...)
   local rep = {...}
@@ -140,14 +115,15 @@ local function FormColor (syntax, elem)
   return bor(fgcolor, lshift(bgcolor,4))
 end
 
-
-local function CompileSyntax (Syntax, filename, classname)
-  local function s_error (msg, numelement) -- syntax_error
-    local s = ([[
+local SYNT_ERROR = [[
 %s
 file:    %s
 class:   %s
-element: #%d]]):format(msg, filename, classname, numelement)
+element: #%d]]
+
+local function CompileSyntax (Syntax, filename, classname)
+  local function s_error (msg, numelement) -- syntax_error
+    local s = SYNT_ERROR:format(msg, filename, classname, numelement)
     error(s)
   end
 
@@ -519,18 +495,24 @@ local function ShowSettings()
     end
 
     far.ReloadDefaultScript = Config.bDebugMode
-    Sett.msave(SETTINGS_KEY, SETTINGS_NAME, Hist)
+    SaveConfig()
     editor.Redraw()
   end
 end
 
-do
-  local info = {
-    Flags = bor(F.PF_EDITOR, F.PF_DISABLEPANELS),
-    PluginMenuGuids = win.Uuid("BE07BD22-B463-4C8E-8BA2-2DA1497C9086"),
-    PluginMenuStrings = { AppTitle },
+function export.GetPluginInfo()
+  local guid = win.Uuid("BE07BD22-B463-4C8E-8BA2-2DA1497C9086")
+  return {
+    Flags = bor(F.PF_EDITOR, F.PF_DISABLEPANELS);
+    PluginMenuGuids = guid;
+    PluginMenuStrings = { AppTitle };
+    PluginConfigGuids = guid;
+    PluginConfigStrings = { AppTitle };
   }
-  function export.GetPluginInfo() return info end
+end
+
+function export.Configure()
+  far.Message("Wait for next commits", AppTitle)
 end
 
 local function SetClass (EditorID, Class, Activate)
@@ -653,7 +635,7 @@ local function HighlightExtra()
         for k,v in pairs(data) do Extra[k]=v end
         state.extracolor = extracolor
         Extra.Color = extracolor
-        Sett.msave(SETTINGS_KEY, SETTINGS_NAME, Hist)
+        SaveConfig()
       else
         ErrMsg(r)
         return 0
@@ -801,7 +783,37 @@ local function AddClass (t)
   Classes[#Classes+1] = class
 end
 
-do
+local function InitRex()
+  local ok, rex
+  ok, rex = pcall(require, "rex_onig")
+  if not ok then return end
+  local Utf8ToUtf32 = win.Utf8ToUtf32
+  local orig_new = rex.new
+  rex.new = function (pat, cf, syn)
+    return orig_new(Utf8ToUtf32(pat), cf, "UTF32_LE", syn or "PERL_NG")
+  end
+
+  local methods = getmetatable(orig_new(".")).__index
+  local sz = 4 -- sizeof(wchar_t)
+  methods.findW = function(r, s, init) -- simplified method: only 1-st capture
+    local from, to, cap = r:find(s, sz*(init-1)+1)
+    if from then return (from-1)/sz+1, to/sz, cap; end
+  end
+  methods.tfindW = function(r, s, init)
+    local from, to, t = r:tfind(s, sz*(init-1)+1)
+    if from then return (from-1)/sz+1, to/sz, t; end
+  end
+
+  return rex
+end
+
+local function main()
+  if not rex then
+    rex = InitRex()
+    if not rex then return end
+  end
+  PatEndLine = rex.new("$")
+  LoadConfig()
   far.RecursiveSearch(far.PluginStartupInfo().ShareDir.."/syntaxes", "*.lua",
     function (item, fullpath)
       if not item.FileAttributes:find("d") then
@@ -819,3 +831,5 @@ do
   table.sort(Classes,
     function(a, b) return win.CompareString(a.name, b.name, "u", "cS") < 0 end) -- for menu
 end
+
+main()
