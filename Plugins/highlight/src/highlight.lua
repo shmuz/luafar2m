@@ -762,20 +762,12 @@ function export.ProcessEditorEvent (id, event, param)
   end
 end
 
-local AddClass_filename
 local function AddClass (t)
-  if type(t)~="table"           then error("function Class() called with a non-table argument",2) end
-  if type(t.syntax)~="table"    then error("field 'syntax': a table expected",2) end
-  if type(t.name)~="string"     then error("field 'name': a string expected",2) end
-  if type(t.filemask)~="string" then error("field 'filemask': a string expected",2) end
-  if t.fastlines and type(t.fastlines)~="number"
-                                then error("field 'fastlines': a number expected",2) end
-
   local class = { syntax=t.syntax; name=t.name; filemask=t.filemask }
   if type(t.firstline) == "string" then
     FirstLineMap[t.firstline:lower()] = class
   end
-  class.filename = AddClass_filename
+  class.filename = t.filename
   class.CS = CompileSyntax(t.syntax, t.filename, t.name)
   if t.fastlines then
     class.fastlines = math.floor(math.max(0, t.fastlines))
@@ -807,29 +799,55 @@ local function InitRex()
   return rex
 end
 
-local function main()
+local function LoadSyntaxFiles()
+  local all, guard = {}, {}
+
+  local function OnFile(item, fullpath)
+    if not item.FileAttributes:find("d") then
+      local f, msg = loadfile(fullpath)
+      if f then
+        local function Add(t)
+          if type(t)=="table" and type(t.name)=="string" and not guard[t.name]
+              and type(t.syntax)=="table" and type(t.filemask)=="string"
+              and (not t.fastline or type(t.fastlines)=="number")
+          then
+            guard[t.name] = true
+            t.filename = fullpath
+            table.insert(all, t)
+          else
+            ErrMsg("Incorrect Class definition in\n" .. item.FileName)
+          end
+        end
+        local ok, msg = pcall(setfenv(f, {Class=Add}))
+        if not ok then ErrMsg(msg, nil, "wl") end
+      else
+        ErrMsg(msg)
+      end
+    end
+  end
+
+  far.RecursiveSearch(far.PluginStartupInfo().ShareDir.."/syntaxes", "*.lua", OnFile)
+  for _, t in ipairs(all) do
+    local ok, msg = pcall(AddClass, t)
+    if not ok then ErrMsg(msg, nil, "wl") end
+  end
+
+  table.sort(Classes,
+    function(a, b) return win.CompareString(a.name, b.name, "u", "cS") < 0 end) -- for menu
+end
+
+local function InitUpvalues()
   if not rex then
     rex = InitRex()
     if not rex then return end
   end
   PatEndLine = rex.new("$")
-  LoadConfig()
-  far.RecursiveSearch(far.PluginStartupInfo().ShareDir.."/syntaxes", "*.lua",
-    function (item, fullpath)
-      if not item.FileAttributes:find("d") then
-        local f, msg = loadfile(fullpath)
-        if f then
-          AddClass_filename = fullpath
-          local ok, msg = pcall(setfenv(f, {Class=AddClass}))
-          if not ok then ErrMsg(msg, nil, "wl") end
-        else
-          ErrMsg(msg)
-        end
-      end
-    end)
+end
 
-  table.sort(Classes,
-    function(a, b) return win.CompareString(a.name, b.name, "u", "cS") < 0 end) -- for menu
+local function main()
+  InitUpvalues()
+  LoadConfig()
+  LoadSyntaxFiles()
 end
 
 main()
