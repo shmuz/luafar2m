@@ -48,6 +48,7 @@ local function LoadConfig()
   if Config.bFastMode==nil then Config.bFastMode=true end -- default=true
   if Config.On==nil then Config.On=true end -- default=true
   Extra = Sett.field(Hist, "ExtraData")
+  Sett.field(Hist, "Names")
   far.ReloadDefaultScript = Config.bDebugMode
 end
 
@@ -511,8 +512,26 @@ function export.GetPluginInfo()
   }
 end
 
-function export.Configure()
-  far.Message("Wait for next commits", AppTitle)
+local function SelectEnabledTypes()
+  local keys = "Enter MsLClick"
+  local props = {Title="Enable/disable types"; Bottom=keys}
+  local items = {}
+  for k,v in pairs(Hist.Names) do
+    local t = {text=k; checked=v;}
+    table.insert(items, t)
+  end
+  table.sort(items, function(a,b) return a.text < b.text end)
+  while true do
+    local item, pos = far.Menu(props, items)
+    if not item then break end
+    if pos >= 1 then
+      local it = items[pos]
+      it.checked = not it.checked
+      Hist.Names[it.text] = it.checked
+      props.SelectIndex = pos
+    end
+  end
+  return props.SelectIndex ~= nil
 end
 
 local function SetClass (EditorID, Class, Activate)
@@ -692,7 +711,7 @@ function export.Open (From, _Id, Item)
     local item = far.Menu({Title=AppTitle}, {
       {text="&1. Select syntax";   act=MenuSelectSyntax; },
       {text="&2. Highlight extra"; act=HighlightExtra;   },
-      {text="&3. Settings";        act=ShowSettings;     }
+      {text="&3. Settings";        act=ShowSettings;     },
     })
     if item then
       item.act()
@@ -762,15 +781,15 @@ function export.ProcessEditorEvent (id, event, param)
   end
 end
 
-local function AddClass (t)
-  local class = { syntax=t.syntax; name=t.name; filemask=t.filemask }
-  if type(t.firstline) == "string" then
-    FirstLineMap[t.firstline:lower()] = class
+local function AddClass (def)
+  local class = { syntax=def.syntax; name=def.name; filemask=def.filemask }
+  if type(def.firstline) == "string" then
+    FirstLineMap[def.firstline:lower()] = class
   end
-  class.filename = t.filename
-  class.CS = CompileSyntax(t.syntax, t.filename, t.name)
-  if t.fastlines then
-    class.fastlines = math.floor(math.max(0, t.fastlines))
+  class.filename = def.fullpath
+  class.CS = CompileSyntax(def.syntax, def.fullpath, def.name)
+  if def.fastlines then
+    class.fastlines = math.floor(math.max(0, def.fastlines))
   end
   Classes[#Classes+1] = class
 end
@@ -800,25 +819,31 @@ local function InitRex()
 end
 
 local function LoadSyntaxFiles()
-  local all, guard = {}, {}
+  Classes = {}
+  local defs, guard, curNames = {}, {}, {}
 
   local function OnFile(item, fullpath)
     if not item.FileAttributes:find("d") then
       local f, msg = loadfile(fullpath)
       if f then
-        local function Add(t)
-          if type(t)=="table" and type(t.name)=="string" and not guard[t.name]
-              and type(t.syntax)=="table" and type(t.filemask)=="string"
-              and (not t.fastline or type(t.fastlines)=="number")
+        local function AddDef(def)
+          if type(def)=="table" and type(def.name)=="string" and not guard[def.name]
+              and type(def.syntax)=="table" and type(def.filemask)=="string"
+              and (not def.fastline or type(def.fastlines)=="number")
           then
-            guard[t.name] = true
-            t.filename = fullpath
-            table.insert(all, t)
+            if Hist.Names[def.name] ~= false then -- nil is treated as true
+              curNames[def.name] = true
+              guard[def.name] = true
+              def.fullpath = fullpath
+              table.insert(defs, def)
+            else
+              curNames[def.name] = false
+            end
           else
             ErrMsg("Incorrect Class definition in\n" .. item.FileName)
           end
         end
-        local ok, msg = pcall(setfenv(f, {Class=Add}))
+        local ok, msg = pcall(setfenv(f, {Class = AddDef}))
         if not ok then ErrMsg(msg, nil, "wl") end
       else
         ErrMsg(msg)
@@ -826,14 +851,29 @@ local function LoadSyntaxFiles()
     end
   end
 
-  far.RecursiveSearch(far.PluginStartupInfo().ShareDir.."/syntaxes", "*.lua", OnFile)
-  for _, t in ipairs(all) do
-    local ok, msg = pcall(AddClass, t)
+  local dir = far.InMyConfig("plugins/luafar/")..("%08X/syntaxes"):format(Owner)
+  far.RecursiveSearch(dir, "*.lua", OnFile)
+  if not defs[1] then
+    dir = far.PluginStartupInfo().ShareDir.."/syntaxes"
+    far.RecursiveSearch(dir, "*.lua", OnFile)
+  end
+  Hist.Names = curNames
+
+  for _, def in ipairs(defs) do
+    local ok, msg = pcall(AddClass, def)
     if not ok then ErrMsg(msg, nil, "wl") end
   end
 
   table.sort(Classes,
     function(a, b) return win.CompareString(a.name, b.name, "u", "cS") < 0 end) -- for menu
+end
+
+function export.Configure()
+  LoadConfig()
+  if SelectEnabledTypes() then
+    SaveConfig()
+    LoadSyntaxFiles()
+  end
 end
 
 local function InitUpvalues()
