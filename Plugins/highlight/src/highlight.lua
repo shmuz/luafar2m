@@ -397,7 +397,7 @@ local function ShowSettings()
     {tp="sbox";    x1=X3; x2=X4; text="Current file"; name="sboxCur"; y1=2; y2=7; },
     {tp="chbox";   x1=X3+1; text="H&ighlight"; y1=3;  name="cbHighCur";       },
     {tp="chbox";   x1=X3+1; text="F&ast rendering";   name="cbFastCur";       },
-    {tp="text";    x1=X3+5, text="Li&nes"; x2=X2-13;  name="labFastLinesCur"; },
+    {tp="text";    x1=X3+5, text="Li&nes"; x2=X4-13;  name="labFastLinesCur"; },
     {tp="fixedit"; x1=X4-11, x2=X4-2; ystep=0; mask="999999"; name="edFastLinesCur"; },
     {tp="text";    x1=X3+1; text="Color p&riority"; x2=X4-13;                        },
     {tp="fixedit"; x1=X4-11, x2=X4-2; ystep=0; mask="9999999999"; name="edPriorCur"; },
@@ -723,7 +723,8 @@ local FirstLineMap = {}
 local function OnNewEditor (id, ei)
   if ei then
     local firstline = editor.GetString(id,1,3):lower()
-    local name = firstline:match("highlight:%s*([%w_]+)")
+    local name = firstline:match('highlight:%s*"([^"]+)"')
+              or firstline:match('highlight:%s*(%S+)')
     if name and FirstLineMap[name] then
       SetClass(id, FirstLineMap[name], false)
     else
@@ -744,6 +745,14 @@ end
 -- Far2m does not redraw the entire visible part of the editor when navigation keys are pressed.
 -- That makes problems with highlighting matching brackets.
 function export.ProcessEditorInput (Rec)
+  if Rec.EventType == F.KEY_EVENT then
+    if Rec.KeyDown then return end
+  elseif Rec.EventType == F.MOUSE_EVENT then
+    if Rec.EventFlags == F.MOUSE_MOVED then return end
+  else
+    return
+  end
+
   local state = Editors[editor.GetInfo().EditorID]
   if state and state.On then
     if state.Class and state.Class.CS.bracketmatch then
@@ -829,7 +838,7 @@ local function LoadSyntaxFiles()
         local function AddDef(def)
           if type(def)=="table" and type(def.name)=="string" and not guard[def.name]
               and type(def.syntax)=="table" and type(def.filemask)=="string"
-              and (not def.fastline or type(def.fastlines)=="number")
+              and (not def.fastlines or type(def.fastlines)=="number")
           then
             if Hist.Names[def.name] ~= false then -- nil is treated as true
               curNames[def.name] = true
@@ -843,8 +852,8 @@ local function LoadSyntaxFiles()
             ErrMsg("Incorrect Class definition in\n" .. item.FileName)
           end
         end
-        local ok, msg = pcall(setfenv(f, {Class = AddDef}))
-        if not ok then ErrMsg(msg, nil, "wl") end
+        local ok, msg2 = pcall(setfenv(f, {Class = AddDef}))
+        if not ok then ErrMsg(msg2, nil, "wl") end
       else
         ErrMsg(msg)
       end
@@ -877,14 +886,18 @@ function export.Configure()
 end
 
 local function InitUpvalues()
-  if not rex then
-    rex = InitRex()
-    if not rex then return end
-  end
   PatEndLine = rex.new("$")
 end
 
 local function main()
+  if not rex then
+    rex = InitRex()
+    if not rex then
+      export = nil
+      ErrMsg("Could not load rex_onig library.")
+      return
+    end
+  end
   InitUpvalues()
   LoadConfig()
   LoadSyntaxFiles()
