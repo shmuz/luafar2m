@@ -287,6 +287,8 @@ local function ShowImage(xpanel)
       }
 
     elseif msg == F.DN_MOUSECLICK then
+      if param2.EventFlags ~= 0 then return true end
+
       local bits = param2.ButtonState % 8
 
       if bits == 1 then -- Left button
