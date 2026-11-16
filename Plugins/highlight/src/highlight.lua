@@ -29,12 +29,11 @@ local function NormalizeColorPriority (p)
 end
 
 -- Constants
-local AppTitle = "Highlight"
+local AppTitle, Owner
+local PatEndLine
 local F = far.Flags
 local band, bor, bxor, lshift = bit64.band, bit64.bor, bit64.bxor, bit64.lshift
 local acFlags = bor(F.ECF_TABMARKCURRENT or 0, F.ECF_AUTODELETE) -- luacheck: ignore
-local Owner = far.GetPluginId()
-local PatEndLine
 local SETTINGS_KEY, SETTINGS_NAME = nil, "settings"
 
 local Classes = {}
@@ -693,21 +692,8 @@ local function HighlightExtra()
   dlg:Run()
 end
 
-local function OpenFromMacro (Item)
-  if far.MacroGetArea() == F.MACROAREA_EDITOR then
-    if Item[1] == "own" then
-      if     Item[2] == "SelectSyntax"   then MenuSelectSyntax()
-      elseif Item[2] == "HighlightExtra" then HighlightExtra()
-      elseif Item[2] == "Settings"       then ShowSettings()
-      end
-    end
-  end
-end
-
 function export.Open (From, _Id, Item)
-  if From == F.OPEN_FROMMACRO then
-    return OpenFromMacro(Item)
-  elseif From == F.OPEN_EDITOR then
+  if From == F.OPEN_EDITOR then
     local item = far.Menu({Title=AppTitle}, {
       {text="&1. Select syntax";   act=MenuSelectSyntax; },
       {text="&2. Highlight extra"; act=HighlightExtra;   },
@@ -715,6 +701,15 @@ function export.Open (From, _Id, Item)
     })
     if item then
       item.act()
+    end
+  elseif From == F.OPEN_FROMMACRO then
+    if far.MacroGetArea() == F.MACROAREA_EDITOR then
+      if Item[1] == "own" then
+        if Item[2] == "SelectSyntax"       then MenuSelectSyntax()
+        elseif Item[2] == "HighlightExtra" then HighlightExtra()
+        elseif Item[2] == "Settings"       then ShowSettings()
+        end
+      end
     end
   end
 end
@@ -804,8 +799,7 @@ local function AddClass (def)
 end
 
 local function InitRex()
-  local ok, rex
-  ok, rex = pcall(require, "rex_onig")
+  local ok, rex = pcall(require, "rex_onig")
   if not ok then return end
   local Utf8ToUtf32 = win.Utf8ToUtf32
   local orig_new = rex.new
@@ -885,6 +879,8 @@ function export.Configure()
 end
 
 local function InitUpvalues()
+  local gInfo = far.GetPluginGlobalInfo()
+  AppTitle, Owner = gInfo.Title, gInfo.SysID
   PatEndLine = rex.new("$")
 end
 
