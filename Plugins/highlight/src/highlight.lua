@@ -878,7 +878,6 @@ local function LoadSyntaxFiles()
 end
 
 function export.Configure()
-  LoadConfig()
   if SelectEnabledTypes() then
     SaveConfig()
     LoadSyntaxFiles()
