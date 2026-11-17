@@ -854,12 +854,10 @@ local function LoadSyntaxFiles()
     end
   end
 
-  local dir = far.InMyConfig("plugins/luafar/")..("%08X/syntaxes"):format(Owner)
-  far.RecursiveSearch(dir, "*.lua", OnFile)
-  if not defs[1] then
-    dir = far.PluginStartupInfo().ShareDir.."/syntaxes"
-    far.RecursiveSearch(dir, "*.lua", OnFile)
-  end
+  local dir1 = far.InMyConfig("plugins/luafar/")..("%08X/syntaxes"):format(Owner)
+  local dir2 = far.PluginStartupInfo().ShareDir.."/syntaxes"
+  far.RecursiveSearch(dir1, "*.lua", OnFile)
+  far.RecursiveSearch(dir2, "*.lua", OnFile)
   Hist.Names = curNames
 
   for _, def in ipairs(defs) do
