@@ -58,12 +58,16 @@ end
 -- NOT USED: IS IT REALLY NEEDED?
 local function toreal(id, y, pos) return editor.TabToReal(id, y, pos) end -- luacheck: ignore
 
+local function escape_literal(s)
+  return (s:gsub("([\\^$.|?*+()[{%]#} \t])", "\\%1"))
+end
+
 local function template(str, ...)
   local rep = {...}
   str = str:gsub("%%(.)",
     function(c)
       local n = tonumber(c)
-      return n and rep[n] and win.Utf32ToUtf8(rep[n]) or c
+      return n and rep[n] and escape_literal(win.Utf32ToUtf8(rep[n])) or c
     end)
   return str
 end
