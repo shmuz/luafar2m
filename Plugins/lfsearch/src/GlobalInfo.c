@@ -2,19 +2,12 @@
 
 SHAREDSYMBOL void WINAPI GetGlobalInfoW(struct GlobalInfo *aInfo)
 {
-  struct VersionInfo Version = { 4,1,0,0 };
   aInfo->StructSize    = sizeof(*aInfo);
+  aInfo->MinFarVersion = MAKEFARVERSION2(2,9,0,0);
+  aInfo->Version       = MAKEFARVERSION2(4,1,0,0);
   aInfo->SysID         = 0x8E11EA75;
-  aInfo->Version       = Version;
   aInfo->Title         = L"LuaFAR Search";
   aInfo->Description   = L"Plugin for search and replace";
   aInfo->Author        = L"Shmuel Zeigerman";
   aInfo->UseMenuGuids  = 1;
 }
-//---------------------------------------------------------------------------
-
-SHAREDSYMBOL int WINAPI GetMinFarVersionW(void)
-{
-  return MAKEFARVERSION(2,4);
-}
-//---------------------------------------------------------------------------
