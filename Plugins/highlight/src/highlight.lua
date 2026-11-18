@@ -1,7 +1,7 @@
 -- Started: 2014-10-06
 -- Author: Shmuel Zeigerman
 
--- luacheck: globals rex Editors
+-- luacheck: globals Editors
 
 local Sett = require "far2.settings"
 local sd   = require "far2.simpledialog"
@@ -11,7 +11,6 @@ local function ErrMsg (msg, title, flags)
 end
 
 -- Global variables
-rex = rex
 Editors = Editors or {}
 
 local function NormalizeFastLines (p)
@@ -33,6 +32,7 @@ local AppTitle, Owner
 local PatEndLine
 local F = far.Flags
 local band, bor, bxor, lshift = bit64.band, bit64.bor, bit64.bxor, bit64.lshift
+local rex = regex
 local acFlags = bor(F.ECF_TABMARKCURRENT or 0, F.ECF_AUTODELETE) -- luacheck: ignore
 local SETTINGS_KEY, SETTINGS_NAME = nil, "settings"
 
@@ -152,7 +152,7 @@ local function CompileSyntax (Syntax, filename, classname)
     end
     local pat = rex.new(v.pattern or v.pat_open) -- can throw error
     T.capstart = i==1 and 1 or (Out[i-1].capend + 1)
-    T.capend = T.capstart + pat:capturecount()
+    T.capend = T.capstart + pat:bracketscount() - 1
     T.color = FormColor(Syntax, v)
     T.color_unfinished = ProcessFullColor(v.color_unfinished)
   end
@@ -802,29 +802,6 @@ local function AddClass (def)
   Classes[#Classes+1] = class
 end
 
-local function InitRex()
-  local ok, rex = pcall(require, "rex_onig")
-  if not ok then return end
-  local Utf8ToUtf32 = win.Utf8ToUtf32
-  local orig_new = rex.new
-  rex.new = function (pat, cf, syn)
-    return orig_new(Utf8ToUtf32(pat), cf, "UTF32_LE", syn or "PERL_NG")
-  end
-
-  local methods = getmetatable(orig_new(".")).__index
-  local sz = 4 -- sizeof(wchar_t)
-  methods.findW = function(r, s, init) -- simplified method: only 1-st capture
-    local from, to, cap = r:find(s, sz*(init-1)+1)
-    if from then return (from-1)/sz+1, to/sz, cap; end
-  end
-  methods.tfindW = function(r, s, init)
-    local from, to, t = r:tfind(s, sz*(init-1)+1)
-    if from then return (from-1)/sz+1, to/sz, t; end
-  end
-
-  return rex
-end
-
 local function LoadSyntaxFiles()
   Classes = {}
   local defs, guard, curNames = {}, {}, {}
@@ -887,14 +864,6 @@ local function InitUpvalues()
 end
 
 local function main()
-  if not rex then
-    rex = InitRex()
-    if not rex then
-      export = nil
-      ErrMsg("Could not load rex_onig library.")
-      return
-    end
-  end
   InitUpvalues()
   LoadConfig()
   LoadSyntaxFiles()
