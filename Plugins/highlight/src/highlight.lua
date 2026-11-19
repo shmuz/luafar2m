@@ -639,7 +639,7 @@ local function HighlightExtra()
 
   local function closeaction(hDlg, param1, data)
     if param1 == Pos.btReset then
-      SetExtraPattern(editor.GetInfo().EditorID, nil)
+      SetExtraPattern(ei.EditorID, nil)
     elseif param1 == Pos.btOk then
       local sSearchPat = data.sSearchPat
       local flags, syn = "", nil
@@ -653,7 +653,7 @@ local function HighlightExtra()
       end
       local ok, r = pcall(rex.new, sSearchPat, flags, syn)
       if ok then
-        SetExtraPattern(editor.GetInfo().EditorID, r)
+        SetExtraPattern(ei.EditorID, r)
         for k,v in pairs(data) do Extra[k]=v end
         state.extracolor = extracolor
         Extra.Color = extracolor
