@@ -93,6 +93,19 @@ Macro {
   end;
 }
 
+Macro {
+  id="08468390-837E-4677-BEA7-DFA6DD5B1372";
+  description="Asciinema recording start/stop";
+  area="Common"; key="CtrlAltE";
+  sortpriority=45;
+  action=function()
+    local rc = require "far2.record_cast"
+    if rc.recording() then rc.stop()
+    else rc.start()
+    end
+  end;
+}
+
 NoMacro {
   description="Key logger";
   area="Common"; key="/.+/";

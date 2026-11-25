@@ -5,7 +5,7 @@
 -- Language:                Lua 5.1
 -- Portability:             far3 (>= 3777), far2m
 -- Far plugin:              LuaMacro
--- Dependencies:            Lua module far2.simpledialog
+-- Dependencies:            (1) far2.simpledialog, (2) far2.lua_explorer
 ------------------------------------------------------------------------------------------------
 
 local MacroKey = "CtrlShiftM"

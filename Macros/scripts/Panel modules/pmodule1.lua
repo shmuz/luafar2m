@@ -16,7 +16,7 @@ local function FileToObject(FileName)
   if fp then
     local obj = { HostFile=FileName; List={} }
     for line in fp:lines() do
-      line = line:gsub("\r", "")
+      line = string.gsub(line, "\r", "")
       table.insert(obj.List, {FileName=line})
     end
     fp:close()
